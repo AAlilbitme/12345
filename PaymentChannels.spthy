@@ -2,7 +2,7 @@ theory paymentchannel
 begin
 
 builtins: hashing, signing
- 
+
 rule Register_key:
     [ Fr(~ltk) ]
     --[ KeyGen($A) ]->
@@ -86,21 +86,28 @@ rule Lock_Funds_And_Open:
       !ChannelRecord(ptr, $A, $B) ]
 
 rule Update_State:
-    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
+    let updA = <'upd', ptr, $A, $B, n_old, ~n_new, fA_new, fB_new>
+        updB = <'upd', ptr, $B, $A, n_old, ~n_new, fA_new, fB_new>
+        sigUpdA = sign(updA, ltkA)
+        sigUpdB = sign(updB, ltkB)
+        newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
         newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
         sigAnew    = sign(newCommitA, ltkA)
         sigBnew    = sign(newCommitB, ltkB)
     in
-    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew),
+    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew), Fr(fA_new), Fr(fB_new),
       !Ltk($A, ltkA), !Ltk($B, ltkB),
+      !Pk($A, pkA), !Pk($B, pkB),
       StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
-      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
-      In(<fA_new, fB_new>) ]
-    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
+      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB) ]
+    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new),
+        Eq(verify(sigUpdA, updA, pkA), true),
+        Eq(verify(sigUpdB, updB, pkB), true) ]->
     [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
                ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
       PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
-               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new) ]
+               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      Out(<'upd', ptr, $A, $B, n_old, ~n_new, fA_new, fB_new, sigUpdA, sigUpdB>) ]
 
 rule Revoke_Old_Secret:
     [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
@@ -116,7 +123,8 @@ rule Revoke_Old_Secret:
     [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
       StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
       !RevokedSecret($A, n_old, sAold, oldCommitA),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      Out(sAold), Out(sBold) ]
 
 rule Publish_Old_Grace_Period_A:
     [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
@@ -180,9 +188,8 @@ rule Publish_Pending_B:
     [ OnChainDelayed($B, n_new, newCommitB),
       OnChainInstant($A, n_new, newCommitB) ]
 
-// Honest Closing
 rule Honest_Close:
-    let closetx = <'commit', ptr, $A, $B, n, fA, fB>
+    let closetx = <'close', ptr, $A, $B, n, fA, fB>
         signA   = sign(closetx, ltkA)
         signB   = sign(closetx, ltkB)
     in
@@ -202,7 +209,8 @@ rule Honest_Close:
 rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
-      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      In(<'chain_publish', ptr, $A, n_old, oldCommitA, sAold>) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
         Cheat($A, n_old) ]->
     [ OnChainCheat($A, $B, n_old, oldCommitA) ]
@@ -210,7 +218,8 @@ rule Publish_Revoked_A:
 rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      In(<'chain_publish', ptr, $B, n_old, oldCommitB, sBold>) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
         Cheat($B, n_old) ]->
     [ OnChainCheat($B, $A, n_old, oldCommitB) ]
@@ -227,7 +236,6 @@ rule Punish_B:
     --[ Punish($A, $B, n_old) ]->
     [ AllFundsTo($A) ]
 
-// Settlement rules: generic txContent unifies with both 'commit' tuples
 rule Instant_Funds_A:
     [ OnChainInstant($A, n, txContent) ]
     --[ FundsSettled($A, n), SettledTx($A, txContent) ]->
@@ -257,7 +265,7 @@ restriction OneChannelPerPtr:
      & ChannelOpen(C, D, ptr) @ #j
      ==> #i = #j"
 
-lemma state_update[use_induction]:   // inductionto avoid the problem of infinite trace(going in loop)
+lemma state_update[use_induction]:
     "All A B ptr n #i.
        StateUpdate(A, B, ptr, n) @ #i
      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
@@ -279,9 +287,9 @@ lemma settlement_is_traceable:
 
 lemma Protocol_execution:
     exists-trace
-    "Ex A B ptr n fA vB #i #j #k #l.
+    "Ex A B ptr n fA fB #i #j #k #l.
         ChannelOpen(A, B, ptr) @ #i
-      & NewStateBuilt(A, B, ptr, n, fA, vB) @ #j
+      & NewStateBuilt(A, B, ptr, n, fA, fB) @ #j
       & StateUpdate(A, B, ptr, n) @ #k
       & Close(A, B, ptr, n) @ #l
       & #i < #j & #j < #k & #k < #l"
@@ -291,6 +299,11 @@ lemma No_Punishment_Without_Cheating:
         Punish(B, A, n) @ #i
      ==> (Ex #k. Cheat(A, n) @ #k & #k < #i)
       | (Ex #j. LtkCompromised(A) @ #j & #j < #i)"
+
+lemma NoCheatWithoutChainPublish:
+    "All A n #i.
+        Cheat(A, n) @ #i
+     ==> Ex commit. PublishRevoked(A, n, commit) @ #i"
 
 lemma Balance_Must_Updates:
   all-traces
