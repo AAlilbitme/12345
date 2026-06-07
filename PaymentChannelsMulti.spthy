@@ -1,0 +1,328 @@
+theory paymentchannel_multi
+begin
+
+/*
+  Multi-party payment channel (3-party template: A, B, C).
+  Each party has its own balance fA, fB, fC (no arithmetic / no +).
+  All members sign every state update and close.
+  CSV: DisputeOpen -> DisputeCanClose -> DisputeClosed (symbolic, no wall-clock).
+  Scale to N parties: duplicate member slot + signature checks per party.
+*/
+
+builtins: hashing, signing
+
+// --- Setup (unchanged) ---
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk) ]
+
+rule Acquire_funds:
+    [ Fr(~f) ]
+    --[ FundsAcquired($A, ~f) ]->
+    [ Wallet($A, ~f) ]
+
+// --- Multi-party roster formation (A initiates, B and C join) ---
+
+rule Init_Multi_Proposal:
+    let roster = <'roster', ~ptr, $A, $B, $C>
+        sigA   = sign(roster, ltkA)
+    in
+    [ Fr(~ptr), !Ltk($A, ltkA) ]
+    --[ MultiProposalSent($A, $B, $C, ~ptr) ]->
+    [ MultiWaitJoin(~ptr, $A, $B, $C),
+      Out(<'roster', ~ptr, $A, $B, $C, sigA>) ]
+
+rule Join_Multi_B:
+    let roster = <'roster', ptr, $A, $B, $C>
+        sigB   = sign(roster, ltkB)
+    in
+    [ MultiWaitJoin(ptr, $A, $B, $C),
+      !Ltk($B, ltkB), !Pk($A, pkA),
+      In(<'roster', ptr, $A, $B, $C, sigA>) ]
+    --[ MultiJoin($B, ptr),
+        Eq(verify(sigA, roster, pkA), true) ]->
+    [ MultiWaitJoinC(ptr, $A, $B, $C),
+      Out(<'roster', ptr, $A, $B, $C, sigA, sigB>) ]
+
+rule Join_Multi_C:
+    let roster = <'roster', ptr, $A, $B, $C>
+        sigC   = sign(roster, ltkC)
+    in
+    [ MultiWaitJoinC(ptr, $A, $B, $C),
+      !Ltk($C, ltkC), !Pk($A, pkA), !Pk($B, pkB),
+      In(<'roster', ptr, $A, $B, $C, sigA, sigB>) ]
+    --[ MultiJoin($C, ptr),
+        Eq(verify(sigA, roster, pkA), true),
+        Eq(verify(sigB, roster, pkB), true) ]->
+    [ !ChannelMember(ptr, $A),
+      !ChannelMember(ptr, $B),
+      !ChannelMember(ptr, $C),
+      !MultiRoster(ptr, $A, $B, $C),
+      Out(<'roster_ack', ptr, $A, $B, $C, sigC>) ]
+
+// --- Initial commits (one secret + commit per party) ---
+
+rule Create_Initial_Commits:
+    let cA = <'commit', ptr, $A, '0', h(~sA)>
+        cB = <'commit', ptr, $B, '0', h(~sB)>
+        cC = <'commit', ptr, $C, '0', h(~sC)>
+        sigA = sign(cA, ltkA)
+        sigB = sign(cB, ltkB)
+        sigC = sign(cC, ltkC)
+    in
+    [ Fr(~sA), Fr(~sB), Fr(~sC),
+      !Ltk($A, ltkA), !Ltk($B, ltkB), !Ltk($C, ltkC),
+      !Pk($A, pkA), !Pk($B, pkB), !Pk($C, pkC),
+      !MultiRoster(ptr, $A, $B, $C) ]
+    --[ Stage1Complete(ptr),
+        StateCreated($A, '0', cA),
+        StateCreated($B, '0', cB),
+        StateCreated($C, '0', cC),
+        Eq(verify(sigA, cA, pkA), true),
+        Eq(verify(sigB, cB, pkB), true),
+        Eq(verify(sigC, cC, pkC), true) ]->
+    [ ReadyToLock3(ptr, ~sA, ~sB, ~sC, cA, cB, cC, sigA, sigB, sigC) ]
+
+rule Lock_Funds_And_Open_3:
+    [ ReadyToLock3(ptr, sA, sB, sC, cA, cB, cC, sigA, sigB, sigC),
+      Wallet($A, ~fA), Wallet($B, ~fB), Wallet($C, ~fC),
+      !MultiRoster(ptr, $A, $B, $C) ]
+    --[ ChannelOpen3(ptr, $A, $B, $C),
+        FundsLocked3(ptr),
+        NewStateBuilt3(ptr, '0', ~fA, ~fB, ~fC) ]->
+    [ ChannelState(ptr, '0', sA, sB, sC, cA, cB, cC, ~fA, ~fB, ~fC),
+      !ValidOnChain(ptr),
+      !LatestIdx(ptr, '0') ]
+
+// --- N-party update: all three sign the same (fA_new, fB_new, fC_new) ---
+
+rule Update_State_3:
+    let upd = <'upd', ptr, n_old, ~n_new, fA_new, fB_new, fC_new>
+        sigA  = sign(upd, ltkA)
+        sigB  = sign(upd, ltkB)
+        sigC  = sign(upd, ltkC)
+        cAnew = <'commit', ptr, $A, ~n_new, h(~sAnew)>
+        cBnew = <'commit', ptr, $B, ~n_new, h(~sBnew)>
+        cCnew = <'commit', ptr, $C, ~n_new, h(~sCnew)>
+        sigAnew = sign(cAnew, ltkA)
+        sigBnew = sign(cBnew, ltkB)
+        sigCnew = sign(cCnew, ltkC)
+    in
+    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew), Fr(~sCnew),
+      Fr(fA_new), Fr(fB_new), Fr(fC_new),
+      !Ltk($A, ltkA), !Ltk($B, ltkB), !Ltk($C, ltkC),
+      !Pk($A, pkA), !Pk($B, pkB), !Pk($C, pkC),
+      !LatestIdx(ptr, n_old),
+      !MultiRoster(ptr, $A, $B, $C),
+      ChannelState(ptr, n_old, sAold, sBold, sCold, cAold, cBold, cCold, fA, fB, fC) ]
+    --[ NewStateBuilt3(ptr, ~n_new, fA_new, fB_new, fC_new),
+        Eq(verify(sigA, upd, pkA), true),
+        Eq(verify(sigB, upd, pkB), true),
+        Eq(verify(sigC, upd, pkC), true) ]->
+    [ ChannelPending(ptr, n_old, ~n_new,
+                     sAold, sBold, sCold, cAold, cBold, cCold,
+                     ~sAnew, ~sBnew, ~sCnew, cAnew, cBnew, cCnew,
+                     sigAnew, sigBnew, sigCnew,
+                     fA_new, fB_new, fC_new),
+      Out(<'upd', ptr, n_old, ~n_new, fA_new, fB_new, fC_new, sigA, sigB, sigC>) ]
+
+rule Revoke_Old_Secrets_3:
+    [ ChannelPending(ptr, n_old, n_new,
+                    sAold, sBold, sCold, cAold, cBold, cCold,
+                    sAnew, sBnew, sCnew, cAnew, cBnew, cCnew,
+                    sigAnew, sigBnew, sigCnew,
+                    fA_new, fB_new, fC_new),
+      !Pk($A, pkA), !Pk($B, pkB), !Pk($C, pkC),
+      !LatestIdx(ptr, n_old),
+      !MultiRoster(ptr, $A, $B, $C) ]
+    --[ StateUpdate3(ptr, n_new),
+        Revoke($A, n_old, sAold),
+        Revoke($B, n_old, sBold),
+        Revoke($C, n_old, sCold),
+        Eq(verify(sigAnew, cAnew, pkA), true),
+        Eq(verify(sigBnew, cBnew, pkB), true),
+        Eq(verify(sigCnew, cCnew, pkC), true) ]->
+    [ ChannelState(ptr, n_new, sAnew, sBnew, sCnew, cAnew, cBnew, cCnew, fA_new, fB_new, fC_new),
+      !LatestIdx(ptr, n_new),
+      !RevokedSecret($A, n_old, sAold, cAold),
+      !RevokedSecret($B, n_old, sBold, cBold),
+      !RevokedSecret($C, n_old, sCold, cCold),
+      DisputeCanClose(ptr, n_old),
+      Out(sAold), Out(sBold), Out(sCold) ]
+
+// --- Publish: party P goes delayed; other members instant (3 explicit rules) ---
+
+rule Publish_Current_A:
+    [ ChannelState(ptr, n, sA, sB, sC, cA, cB, cC, fA, fB, fC),
+      !ValidOnChain(ptr), !MultiRoster(ptr, $A, $B, $C) ]
+    --[ Publish($A, n, cA),
+        PublishState($A, n),
+        OnChainDelayedProduce($A, n),
+        OnChainInstantProduce($B, n),
+        OnChainInstantProduce($C, n) ]->
+    [ OnChainDelayed(ptr, $A, n, cA),
+      OnChainInstant(ptr, $B, n, cA),
+      OnChainInstant(ptr, $C, n, cA),
+      DisputeOpen(ptr, $A, n) ]
+
+rule Publish_Current_B:
+    [ ChannelState(ptr, n, sA, sB, sC, cA, cB, cC, fA, fB, fC),
+      !ValidOnChain(ptr), !MultiRoster(ptr, $A, $B, $C) ]
+    --[ Publish($B, n, cB),
+        PublishState($B, n),
+        OnChainDelayedProduce($B, n),
+        OnChainInstantProduce($A, n),
+        OnChainInstantProduce($C, n) ]->
+    [ OnChainDelayed(ptr, $B, n, cB),
+      OnChainInstant(ptr, $A, n, cB),
+      OnChainInstant(ptr, $C, n, cB),
+      DisputeOpen(ptr, $B, n) ]
+
+rule Publish_Current_C:
+    [ ChannelState(ptr, n, sA, sB, sC, cA, cB, cC, fA, fB, fC),
+      !ValidOnChain(ptr), !MultiRoster(ptr, $A, $B, $C) ]
+    --[ Publish($C, n, cC),
+        PublishState($C, n),
+        OnChainDelayedProduce($C, n),
+        OnChainInstantProduce($A, n),
+        OnChainInstantProduce($B, n) ]->
+    [ OnChainDelayed(ptr, $C, n, cC),
+      OnChainInstant(ptr, $A, n, cC),
+      OnChainInstant(ptr, $B, n, cC),
+      DisputeOpen(ptr, $C, n) ]
+
+rule Dispute_Window_End:
+    [ DisputeOpen(ptr, $P, n),
+      DisputeCanClose(ptr, n) ]
+    --[ CSVPassed($P, n) ]->
+    [ DisputeClosed(ptr, $P, n) ]
+
+// --- Cooperative close: all parties sign (fA, fB, fC) ---
+
+rule Honest_Close_3:
+    let closetx = <'close', ptr, $A, $B, $C, n, fA, fB, fC>
+        sigA    = sign(closetx, ltkA)
+        sigB    = sign(closetx, ltkB)
+        sigC    = sign(closetx, ltkC)
+    in
+    [ ChannelState(ptr, n, sA, sB, sC, cA, cB, cC, fA, fB, fC),
+      !ValidOnChain(ptr), !LatestIdx(ptr, n),
+      !MultiRoster(ptr, $A, $B, $C),
+      !Ltk($A, ltkA), !Ltk($B, ltkB), !Ltk($C, ltkC),
+      !Pk($A, pkA), !Pk($B, pkB), !Pk($C, pkC) ]
+    --[ Close3(ptr, n),
+        OnChainInstantProduce($A, n),
+        OnChainInstantProduce($B, n),
+        OnChainInstantProduce($C, n),
+        ChannelClosed(ptr),
+        Eq(verify(sigA, closetx, pkA), true),
+        Eq(verify(sigB, closetx, pkB), true),
+        Eq(verify(sigC, closetx, pkC), true) ]->
+    [ OnChainInstant(ptr, $A, n, closetx),
+      OnChainInstant(ptr, $B, n, closetx),
+      OnChainInstant(ptr, $C, n, closetx) ]
+
+// --- Cheat / punish (per party) ---
+
+rule Publish_Revoked:
+    [ !ChannelMember(ptr, $P),
+      !ValidOnChain(ptr),
+      !RevokedSecret($P, n_old, sOld, cOld),
+      In(<'chain_publish', ptr, $P, n_old, cOld, sOld>) ]
+    --[ PublishRevoked($P, n_old, cOld),
+        Cheat($P, n_old) ]->
+    [ OnChainCheat(ptr, $P, n_old, cOld) ]
+
+rule Punish_Cheater:
+    [ OnChainCheat(ptr, $P, n_old, cOld),
+      !RevokedSecret($P, n_old, sOld, cOld),
+      !MultiRoster(ptr, $A, $B, $C) ]
+    --[ PunishMulti(ptr, $P, n_old),
+        ChannelClosed(ptr) ]->
+    [ AllFundsToHonest(ptr, $A, $B, $C) ]
+
+// --- Settlement ---
+
+rule Instant_Funds:
+    [ OnChainInstant(ptr, $P, n, txContent) ]
+    --[ FundsSettled($P, n), SettledTx($P, txContent) ]->
+    [ ]
+
+rule Claim_Funds:
+    [ OnChainDelayed(ptr, $P, n, txContent),
+      DisputeClosed(ptr, $P, n) ]
+    --[ ClaimFunds($P, n), SettledTx($P, txContent) ]->
+    [ FundsTo($P, n) ]
+
+// --- Restrictions ---
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction OneChannelPerPtr:
+    "All ptr A1 B1 C1 A2 B2 C2 #i #j.
+       ChannelOpen3(ptr, A1, B1, C1) @ #i
+     & ChannelOpen3(ptr, A2, B2, C2) @ #j
+     ==> #i = #j"
+
+restriction ClaimAfterDelayed:
+    "All A n #i #j.
+       OnChainDelayedProduce(A, n) @ #i
+     & ClaimFunds(A, n) @ #j
+     ==> #i < #j"
+
+restriction NoPublishAfterClose:
+    "All ptr P n #i #j.
+       ChannelClosed(ptr) @ #i
+     & PublishState(P, n) @ #j
+     ==> #j < #i"
+
+// --- Lemmas ---
+
+lemma state_update3[use_induction]:
+    "All ptr n #i.
+       StateUpdate3(ptr, n) @ #i
+     ==> Ex A B C #j. ChannelOpen3(ptr, A, B, C) @ #j & #j < #i"
+
+lemma Protocol_execution_3:
+    exists-trace
+    "Ex ptr A B C n fA fB fC #i #j #k #l.
+        ChannelOpen3(ptr, A, B, C) @ #i
+      & NewStateBuilt3(ptr, n, fA, fB, fC) @ #j
+      & StateUpdate3(ptr, n) @ #k
+      & Close3(ptr, n) @ #l
+      & #i < #j & #j < #k & #k < #l"
+
+lemma Balance_Change_On_Update:
+  all-traces
+  "All ptr n1 n2 fA1 fB1 fC1 fA2 fB2 fC2 #i #j.
+     ( NewStateBuilt3(ptr, n1, fA1, fB1, fC1) @ #i
+      & StateUpdate3(ptr, n1) @ #i
+      & NewStateBuilt3(ptr, n2, fA2, fB2, fC2) @ #j
+      & StateUpdate3(ptr, n2) @ #j
+      & #i < #j
+     )
+     ==> ( not(fA2 = fA1) | not(fB2 = fB1) | not(fC2 = fC1) )"
+
+lemma No_Punish_Without_Cheat:
+    "All ptr P n #i.
+        PunishMulti(ptr, P, n) @ #i
+     ==> (Ex #k. Cheat(P, n) @ #k & #k < #i)
+      | (Ex #j. LtkCompromised(P) @ #j & #j < #i)"
+
+lemma Cooperative_Close_3:
+    exists-trace
+    "Ex ptr A B C n #k #i.
+        ChannelOpen3(ptr, A, B, C) @ #k
+      & Close3(ptr, n) @ #i
+      & #k < #i
+      & not (Ex ptr2 n2 #j. StateUpdate3(ptr2, n2) @ #j)"
+
+end
