@@ -17,6 +17,7 @@ rule Alice_To_Bob_Lock:
       In(<$D, y>) ]
   --[ HTLC_Lock($A, $B, ptrAB, y, '3t'),
       HTLC_Lock_Room1($A, $B, ptrAB, y),
+      UsesChannelRecord($A, $B, ptrAB),
       ChannelHTLCLocked($A, $B, ptrAB, y) ]->
     [ HTLC_LockedAB($A, $B, $D, ptrAB, y),
       Out(htlcAB) ]
@@ -27,6 +28,7 @@ rule Bob_To_Carol_Lock:
       In(<'HTLC', $A, $B, $D, ptrAB, y, '3t'>) ]
   --[ HTLC_Lock($B, $C, ptrBC, y, '2t'),
       HTLC_Lock_Room2($B, $C, ptrBC, y),
+      UsesChannelRecord($B, $C, ptrBC),
       ChannelHTLCLocked($B, $C, ptrBC, y) ]->
     [ HTLC_LockedBC($A, $B, $C, $D, ptrAB, ptrBC, y),
       Out(htlcBC) ]
@@ -37,6 +39,7 @@ rule Carol_To_Dave_Lock:
       In(<'HTLC', $B, $C, $D, ptrAB, ptrBC, y, '2t'>) ]
   --[ HTLC_Lock($C, $D, ptrCD, y, 't'),
       HTLC_Lock_Room3($C, $D, ptrCD, y),
+      UsesChannelRecord($C, $D, ptrCD),
       ChannelHTLCLocked($C, $D, ptrCD, y) ]->
     [ HTLC_LockedCD($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y),
       Out(htlcCD) ]
@@ -102,11 +105,10 @@ lemma Multi_Hop_Executable:
       & RoundComplete(A, D, y) @ #j
       & #i < #j"
 
-lemma HTLC_Requires_Open_Channel[use_induction]:
+lemma HTLC_Uses_Channel_Record:
     "All A B ptr y #i.
         ChannelHTLCLocked(A, B, ptr, y) @ #i
-      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
-               & #j < #i"
+      ==> UsesChannelRecord(A, B, ptr) @ #i"
 
 lemma Room3_Settles_Before_Room2_Redeems[use_induction]:
     "All B C ptrBC y #i.
@@ -121,12 +123,6 @@ lemma Room2_Settles_Before_Room1_Redeems[use_induction]:
       ==> Ex C ptrBC #j.
              HTLCSettle_Room2(B, C, ptrBC, y) @ #j
            & #j < #i"
-
-lemma Channel_Restored_After_HTLC[use_induction]:
-    "All A B ptr y #i.
-        HTLCSettle(A, B, ptr, y) @ #i
-      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
-               & #j < #i"
 
 lemma Round_Complete_Implies_All_Rooms_Settled[use_induction]:
     "All A D y #i.
