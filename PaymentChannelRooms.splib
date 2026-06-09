@@ -1,0 +1,26 @@
+/*
+   Lightweight channel-room abstraction for multihop proofs.
+
+   This library intentionally does not model balances, funding amounts,
+   revocation, publishing, or StateA/StateB facts.  The detailed two-party
+   payment-channel model can stay in PaymentChannels.splib; multihop only
+   needs a certificate that a room/channel pointer is valid.
+*/
+
+builtins: hashing, signing
+
+rule Setup_Channel_Record:
+    [ Fr(~ptr) ]
+  --[ ChannelOpen($A, $B, ~ptr),
+      ChannelRecordCreated($A, $B, ~ptr) ]->
+    [ !ChannelRecord(~ptr, $A, $B),
+      !ValidChannelPtr(~ptr) ]
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction OneChannelPerPtr:
+    "All A B C D ptr #i #j.
+       ChannelOpen(A, B, ptr) @ #i
+     & ChannelOpen(C, D, ptr) @ #j
+     ==> #i = #j"

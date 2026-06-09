@@ -1,0 +1,139 @@
+theory PaymentChannelMultihop
+begin
+
+#include "PaymentChannelRooms.splib"
+
+rule Dave_Generate_Key:
+    [ Fr(~x) ]
+  --[ KeyCreated($D, $A, h(~x)), SecretGenerated(~x) ]->
+    [ !Dave_Secret($D, h(~x), ~x),
+      !Invoice($D, $A, h(~x)) ]
+
+/* -- Phase 2: Locking -- */
+
+rule Alice_To_Bob_Lock:
+    [ !ChannelRecord(ptrAB, $A, $B),
+      !Invoice($D, $A, y) ]
+  --[ HTLC_Lock($A, $B, ptrAB, y, '3t'),
+      HTLC_Lock_Room1($A, $B, ptrAB, y),
+      UsesChannelRecord($A, $B, ptrAB),
+      ChannelHTLCLocked($A, $B, ptrAB, y) ]->
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y),
+      !HTLCForwardAB($A, $B, $D, ptrAB, y) ]
+
+rule Bob_To_Carol_Lock:
+    [ !ChannelRecord(ptrBC, $B, $C),
+      !HTLCForwardAB($A, $B, $D, ptrAB, y) ]
+  --[ HTLC_Lock($B, $C, ptrBC, y, '2t'),
+      HTLC_Lock_Room2($B, $C, ptrBC, y),
+      UsesChannelRecord($B, $C, ptrBC),
+      ChannelHTLCLocked($B, $C, ptrBC, y) ]->
+    [ HTLC_LockedBC($A, $B, $C, $D, ptrAB, ptrBC, y),
+      !HTLCForwardBC($A, $B, $C, $D, ptrAB, ptrBC, y) ]
+
+rule Carol_To_Dave_Lock:
+    [ !ChannelRecord(ptrCD, $C, $D),
+      !HTLCForwardBC($A, $B, $C, $D, ptrAB, ptrBC, y) ]
+  --[ HTLC_Lock($C, $D, ptrCD, y, 't'),
+      HTLC_Lock_Room3($C, $D, ptrCD, y),
+      UsesChannelRecord($C, $D, ptrCD),
+      ChannelHTLCLocked($C, $D, ptrCD, y) ]->
+    [ HTLC_LockedCD($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y) ]
+
+/* -- Phase 3: Release -- */
+
+rule Dave_Redeem_Room3:
+    [ HTLC_LockedCD($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y),
+      !Dave_Secret($D, y, x) ]
+  --[ PaymentReleased($D, h(x)),
+      Eq(h(x), y),
+      HTLCSettle($C, $D, ptrCD, y),
+      HTLCSettle_Room3($C, $D, ptrCD, y),
+      ChannelSettle($C, $D, ptrCD, y) ]->
+    [ !RoomSettled(ptrCD, ptrBC, y),
+      !PreimageReleased($D, x, y) ]
+
+rule Carol_Redeem_Room2:
+    [ HTLC_LockedBC($A, $B, $C, $D, ptrAB, ptrBC, y),
+      !PreimageReleased($D, x, y),
+      !RoomSettled(ptrCD, ptrBC, y) ]
+  --[ PaymentReleased($C, h(x)),
+      Eq(h(x), y),
+      HTLCSettle($B, $C, ptrBC, y),
+      HTLCSettle_Room2($B, $C, ptrBC, y),
+      ChannelSettle($B, $C, ptrBC, y) ]->
+    [ !RoomSettled(ptrBC, ptrAB, y),
+      !PreimageReleased($C, x, y) ]
+
+rule Bob_Redeem_Room1:
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y),
+      !PreimageReleased($C, x, y),
+      !RoomSettled(ptrBC, ptrAB, y) ]
+  --[ PaymentReleased($B, h(x)),
+      Eq(h(x), y),
+      HTLCSettle($A, $B, ptrAB, y),
+      HTLCSettle_Room1($A, $B, ptrAB, y),
+      ChannelSettle($A, $B, ptrAB, y),
+      RoundComplete($A, $D, y) ]->
+    [ !RoomSettled(ptrAB, ptrAB, y) ]
+
+/* -- Restrictions -- */
+
+restriction Single_HTLC_Per_Channel:
+    "All A B ptr y1 y2 #i #j.
+        ChannelHTLCLocked(A, B, ptr, y1) @ #i
+      & ChannelHTLCLocked(A, B, ptr, y2) @ #j
+      ==> #i = #j"
+
+/* -- Source lemma -- */
+
+lemma secrets_source[sources]:
+    "All P x #i. PaymentReleased(P, h(x)) @ #i
+      ==> Ex #j. SecretGenerated(x) @ #j & #j < #i"
+
+/* -- Lemmas -- */
+
+lemma Multi_Hop_Executable:
+    exists-trace
+    "Ex A B C D ptrAB ptrBC ptrCD y #i #j #k #l #m.
+        KeyCreated(D, A, y) @ #i
+      & UsesChannelRecord(A, B, ptrAB) @ #j
+      & UsesChannelRecord(B, C, ptrBC) @ #k
+      & UsesChannelRecord(C, D, ptrCD) @ #l
+      & RoundComplete(A, D, y) @ #m
+      & #i < #j & #j < #k & #k < #l & #l < #m"
+
+lemma HTLC_Uses_Channel_Record:
+    "All A B ptr y #i.
+        ChannelHTLCLocked(A, B, ptr, y) @ #i
+      ==> UsesChannelRecord(A, B, ptr) @ #i"
+
+lemma Channel_Record_Source:
+    "All A B ptr #i.
+        UsesChannelRecord(A, B, ptr) @ #i
+      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
+
+lemma Room3_Settles_Before_Room2_Redeems:
+    "All B C ptrBC y #i.
+        HTLCSettle_Room2(B, C, ptrBC, y) @ #i
+      ==> Ex D ptrCD #j.
+             HTLCSettle_Room3(C, D, ptrCD, y) @ #j
+           & #j < #i"
+
+lemma Room2_Settles_Before_Room1_Redeems:
+    "All A B ptrAB y #i.
+        HTLCSettle_Room1(A, B, ptrAB, y) @ #i
+      ==> Ex C ptrBC #j.
+             HTLCSettle_Room2(B, C, ptrBC, y) @ #j
+           & #j < #i"
+
+lemma Round_Complete_Implies_All_Rooms_Settled:
+    "All A D y #i.
+        RoundComplete(A, D, y) @ #i
+      ==> Ex ptrAB ptrBC ptrCD B C #j #k #l.
+            HTLCSettle_Room1(A, B, ptrAB, y) @ #j
+          & HTLCSettle_Room2(B, C, ptrBC, y) @ #k
+          & HTLCSettle_Room3(C, D, ptrCD, y) @ #l
+          & #l < #k & #k < #j & #j = #i"
+
+end
