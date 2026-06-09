@@ -1,7 +1,7 @@
 theory PaymentChannelMultihop
 begin
 
-#include "PaymentChannels.splib"
+#include "PaymentChannelRooms.splib"
 
 rule Dave_Generate_Key:
     [ Fr(~x) ]
@@ -112,6 +112,11 @@ lemma HTLC_Uses_Channel_Record:
     "All A B ptr y #i.
         ChannelHTLCLocked(A, B, ptr, y) @ #i
       ==> UsesChannelRecord(A, B, ptr) @ #i"
+
+lemma Channel_Record_Source[use_induction]:
+    "All A B ptr #i.
+        UsesChannelRecord(A, B, ptr) @ #i
+      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
 
 lemma Room3_Settles_Before_Room2_Redeems[use_induction]:
     "All B C ptrBC y #i.
