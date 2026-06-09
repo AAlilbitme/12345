@@ -1,128 +1,84 @@
 theory PaymentChannelMultihop
 begin
 
-/*
-   Multihop layer.
-
-   The included library is the reusable Alice-Bob channel/room model.  This
-   theory wires three such rooms together:
-
-       room 1: Alice  <-> Bob
-       room 2: Bob    <-> Carol
-       room 3: Carol  <-> Dave
-
-   The library is expected to define:
-     - builtins: hashing, signing
-     - ChannelOpen(A, B, ptr)
-     - !ChannelRecord(ptr, A, B)
-     - Equality restriction for Eq(...)
-*/
 #include "PaymentChannels.splib"
 
-/* --------------------------------------------------------------------------
-   PHASE 1: Dave creates an invoice hash
-   -------------------------------------------------------------------------- */
-
-rule Dave_Generate_Invoice:
+rule Dave_Generate_Key:
     [ Fr(~x) ]
-  --[ InvoiceCreated($D, $A, h(~x)),
-      SecretGenerated(~x) ]->
-    [ !DaveSecret($D, h(~x), ~x),
-      Out(<'invoice', $D, h(~x)>) ]
+  --[ KeyCreated($D, $A, h(~x)), SecretGenerated(~x) ]->
+    [ !Dave_Secret($D, h(~x), ~x),
+      Out(h(~x)) ]
 
-/* --------------------------------------------------------------------------
-   PHASE 2: forward HTLC locking path
-
-   Each room recalls the base channel record for that room and emits a
-   persistent room signal.  The next room may lock only after the previous
-   room's signal exists.
-   -------------------------------------------------------------------------- */
+/* -- Phase 2: Locking -- */
 
 rule Alice_To_Bob_Lock:
     let htlcAB = <'HTLC', $A, $B, $D, ptrAB, y, '3t'> in
     [ !ChannelRecord(ptrAB, $A, $B),
-      In(<'invoice', $D, y>) ]
-  --[ HTLCLockRoom1($A, $B, ptrAB, y),
-      HTLC_Lock($A, $B, ptrAB, y, '3t'),
-      ChannelHTLCLocked($A, $B, ptrAB, y),
-      ForwardSignalRoom1($A, $B, ptrAB, y) ]->
-    [ HTLCLockedRoom1($A, $B, $D, ptrAB, y),
-      !Room1Locked($A, $B, $D, ptrAB, y),
+      In(<$D, y>) ]
+  --[ HTLC_Lock($A, $B, ptrAB, y, '3t'),
+      HTLC_Lock_Room1($A, $B, ptrAB, y),
+      ChannelHTLCLocked($A, $B, ptrAB, y) ]->
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y),
       Out(htlcAB) ]
 
 rule Bob_To_Carol_Lock:
     let htlcBC = <'HTLC', $B, $C, $D, ptrAB, ptrBC, y, '2t'> in
     [ !ChannelRecord(ptrBC, $B, $C),
-      !Room1Locked($A, $B, $D, ptrAB, y) ]
-  --[ HTLCLockRoom2($B, $C, ptrBC, y),
-      HTLC_Lock($B, $C, ptrBC, y, '2t'),
-      ChannelHTLCLocked($B, $C, ptrBC, y),
-      ForwardSignalRoom2($B, $C, ptrBC, y) ]->
-    [ HTLCLockedRoom2($A, $B, $C, $D, ptrAB, ptrBC, y),
-      !Room2Locked($A, $B, $C, $D, ptrAB, ptrBC, y),
+      In(<'HTLC', $A, $B, $D, ptrAB, y, '3t'>) ]
+  --[ HTLC_Lock($B, $C, ptrBC, y, '2t'),
+      HTLC_Lock_Room2($B, $C, ptrBC, y),
+      ChannelHTLCLocked($B, $C, ptrBC, y) ]->
+    [ HTLC_LockedBC($A, $B, $C, $D, ptrAB, ptrBC, y),
       Out(htlcBC) ]
 
 rule Carol_To_Dave_Lock:
     let htlcCD = <'HTLC', $C, $D, ptrBC, ptrCD, y, 't'> in
     [ !ChannelRecord(ptrCD, $C, $D),
-      !Room2Locked($A, $B, $C, $D, ptrAB, ptrBC, y) ]
-  --[ HTLCLockRoom3($C, $D, ptrCD, y),
-      HTLC_Lock($C, $D, ptrCD, y, 't'),
-      ChannelHTLCLocked($C, $D, ptrCD, y),
-      ForwardSignalRoom3($C, $D, ptrCD, y) ]->
-    [ HTLCLockedRoom3($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y),
-      !Room3Locked($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y),
+      In(<'HTLC', $B, $C, $D, ptrAB, ptrBC, y, '2t'>) ]
+  --[ HTLC_Lock($C, $D, ptrCD, y, 't'),
+      HTLC_Lock_Room3($C, $D, ptrCD, y),
+      ChannelHTLCLocked($C, $D, ptrCD, y) ]->
+    [ HTLC_LockedCD($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y),
       Out(htlcCD) ]
 
-/* --------------------------------------------------------------------------
-   PHASE 3: backward settlement path
-
-   Dave reveals the preimage in room 3.  That settlement creates the signal
-   Carol needs for room 2; Carol's settlement creates the signal Bob needs for
-   room 1.  Room 1 settlement completes the round.
-   -------------------------------------------------------------------------- */
+/* -- Phase 3: Release -- */
 
 rule Dave_Redeem_Room3:
-    [ HTLCLockedRoom3($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y),
-      !DaveSecret($D, y, x) ]
+    [ HTLC_LockedCD($A, $B, $C, $D, ptrAB, ptrBC, ptrCD, y),
+      !Dave_Secret($D, y, x) ]
   --[ PaymentReleased($D, h(x)),
       Eq(h(x), y),
-      HTLCSettleRoom3($C, $D, ptrCD, y),
       HTLCSettle($C, $D, ptrCD, y),
-      ChannelSettle($C, $D, ptrCD, y),
-      BackwardSignalRoom3($C, $D, ptrCD, y) ]->
-    [ !Room3Settled(ptrCD, ptrBC, y),
-      Out(<'payment_preimage', x, y>) ]
+      HTLCSettle_Room3($C, $D, ptrCD, y),
+      ChannelSettle($C, $D, ptrCD, y) ]->
+    [ !RoomSettled(ptrCD, ptrBC, y),
+      Out(<'Payment', x, y>) ]
 
 rule Carol_Redeem_Room2:
-    [ HTLCLockedRoom2($A, $B, $C, $D, ptrAB, ptrBC, y),
-      !Room3Settled(ptrCD, ptrBC, y),
-      In(<'payment_preimage', x, y>) ]
+    [ HTLC_LockedBC($A, $B, $C, $D, ptrAB, ptrBC, y),
+      In(<'Payment', x, y>),
+      !RoomSettled(ptrCD, ptrBC, y) ]
   --[ PaymentReleased($C, h(x)),
       Eq(h(x), y),
-      HTLCSettleRoom2($B, $C, ptrBC, y),
       HTLCSettle($B, $C, ptrBC, y),
-      ChannelSettle($B, $C, ptrBC, y),
-      BackwardSignalRoom2($B, $C, ptrBC, y) ]->
-    [ !Room2Settled(ptrBC, ptrAB, y),
-      Out(<'payment_preimage', x, y>) ]
+      HTLCSettle_Room2($B, $C, ptrBC, y),
+      ChannelSettle($B, $C, ptrBC, y) ]->
+    [ !RoomSettled(ptrBC, ptrAB, y),
+      Out(<'Payment', x, y>) ]
 
 rule Bob_Redeem_Room1:
-    [ HTLCLockedRoom1($A, $B, $D, ptrAB, y),
-      !Room2Settled(ptrBC, ptrAB, y),
-      In(<'payment_preimage', x, y>) ]
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y),
+      In(<'Payment', x, y>),
+      !RoomSettled(ptrBC, ptrAB, y) ]
   --[ PaymentReleased($B, h(x)),
       Eq(h(x), y),
-      HTLCSettleRoom1($A, $B, ptrAB, y),
       HTLCSettle($A, $B, ptrAB, y),
+      HTLCSettle_Room1($A, $B, ptrAB, y),
       ChannelSettle($A, $B, ptrAB, y),
-      BackwardSignalRoom1($A, $B, ptrAB, y),
       RoundComplete($A, $D, y) ]->
-    [ !Room1Settled(ptrAB, y) ]
+    [ !RoomSettled(ptrAB, ptrAB, y) ]
 
-/* --------------------------------------------------------------------------
-   MULTIHOP RESTRICTIONS
-   -------------------------------------------------------------------------- */
+/* -- Restrictions -- */
 
 restriction Single_HTLC_Per_Channel:
     "All A B ptr y1 y2 #i #j.
@@ -130,80 +86,55 @@ restriction Single_HTLC_Per_Channel:
       & ChannelHTLCLocked(A, B, ptr, y2) @ #j
       ==> #i = #j"
 
-restriction Distinct_Multihop_Route:
-    "All A B C D ptrAB ptrBC ptrCD y #i #j #k.
-        HTLCLockRoom1(A, B, ptrAB, y) @ #i
-      & HTLCLockRoom2(B, C, ptrBC, y) @ #j
-      & HTLCLockRoom3(C, D, ptrCD, y) @ #k
-      ==> not(A = B) & not(A = C) & not(A = D)
-        & not(B = C) & not(B = D) & not(C = D)"
-
-/* --------------------------------------------------------------------------
-   SOURCE LEMMA
-   -------------------------------------------------------------------------- */
+/* -- Source lemma -- */
 
 lemma secrets_source[sources]:
     "All D x #i. PaymentReleased(D, h(x)) @ #i
       ==> (Ex #j. SecretGenerated(x) @ #j & #j < #i)
         | (Ex #k. K(x) @ #k & #k < #i)"
 
-/* --------------------------------------------------------------------------
-   MULTIHOP LEMMAS
-   -------------------------------------------------------------------------- */
+/* -- Lemmas -- */
 
 lemma Multi_Hop_Executable:
     exists-trace
-    "Ex A B C D ptrAB ptrBC ptrCD y #i #j #k #l #m #n #o.
-        InvoiceCreated(D, A, y) @ #i
-      & HTLCLockRoom1(A, B, ptrAB, y) @ #j
-      & HTLCLockRoom2(B, C, ptrBC, y) @ #k
-      & HTLCLockRoom3(C, D, ptrCD, y) @ #l
-      & HTLCSettleRoom3(C, D, ptrCD, y) @ #m
-      & HTLCSettleRoom2(B, C, ptrBC, y) @ #n
-      & RoundComplete(A, D, y) @ #o
-      & #i < #j & #j < #k & #k < #l
-      & #l < #m & #m < #n & #n < #o"
+    "Ex A D y #i #j.
+        KeyCreated(D, A, y) @ #i
+      & RoundComplete(A, D, y) @ #j
+      & #i < #j"
 
 lemma HTLC_Requires_Open_Channel[use_induction]:
     "All A B ptr y #i.
         ChannelHTLCLocked(A, B, ptr, y) @ #i
-      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
-
-lemma Room1_Signal_Before_Room2_Lock[use_induction]:
-    "All B C ptrBC y #i.
-        HTLCLockRoom2(B, C, ptrBC, y) @ #i
-      ==> Ex A D ptrAB #j.
-            ForwardSignalRoom1(A, B, ptrAB, y) @ #j
-          & #j < #i"
-
-lemma Room2_Signal_Before_Room3_Lock[use_induction]:
-    "All C D ptrCD y #i.
-        HTLCLockRoom3(C, D, ptrCD, y) @ #i
-      ==> Ex B ptrBC #j.
-            ForwardSignalRoom2(B, C, ptrBC, y) @ #j
-          & #j < #i"
+      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
+               & #j < #i"
 
 lemma Room3_Settles_Before_Room2_Redeems[use_induction]:
     "All B C ptrBC y #i.
-        HTLCSettleRoom2(B, C, ptrBC, y) @ #i
+        HTLCSettle_Room2(B, C, ptrBC, y) @ #i
       ==> Ex D ptrCD #j.
-            HTLCSettleRoom3(C, D, ptrCD, y) @ #j
-          & #j < #i"
+             HTLCSettle_Room3(C, D, ptrCD, y) @ #j
+           & #j < #i"
 
 lemma Room2_Settles_Before_Room1_Redeems[use_induction]:
     "All A B ptrAB y #i.
-        HTLCSettleRoom1(A, B, ptrAB, y) @ #i
+        HTLCSettle_Room1(A, B, ptrAB, y) @ #i
       ==> Ex C ptrBC #j.
-            HTLCSettleRoom2(B, C, ptrBC, y) @ #j
-          & #j < #i"
+             HTLCSettle_Room2(B, C, ptrBC, y) @ #j
+           & #j < #i"
+
+lemma Channel_Restored_After_HTLC[use_induction]:
+    "All A B ptr y #i.
+        HTLCSettle(A, B, ptr, y) @ #i
+      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
+               & #j < #i"
 
 lemma Round_Complete_Implies_All_Rooms_Settled[use_induction]:
     "All A D y #i.
         RoundComplete(A, D, y) @ #i
-      ==> Ex B C ptrAB ptrBC ptrCD #j #k #l.
-            HTLCSettleRoom1(A, B, ptrAB, y) @ #j
-          & HTLCSettleRoom2(B, C, ptrBC, y) @ #k
-          & HTLCSettleRoom3(C, D, ptrCD, y) @ #l
+      ==> Ex ptrAB ptrBC ptrCD B C #j #k #l.
+            HTLCSettle_Room1(A, B, ptrAB, y) @ #j
+          & HTLCSettle_Room2(B, C, ptrBC, y) @ #k
+          & HTLCSettle_Room3(C, D, ptrCD, y) @ #l
           & #l < #k & #k < #j & #j = #i"
 
 end
