@@ -100,10 +100,13 @@ lemma secrets_source[sources]:
 
 lemma Multi_Hop_Executable:
     exists-trace
-    "Ex A D y #i #j.
+    "Ex A B C D ptrAB ptrBC ptrCD y #i #j #k #l #m.
         KeyCreated(D, A, y) @ #i
-      & RoundComplete(A, D, y) @ #j
-      & #i < #j"
+      & UsesChannelRecord(A, B, ptrAB) @ #j
+      & UsesChannelRecord(B, C, ptrBC) @ #k
+      & UsesChannelRecord(C, D, ptrCD) @ #l
+      & RoundComplete(A, D, y) @ #m
+      & #i < #j & #j < #k & #k < #l & #l < #m"
 
 lemma HTLC_Uses_Channel_Record:
     "All A B ptr y #i.
