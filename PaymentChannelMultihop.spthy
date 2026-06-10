@@ -1,0 +1,174 @@
+/*
+ * Multi-hop HTLC payments (Alice -> Bob -> Carol -> Dave) layered on top of
+ * the base channel library.
+ *
+ * Design notes:
+ *
+ *  - No private Setup_Channel rule: the lock rules consume the REAL slim
+ *    StateA/StateB facts produced by the library's opening/update machinery,
+ *    so every HTLC genuinely runs over an opened channel (same fact arity,
+ *    no parallel toy world).
+ *
+ *  - Locking parks the channel's control state inside an HTLC_Locked* fact;
+ *    settling restores the parked state unchanged. Balances are untouched:
+ *    they live in ChannelFunds(ptr, n, fA, fB) and the HTLC layer never
+ *    needs to mention them.
+ *
+ *  - Forwarding emits a persistent !NextHop(ptrUp, ptrDown, y) fact binding
+ *    the upstream channel to the concrete downstream channel chosen by the
+ *    forwarder. Redeems require !RoomSettled on exactly that downstream ptr,
+ *    so a settle on an unrelated channel with the same hash cannot unlock an
+ *    upstream hop.
+ *
+ *  - HTLCSettle carries the hop's timeout tag ('3t'/'2t'/'t') so the
+ *    ordering lemmas can distinguish terminal from non-terminal hops.
+ */
+theory PaymentChannelMultihop
+begin
+
+builtins: hashing, signing
+
+#include "PaymentChannels.splib"
+
+/* ── Phase 1: receiver generates the payment secret ── */
+
+rule Dave_Generate_Key:
+    [ Fr(~x) ]
+  --[ KeyCreated($D, $A, h(~x)), SecretGenerated(~x) ]->
+    [ !Dave_Secret($D, h(~x), ~x),
+      Out(h(~x)) ]
+
+/* ── Phase 2: Locking ── */
+
+rule Alice_To_Bob_Lock:
+    let htlcAB = <'HTLC', $A, $B, $D, ptrAB, y, '3t'> in
+    [ StateA($A, $B, ptrAB, n, sA, commitA),
+      StateB($A, $B, ptrAB, n, sB, commitB),
+      In(<$D, y>) ]
+  --[ HTLC_Lock($A, $B, ptrAB, y, '3t'),
+      ChannelHTLCLocked($A, $B, ptrAB, y) ]->
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y, n, sA, commitA, sB, commitB),
+      Out(htlcAB) ]
+
+rule Bob_To_Carol_Lock:
+    let htlcBC = <'HTLC', $B, $C, $D, ptrBC, y, '2t'> in
+    [ StateA($B, $C, ptrBC, n, sA, commitA),
+      StateB($B, $C, ptrBC, n, sB, commitB),
+      In(<'HTLC', $A, $B, $D, ptrAB, y, '3t'>) ]
+  --[ HTLC_Lock($B, $C, ptrBC, y, '2t'),
+      ChannelHTLCLocked($B, $C, ptrBC, y) ]->
+    [ HTLC_LockedBC($B, $C, $D, ptrBC, y, n, sA, commitA, sB, commitB),
+      !NextHop(ptrAB, ptrBC, y),
+      Out(htlcBC) ]
+
+rule Carol_To_Dave_Lock:
+    let htlcCD = <'HTLC', $C, $D, ptrCD, y, 't'> in
+    [ StateA($C, $D, ptrCD, n, sA, commitA),
+      StateB($C, $D, ptrCD, n, sB, commitB),
+      In(<'HTLC', $B, $C, $D, ptrBC, y, '2t'>) ]
+  --[ HTLC_Lock($C, $D, ptrCD, y, 't'),
+      ChannelHTLCLocked($C, $D, ptrCD, y) ]->
+    [ HTLC_LockedCD($C, $D, ptrCD, y, n, sA, commitA, sB, commitB),
+      !NextHop(ptrBC, ptrCD, y),
+      Out(htlcCD) ]
+
+/* ── Phase 3: Release ── */
+
+rule Dave_Redeem_Room3:
+    [ HTLC_LockedCD($C, $D, ptrCD, y, n, sA, commitA, sB, commitB),
+      !Dave_Secret($D, y, x) ]
+  --[ PaymentReleased($D, y),
+      HTLCSettle($C, $D, ptrCD, y, 't'),
+      ChannelSettle($C, $D, ptrCD, y) ]->
+    [ StateA($C, $D, ptrCD, n, sA, commitA),
+      StateB($C, $D, ptrCD, n, sB, commitB),
+      !RoomSettled(ptrCD, y),
+      Out(<'Payment', x, y>) ]
+
+rule Carol_Redeem_Room2:
+    [ HTLC_LockedBC($B, $C, $D, ptrBC, y, n, sA, commitA, sB, commitB),
+      In(<'Payment', x, y>),
+      !NextHop(ptrBC, ptrCD, y),
+      !RoomSettled(ptrCD, y) ]
+  --[ PaymentReleased($C, y),
+      Eq(h(x), y),
+      HTLCSettle($B, $C, ptrBC, y, '2t'),
+      ChannelSettle($B, $C, ptrBC, y) ]->
+    [ StateA($B, $C, ptrBC, n, sA, commitA),
+      StateB($B, $C, ptrBC, n, sB, commitB),
+      !RoomSettled(ptrBC, y),
+      Out(<'Payment', x, y>) ]
+
+rule Bob_Redeem_Room1:
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y, n, sA, commitA, sB, commitB),
+      In(<'Payment', x, y>),
+      !NextHop(ptrAB, ptrBC, y),
+      !RoomSettled(ptrBC, y) ]
+  --[ PaymentReleased($B, y),
+      Eq(h(x), y),
+      HTLCSettle($A, $B, ptrAB, y, '3t'),
+      ChannelSettle($A, $B, ptrAB, y),
+      RoundComplete($A, $D, y) ]->
+    [ StateA($A, $B, ptrAB, n, sA, commitA),
+      StateB($A, $B, ptrAB, n, sB, commitB),
+      !RoomSettled(ptrAB, y) ]
+
+/* ── Restrictions ── */
+
+restriction Single_HTLC_Per_Channel:
+    "All A B ptr y1 y2 #i #j.
+        ChannelHTLCLocked(A, B, ptr, y1) @ #i
+      & ChannelHTLCLocked(A, B, ptr, y2) @ #j
+      ==> #i = #j"
+
+/* ── Lemmas ── */
+
+lemma Multi_Hop_Executable:
+    exists-trace
+    "Ex A D y #i #j.
+        KeyCreated(D, A, y) @ #i
+      & RoundComplete(A, D, y) @ #j
+      & #i < #j"
+
+lemma HTLC_Requires_Open_Channel[use_induction]:
+    "All A B ptr y #i.
+        ChannelHTLCLocked(A, B, ptr, y) @ #i
+      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
+               & #j < #i"
+
+/* Non-terminal hop settles only after its downstream hop settled.
+   The terminal hop ('t') is exempt by construction: only HTLCSettle events
+   tagged '2t' / '3t' are quantified over. */
+lemma Room3_Settles_Before_Room2_Redeems[use_induction]:
+    "All B C ptrBC y #i.
+        HTLCSettle(B, C, ptrBC, y, '2t') @ #i
+      ==> Ex C2 D ptrCD #j.
+             HTLCSettle(C2, D, ptrCD, y, 't') @ #j
+           & #j < #i"
+
+lemma Room2_Settles_Before_Room1_Redeems[use_induction]:
+    "All A B ptrAB y #i.
+        HTLCSettle(A, B, ptrAB, y, '3t') @ #i
+      ==> Ex B2 C ptrBC #j.
+             HTLCSettle(B2, C, ptrBC, y, '2t') @ #j
+           & #j < #i"
+
+lemma Channel_Restored_After_HTLC[use_induction]:
+    "All A B ptr y tl #i.
+        HTLCSettle(A, B, ptr, y, tl) @ #i
+      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
+               & #j < #i"
+
+/* RoundComplete coincides with the first hop's settle (same rule instance),
+   so the '3t' settle is at #i itself; the downstream settles strictly
+   precede it in reverse path order. */
+lemma Round_Complete_Implies_All_Rooms_Settled[use_induction]:
+    "All A D y #i.
+        RoundComplete(A, D, y) @ #i
+      ==> Ex B ptrAB B2 C ptrBC C2 D2 ptrCD #k #l.
+            HTLCSettle(A, B, ptrAB, y, '3t') @ #i
+          & HTLCSettle(B2, C, ptrBC, y, '2t') @ #k
+          & HTLCSettle(C2, D2, ptrCD, y, 't') @ #l
+          & #l < #k & #k < #i"
+
+end
