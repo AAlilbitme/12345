@@ -1,13 +1,11 @@
 /*
  * Standalone single-channel theory.
- * All rules, restrictions and base lemmas live in PaymentChannels.splib so
- * that layered theories (e.g. PaymentChannelMultihop.spthy) can reuse them
- * via #include without fact-arity clashes.
+ * All rules, restrictions and base lemmas live in PaymentChannels.splib
+ * (kept untouched) so that layered theories such as
+ * PaymentChannelMultihop.spthy can reuse them via #include.
  */
 theory PaymentChannel
 begin
-
-builtins: hashing, signing
 
 #include "PaymentChannels.splib"
 

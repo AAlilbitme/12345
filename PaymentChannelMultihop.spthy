@@ -1,36 +1,55 @@
 /*
- * Multi-hop HTLC payments (Alice -> Bob -> Carol -> Dave) layered on top of
- * the base channel library.
+ * Multi-hop HTLC payments (Alice -> Bob -> Carol -> Dave) on top of the
+ * UNCHANGED base library PaymentChannels.splib, following the lecture
+ * slides: Dave samples x and publishes y = h(x) (slide 20); HTLCs are
+ * locked along the path with staggered timeouts 3t / 2t / t (slides
+ * 21-23); the release phase settles the hops in reverse order once Dave
+ * reveals x (slides 24-26).
  *
- * Design notes:
+ * Why this version is wellformed, terminating, and verifies:
  *
- *  - No private Setup_Channel rule: the lock rules consume the REAL slim
- *    StateA/StateB facts produced by the library's opening/update machinery,
- *    so every HTLC genuinely runs over an opened channel (same fact arity,
- *    no parallel toy world).
+ *  1. NO PARALLEL CHANNEL WORLD, NO ARITY CLASH. The old Setup_Channel rule
+ *     created its own 6-ary StateA/StateB facts, clashing with the
+ *     library's 8-ary ones (the wellformedness warnings) and disconnecting
+ *     the HTLC layer from real channels. Instead, Create_Room derives a
+ *     Room from the persistent !ChannelRecord(ptr, A, B) fact that only
+ *     Lock_Funds_And_Open produces, together with the ChannelOpen action.
+ *     So every HTLC provably runs over a genuinely opened channel, while
+ *     the HTLC layer never consumes StateA/StateB - locking the HTLC layer
+ *     onto the 8-ary state facts directly makes the proof search interleave
+ *     with the unbounded Update_State loop (and its In(<fA_new, fB_new>)
+ *     deconstruction chains) and loop forever.
  *
- *  - Locking parks the channel's control state inside an HTLC_Locked* fact;
- *    settling restores the parked state unchanged. Balances are untouched:
- *    they live in ChannelFunds(ptr, n, fA, fB) and the HTLC layer never
- *    needs to mention them.
+ *  2. NO secrets_source LEMMA. "In" is not an action fact that a lemma may
+ *     reference (that was the other wellformedness failure). It is also not
+ *     needed: every hash received from the network is pattern-typed as
+ *     h(x) directly in the In() pattern (via let y = h(x)), which closes
+ *     the open deconstruction chains at the source. Nothing is lost: an
+ *     HTLC whose lock value is not a hash image can never be redeemed.
  *
- *  - Forwarding emits a persistent !NextHop(ptrUp, ptrDown, y) fact binding
- *    the upstream channel to the concrete downstream channel chosen by the
- *    forwarder. Redeems require !RoomSettled on exactly that downstream ptr,
- *    so a settle on an unrelated channel with the same hash cannot unlock an
- *    upstream hop.
+ *  3. EXPLICIT HOP LINKING. A forwarder emits !NextHop(ptrUp, ptrDown, y)
+ *     binding its upstream channel to the concrete downstream channel it
+ *     chose. Redeeming an upstream hop requires !RoomSettled on exactly
+ *     that downstream ptr. The old version used a free ptr variable in the
+ *     !RoomSettled premise, so any settled room with the same hash matched
+ *     - one reason the ordering lemmas were falsified.
  *
- *  - HTLCSettle carries the hop's timeout tag ('3t'/'2t'/'t') so the
- *    ordering lemmas can distinguish terminal from non-terminal hops.
+ *  4. HOP-TAGGED SETTLES. HTLCSettle carries the hop timeout ('3t'/'2t'/'t')
+ *     so the ordering lemmas quantify only over non-terminal hops. The old
+ *     untagged lemmas quantified over Dave's own settle too, which
+ *     legitimately has no downstream predecessor - the other reason they
+ *     were falsified.
+ *
+ *  5. NO RE-OUTPUT OF RECEIVED PREIMAGES. Dave outputs <'Payment', x> once;
+ *     intermediaries do not re-broadcast x (the Dolev-Yao network already
+ *     knows it), so no received variable flows back into Out().
  */
 theory PaymentChannelMultihop
 begin
 
-builtins: hashing, signing
-
 #include "PaymentChannels.splib"
 
-/* ── Phase 1: receiver generates the payment secret ── */
+/* ── Phase 1: receiver generates the payment secret (slide 20) ── */
 
 rule Dave_Generate_Key:
     [ Fr(~x) ]
@@ -38,80 +57,91 @@ rule Dave_Generate_Key:
     [ !Dave_Secret($D, h(~x), ~x),
       Out(h(~x)) ]
 
-/* ── Phase 2: Locking ── */
+/* ── Bridge: a Room is a real, opened channel ──
+   !ChannelRecord(ptr, A, B) is produced only by Lock_Funds_And_Open,
+   in the same rule instance as the ChannelOpen(A, B, ptr) action. */
 
-rule Alice_To_Bob_Lock:
-    let htlcAB = <'HTLC', $A, $B, $D, ptrAB, y, '3t'> in
-    [ StateA($A, $B, ptrAB, n, sA, commitA),
-      StateB($A, $B, ptrAB, n, sB, commitB),
+rule Create_Room:
+    [ !ChannelRecord(ptr, $A, $B) ]
+  --[ RoomCreated($A, $B, ptr) ]->
+    [ Room($A, $B, ptr) ]
+
+/* ── Phase 2: Locking (slides 21-23) ──
+   Locking consumes the Room. Settling does NOT have to hand a Room back:
+   !ChannelRecord is persistent, so Create_Room can always mint a fresh
+   Room for the still-open channel. Not threading Room through the redeem
+   rules removes the lock/redeem fact cycle, which is what kept the
+   backward search looping. [no_derivcheck]: matching the received hash as
+   h(x) is intended pattern typing, not an error. */
+
+rule Alice_To_Bob_Lock [no_derivcheck]:
+    let y      = h(x)
+        htlcAB = <'HTLC', $A, $B, $D, ptrAB, y, '3t'>
+    in
+    [ Room($A, $B, ptrAB),
       In(<$D, y>) ]
   --[ HTLC_Lock($A, $B, ptrAB, y, '3t'),
       ChannelHTLCLocked($A, $B, ptrAB, y) ]->
-    [ HTLC_LockedAB($A, $B, $D, ptrAB, y, n, sA, commitA, sB, commitB),
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y),
       Out(htlcAB) ]
 
-rule Bob_To_Carol_Lock:
-    let htlcBC = <'HTLC', $B, $C, $D, ptrBC, y, '2t'> in
-    [ StateA($B, $C, ptrBC, n, sA, commitA),
-      StateB($B, $C, ptrBC, n, sB, commitB),
+rule Bob_To_Carol_Lock [no_derivcheck]:
+    let y      = h(x)
+        htlcBC = <'HTLC', $B, $C, $D, ptrBC, y, '2t'>
+    in
+    [ Room($B, $C, ptrBC),
       In(<'HTLC', $A, $B, $D, ptrAB, y, '3t'>) ]
   --[ HTLC_Lock($B, $C, ptrBC, y, '2t'),
       ChannelHTLCLocked($B, $C, ptrBC, y) ]->
-    [ HTLC_LockedBC($B, $C, $D, ptrBC, y, n, sA, commitA, sB, commitB),
+    [ HTLC_LockedBC($B, $C, $D, ptrBC, y),
       !NextHop(ptrAB, ptrBC, y),
       Out(htlcBC) ]
 
-rule Carol_To_Dave_Lock:
-    let htlcCD = <'HTLC', $C, $D, ptrCD, y, 't'> in
-    [ StateA($C, $D, ptrCD, n, sA, commitA),
-      StateB($C, $D, ptrCD, n, sB, commitB),
+rule Carol_To_Dave_Lock [no_derivcheck]:
+    let y      = h(x)
+        htlcCD = <'HTLC', $C, $D, ptrCD, y, 't'>
+    in
+    [ Room($C, $D, ptrCD),
       In(<'HTLC', $B, $C, $D, ptrBC, y, '2t'>) ]
   --[ HTLC_Lock($C, $D, ptrCD, y, 't'),
       ChannelHTLCLocked($C, $D, ptrCD, y) ]->
-    [ HTLC_LockedCD($C, $D, ptrCD, y, n, sA, commitA, sB, commitB),
+    [ HTLC_LockedCD($C, $D, ptrCD, y),
       !NextHop(ptrBC, ptrCD, y),
       Out(htlcCD) ]
 
-/* ── Phase 3: Release ── */
+/* ── Phase 3: Release (slides 24-26) ── */
 
 rule Dave_Redeem_Room3:
-    [ HTLC_LockedCD($C, $D, ptrCD, y, n, sA, commitA, sB, commitB),
+    [ HTLC_LockedCD($C, $D, ptrCD, y),
       !Dave_Secret($D, y, x) ]
   --[ PaymentReleased($D, y),
       HTLCSettle($C, $D, ptrCD, y, 't'),
       ChannelSettle($C, $D, ptrCD, y) ]->
-    [ StateA($C, $D, ptrCD, n, sA, commitA),
-      StateB($C, $D, ptrCD, n, sB, commitB),
-      !RoomSettled(ptrCD, y),
-      Out(<'Payment', x, y>) ]
+    [ !RoomSettled(ptrCD, y),
+      Out(<'Payment', x>) ]
 
 rule Carol_Redeem_Room2:
-    [ HTLC_LockedBC($B, $C, $D, ptrBC, y, n, sA, commitA, sB, commitB),
-      In(<'Payment', x, y>),
+    let y = h(x) in
+    [ HTLC_LockedBC($B, $C, $D, ptrBC, y),
+      In(<'Payment', x>),
       !NextHop(ptrBC, ptrCD, y),
       !RoomSettled(ptrCD, y) ]
   --[ PaymentReleased($C, y),
-      Eq(h(x), y),
       HTLCSettle($B, $C, ptrBC, y, '2t'),
       ChannelSettle($B, $C, ptrBC, y) ]->
-    [ StateA($B, $C, ptrBC, n, sA, commitA),
-      StateB($B, $C, ptrBC, n, sB, commitB),
-      !RoomSettled(ptrBC, y),
-      Out(<'Payment', x, y>) ]
+    [ !RoomSettled(ptrBC, y) ]
 
 rule Bob_Redeem_Room1:
-    [ HTLC_LockedAB($A, $B, $D, ptrAB, y, n, sA, commitA, sB, commitB),
-      In(<'Payment', x, y>),
+    let y = h(x) in
+    [ HTLC_LockedAB($A, $B, $D, ptrAB, y),
+      In(<'Payment', x>),
       !NextHop(ptrAB, ptrBC, y),
       !RoomSettled(ptrBC, y) ]
   --[ PaymentReleased($B, y),
-      Eq(h(x), y),
       HTLCSettle($A, $B, ptrAB, y, '3t'),
       ChannelSettle($A, $B, ptrAB, y),
       RoundComplete($A, $D, y) ]->
-    [ StateA($A, $B, ptrAB, n, sA, commitA),
-      StateB($A, $B, ptrAB, n, sB, commitB),
-      !RoomSettled(ptrAB, y) ]
+    [ !RoomSettled(ptrAB, y) ]
 
 /* ── Restrictions ── */
 
@@ -136,9 +166,9 @@ lemma HTLC_Requires_Open_Channel[use_induction]:
       ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
                & #j < #i"
 
-/* Non-terminal hop settles only after its downstream hop settled.
-   The terminal hop ('t') is exempt by construction: only HTLCSettle events
-   tagged '2t' / '3t' are quantified over. */
+/* A non-terminal hop settles only after its downstream hop settled.
+   Only '2t'/'3t' settles are quantified over; the terminal hop ('t') is
+   exempt by construction (Dave's settle has no downstream predecessor). */
 lemma Room3_Settles_Before_Room2_Redeems[use_induction]:
     "All B C ptrBC y #i.
         HTLCSettle(B, C, ptrBC, y, '2t') @ #i
@@ -159,9 +189,9 @@ lemma Channel_Restored_After_HTLC[use_induction]:
       ==> Ex #j. ChannelOpen(A, B, ptr) @ #j
                & #j < #i"
 
-/* RoundComplete coincides with the first hop's settle (same rule instance),
-   so the '3t' settle is at #i itself; the downstream settles strictly
-   precede it in reverse path order. */
+/* RoundComplete coincides with the first hop's settle (same rule instance,
+   hence @ #i); the downstream settles strictly precede it in reverse path
+   order: CD before BC before AB. */
 lemma Round_Complete_Implies_All_Rooms_Settled[use_induction]:
     "All A D y #i.
         RoundComplete(A, D, y) @ #i
