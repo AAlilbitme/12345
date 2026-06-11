@@ -1,10 +1,11 @@
 /*
  * multihop.spthy
  * ==============
- * Lightning-style multi-hop payment over two payment channels, using
- * Hash Time-Locked Contracts (HTLCs):
+ * Lightning-style multi-hop payment over three payment channels, using
+ * Hash Time-Locked Contracts (HTLCs). Roles follow the lecture slides
+ * ("Recap: Multi-hop payments", Alice pays Dave via Bob and Carol):
  *
- *     Sender S  <-- channel ptr1 -->  Intermediary I  <-- channel ptr2 -->  Receiver R
+ *   Alice <-ptrAB-> Bob <-ptrBC-> Carol <-ptrCD-> Dave
  *
  * The underlying two-party channel machinery (PKI, funding, channel
  * opening, revocable commitments, closing, punishment) is shared with
@@ -13,23 +14,32 @@
  *
  *     #include "splib/paymentchannel.splib"
  *
- * The HTLC layer follows the Lightning Network payment flow
- * (BOLT #2/#11, abstracted):
- *   1. R draws a fresh preimage x and sends the signed invoice carrying
- *      the payment hash y = h(x) to S.
- *   2. S offers an HTLC locked on y to I over their open channel ptr1
- *      (update_add_htlc).
- *   3. I forwards an HTLC locked on the same y to R over channel ptr2.
- *   4. R redeems by revealing x (update_fulfill_htlc) on ptr2.
- *   5. I uses the learned x to claim the incoming HTLC on ptr1.
- *   6. S sees x, the payment is settled end-to-end.
+ * Payment flow (slides 20-26):
+ *   1. Dave samples a fresh preimage x and sends the signed invoice
+ *      carrying the payment hash y = h(x) to Alice.
+ *   2. Lock round (slide 27, "Round 1"):
+ *      Alice -> Bob   HTLC on y over ptrAB   (htlc1)
+ *      Bob   -> Carol HTLC on y over ptrBC   (htlc2)
+ *      Carol -> Dave  HTLC on y over ptrCD   (htlc3)
+ *      The hash y is THE SAME in every hop (slide 15).
+ *   3. Release round (slide 27, "Round 2"):
+ *      Dave redeems from Carol by revealing x; Carol redeems from Bob
+ *      with the same x; Bob redeems from Alice. Payment settled.
+ *   4. Timeout branch (slide 11/15): if the preimage never arrives,
+ *      the party that locked an HTLC refunds it. On-chain an HTLC
+ *      output can be spent only once, so redeem and refund of the same
+ *      HTLC are mutually exclusive (restriction OneOutcomePerHTLC).
+ *      Tamarin has no quantitative time, so the timelocks (3t, 2t, t)
+ *      are abstracted to this mutual exclusion; the staggered-delay
+ *      liveness argument of the slides is out of scope of a symbolic
+ *      model.
  *
- * Design note (labeled transition system): each step is a single
- * multiset-rewriting transition. HTLC offers and fulfilments travel
- * over the public (Dolev-Yao) network; channel existence is taken from
- * the persistent !ChannelPeers facts produced by Lock_Funds_And_Open
- * in the shared library, so a multi-hop payment is only possible after
- * both channels were opened by the two-party protocol.
+ * Design note (labeled transition system): each step is one multiset
+ * rewriting transition. HTLC offers and fulfilments travel over the
+ * public (Dolev-Yao) network; channel existence comes from the
+ * persistent !ChannelPeers facts produced by Lock_Funds_And_Open in
+ * the shared library, so a multi-hop payment is only possible after
+ * all three channels were opened by the two-party protocol.
  *
  * Run with:
  *     tamarin-prover --prove multihop.spthy
@@ -38,8 +48,8 @@
 /*
  * Trace search strategy (Tamarin manual, "theory configuration"):
  * sequential depth-first search keeps the witness search for the
- * exists-trace sanity lemma memory-bounded; the default BFS explodes
- * on the interleavings of the two channel-opening sub-protocols.
+ * exists-trace sanity lemmas memory-bounded; the default BFS explodes
+ * on the interleavings of the three channel-opening sub-protocols.
  */
 theory multihop
 configuration: "--stop-on-trace=seqdfs"
@@ -48,195 +58,320 @@ begin
 #include "splib/paymentchannel.splib"
 
 /* ------------------------------------------------------------------ */
-/* 1. Invoice: receiver R creates preimage x, payment hash y = h(x)   */
+/* 1. Invoice: Dave samples x and sends y = h(x) to Alice (slide 20)  */
 /* ------------------------------------------------------------------ */
 
-rule Receiver_Create_Invoice:
+rule Dave_Create_Invoice:
     let y       = h(~x)
-        invoice = <'invoice', $R, $S, y>
-        sigR    = sign(invoice, ltkR)
+        invoice = <'invoice', $Dave, $Alice, y>
+        sigD    = sign(invoice, ltkD)
     in
-    [ Fr(~x), !Ltk($R, ltkR) ]
-    --[ InvoiceCreated($R, $S, y),
-        SecretPreimage($R, ~x) ]->
-    [ ReceiverInv($R, $S, ~x),
-      Out(<'invoice', $R, $S, y, sigR>) ]
+    [ Fr(~x), !Ltk($Dave, ltkD) ]
+    --[ InvoiceCreated($Dave, $Alice, y),
+        SecretPreimage($Dave, ~x) ]->
+    [ ReceiverInv($Dave, $Alice, ~x),
+      Out(<'invoice', $Dave, $Alice, y, sigD>) ]
 
 /* ------------------------------------------------------------------ */
-/* 2. Sender S offers an HTLC to intermediary I on channel ptr1       */
+/* 2. Lock round: HTLCs with the same hash y, hop by hop (slides      */
+/*    21-23). Distinct tags 'htlc1'/'htlc2'/'htlc3' model the per-hop  */
+/*    channel context of update_add_htlc; with a single shared tag a   */
+/*    forwarded HTLC could be re-parsed as a fresh offer, which both   */
+/*    breaks hop authenticity and makes Tamarin's backward search      */
+/*    loop through an unbounded Forward -> Forward chain.              */
 /* ------------------------------------------------------------------ */
+
+rule Alice_Offer_HTLC:
+    let invoice = <'invoice', $Dave, $Alice, y>
+        offer   = <'htlc1', ptrAB, $Alice, $Bob, y>
+        sigA    = sign(offer, ltkA)
+    in
+    [ In(<'invoice', $Dave, $Alice, y, sigD>),
+      !Pk($Dave, pkD), !Ltk($Alice, ltkA),
+      !ChannelPeers(ptrAB, $Alice, $Bob) ]
+    --[ HTLCOffered($Alice, $Bob, ptrAB, y),
+        Eq(verify(sigD, invoice, pkD), true) ]->
+    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
+      Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>) ]
+
+rule Bob_Forward_HTLC:
+    let offer    = <'htlc1', ptrAB, $Alice, $Bob, y>
+        offerFwd = <'htlc2', ptrBC, $Bob, $Carol, y>
+        sigB     = sign(offerFwd, ltkB)
+    in
+    [ In(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>),
+      !Pk($Alice, pkA), !Ltk($Bob, ltkB),
+      !ChannelPeers(ptrAB, $Alice, $Bob),
+      !ChannelPeers(ptrBC, $Bob, $Carol) ]
+    --[ HTLCForwarded1($Bob, $Carol, $Alice, ptrBC, y),
+        Neq(ptrAB, ptrBC),
+        Eq(verify(sigA, offer, pkA), true) ]->
+    [ IntermediaryPending($Bob, $Alice, $Carol, ptrAB, ptrBC, y),
+      Out(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>) ]
+
+rule Carol_Forward_HTLC:
+    let offer    = <'htlc2', ptrBC, $Bob, $Carol, y>
+        offerFwd = <'htlc3', ptrCD, $Carol, $Dave, y>
+        sigC     = sign(offerFwd, ltkC)
+    in
+    [ In(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>),
+      !Pk($Bob, pkB), !Ltk($Carol, ltkC),
+      !ChannelPeers(ptrBC, $Bob, $Carol),
+      !ChannelPeers(ptrCD, $Carol, $Dave) ]
+    --[ HTLCForwarded2($Carol, $Dave, $Bob, ptrCD, y),
+        Neq(ptrBC, ptrCD),
+        Eq(verify(sigB, offer, pkB), true) ]->
+    [ IntermediaryPending($Carol, $Bob, $Dave, ptrBC, ptrCD, y),
+      Out(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>) ]
+
+/* ------------------------------------------------------------------ */
+/* 3. Release round: Dave reveals x; the redeem propagates backwards  */
+/*    (slides 24-26).                                                 */
+/* ------------------------------------------------------------------ */
+
+rule Dave_Fulfill_HTLC:
+    let y        = h(x)
+        offerFwd = <'htlc3', ptrCD, $Carol, $Dave, y>
+    in
+    [ ReceiverInv($Dave, $Alice, x),
+      In(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>),
+      !Pk($Carol, pkC),
+      !ChannelPeers(ptrCD, $Carol, $Dave) ]
+    --[ HTLCFulfilled($Dave, $Carol, ptrCD, y),
+        PreimageReleased($Dave, x),
+        Redeemed(ptrCD, y),
+        Eq(verify(sigC, offerFwd, pkC), true) ]->
+    [ Out(<'fulfill', ptrCD, x>) ]
 
 /*
- * Note the distinct tags 'htlc1' (hop S -> I) and 'htlc2' (hop I -> R).
- * They model the per-hop channel context of update_add_htlc. With a
- * single shared tag a forwarded HTLC could be re-parsed as a fresh
- * offer, which both breaks hop authenticity and makes Tamarin's
- * backward search loop through an unbounded Forward -> Forward chain.
+ * Generic settle step, used by Carol (ptrBC <- ptrCD) and then by Bob
+ * (ptrAB <- ptrBC): an intermediary that learns x on its outgoing
+ * channel redeems the HTLC on its incoming channel with the same x.
  */
-rule Sender_Offer_HTLC:
-    let invoice = <'invoice', $R, $S, y>
-        offer   = <'htlc1', ptr1, $S, $I, y>
-        sigS    = sign(offer, ltkS)
-    in
-    [ In(<'invoice', $R, $S, y, sigR>),
-      !Pk($R, pkR), !Ltk($S, ltkS),
-      !ChannelPeers(ptr1, $S, $I) ]
-    --[ HTLCOffered($S, $I, ptr1, y),
-        Eq(verify(sigR, invoice, pkR), true) ]->
-    [ SenderPending($S, $I, $R, ptr1, y),
-      Out(<'htlc1', ptr1, $S, $I, y, sigS>) ]
-
-/* ------------------------------------------------------------------ */
-/* 3. Intermediary I forwards the HTLC to R on channel ptr2           */
-/* ------------------------------------------------------------------ */
-
-rule Intermediary_Forward_HTLC:
-    let offer    = <'htlc1', ptr1, $S, $I, y>
-        offerFwd = <'htlc2', ptr2, $I, $R, y>
-        sigI     = sign(offerFwd, ltkI)
-    in
-    [ In(<'htlc1', ptr1, $S, $I, y, sigS>),
-      !Pk($S, pkS), !Ltk($I, ltkI),
-      !ChannelPeers(ptr1, $S, $I),
-      !ChannelPeers(ptr2, $I, $R) ]
-    --[ HTLCForwarded($I, $R, $S, ptr2, y),
-        Neq(ptr1, ptr2),
-        Eq(verify(sigS, offer, pkS), true) ]->
-    [ IntermediaryPending($I, $S, $R, ptr1, ptr2, y),
-      Out(<'htlc2', ptr2, $I, $R, y, sigI>) ]
-
-/* ------------------------------------------------------------------ */
-/* 4. Receiver R fulfils the incoming HTLC by revealing the preimage  */
-/* ------------------------------------------------------------------ */
-
-rule Receiver_Fulfill_HTLC:
-    let y        = h(x)
-        offerFwd = <'htlc2', ptr2, $I, $R, y>
-    in
-    [ ReceiverInv($R, $S, x),
-      In(<'htlc2', ptr2, $I, $R, y, sigI>),
-      !Pk($I, pkI),
-      !ChannelPeers(ptr2, $I, $R) ]
-    --[ HTLCFulfilled($R, $I, ptr2, y),
-        PreimageReleased($R, x),
-        Eq(verify(sigI, offerFwd, pkI), true) ]->
-    [ Out(<'fulfill', ptr2, x>) ]
-
-/* ------------------------------------------------------------------ */
-/* 5. Intermediary I claims the incoming HTLC with the learned x      */
-/* ------------------------------------------------------------------ */
-
 rule Intermediary_Settle:
-    [ IntermediaryPending($I, $S, $R, ptr1, ptr2, y),
-      In(<'fulfill', ptr2, x>) ]
-    --[ IntermediaryClaimed($I, $S, ptr1, x),
+    [ IntermediaryPending(I, up, down, ptrIn, ptrOut, y),
+      In(<'fulfill', ptrOut, x>) ]
+    --[ IntermediaryClaimed(I, up, ptrIn, x),
+        Redeemed(ptrIn, y),
         Eq(h(x), y) ]->
-    [ Out(<'fulfill', ptr1, x>) ]
+    [ Out(<'fulfill', ptrIn, x>) ]
 
-/* ------------------------------------------------------------------ */
-/* 6. Sender S sees the preimage: payment settled end-to-end          */
-/* ------------------------------------------------------------------ */
-
-rule Sender_Settle:
-    [ SenderPending($S, $I, $R, ptr1, y),
-      In(<'fulfill', ptr1, x>) ]
-    --[ SenderSettled($S, $I, $R, x),
-        PaymentComplete($S, $R, h(x)),
+rule Alice_Settle:
+    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
+      In(<'fulfill', ptrAB, x>) ]
+    --[ SenderSettled($Alice, $Bob, $Dave, ptrAB, x),
+        PaymentComplete($Alice, $Dave, h(x)),
+        Redeemed(ptrAB, y),
         Eq(h(x), y) ]->
     [ ]
+
+/* ------------------------------------------------------------------ */
+/* 4. Timeout branch (slides 11/15): the party that locked an HTLC    */
+/*    refunds it after the timelock. Consuming the pending fact means  */
+/*    giving up the payment; the OneOutcomePerHTLC restriction below   */
+/*    encodes that an on-chain HTLC output cannot be both redeemed     */
+/*    and refunded.                                                   */
+/* ------------------------------------------------------------------ */
+
+rule Sender_Timeout_Refund:
+    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y) ]
+    --[ HTLCRefunded($Alice, ptrAB, y),
+        Refunded(ptrAB, y) ]->
+    [ ]
+
+rule Intermediary_Timeout_Refund:
+    [ IntermediaryPending(I, up, down, ptrIn, ptrOut, y) ]
+    --[ HTLCRefunded(I, ptrOut, y),
+        Refunded(ptrOut, y) ]->
+    [ ]
+
+/*
+ * An HTLC (identified by its channel and payment hash) has exactly one
+ * outcome: redeem with the preimage, or refund after the timeout.
+ * This is the blockchain's double-spend prevention; the staggered
+ * timelocks of the slides (3t > 2t > t) are what makes the refund
+ * branch safe in real time, which a symbolic model cannot quantify.
+ */
+restriction OneOutcomePerHTLC:
+    "All ptr y #i #j.
+       Redeemed(ptr, y) @ #i & Refunded(ptr, y) @ #j ==> F"
 
 /* ------------------------------------------------------------------ */
 /* Lemmas                                                             */
 /* ------------------------------------------------------------------ */
 
 /*
- * Sanity: a complete multi-hop payment is executable, with both
- * channels opened by the (shared) two-party channel protocol and
- * without any key compromise.
+ * Sanity (slides 19-27), part 1: the complete 3-hop payment pipeline
+ * is executable in slide order -- invoice, lock round (offer, forward,
+ * forward), release round (fulfil, claim, claim, settle) -- with all
+ * channels opened by the (shared) two-party channel protocol and no
+ * key compromise. Each hop crosses a different channel (the forward
+ * rules carry Neq(ptrIn, ptrOut)).
  *
  * The trailing not-clauses prune the witness search: they exclude the
  * unbounded off-chain update / publish loops of the channel library,
  * which are irrelevant for the HTLC payment flow and would otherwise
- * make the constraint solving for this sanity trace loop.
+ * make the constraint solving for this sanity trace explode.
+ *
+ * Note: this lemma does not additionally pin all four roles to
+ * pairwise-distinct parties. The conjunction of the full event chain
+ * with three pairwise-distinct channels (a trace of 40+ rule
+ * instances) exceeds the automated witness search (memory), so the
+ * distinct-party topology of the slides is checked separately as
+ * part 2 below.
  */
 lemma Multihop_Payment_Possible:
     exists-trace
-    "Ex S I R ptr1 ptr2 x #c1 #c2 #t1 #t2 #t3 #t4 #t5 #t6.
-        ChannelOpen(S, I, ptr1) @ #c1
-      & ChannelOpen(I, R, ptr2) @ #c2
-      & InvoiceCreated(R, S, h(x))        @ #t1
-      & HTLCOffered(S, I, ptr1, h(x))     @ #t2
-      & HTLCForwarded(I, R, S, ptr2, h(x)) @ #t3
-      & HTLCFulfilled(R, I, ptr2, h(x))   @ #t4
-      & IntermediaryClaimed(I, S, ptr1, x) @ #t5
-      & SenderSettled(S, I, R, x)         @ #t6
-      & #c1 < #t2 & #c2 < #t3
-      & #t1 < #t2 & #t2 < #t3 & #t3 < #t4 & #t4 < #t5 & #t5 < #t6
-      & not (Ex C #r. LtkCompromised(C) @ #r)
-      & not (Ex A B p n #u. StateUpdate(A, B, p, n) @ #u)
-      & not (Ex A B p n fA fB #u #v.
-               NewStateBuilt(A, B, p, n, fA, fB) @ #u
-             & NewStateBuilt(A, B, p, n, fA, fB) @ #v & not(#u = #v))
+    "Ex A B C D ptrAB ptrBC ptrCD x #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.
+        InvoiceCreated(D, A, h(x))            @ #t1
+      & HTLCOffered(A, B, ptrAB, h(x))        @ #t2
+      & HTLCForwarded1(B, C, A, ptrBC, h(x))  @ #t3
+      & HTLCForwarded2(C, D, B, ptrCD, h(x))  @ #t4
+      & HTLCFulfilled(D, C, ptrCD, h(x))      @ #t5
+      & IntermediaryClaimed(C, B, ptrBC, x)   @ #t6
+      & IntermediaryClaimed(B, A, ptrAB, x)   @ #t7
+      & SenderSettled(A, B, D, ptrAB, x)      @ #t8
+      & #t1 < #t2 & #t2 < #t3 & #t3 < #t4 & #t4 < #t5
+      & #t5 < #t6 & #t6 < #t7 & #t7 < #t8
+      & not (Ex P #r. LtkCompromised(P) @ #r)
+      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
       & not (Ex P n #u. PublishState(P, n) @ #u)
+      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
+      & not (Ex P n #u. Cheat(P, n) @ #u)
+      & not (Ex P p y2 #u. HTLCRefunded(P, p, y2) @ #u)"
+
+/*
+ * Sanity (slide 19), part 2: the slide topology -- a path of three
+ * channels Alice-Bob, Bob-Carol, Carol-Dave between four pairwise
+ * distinct parties -- is constructible by the two-party channel
+ * protocol without key compromise.
+ */
+lemma Distinct_Parties_Topology_Possible:
+    exists-trace
+    "Ex A B C D ptrAB ptrBC ptrCD #c1 #c2 #c3.
+        ChannelOpen(A, B, ptrAB) @ #c1
+      & ChannelOpen(B, C, ptrBC) @ #c2
+      & ChannelOpen(C, D, ptrCD) @ #c3
+      & not (A = B) & not (A = C) & not (A = D)
+      & not (B = C) & not (B = D) & not (C = D)
+      & not (Ex P #r. LtkCompromised(P) @ #r)
+      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
+      & not (Ex P n #u. PublishState(P, n) @ #u)
+      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
       & not (Ex P n #u. Cheat(P, n) @ #u)"
 
 /*
+ * Sanity (timeout branch): if the payment stalls, the sender can
+ * refund the locked HTLC instead of settling.
+ */
+lemma Refund_Possible:
+    exists-trace
+    "Ex A B D p y #i #j #k.
+        InvoiceCreated(D, A, y) @ #j
+      & HTLCOffered(A, B, p, y) @ #k
+      & HTLCRefunded(A, p, y) @ #i
+      & #j < #k & #k < #i
+      & not (Ex S I R p2 x #u. SenderSettled(S, I, R, p2, x) @ #u)
+      & not (Ex P #r. LtkCompromised(P) @ #r)"
+
+/*
  * Hash-lock secrecy: the adversary can learn a payment preimage only
- * after the receiver deliberately released it to fulfil an HTLC.
+ * after the receiver deliberately released it to redeem an HTLC.
  *
  * Marked [reuse] as an auxiliary lemma: the atomicity lemma below
  * relies on it, which keeps its proof from looping through the
  * unbounded relay chain of 'fulfill' messages.
  */
 lemma Preimage_Secret_Until_Released [reuse]:
-    "All R x #i #j.
-        SecretPreimage(R, x) @ #i
+    "All D x #i #j.
+        SecretPreimage(D, x) @ #i
       & K(x) @ #j
-     ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #j"
+     ==> Ex #k. PreimageReleased(D, x) @ #k & #k < #j"
 
 /*
- * Proof of payment: when the sender settles, the receiver named in the
+ * Proof of payment: when Alice settles, the receiver named in the
  * invoice really released the preimage (unless the receiver's signing
  * key was compromised, in which case the invoice may be forged).
  */
 lemma Settle_Requires_Receiver_Release:
-    "All S I R x #i.
-        SenderSettled(S, I, R, x) @ #i
-     ==> (Ex #j. PreimageReleased(R, x) @ #j & #j < #i)
-       | (Ex #r. LtkCompromised(R) @ #r & #r < #i)"
+    "All A B D ptr x #i.
+        SenderSettled(A, B, D, ptr, x) @ #i
+     ==> (Ex #j. PreimageReleased(D, x) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(D) @ #r & #r < #i)"
 
 /*
- * Hop authenticity (incoming): the intermediary forwards an HTLC only
- * if the sender authentically offered one with the same payment hash
- * (or the sender's key was compromised).
+ * Auxiliary [reuse] lemmas: they let the atomicity proof at the end
+ * compose the per-hop arguments instead of re-deriving the whole
+ * three-hop chain, which would make its backward search explode.
  */
-lemma Forward_Requires_Offer:
-    "All I R S ptr2 y #i.
-        HTLCForwarded(I, R, S, ptr2, y) @ #i
-     ==> (Ex ptr1 #j. HTLCOffered(S, I, ptr1, y) @ #j & #j < #i)
-       | (Ex #r. LtkCompromised(S) @ #r & #r < #i)"
+
+// The payment hash of an authentic offer stems from a signed invoice.
+lemma Offer_Requires_Invoice [reuse]:
+    "All A B ptr y #i.
+        HTLCOffered(A, B, ptr, y) @ #i
+     ==> (Ex D #j. InvoiceCreated(D, A, y) @ #j & #j < #i)
+       | (Ex D #r. LtkCompromised(D) @ #r & #r < #i)"
+
+// An invoice's payment hash always covers a recorded secret preimage.
+lemma Invoice_Has_Secret_Preimage [reuse]:
+    "All D A x #i.
+        InvoiceCreated(D, A, h(x)) @ #i
+     ==> SecretPreimage(D, x) @ #i"
 
 /*
- * Hop authenticity (outgoing): the receiver fulfils an HTLC only if
- * the intermediary authentically forwarded it on that channel (or the
- * intermediary's key was compromised).
+ * Hop authenticity 1 (slide 21->22): Bob forwards an HTLC only if
+ * Alice authentically offered one with the same payment hash (or
+ * Alice's key was compromised).
  */
-lemma Fulfill_Requires_Forward:
-    "All R I ptr2 y #i.
-        HTLCFulfilled(R, I, ptr2, y) @ #i
-     ==> (Ex S #j. HTLCForwarded(I, R, S, ptr2, y) @ #j & #j < #i)
-       | (Ex #r. LtkCompromised(I) @ #r & #r < #i)"
+lemma Forward1_Requires_Offer [reuse]:
+    "All B C A ptrBC y #i.
+        HTLCForwarded1(B, C, A, ptrBC, y) @ #i
+     ==> (Ex ptrAB #j. HTLCOffered(A, B, ptrAB, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(A) @ #r & #r < #i)"
 
 /*
- * Atomicity towards the intermediary: I claims the incoming HTLC only
- * with a preimage some receiver really released, i.e. only after its
- * outgoing HTLC became claimable (or some long-term key was
- * compromised, allowing a forged invoice or offer).
+ * Hop authenticity 2 (slide 22->23): Carol forwards an HTLC only if
+ * Bob authentically forwarded one with the same payment hash (or
+ * Bob's key was compromised).
+ */
+lemma Forward2_Requires_Forward1 [reuse]:
+    "All C D B ptrCD y #i.
+        HTLCForwarded2(C, D, B, ptrCD, y) @ #i
+     ==> (Ex A ptrBC #j. HTLCForwarded1(B, C, A, ptrBC, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(B) @ #r & #r < #i)"
+
+/*
+ * Hop authenticity 3 (slide 23->24): Dave redeems an HTLC only if
+ * Carol authentically forwarded it on that channel (or Carol's key
+ * was compromised).
+ */
+lemma Fulfill_Requires_Forward2:
+    "All D C ptrCD y #i.
+        HTLCFulfilled(D, C, ptrCD, y) @ #i
+     ==> (Ex B #j. HTLCForwarded2(C, D, B, ptrCD, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(C) @ #r & #r < #i)"
+
+/*
+ * Atomicity towards the intermediaries (slide 15: "if Carol gets her
+ * money then Bob can get his money too"): an intermediary redeems its
+ * incoming HTLC only with a preimage some receiver really released,
+ * i.e. only after its own outgoing HTLC became redeemable (or some
+ * long-term key was compromised, allowing a forged invoice or offer).
  */
 lemma Claim_Requires_Release_Or_Compromise:
-    "All I S ptr1 x #i.
-        IntermediaryClaimed(I, S, ptr1, x) @ #i
-     ==> (Ex R #j. PreimageReleased(R, x) @ #j & #j < #i)
-       | (Ex C #r. LtkCompromised(C) @ #r & #r < #i)"
+    "All I up ptrIn x #i.
+        IntermediaryClaimed(I, up, ptrIn, x) @ #i
+     ==> (Ex D #j. PreimageReleased(D, x) @ #j & #j < #i)
+       | (Ex P #r. LtkCompromised(P) @ #r & #r < #i)"
+
+/*
+ * No double outcome: a payment settled on a channel implies the HTLC
+ * on that channel was never refunded (consequence of the on-chain
+ * exclusivity encoded by OneOutcomePerHTLC).
+ */
+lemma Settle_Excludes_Sender_Refund:
+    "All A B D ptr x #i.
+        SenderSettled(A, B, D, ptr, x) @ #i
+     ==> not (Ex #j. HTLCRefunded(A, ptr, h(x)) @ #j)"
 
 end
