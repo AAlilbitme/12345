@@ -1,0 +1,242 @@
+/*
+ * multihop.spthy
+ * ==============
+ * Lightning-style multi-hop payment over two payment channels, using
+ * Hash Time-Locked Contracts (HTLCs):
+ *
+ *     Sender S  <-- channel ptr1 -->  Intermediary I  <-- channel ptr2 -->  Receiver R
+ *
+ * The underlying two-party channel machinery (PKI, funding, channel
+ * opening, revocable commitments, closing, punishment) is shared with
+ * TwoPartyChannel.spthy and is pulled in via the integrated
+ * preprocessor:
+ *
+ *     #include "splib/paymentchannel.splib"
+ *
+ * The HTLC layer follows the Lightning Network payment flow
+ * (BOLT #2/#11, abstracted):
+ *   1. R draws a fresh preimage x and sends the signed invoice carrying
+ *      the payment hash y = h(x) to S.
+ *   2. S offers an HTLC locked on y to I over their open channel ptr1
+ *      (update_add_htlc).
+ *   3. I forwards an HTLC locked on the same y to R over channel ptr2.
+ *   4. R redeems by revealing x (update_fulfill_htlc) on ptr2.
+ *   5. I uses the learned x to claim the incoming HTLC on ptr1.
+ *   6. S sees x, the payment is settled end-to-end.
+ *
+ * Design note (labeled transition system): each step is a single
+ * multiset-rewriting transition. HTLC offers and fulfilments travel
+ * over the public (Dolev-Yao) network; channel existence is taken from
+ * the persistent !ChannelPeers facts produced by Lock_Funds_And_Open
+ * in the shared library, so a multi-hop payment is only possible after
+ * both channels were opened by the two-party protocol.
+ *
+ * Run with:
+ *     tamarin-prover --prove multihop.spthy
+ */
+
+/*
+ * Trace search strategy (Tamarin manual, "theory configuration"):
+ * sequential depth-first search keeps the witness search for the
+ * exists-trace sanity lemma memory-bounded; the default BFS explodes
+ * on the interleavings of the two channel-opening sub-protocols.
+ */
+theory multihop
+configuration: "--stop-on-trace=seqdfs"
+begin
+
+#include "splib/paymentchannel.splib"
+
+/* ------------------------------------------------------------------ */
+/* 1. Invoice: receiver R creates preimage x, payment hash y = h(x)   */
+/* ------------------------------------------------------------------ */
+
+rule Receiver_Create_Invoice:
+    let y       = h(~x)
+        invoice = <'invoice', $R, $S, y>
+        sigR    = sign(invoice, ltkR)
+    in
+    [ Fr(~x), !Ltk($R, ltkR) ]
+    --[ InvoiceCreated($R, $S, y),
+        SecretPreimage($R, ~x) ]->
+    [ ReceiverInv($R, $S, ~x),
+      Out(<'invoice', $R, $S, y, sigR>) ]
+
+/* ------------------------------------------------------------------ */
+/* 2. Sender S offers an HTLC to intermediary I on channel ptr1       */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Note the distinct tags 'htlc1' (hop S -> I) and 'htlc2' (hop I -> R).
+ * They model the per-hop channel context of update_add_htlc. With a
+ * single shared tag a forwarded HTLC could be re-parsed as a fresh
+ * offer, which both breaks hop authenticity and makes Tamarin's
+ * backward search loop through an unbounded Forward -> Forward chain.
+ */
+rule Sender_Offer_HTLC:
+    let invoice = <'invoice', $R, $S, y>
+        offer   = <'htlc1', ptr1, $S, $I, y>
+        sigS    = sign(offer, ltkS)
+    in
+    [ In(<'invoice', $R, $S, y, sigR>),
+      !Pk($R, pkR), !Ltk($S, ltkS),
+      !ChannelPeers(ptr1, $S, $I) ]
+    --[ HTLCOffered($S, $I, ptr1, y),
+        Eq(verify(sigR, invoice, pkR), true) ]->
+    [ SenderPending($S, $I, $R, ptr1, y),
+      Out(<'htlc1', ptr1, $S, $I, y, sigS>) ]
+
+/* ------------------------------------------------------------------ */
+/* 3. Intermediary I forwards the HTLC to R on channel ptr2           */
+/* ------------------------------------------------------------------ */
+
+rule Intermediary_Forward_HTLC:
+    let offer    = <'htlc1', ptr1, $S, $I, y>
+        offerFwd = <'htlc2', ptr2, $I, $R, y>
+        sigI     = sign(offerFwd, ltkI)
+    in
+    [ In(<'htlc1', ptr1, $S, $I, y, sigS>),
+      !Pk($S, pkS), !Ltk($I, ltkI),
+      !ChannelPeers(ptr1, $S, $I),
+      !ChannelPeers(ptr2, $I, $R) ]
+    --[ HTLCForwarded($I, $R, $S, ptr2, y),
+        Neq(ptr1, ptr2),
+        Eq(verify(sigS, offer, pkS), true) ]->
+    [ IntermediaryPending($I, $S, $R, ptr1, ptr2, y),
+      Out(<'htlc2', ptr2, $I, $R, y, sigI>) ]
+
+/* ------------------------------------------------------------------ */
+/* 4. Receiver R fulfils the incoming HTLC by revealing the preimage  */
+/* ------------------------------------------------------------------ */
+
+rule Receiver_Fulfill_HTLC:
+    let y        = h(x)
+        offerFwd = <'htlc2', ptr2, $I, $R, y>
+    in
+    [ ReceiverInv($R, $S, x),
+      In(<'htlc2', ptr2, $I, $R, y, sigI>),
+      !Pk($I, pkI),
+      !ChannelPeers(ptr2, $I, $R) ]
+    --[ HTLCFulfilled($R, $I, ptr2, y),
+        PreimageReleased($R, x),
+        Eq(verify(sigI, offerFwd, pkI), true) ]->
+    [ Out(<'fulfill', ptr2, x>) ]
+
+/* ------------------------------------------------------------------ */
+/* 5. Intermediary I claims the incoming HTLC with the learned x      */
+/* ------------------------------------------------------------------ */
+
+rule Intermediary_Settle:
+    [ IntermediaryPending($I, $S, $R, ptr1, ptr2, y),
+      In(<'fulfill', ptr2, x>) ]
+    --[ IntermediaryClaimed($I, $S, ptr1, x),
+        Eq(h(x), y) ]->
+    [ Out(<'fulfill', ptr1, x>) ]
+
+/* ------------------------------------------------------------------ */
+/* 6. Sender S sees the preimage: payment settled end-to-end          */
+/* ------------------------------------------------------------------ */
+
+rule Sender_Settle:
+    [ SenderPending($S, $I, $R, ptr1, y),
+      In(<'fulfill', ptr1, x>) ]
+    --[ SenderSettled($S, $I, $R, x),
+        PaymentComplete($S, $R, h(x)),
+        Eq(h(x), y) ]->
+    [ ]
+
+/* ------------------------------------------------------------------ */
+/* Lemmas                                                             */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Sanity: a complete multi-hop payment is executable, with both
+ * channels opened by the (shared) two-party channel protocol and
+ * without any key compromise.
+ *
+ * The trailing not-clauses prune the witness search: they exclude the
+ * unbounded off-chain update / publish loops of the channel library,
+ * which are irrelevant for the HTLC payment flow and would otherwise
+ * make the constraint solving for this sanity trace loop.
+ */
+lemma Multihop_Payment_Possible:
+    exists-trace
+    "Ex S I R ptr1 ptr2 x #c1 #c2 #t1 #t2 #t3 #t4 #t5 #t6.
+        ChannelOpen(S, I, ptr1) @ #c1
+      & ChannelOpen(I, R, ptr2) @ #c2
+      & InvoiceCreated(R, S, h(x))        @ #t1
+      & HTLCOffered(S, I, ptr1, h(x))     @ #t2
+      & HTLCForwarded(I, R, S, ptr2, h(x)) @ #t3
+      & HTLCFulfilled(R, I, ptr2, h(x))   @ #t4
+      & IntermediaryClaimed(I, S, ptr1, x) @ #t5
+      & SenderSettled(S, I, R, x)         @ #t6
+      & #c1 < #t2 & #c2 < #t3
+      & #t1 < #t2 & #t2 < #t3 & #t3 < #t4 & #t4 < #t5 & #t5 < #t6
+      & not (Ex C #r. LtkCompromised(C) @ #r)
+      & not (Ex A B p n #u. StateUpdate(A, B, p, n) @ #u)
+      & not (Ex A B p n fA fB #u #v.
+               NewStateBuilt(A, B, p, n, fA, fB) @ #u
+             & NewStateBuilt(A, B, p, n, fA, fB) @ #v & not(#u = #v))
+      & not (Ex P n #u. PublishState(P, n) @ #u)
+      & not (Ex P n #u. Cheat(P, n) @ #u)"
+
+/*
+ * Hash-lock secrecy: the adversary can learn a payment preimage only
+ * after the receiver deliberately released it to fulfil an HTLC.
+ *
+ * Marked [reuse] as an auxiliary lemma: the atomicity lemma below
+ * relies on it, which keeps its proof from looping through the
+ * unbounded relay chain of 'fulfill' messages.
+ */
+lemma Preimage_Secret_Until_Released [reuse]:
+    "All R x #i #j.
+        SecretPreimage(R, x) @ #i
+      & K(x) @ #j
+     ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #j"
+
+/*
+ * Proof of payment: when the sender settles, the receiver named in the
+ * invoice really released the preimage (unless the receiver's signing
+ * key was compromised, in which case the invoice may be forged).
+ */
+lemma Settle_Requires_Receiver_Release:
+    "All S I R x #i.
+        SenderSettled(S, I, R, x) @ #i
+     ==> (Ex #j. PreimageReleased(R, x) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(R) @ #r & #r < #i)"
+
+/*
+ * Hop authenticity (incoming): the intermediary forwards an HTLC only
+ * if the sender authentically offered one with the same payment hash
+ * (or the sender's key was compromised).
+ */
+lemma Forward_Requires_Offer:
+    "All I R S ptr2 y #i.
+        HTLCForwarded(I, R, S, ptr2, y) @ #i
+     ==> (Ex ptr1 #j. HTLCOffered(S, I, ptr1, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(S) @ #r & #r < #i)"
+
+/*
+ * Hop authenticity (outgoing): the receiver fulfils an HTLC only if
+ * the intermediary authentically forwarded it on that channel (or the
+ * intermediary's key was compromised).
+ */
+lemma Fulfill_Requires_Forward:
+    "All R I ptr2 y #i.
+        HTLCFulfilled(R, I, ptr2, y) @ #i
+     ==> (Ex S #j. HTLCForwarded(I, R, S, ptr2, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(I) @ #r & #r < #i)"
+
+/*
+ * Atomicity towards the intermediary: I claims the incoming HTLC only
+ * with a preimage some receiver really released, i.e. only after its
+ * outgoing HTLC became claimable (or some long-term key was
+ * compromised, allowing a forged invoice or offer).
+ */
+lemma Claim_Requires_Release_Or_Compromise:
+    "All I S ptr1 x #i.
+        IntermediaryClaimed(I, S, ptr1, x) @ #i
+     ==> (Ex R #j. PreimageReleased(R, x) @ #j & #j < #i)
+       | (Ex C #r. LtkCompromised(C) @ #r & #r < #i)"
+
+end

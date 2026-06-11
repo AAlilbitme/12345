@@ -1,0 +1,84 @@
+/*
+ * TwoPartyChannel.spthy
+ * =====================
+ * Two-party Lightning-style payment channel.
+ *
+ * The complete transition system (PKI, channel opening, revocable state
+ * updates, closing, punishment) lives in the shared library and is
+ * pulled in with Tamarin's integrated preprocessor:
+ *
+ *     #include "splib/paymentchannel.splib"
+ *
+ * This theory only states the security goals for a single channel
+ * between two parties A and B. The same library is reused by
+ * multihop.spthy for HTLC-based multi-hop payments.
+ *
+ * Run with:
+ *     tamarin-prover --prove TwoPartyChannel.spthy
+ */
+
+theory TwoPartyChannel
+begin
+
+#include "splib/paymentchannel.splib"
+
+/* ------------------------------------------------------------------ */
+/* Security lemmas for the two-party channel                          */
+/* ------------------------------------------------------------------ */
+
+// Induction avoids non-terminating proof loops through Update_State.
+lemma state_update[use_induction]:
+    "All A B ptr n #i.
+       StateUpdate(A, B, ptr, n) @ #i
+     ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
+
+lemma delayed_funds:
+    "All A n #i.
+       ClaimFunds(A, n) @ #i
+     ==> Ex #j. OnChainDelayedProduce(A, n) @ #j & #j < #i"
+
+lemma instant_funds:
+    "All A n #i.
+       FundsSettled(A, n) @ #i
+     ==> Ex #j. OnChainInstantProduce(A, n) @ #j & #j < #i"
+
+lemma settlement_is_traceable:
+    "All A n #i.
+       FundsSettled(A, n) @ #i
+     ==> Ex tx #j. SettledTx(A, tx) @ #j & #j = #i"
+
+lemma Protocol_execution:
+    exists-trace
+    "Ex A B ptr n fA vB #i #j #k #l.
+        ChannelOpen(A, B, ptr) @ #i
+      & NewStateBuilt(A, B, ptr, n, fA, vB) @ #j
+      & StateUpdate(A, B, ptr, n) @ #k
+      & Close(A, B, ptr, n) @ #l
+      & #i < #j & #j < #k & #k < #l"
+
+lemma No_Punishment_Without_Cheating:
+    "All A B n #i.
+        Punish(B, A, n) @ #i
+     ==> (Ex #k. Cheat(A, n) @ #k & #k < #i)
+      | (Ex #j. LtkCompromised(A) @ #j & #j < #i)"
+
+lemma Balance_Must_Updates:
+  all-traces
+  "All A B ptr n1 n2 fA1 fB1 fA2 fB2 #i #j.
+     ( NewStateBuilt(A, B, ptr, n1, fA1, fB1) @ #i
+      & StateUpdate(A, B, ptr, n1) @ #i
+      & NewStateBuilt(A, B, ptr, n2, fA2, fB2) @ #j
+      & StateUpdate(A, B, ptr, n2) @ #j
+      & #i < #j
+     )
+     ==> not(fA2 = fA1) & not(fB2 = fB1)"
+
+lemma Cooperative_Close_Execution:
+    exists-trace
+    "Ex A B ptr n #k #i.
+        ChannelOpen(A, B, ptr) @ #k
+      & Close(A, B, ptr, n) @ #i
+      & #k < #i
+      & not (Ex A2 B2 ptr2 n2 #j. StateUpdate(A2, B2, ptr2, n2) @ #j)"
+
+end
