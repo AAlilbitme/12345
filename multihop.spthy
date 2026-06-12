@@ -15,8 +15,9 @@
  *     #include "splib/paymentchannel.splib"
  *
  * Payment flow (slides 20-26):
- *   1. Dave samples a fresh preimage x and sends the signed invoice
- *      carrying the payment hash y = h(x) to Alice.
+ *   1. Dave samples a fresh preimage x and sends the payment hash
+ *      y = h(x) to Alice (unauthenticated, as on the slides: the only
+ *      signatures in the protocol are transaction signatures).
  *   2. Lock round (slide 27, "Round 1"):
  *      Alice -> Bob   HTLC on y over ptrAB   (htlc1)
  *      Bob   -> Carol HTLC on y over ptrBC   (htlc2)
@@ -61,16 +62,21 @@ begin
 /* 1. Invoice: Dave samples x and sends y = h(x) to Alice (slide 20)  */
 /* ------------------------------------------------------------------ */
 
+/*
+ * As on the slides, the payment hash is sent WITHOUT a signature: the
+ * only signatures in the protocol are transaction signatures (the
+ * HTLC offers below). Real Lightning authenticates invoices (BOLT 11);
+ * the consequence of leaving them unauthenticated is exhibited by the
+ * Fake_Invoice_Attack_Possible lemma at the end of this file.
+ */
 rule Dave_Create_Invoice:
-    let y       = h(~x)
-        invoice = <'invoice', $Dave, $Alice, y>
-        sigD    = sign(invoice, ltkD)
+    let y = h(~x)
     in
-    [ Fr(~x), !Ltk($Dave, ltkD) ]
+    [ Fr(~x) ]
     --[ InvoiceCreated($Dave, $Alice, y),
         SecretPreimage($Dave, ~x) ]->
     [ ReceiverInv($Dave, $Alice, ~x),
-      Out(<'invoice', $Dave, $Alice, y, sigD>) ]
+      Out(<'invoice', $Dave, $Alice, y>) ]
 
 /* ------------------------------------------------------------------ */
 /* 2. Lock round: HTLCs with the same hash y, hop by hop (slides      */
@@ -82,15 +88,13 @@ rule Dave_Create_Invoice:
 /* ------------------------------------------------------------------ */
 
 rule Alice_Offer_HTLC:
-    let invoice = <'invoice', $Dave, $Alice, y>
-        offer   = <'htlc1', ptrAB, $Alice, $Bob, y>
-        sigA    = sign(offer, ltkA)
+    let offer = <'htlc1', ptrAB, $Alice, $Bob, y>
+        sigA  = sign(offer, ltkA)
     in
-    [ In(<'invoice', $Dave, $Alice, y, sigD>),
-      !Pk($Dave, pkD), !Ltk($Alice, ltkA),
+    [ In(<'invoice', $Dave, $Alice, y>),
+      !Ltk($Alice, ltkA),
       !ChannelPeers(ptrAB, $Alice, $Bob) ]
-    --[ HTLCOffered($Alice, $Bob, ptrAB, y),
-        Eq(verify(sigD, invoice, pkD), true) ]->
+    --[ HTLCOffered($Alice, $Bob, ptrAB, y) ]->
     [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
       Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>) ]
 
@@ -289,34 +293,33 @@ lemma Preimage_Secret_Until_Released [reuse]:
      ==> Ex #k. PreimageReleased(D, x) @ #k & #k < #j"
 
 /*
- * Proof of payment: when Alice settles, the receiver named in the
- * invoice really released the preimage (unless the receiver's signing
- * key was compromised, in which case the invoice may be forged).
+ * Auxiliary [reuse] lemma: an invoice's payment hash always covers a
+ * recorded secret preimage. Together with the secrecy lemma above it
+ * lets the proof-of-payment and atomicity proofs below compose,
+ * instead of re-deriving the whole three-hop chain (which would make
+ * their backward search explode).
  */
-lemma Settle_Requires_Receiver_Release:
-    "All A B D ptr x #i.
-        SenderSettled(A, B, D, ptr, x) @ #i
-     ==> (Ex #j. PreimageReleased(D, x) @ #j & #j < #i)
-       | (Ex #r. LtkCompromised(D) @ #r & #r < #i)"
-
-/*
- * Auxiliary [reuse] lemmas: they let the atomicity proof at the end
- * compose the per-hop arguments instead of re-deriving the whole
- * three-hop chain, which would make its backward search explode.
- */
-
-// The payment hash of an authentic offer stems from a signed invoice.
-lemma Offer_Requires_Invoice [reuse]:
-    "All A B ptr y #i.
-        HTLCOffered(A, B, ptr, y) @ #i
-     ==> (Ex D #j. InvoiceCreated(D, A, y) @ #j & #j < #i)
-       | (Ex D #r. LtkCompromised(D) @ #r & #r < #i)"
-
-// An invoice's payment hash always covers a recorded secret preimage.
 lemma Invoice_Has_Secret_Preimage [reuse]:
     "All D A x #i.
         InvoiceCreated(D, A, h(x)) @ #i
      ==> SecretPreimage(D, x) @ #i"
+
+/*
+ * Proof of payment, conditional on the invoice being genuine: if Alice
+ * settles on a payment hash that Dave really invoiced, then Dave
+ * really released the preimage. No key-compromise escape clause is
+ * needed: the preimage is never derivable from long-term keys.
+ *
+ * The condition InvoiceCreated(D, A, h(x)) cannot be dropped: the
+ * slides' invoice (slide 20) is unauthenticated -- only transactions
+ * carry signatures -- so an adversary can hand Alice a payment hash of
+ * its own and Alice cannot tell. See Fake_Invoice_Attack_Possible.
+ */
+lemma Settle_Requires_Receiver_Release:
+    "All A B D ptr x #i #j.
+        SenderSettled(A, B, D, ptr, x) @ #i
+      & InvoiceCreated(D, A, h(x)) @ #j
+     ==> Ex #k. PreimageReleased(D, x) @ #k & #k < #i"
 
 /*
  * Hop authenticity 1 (slide 21->22): Bob forwards an HTLC only if
@@ -353,16 +356,17 @@ lemma Fulfill_Requires_Forward2:
 
 /*
  * Atomicity towards the intermediaries (slide 15: "if Carol gets her
- * money then Bob can get his money too"): an intermediary redeems its
- * incoming HTLC only with a preimage some receiver really released,
- * i.e. only after its own outgoing HTLC became redeemable (or some
- * long-term key was compromised, allowing a forged invoice or offer).
+ * money then Bob can get his money too"), conditional on the payment
+ * hash stemming from a genuine invoice: an intermediary redeems its
+ * incoming HTLC only with the preimage the receiver really released,
+ * i.e. only after its own outgoing HTLC became redeemable. As above,
+ * the condition reflects the unauthenticated invoice of the slides.
  */
-lemma Claim_Requires_Release_Or_Compromise:
-    "All I up ptrIn x #i.
+lemma Claim_Requires_Release:
+    "All I up ptrIn D x #i #j.
         IntermediaryClaimed(I, up, ptrIn, x) @ #i
-     ==> (Ex D #j. PreimageReleased(D, x) @ #j & #j < #i)
-       | (Ex P #r. LtkCompromised(P) @ #r & #r < #i)"
+      & SecretPreimage(D, x) @ #j
+     ==> Ex #k. PreimageReleased(D, x) @ #k & #k < #i"
 
 /*
  * No double outcome: a payment settled on a channel implies the HTLC
@@ -373,5 +377,21 @@ lemma Settle_Excludes_Sender_Refund:
     "All A B D ptr x #i.
         SenderSettled(A, B, D, ptr, x) @ #i
      ==> not (Ex #j. HTLCRefunded(A, ptr, h(x)) @ #j)"
+
+/*
+ * Attack (found by Tamarin, consequence of the unauthenticated
+ * invoice): without any key compromise, the adversary can pick its own
+ * preimage, hand Alice the corresponding payment hash as if it were
+ * Dave's invoice, and later reveal the preimage -- making Alice settle
+ * a payment that Dave never invoiced and never received. This is why
+ * real Lightning signs invoices (BOLT 11); the slides abstract this
+ * away, keeping signatures only on transactions.
+ */
+lemma Fake_Invoice_Attack_Possible:
+    exists-trace
+    "Ex A B D ptr x #i.
+        SenderSettled(A, B, D, ptr, x) @ #i
+      & not (Ex #j. InvoiceCreated(D, A, h(x)) @ #j)
+      & not (Ex P #r. LtkCompromised(P) @ #r)"
 
 end

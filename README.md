@@ -21,7 +21,7 @@ When writing or debugging, explicitly output a brief design thought explaining h
 | --- | --- |
 | `splib/paymentchannel.splib` | Shared library (included via Tamarin's integrated preprocessor `#include`): PKI, funding, signed channel-opening handshake, revocable commitment states, off-chain updates with revocation, cooperative/unilateral close, cheat-and-punish, settlement, and the shared restrictions. Not a standalone theory. |
 | `TwoPartyChannel.spthy` | Two-party payment channel theory. Pulls the whole transition system from the splib and states the single-channel security lemmas (state updates require an open channel, settlement traceability, punishment only after cheating or key compromise, executability of update/close flows). |
-| `multihop.spthy` | Lightning-style 3-hop payment following the lecture slides (`Alice <-ptrAB-> Bob <-ptrBC-> Carol <-ptrCD-> Dave`), built on top of the same splib. Adds the HTLC layer (invoice with payment hash `h(x)`, same hash locked on every hop, `update_add_htlc`-style offers, preimage release, backwards redeem propagation, timeout refunds with one-outcome-per-HTLC exclusivity) and proves executability of the lock/release rounds and the refund branch, hash-lock secrecy, proof-of-payment, per-hop authenticity for all three hops, intermediary atomicity, and redeem/refund exclusivity. |
+| `multihop.spthy` | Lightning-style 3-hop payment following the lecture slides (`Alice <-ptrAB-> Bob <-ptrBC-> Carol <-ptrCD-> Dave`), built on top of the same splib. Adds the HTLC layer (unauthenticated invoice with payment hash `h(x)`, same hash locked on every hop, signed `update_add_htlc`-style offers, preimage release, backwards redeem propagation, timeout refunds with one-outcome-per-HTLC exclusivity) and proves executability of the lock/release rounds and the refund branch, hash-lock secrecy, conditional proof-of-payment, per-hop authenticity for all three hops, conditional intermediary atomicity, redeem/refund exclusivity — plus a machine-found fake-invoice attack trace. |
 | `PaymentChannels.spthy` | Original monolithic two-party model, kept for reference. Superseded by `splib/paymentchannel.splib` + `TwoPartyChannel.spthy`. |
 
 The connection between the files is the preprocessor include (see the
@@ -78,8 +78,16 @@ Notes on proof termination (avoiding loops):
   invoice (`y = h(x)`), lock round with the same hash on every hop,
   release round propagating the preimage backwards, timeout refund
   branch: in `multihop.spthy`.
+- As on the slides, the only signatures are transaction signatures
+  (the HTLC offers); the invoice of slide 20 ("Dave samples x and
+  sends y := H(x) to Alice") is unauthenticated. Consequence, found by
+  Tamarin (`Fake_Invoice_Attack_Possible`): without any key
+  compromise, the adversary can hand Alice a payment hash of its own
+  and make her settle a payment Dave never invoiced. Proof-of-payment
+  and intermediary atomicity therefore hold conditionally on the
+  payment hash stemming from a genuine invoice (real Lightning closes
+  this gap by signing invoices, BOLT 11).
 - Abstractions: Tamarin has no quantitative time, so the staggered
   timelocks (3t > 2t > t) are abstracted to the OneOutcomePerHTLC
   exclusivity (an HTLC is redeemed or refunded, never both); amounts
-  and fees are not modelled (no arithmetic in the term algebra); the
-  invoice is signed (BOLT 11) to make proof-of-payment provable.
+  and fees are not modelled (no arithmetic in the term algebra).
