@@ -1,0 +1,335 @@
+/*
+ * splib/paymentchannel.splib
+ * ==========================
+ * Shared Tamarin library (included via the integrated preprocessor,
+ * see Tamarin manual, "Integrated Preprocessor": #include "path/file").
+ *
+ * It models a two-party Lightning-style payment channel:
+ *   - PKI (key registration / long-term key compromise)
+ *   - funding wallets
+ *   - signed channel-opening handshake
+ *   - revocable committed states (commitment transactions)
+ *   - state updates with revocation of the old state
+ *   - unilateral / cooperative closing
+ *   - punishment of a party publishing a revoked state
+ *
+ * Design note (labeled transition system): every rule below is a strict
+ * multiset-rewriting transition [ l ] --[ a ]-> [ r ]. Persistent facts
+ * (prefixed with !) model non-consumable knowledge (keys, on-chain
+ * records, revoked secrets); linear facts model protocol state that is
+ * consumed exactly once per transition.
+ *
+ * This file is NOT a standalone theory. It is included by:
+ *   - TwoPartyChannel.spthy  (two-party channel security lemmas)
+ *   - multihop.spthy         (HTLC-based multi-hop payments on top)
+ */
+
+builtins: hashing, signing
+
+/* ------------------------------------------------------------------ */
+/* PKI and adversary capabilities                                     */
+/* ------------------------------------------------------------------ */
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk) ]
+
+rule Acquire_funds:
+    [ Fr(~f) ]
+    --[ FundsAcquired($A, ~f) ]->
+    [ Wallet($A, ~f) ]
+
+/* ------------------------------------------------------------------ */
+/* Channel-opening handshake (mutually signed proposal)               */
+/* ------------------------------------------------------------------ */
+
+rule A_Send_Proposal:
+    let proposal = <'proposal', $A, $B, ~ptr>
+        sigA     = sign(proposal, ltkA)
+    in
+    [ Fr(~ptr), !Ltk($A, ltkA) ]
+    --[ A_ProposalSent($A, $B, ~ptr) ]->
+    [ A_WaitAck($A, $B, ~ptr),
+      Out(<'proposal', $A, $B, ~ptr, sigA>) ]
+
+rule B_Recv_Proposal:
+    let proposal = <'proposal', $A, $B, ptr>
+        sigB     = sign(proposal, ltkB)
+    in
+    [ !Ltk($B, ltkB), !Pk($A, pkA),
+      In(<'proposal', $A, $B, ptr, sigA>) ]
+    --[ ProposalExchange($A, $B, ptr),
+        Eq(verify(sigA, proposal, pkA), true) ]->
+    [ !ProposalCommitted($A, $B, ptr),
+      Out(<'proposal_ack', $A, $B, ptr, sigB>) ]
+
+rule A_Recv_From_B:
+    let proposal = <'proposal', $A, $B, ptr>
+    in
+    [ A_WaitAck($A, $B, ptr),
+      !Pk($B, pkB),
+      In(<'proposal_ack', $A, $B, ptr, sigB>) ]
+    --[ A_Received($A, $B, ptr),
+        Eq(verify(sigB, proposal, pkB), true) ]->
+    [ !A_HandshakeDone($A, $B, ptr) ]
+
+/* ------------------------------------------------------------------ */
+/* Initial commitment states and channel funding                      */
+/* ------------------------------------------------------------------ */
+
+rule Create_State_A:
+    let commitA0 = <'commit', ptr, $A, $B, '0', h(~sA0)>
+        sigA0    = sign(commitA0, ltkA)
+    in
+    [ Fr(~sA0), !Ltk($A, ltkA),
+      !A_HandshakeDone($A, $B, ptr) ]
+    --[ StateCreated($A, '0', commitA0) ]->
+    [ CommittedStateA($A, $B, ptr, '0', ~sA0, commitA0, sigA0) ]
+
+rule Create_State_B:
+    let commitB0 = <'commit', ptr, $B, $A, '0', h(~sB0)>
+        sigB0    = sign(commitB0, ltkB)
+    in
+    [ Fr(~sB0), !Ltk($B, ltkB),
+      !ProposalCommitted($A, $B, ptr) ]
+    --[ StateCreated($B, '0', commitB0) ]->
+    [ CommittedStateB($A, $B, ptr, '0', ~sB0, commitB0, sigB0) ]
+
+rule Both_States_Committed:
+    [ CommittedStateA($A, $B, ptr, '0', sA0, commitA0, sigA0),
+      CommittedStateB($A, $B, ptr, '0', sB0, commitB0, sigB0),
+      !Pk($A, pkA), !Pk($B, pkB) ]
+    --[ Stage1Complete($A, $B, ptr),
+        Eq(verify(sigA0, commitA0, pkA), true),
+        Eq(verify(sigB0, commitB0, pkB), true) ]->
+    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0) ]
+
+/*
+ * Funding: both parties lock funds, the channel becomes valid on-chain.
+ * !ChannelPeers is emitted in BOTH orientations so that higher layers
+ * (e.g. the HTLC multi-hop layer in multihop.spthy) can address the
+ * channel from the point of view of either endpoint.
+ *
+ * ChanLive is the channel's linear service token and off-chain HTLC
+ * ledger: it exists exactly while the channel is open and carries the
+ * balances of the HTLC layer. The HTLC layer checks it out when an
+ * HTLC is locked and returns it on resolution; cooperative closing
+ * consumes it, so a channel can only be closed cooperatively when no
+ * HTLC is pending, and no HTLC can be locked after the close.
+ */
+rule Lock_Funds_And_Open:
+    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0),
+      Wallet($A, ~fA), Wallet($B, ~fB) ]
+    --[ ChannelOpen($A, $B, ptr), FundsLocked($A, $B, ptr),
+        NewStateBuilt($A, $B, ptr, '0', ~fA, ~fB) ]->
+    [ StateA($A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB),
+      StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
+      ChanLive(ptr, $A, $B, ~fA, ~fB),
+      !ValidOnChain(ptr),
+      !ChannelRecord(ptr, $A, $B),
+      !ChannelPeers(ptr, $A, $B),
+      !ChannelPeers(ptr, $B, $A) ]
+
+/* ------------------------------------------------------------------ */
+/* Off-chain state updates with revocation                            */
+/* ------------------------------------------------------------------ */
+
+rule Update_State:
+    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
+        newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
+        sigAnew    = sign(newCommitA, ltkA)
+        sigBnew    = sign(newCommitB, ltkB)
+    in
+    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
+      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
+      In(<fA_new, fB_new>) ]
+    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new) ]
+
+rule Revoke_Old_Secret:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !Pk($A, pkA), !Pk($B, pkB) ]
+    --[ StateUpdate($A, $B, ptr, n_new),
+        Revoke($A, n_old, sAold),
+        Revoke($B, n_old, sBold),
+        Eq(verify(sigAnew, newCommitA, pkA), true),
+        Eq(verify(sigBnew, newCommitB, pkB), true) ]->
+    [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
+      StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+
+/* ------------------------------------------------------------------ */
+/* Publishing states on-chain                                         */
+/* ------------------------------------------------------------------ */
+
+rule Publish_Old_Grace_Period_A:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ PublishOldBeforeRevocation($A, n_old),
+        PublishState($A, n_old),
+        OnChainDelayedProduce($A, n_old),
+        OnChainInstantProduce($B, n_old) ]->
+    [ OnChainDelayed($A, n_old, oldCommitA),
+      OnChainInstant($B, n_old, oldCommitA) ]
+
+rule Publish_Old_Grace_Period_B:
+    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ PublishOldBeforeRevocation($B, n_old),
+        PublishState($B, n_old),
+        OnChainDelayedProduce($B, n_old),
+        OnChainInstantProduce($A, n_old) ]->
+    [ OnChainDelayed($B, n_old, oldCommitB),
+      OnChainInstant($A, n_old, oldCommitB) ]
+
+rule Publish_Current_A:
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB), !ValidOnChain(ptr) ]
+    --[ Publish($A, n, commitA),
+        PublishState($A, n),
+        OnChainDelayedProduce($A, n),
+        OnChainInstantProduce($B, n) ]->
+    [ OnChainDelayed($A, n, commitA),
+      OnChainInstant($B, n, commitA) ]
+
+rule Publish_Current_B:
+    [ StateB($A, $B, ptr, n, sB, commitB, fA, fB), !ValidOnChain(ptr) ]
+    --[ Publish($B, n, commitB),
+        PublishState($B, n),
+        OnChainDelayedProduce($B, n),
+        OnChainInstantProduce($A, n) ]->
+    [ OnChainDelayed($B, n, commitB),
+      OnChainInstant($A, n, commitB) ]
+
+rule Publish_Pending_A:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ Publish($A, n_new, newCommitA),
+        PublishFromPending($A, n_old, n_new),
+        OnChainDelayedProduce($A, n_new),
+        OnChainInstantProduce($B, n_new) ]->
+    [ OnChainDelayed($A, n_new, newCommitA),
+      OnChainInstant($B, n_new, newCommitA) ]
+
+rule Publish_Pending_B:
+    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ Publish($B, n_new, newCommitB),
+        PublishFromPending($B, n_old, n_new),
+        OnChainDelayedProduce($B, n_new),
+        OnChainInstantProduce($A, n_new) ]->
+    [ OnChainDelayed($B, n_new, newCommitB),
+      OnChainInstant($A, n_new, newCommitB) ]
+
+/* ------------------------------------------------------------------ */
+/* Cooperative close                                                  */
+/* ------------------------------------------------------------------ */
+
+rule Honest_Close:
+    let closetx = <'commit', ptr, $A, $B, n, fA, fB>
+        signA   = sign(closetx, ltkA)
+        signB   = sign(closetx, ltkB)
+    in
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB),
+      StateB($A, $B, ptr, n, sB, commitB, fA, fB),
+      ChanLive(ptr, $A, $B, fLA, fLB),
+      !ValidOnChain(ptr),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      !Pk($A, pkA),   !Pk($B, pkB) ]
+    --[ Close($A, $B, ptr, n),
+        OnChainInstantProduce($A, n),
+        OnChainInstantProduce($B, n),
+        Eq(verify(signA, closetx, pkA), true),
+        Eq(verify(signB, closetx, pkB), true) ]->
+    [ OnChainInstant($A, n, closetx),
+      OnChainInstant($B, n, closetx) ]
+
+/* ------------------------------------------------------------------ */
+/* Cheating (publishing revoked states) and punishment                */
+/* ------------------------------------------------------------------ */
+
+rule Publish_Revoked_A:
+    [ !ChannelRecord(ptr, $A, $B),
+      !ValidOnChain(ptr),
+      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+    --[ PublishRevoked($A, n_old, oldCommitA),
+        Cheat($A, n_old) ]->
+    [ OnChainCheat($A, $B, n_old, oldCommitA) ]
+
+rule Publish_Revoked_B:
+    [ !ChannelRecord(ptr, $A, $B),
+      !ValidOnChain(ptr),
+      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+    --[ PublishRevoked($B, n_old, oldCommitB),
+        Cheat($B, n_old) ]->
+    [ OnChainCheat($B, $A, n_old, oldCommitB) ]
+
+rule Punish_A:
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+    --[ Punish($B, $A, n_old) ]->
+    [ AllFundsTo($B) ]
+
+rule Punish_B:
+    [ OnChainCheat($B, $A, n_old, oldCommitB),
+      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+    --[ Punish($A, $B, n_old) ]->
+    [ AllFundsTo($A) ]
+
+/* ------------------------------------------------------------------ */
+/* Settlement                                                         */
+/* ------------------------------------------------------------------ */
+
+rule Instant_Funds_A:
+    [ OnChainInstant($A, n, txContent) ]
+    --[ FundsSettled($A, n), SettledTx($A, txContent) ]->
+    [ ]
+
+rule Instant_Funds_B:
+    [ OnChainInstant($B, n, txContent) ]
+    --[ FundsSettled($B, n), SettledTx($B, txContent) ]->
+    [ ]
+
+rule Claim_Funds_A:
+    [ OnChainDelayed($A, n, txContent) ]
+    --[ ClaimFunds($A, n), CSVPassed($A, n), SettledTx($A, txContent) ]->
+    [ FundsTo($A, n) ]
+
+rule Claim_Funds_B:
+    [ OnChainDelayed($B, n, txContent) ]
+    --[ ClaimFunds($B, n), CSVPassed($B, n), SettledTx($B, txContent) ]->
+    [ FundsTo($B, n) ]
+
+/* ------------------------------------------------------------------ */
+/* Shared restrictions                                                */
+/* ------------------------------------------------------------------ */
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+
+restriction OneChannelPerPtr:
+    "All A B C D ptr #i #j.
+       ChannelOpen(A, B, ptr) @ #i
+     & ChannelOpen(C, D, ptr) @ #j
+     ==> #i = #j"
