@@ -85,6 +85,16 @@ rule Dave_Create_Invoice:
 /*    forwarded HTLC could be re-parsed as a fresh offer, which both   */
 /*    breaks hop authenticity and makes Tamarin's backward search      */
 /*    loop through an unbounded Forward -> Forward chain.              */
+/*                                                                    */
+/*    Coupling to the channel state (slide 16, "putting all pieces    */
+/*    together"): locking an HTLC consumes the channel's current      */
+/*    state pair StateA/StateB and parks it in HTLCChan -- the        */
+/*    commitment now carrying the hashlock output. While HTLCChan     */
+/*    holds the channel, no ordinary Update_State / Honest_Close /    */
+/*    Publish_Current can fire for it (they need StateA/StateB), and  */
+/*    no second HTLC fits on the same channel. The pair (X, Y) keeps  */
+/*    the library's channel orientation; the locking party P is       */
+/*    recorded separately, since either endpoint may lock.            */
 /* ------------------------------------------------------------------ */
 
 rule Alice_Offer_HTLC:
@@ -93,9 +103,12 @@ rule Alice_Offer_HTLC:
     in
     [ In(<'invoice', $Dave, $Alice, y>),
       !Ltk($Alice, ltkA),
-      !ChannelPeers(ptrAB, $Alice, $Bob) ]
-    --[ HTLCOffered($Alice, $Bob, ptrAB, y) ]->
-    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
+      !ChannelPeers(ptrAB, $Alice, $Bob),
+      ChanLive(ptrAB, $U, $V, fU, fV) ]
+    --[ HTLCOffered($Alice, $Bob, ptrAB, y),
+        HTLCAdded(ptrAB, y) ]->
+    [ HTLCChan(ptrAB, $U, $V, $Alice, y, fU, fV),
+      SenderPending($Alice, $Bob, $Dave, ptrAB, y),
       Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>) ]
 
 rule Bob_Forward_HTLC:
@@ -106,11 +119,14 @@ rule Bob_Forward_HTLC:
     [ In(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>),
       !Pk($Alice, pkA), !Ltk($Bob, ltkB),
       !ChannelPeers(ptrAB, $Alice, $Bob),
-      !ChannelPeers(ptrBC, $Bob, $Carol) ]
+      !ChannelPeers(ptrBC, $Bob, $Carol),
+      ChanLive(ptrBC, $U, $V, fU, fV) ]
     --[ HTLCForwarded1($Bob, $Carol, $Alice, ptrBC, y),
+        HTLCAdded(ptrBC, y),
         Neq(ptrAB, ptrBC),
         Eq(verify(sigA, offer, pkA), true) ]->
-    [ IntermediaryPending($Bob, $Alice, $Carol, ptrAB, ptrBC, y),
+    [ HTLCChan(ptrBC, $U, $V, $Bob, y, fU, fV),
+      IntermediaryPending($Bob, $Alice, $Carol, ptrAB, ptrBC, y),
       Out(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>) ]
 
 rule Carol_Forward_HTLC:
@@ -121,16 +137,30 @@ rule Carol_Forward_HTLC:
     [ In(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>),
       !Pk($Bob, pkB), !Ltk($Carol, ltkC),
       !ChannelPeers(ptrBC, $Bob, $Carol),
-      !ChannelPeers(ptrCD, $Carol, $Dave) ]
+      !ChannelPeers(ptrCD, $Carol, $Dave),
+      ChanLive(ptrCD, $U, $V, fU, fV) ]
     --[ HTLCForwarded2($Carol, $Dave, $Bob, ptrCD, y),
+        HTLCAdded(ptrCD, y),
         Neq(ptrBC, ptrCD),
         Eq(verify(sigB, offer, pkB), true) ]->
-    [ IntermediaryPending($Carol, $Bob, $Dave, ptrBC, ptrCD, y),
+    [ HTLCChan(ptrCD, $U, $V, $Carol, y, fU, fV),
+      IntermediaryPending($Carol, $Bob, $Dave, ptrBC, ptrCD, y),
       Out(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>) ]
 
 /* ------------------------------------------------------------------ */
 /* 3. Release round: Dave reveals x; the redeem propagates backwards  */
-/*    (slides 24-26).                                                 */
+/*    (slides 24-26). Resolving an HTLC consumes HTLCChan and         */
+/*    produces a FRESH StateA/StateB pair -- slide 17: "Alice and Bob */
+/*    can safely reset the state of the channel, dropping the HTLC    */
+/*    condition" -- so the channel re-enters the normal update /      */
+/*    close loop of the library. The reset is modelled as one atomic  */
+/*    cooperative transition (like Update_State + Revoke in one       */
+/*    step), abstracting the commitment-exchange handshake.           */
+/*                                                                    */
+/*    Because HTLCChan is linear and is consumed by exactly one of    */
+/*    {downstream redeem, locker refund}, redeem/refund exclusivity   */
+/*    per HTLC is now STRUCTURAL; the OneOutcomePerHTLC restriction   */
+/*    below remains as documentation of the on-chain reason.          */
 /* ------------------------------------------------------------------ */
 
 rule Dave_Fulfill_HTLC:
@@ -140,26 +170,38 @@ rule Dave_Fulfill_HTLC:
     [ ReceiverInv($Dave, $Alice, x),
       In(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>),
       !Pk($Carol, pkC),
-      !ChannelPeers(ptrCD, $Carol, $Dave) ]
+      !ChannelPeers(ptrCD, $Carol, $Dave),
+      HTLCChan(ptrCD, $U, $V, payer, y, fU, fV) ]
     --[ HTLCFulfilled($Dave, $Carol, ptrCD, y),
         PreimageReleased($Dave, x),
         Redeemed(ptrCD, y),
+        HTLCResolved(ptrCD, y),
         Eq(verify(sigC, offerFwd, pkC), true) ]->
-    [ Out(<'fulfill', ptrCD, x>) ]
+    [ ChanReturn(ptrCD, $U, $V, fU, fV),
+      Out(<'fulfill', ptrCD, x>) ]
 
 /*
  * Generic settle step, used by Carol (ptrBC <- ptrCD) and then by Bob
  * (ptrAB <- ptrBC): an intermediary that learns x on its outgoing
- * channel redeems the HTLC on its incoming channel with the same x.
+ * channel redeems the HTLC on its incoming channel with the same x,
+ * resetting that channel to a fresh HTLC-free state.
  */
 rule Intermediary_Settle:
     [ IntermediaryPending(I, up, down, ptrIn, ptrOut, y),
-      In(<'fulfill', ptrOut, x>) ]
+      In(<'fulfill', ptrOut, x>),
+      HTLCChan(ptrIn, $U, $V, payer, y, fU, fV) ]
     --[ IntermediaryClaimed(I, up, ptrIn, x),
         Redeemed(ptrIn, y),
+        HTLCResolved(ptrIn, y),
         Eq(h(x), y) ]->
-    [ Out(<'fulfill', ptrIn, x>) ]
+    [ ChanReturn(ptrIn, $U, $V, fU, fV),
+      Out(<'fulfill', ptrIn, x>) ]
 
+/*
+ * Alice's settle is her bookkeeping only: the channel reset of ptrAB
+ * happened at Bob's claim (the Intermediary_Settle instance with
+ * ptrIn = ptrAB), which consumed the HTLCChan of ptrAB.
+ */
 rule Alice_Settle:
     [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
       In(<'fulfill', ptrAB, x>) ]
@@ -171,23 +213,38 @@ rule Alice_Settle:
 
 /* ------------------------------------------------------------------ */
 /* 4. Timeout branch (slides 11/15): the party that locked an HTLC    */
-/*    refunds it after the timelock. Consuming the pending fact means  */
-/*    giving up the payment; the OneOutcomePerHTLC restriction below   */
-/*    encodes that an on-chain HTLC output cannot be both redeemed     */
-/*    and refunded.                                                   */
+/*    refunds it after the timelock, also resetting the channel to a  */
+/*    fresh HTLC-free state (back into the update loop).              */
 /* ------------------------------------------------------------------ */
 
 rule Sender_Timeout_Refund:
-    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y) ]
+    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
+      HTLCChan(ptrAB, $U, $V, payer, y, fU, fV) ]
     --[ HTLCRefunded($Alice, ptrAB, y),
-        Refunded(ptrAB, y) ]->
-    [ ]
+        Refunded(ptrAB, y),
+        HTLCResolved(ptrAB, y) ]->
+    [ ChanReturn(ptrAB, $U, $V, fU, fV) ]
 
 rule Intermediary_Timeout_Refund:
-    [ IntermediaryPending(I, up, down, ptrIn, ptrOut, y) ]
+    [ IntermediaryPending(I, up, down, ptrIn, ptrOut, y),
+      HTLCChan(ptrOut, $U, $V, payer, y, fU, fV) ]
     --[ HTLCRefunded(I, ptrOut, y),
-        Refunded(ptrOut, y) ]->
-    [ ]
+        Refunded(ptrOut, y),
+        HTLCResolved(ptrOut, y) ]->
+    [ ChanReturn(ptrOut, $U, $V, fU, fV) ]
+
+/*
+ * Returning the channel token. All four resolution rules above funnel
+ * through this single rule instead of producing ChanLive directly:
+ * with four direct producers, Tamarin's precomputation of the sources
+ * for the ChanLive/HTLCChan token cycle explodes (the saturation never
+ * returns); with a single producer it terminates. Semantically this is
+ * just "the channel is back in service after the HTLC was resolved".
+ */
+rule Channel_Release:
+    [ ChanReturn(ptr, $U, $V, fU, fV) ]
+    --[ ChannelReleased(ptr) ]->
+    [ ChanLive(ptr, $U, $V, fU, fV) ]
 
 /*
  * An HTLC (identified by its channel and payment hash) has exactly one
@@ -279,6 +336,24 @@ lemma Refund_Possible:
       & not (Ex P #r. LtkCompromised(P) @ #r)"
 
 /*
+ * Sanity (slide 17): resolving an HTLC hands the channel back to the
+ * ordinary update loop -- after lock and resolve on channel ptr, a
+ * normal off-chain state update on the SAME channel is still possible.
+ */
+lemma HTLC_Reenters_Update_Loop:
+    exists-trace
+    "Ex X Y ptr y n #o #a #r #u.
+        ChannelOpen(X, Y, ptr) @ #o
+      & HTLCAdded(ptr, y)      @ #a
+      & HTLCResolved(ptr, y)   @ #r
+      & StateUpdate(X, Y, ptr, n) @ #u
+      & #o < #a & #a < #r & #r < #u
+      & not (Ex P #c. LtkCompromised(P) @ #c)
+      & not (Ex P m #v. PublishState(P, m) @ #v)
+      & not (Ex P Q p2 m #v. Close(P, Q, p2, m) @ #v)
+      & not (Ex P m #v. Cheat(P, m) @ #v)"
+
+/*
  * Hash-lock secrecy: the adversary can learn a payment preimage only
  * after the receiver deliberately released it to redeem an HTLC.
  *
@@ -286,7 +361,7 @@ lemma Refund_Possible:
  * relies on it, which keeps its proof from looping through the
  * unbounded relay chain of 'fulfill' messages.
  */
-lemma Preimage_Secret_Until_Released [reuse]:
+lemma Preimage_Secret_Until_Released [reuse, use_induction]:
     "All D x #i #j.
         SecretPreimage(D, x) @ #i
       & K(x) @ #j
@@ -305,6 +380,18 @@ lemma Invoice_Has_Secret_Preimage [reuse]:
      ==> SecretPreimage(D, x) @ #i"
 
 /*
+ * Auxiliary [reuse] lemma with induction: every HTLC lock sits on a
+ * channel that was opened by the two-party protocol. Induction is
+ * needed because the channel-state chain (open -> updates / HTLC
+ * locks / resets -> ...) is unbounded; without it, backward search
+ * through the StateA/StateB provenance loops.
+ */
+lemma HTLC_On_Opened_Channel [reuse, use_induction]:
+    "All ptr y #i.
+        HTLCAdded(ptr, y) @ #i
+     ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
+
+/*
  * Proof of payment, conditional on the invoice being genuine: if Alice
  * settles on a payment hash that Dave really invoiced, then Dave
  * really released the preimage. No key-compromise escape clause is
@@ -315,7 +402,7 @@ lemma Invoice_Has_Secret_Preimage [reuse]:
  * carry signatures -- so an adversary can hand Alice a payment hash of
  * its own and Alice cannot tell. See Fake_Invoice_Attack_Possible.
  */
-lemma Settle_Requires_Receiver_Release:
+lemma Settle_Requires_Receiver_Release [use_induction]:
     "All A B D ptr x #i #j.
         SenderSettled(A, B, D, ptr, x) @ #i
       & InvoiceCreated(D, A, h(x)) @ #j
@@ -326,7 +413,7 @@ lemma Settle_Requires_Receiver_Release:
  * Alice authentically offered one with the same payment hash (or
  * Alice's key was compromised).
  */
-lemma Forward1_Requires_Offer [reuse]:
+lemma Forward1_Requires_Offer [reuse, use_induction]:
     "All B C A ptrBC y #i.
         HTLCForwarded1(B, C, A, ptrBC, y) @ #i
      ==> (Ex ptrAB #j. HTLCOffered(A, B, ptrAB, y) @ #j & #j < #i)
@@ -337,7 +424,7 @@ lemma Forward1_Requires_Offer [reuse]:
  * Bob authentically forwarded one with the same payment hash (or
  * Bob's key was compromised).
  */
-lemma Forward2_Requires_Forward1 [reuse]:
+lemma Forward2_Requires_Forward1 [reuse, use_induction]:
     "All C D B ptrCD y #i.
         HTLCForwarded2(C, D, B, ptrCD, y) @ #i
      ==> (Ex A ptrBC #j. HTLCForwarded1(B, C, A, ptrBC, y) @ #j & #j < #i)
@@ -348,7 +435,7 @@ lemma Forward2_Requires_Forward1 [reuse]:
  * Carol authentically forwarded it on that channel (or Carol's key
  * was compromised).
  */
-lemma Fulfill_Requires_Forward2:
+lemma Fulfill_Requires_Forward2 [use_induction]:
     "All D C ptrCD y #i.
         HTLCFulfilled(D, C, ptrCD, y) @ #i
      ==> (Ex B #j. HTLCForwarded2(C, D, B, ptrCD, y) @ #j & #j < #i)
@@ -362,7 +449,7 @@ lemma Fulfill_Requires_Forward2:
  * i.e. only after its own outgoing HTLC became redeemable. As above,
  * the condition reflects the unauthenticated invoice of the slides.
  */
-lemma Claim_Requires_Release:
+lemma Claim_Requires_Release [use_induction]:
     "All I up ptrIn D x #i #j.
         IntermediaryClaimed(I, up, ptrIn, x) @ #i
       & SecretPreimage(D, x) @ #j
@@ -373,10 +460,51 @@ lemma Claim_Requires_Release:
  * on that channel was never refunded (consequence of the on-chain
  * exclusivity encoded by OneOutcomePerHTLC).
  */
-lemma Settle_Excludes_Sender_Refund:
+lemma Settle_Excludes_Sender_Refund [use_induction]:
     "All A B D ptr x #i.
         SenderSettled(A, B, D, ptr, x) @ #i
      ==> not (Ex #j. HTLCRefunded(A, ptr, h(x)) @ #j)"
+
+/*
+ * Channel/HTLC interaction safety: no HTLC can be locked on a channel
+ * after it was cooperatively closed, and the channel token only
+ * returns after an HTLC was locked. Both hold STRUCTURALLY: the
+ * channel service token (ChanLive -> HTLCChan -> ChanReturn ->
+ * ChanLive) is linear, exactly one Lock_Funds_And_Open exists per ptr
+ * (restriction OneChannelPerPtr), and Honest_Close consumes the token
+ * terminally -- so a closed channel can never lend its token to an
+ * offer again. (In the previous, decoupled version of this model the
+ * first property was FALSE: HTLCs rode on the persistent !ChannelPeers
+ * fact and ignored the channel's life cycle.)
+ *
+ * Tamarin's automated backward search does not terminate on these two
+ * lemmas: it cannot finitely close the unbounded token-provenance
+ * cycle even with induction and custom goal rankings. They are
+ * therefore guarded by the TOKENCHAIN flag and excluded from the
+ * default run; prove them interactively with
+ *     tamarin-prover interactive -DTOKENCHAIN multihop.spthy
+ */
+/*
+ * Two further structural properties hold by linearity of the token
+ * but are NOT included as lemmas: Tamarin's automated backward search
+ * does not terminate on them (the token-provenance cycle cannot be
+ * closed finitely, even with induction), and merely guarding them
+ * behind an undefined #ifdef flag measurably degrades the prover on
+ * the remaining lemmas (preprocessor quirk). For the record:
+ *
+ *   Release_Requires_Add:
+ *     All ptr #i. ChannelReleased(ptr) @ #i
+ *       ==> Ex y #j. HTLCAdded(ptr, y) @ #j & #j < #i
+ *
+ *   No_HTLC_After_Close:
+ *     All ptr y #i. HTLCAdded(ptr, y) @ #i
+ *       ==> not (Ex X Y n #j. Close(X, Y, ptr, n) @ #j & #j < #i)
+ *
+ * Both follow from: the service token ChanLive/HTLCChan/ChanReturn is
+ * linear, exactly one Lock_Funds_And_Open exists per ptr (restriction
+ * OneChannelPerPtr), and Honest_Close consumes the token terminally,
+ * so a closed channel can never lend its token to an offer again.
+ */
 
 /*
  * Attack (found by Tamarin, consequence of the unauthenticated

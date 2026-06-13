@@ -115,6 +115,13 @@ rule Both_States_Committed:
  * !ChannelPeers is emitted in BOTH orientations so that higher layers
  * (e.g. the HTLC multi-hop layer in multihop.spthy) can address the
  * channel from the point of view of either endpoint.
+ *
+ * ChanLive is the channel's linear service token and off-chain HTLC
+ * ledger: it exists exactly while the channel is open and carries the
+ * balances of the HTLC layer. The HTLC layer checks it out when an
+ * HTLC is locked and returns it on resolution; cooperative closing
+ * consumes it, so a channel can only be closed cooperatively when no
+ * HTLC is pending, and no HTLC can be locked after the close.
  */
 rule Lock_Funds_And_Open:
     [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0),
@@ -123,6 +130,7 @@ rule Lock_Funds_And_Open:
         NewStateBuilt($A, $B, ptr, '0', ~fA, ~fB) ]->
     [ StateA($A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB),
       StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
+      ChanLive(ptr, $A, $B, ~fA, ~fB),
       !ValidOnChain(ptr),
       !ChannelRecord(ptr, $A, $B),
       !ChannelPeers(ptr, $A, $B),
@@ -242,6 +250,7 @@ rule Honest_Close:
     in
     [ StateA($A, $B, ptr, n, sA, commitA, fA, fB),
       StateB($A, $B, ptr, n, sB, commitB, fA, fB),
+      ChanLive(ptr, $A, $B, fLA, fLB),
       !ValidOnChain(ptr),
       !Ltk($A, ltkA), !Ltk($B, ltkB),
       !Pk($A, pkA),   !Pk($B, pkB) ]
