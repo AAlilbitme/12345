@@ -90,7 +90,8 @@ rule Lock_Funds_And_Open:
       StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
       !ValidOnChain(ptr),
       !ChannelRecord(ptr, $A, $B),
-      !ChannelConnect(ptr, $A, $B) ]
+      !ChannelConnect(ptr, $A, $B),
+      ChannelActive(ptr) ]
 
 rule Update_State:
     let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
@@ -196,7 +197,8 @@ rule Honest_Close:
       StateB($A, $B, ptr, n, sB, commitB, fA, fB),
       !ValidOnChain(ptr),
       !Ltk($A, ltkA), !Ltk($B, ltkB),
-      !Pk($A, pkA),   !Pk($B, pkB) ]
+      !Pk($A, pkA),   !Pk($B, pkB),
+      ChannelActive(ptr) ]
     --[ Close($A, $B, ptr, n),
         OnChainInstantProduce($A, n),
         OnChainInstantProduce($B, n),
@@ -274,12 +276,14 @@ rule Alice_Offer_HTLC:
     [ In(<'SecretDA', invoice, sigD>),
       !Pk($Dave, pkD),
       !Ltk($Alice, ltkA),
-      !ChannelConnect(ptrAB, $Alice, $Bob) ]
+      !ChannelConnect(ptrAB, $Alice, $Bob),
+      ChannelActive(ptrAB) ]
     --[ HTLCOffered($Alice, $Bob, ptrAB, y),
         HTLCAdded(ptrAB, y),
         Eq(verify(sigD, invoice, pkD), true) ]->
     [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
-      Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>) ]
+      Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>),
+      ChannelActive(ptrAB) ]
 
 rule Bob_Forward_HTLC:
     let offer    = <'htlc1', ptrAB, $Alice, $Bob, y>
@@ -289,14 +293,16 @@ rule Bob_Forward_HTLC:
     [ In(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>),
       !Pk($Alice, pkA), !Ltk($Bob, ltkB),
       !ChannelConnect(ptrAB, $Alice, $Bob),
-      !ChannelConnect(ptrBC, $Bob, $Carol) ]
+      !ChannelConnect(ptrBC, $Bob, $Carol),
+      ChannelActive(ptrBC) ]
     --[ HTLCForwarded1($Bob, $Carol, $Alice, ptrBC, y),
         HTLCAdded(ptrBC, y),
         ForwardHTLC($Bob, ptrAB, ptrBC, y),
         Neq(ptrAB, ptrBC),
         Eq(verify(sigA, offer, pkA), true) ]->
     [ IntermediaryPending($Bob, $Alice, $Carol, ptrAB, ptrBC, y),
-      Out(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>) ]
+      Out(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>),
+      ChannelActive(ptrBC) ]
 
 rule Carol_Forward_HTLC:
     let offer    = <'htlc2', ptrBC, $Bob, $Carol, y>
@@ -306,14 +312,16 @@ rule Carol_Forward_HTLC:
     [ In(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>),
       !Pk($Bob, pkB), !Ltk($Carol, ltkC),
       !ChannelConnect(ptrBC, $Bob, $Carol),
-      !ChannelConnect(ptrCD, $Carol, $Dave) ]
+      !ChannelConnect(ptrCD, $Carol, $Dave),
+      ChannelActive(ptrCD) ]
     --[ HTLCForwarded2($Carol, $Dave, $Bob, ptrCD, y),
         HTLCAdded(ptrCD, y),
         ForwardHTLC($Carol, ptrBC, ptrCD, y),
         Neq(ptrBC, ptrCD),
         Eq(verify(sigB, offer, pkB), true) ]->
     [ IntermediaryPending($Carol, $Bob, $Dave, ptrBC, ptrCD, y),
-      Out(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>) ]
+      Out(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>),
+      ChannelActive(ptrCD) ]
 
 rule Dave_Fulfill_HTLC:
     let y        = h(x)
@@ -548,32 +556,25 @@ lemma Intermediary_Never_Loses:
       & Refunded(ptrIn, y) @ #j
      ==> Ex #r. LtkCompromised(M) @ #r"
 
-// ── Future work note ──────────────────────────────────────────────────────
-//
-// No_HTLC_After_Close — that an HTLC cannot be offered on a channel after
-// that channel is closed — is deliberately omitted here.
-//
-// The model gates HTLC offers on the persistent fact !ChannelConnect(ptr,A,B),
-// which survives Honest_Close.  Enforcing the property therefore requires
-// coupling HTLC offers to a revocable condition.  The two natural Tamarin
-// approaches both have costs:
-//
-//   (a) consume-and-restore a linear ChannelActive(ptr) fact in each offer
-//       rule — structurally sound, but the backward source chain for
-//       ChannelActive cycles through the offer rules and never terminates.
-//
-//   (b) add a restriction that bars HTLCAdded after Close — sound but
-//       circular (it asserts the property rather than proves it from the
-//       operational model).
-//
-// The recommended implementation path is to extend the on-chain layer with
-// an explicit linear FundingUTXO(ptr) fact produced by Lock_Funds_And_Open
-// and consumed by each close rule, and to restructure HTLC commitment as
-// outputs within the commitment transaction referencing that UTXO.  This
-// makes "no HTLC after close" follow from the spend graph (the UTXO is
-// gone) rather than from gating an abstract state fact, removing the
-// backward-search cycle.  That extension is the same one needed to model
-// CLTV timeout guarantees and should be undertaken as a deliberate remodel
-// of the on-chain layer rather than as an incremental edit to this file.
+// ChannelActive(ptr) is a linear fact produced exactly once by
+// Lock_Funds_And_Open and consumed exactly once by Honest_Close.
+// HTLC offer rules consume-and-restore it, so it is available for every
+// offer on an open channel but unavailable after close.
+// [use_induction] breaks the backward-search cycle that would otherwise
+// arise from the consume-and-restore pattern.
+lemma ChannelActive_Provenance [reuse, use_induction]:
+    "All ptr y #i.
+        HTLCAdded(ptr, y) @ #i
+     ==> Ex A B #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
+
+// No HTLC may be added to a channel on or after the channel is honestly
+// closed.  Proof follows from the linear ChannelActive(ptr) fact:
+// Honest_Close consumes it without restoring it, so any HTLC offer rule
+// that needs it must have fired strictly before the close.
+lemma No_HTLC_After_Close [use_induction]:
+    "All A B ptr n y #i #j.
+        Close(A, B, ptr, n) @ #i
+      & HTLCAdded(ptr, y) @ #j
+     ==> #j < #i"
 
 end
