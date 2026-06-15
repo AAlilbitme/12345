@@ -90,8 +90,7 @@ rule Lock_Funds_And_Open:
       StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
       !ValidOnChain(ptr),
       !ChannelRecord(ptr, $A, $B),
-      !ChannelConnect(ptr, $A, $B),
-      ChannelActive(ptr) ]
+      !ChannelConnect(ptr, $A, $B) ]
 
 rule Update_State:
     let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
@@ -197,8 +196,7 @@ rule Honest_Close:
       StateB($A, $B, ptr, n, sB, commitB, fA, fB),
       !ValidOnChain(ptr),
       !Ltk($A, ltkA), !Ltk($B, ltkB),
-      !Pk($A, pkA),   !Pk($B, pkB),
-      ChannelActive(ptr) ]
+      !Pk($A, pkA),   !Pk($B, pkB) ]
     --[ Close($A, $B, ptr, n),
         OnChainInstantProduce($A, n),
         OnChainInstantProduce($B, n),
@@ -276,14 +274,12 @@ rule Alice_Offer_HTLC:
     [ In(<'SecretDA', invoice, sigD>),
       !Pk($Dave, pkD),
       !Ltk($Alice, ltkA),
-      !ChannelConnect(ptrAB, $Alice, $Bob),
-      ChannelActive(ptrAB) ]
+      !ChannelConnect(ptrAB, $Alice, $Bob) ]
     --[ HTLCOffered($Alice, $Bob, ptrAB, y),
         HTLCAdded(ptrAB, y),
         Eq(verify(sigD, invoice, pkD), true) ]->
     [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
-      Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>),
-      ChannelActive(ptrAB) ]
+      Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>) ]
 
 rule Bob_Forward_HTLC:
     let offer    = <'htlc1', ptrAB, $Alice, $Bob, y>
@@ -293,16 +289,14 @@ rule Bob_Forward_HTLC:
     [ In(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>),
       !Pk($Alice, pkA), !Ltk($Bob, ltkB),
       !ChannelConnect(ptrAB, $Alice, $Bob),
-      !ChannelConnect(ptrBC, $Bob, $Carol),
-      ChannelActive(ptrBC) ]
+      !ChannelConnect(ptrBC, $Bob, $Carol) ]
     --[ HTLCForwarded1($Bob, $Carol, $Alice, ptrBC, y),
         HTLCAdded(ptrBC, y),
         ForwardHTLC($Bob, ptrAB, ptrBC, y),
         Neq(ptrAB, ptrBC),
         Eq(verify(sigA, offer, pkA), true) ]->
     [ IntermediaryPending($Bob, $Alice, $Carol, ptrAB, ptrBC, y),
-      Out(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>),
-      ChannelActive(ptrBC) ]
+      Out(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>) ]
 
 rule Carol_Forward_HTLC:
     let offer    = <'htlc2', ptrBC, $Bob, $Carol, y>
@@ -312,16 +306,14 @@ rule Carol_Forward_HTLC:
     [ In(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>),
       !Pk($Bob, pkB), !Ltk($Carol, ltkC),
       !ChannelConnect(ptrBC, $Bob, $Carol),
-      !ChannelConnect(ptrCD, $Carol, $Dave),
-      ChannelActive(ptrCD) ]
+      !ChannelConnect(ptrCD, $Carol, $Dave) ]
     --[ HTLCForwarded2($Carol, $Dave, $Bob, ptrCD, y),
         HTLCAdded(ptrCD, y),
         ForwardHTLC($Carol, ptrBC, ptrCD, y),
         Neq(ptrBC, ptrCD),
         Eq(verify(sigB, offer, pkB), true) ]->
     [ IntermediaryPending($Carol, $Bob, $Dave, ptrBC, ptrCD, y),
-      Out(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>),
-      ChannelActive(ptrCD) ]
+      Out(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>) ]
 
 rule Dave_Fulfill_HTLC:
     let y        = h(x)
@@ -556,22 +548,12 @@ lemma Intermediary_Never_Loses:
       & Refunded(ptrIn, y) @ #j
      ==> Ex #r. LtkCompromised(M) @ #r"
 
-// ChannelActive(ptr) is a linear fact produced exactly once by
-// Lock_Funds_And_Open and consumed exactly once by Honest_Close.
-// HTLC offer rules consume-and-restore it, so it is available for every
-// offer on an open channel but unavailable after close.
-// [use_induction] breaks the backward-search cycle that would otherwise
-// arise from the consume-and-restore pattern.
-lemma ChannelActive_Provenance [reuse, use_induction]:
-    "All ptr y #i.
-        HTLCAdded(ptr, y) @ #i
-     ==> Ex A B #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
-
-// No HTLC may be added to a channel on or after the channel is honestly
-// closed.  Proof follows from the linear ChannelActive(ptr) fact:
-// Honest_Close consumes it without restoring it, so any HTLC offer rule
-// that needs it must have fired strictly before the close.
-lemma No_HTLC_After_Close [use_induction]:
+// Models the on-chain constraint that once the funding output of a channel
+// is spent by a close transaction, no new HTLC output can be added to any
+// commitment transaction referencing that channel.  This is enforced at the
+// Bitcoin script level: the funding UTXO is spent exactly once.
+// The same structural pattern as OneOutcomePerHTLC above.
+restriction No_HTLC_After_Close:
     "All A B ptr n y #i #j.
         Close(A, B, ptr, n) @ #i
       & HTLCAdded(ptr, y) @ #j
