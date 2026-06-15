@@ -83,7 +83,8 @@ rule Lock_Funds_And_Open:
     [ StateA($A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB),
       StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
       !ValidOnChain(ptr),
-      !ChannelRecord(ptr, $A, $B) ]
+      !ChannelRecord(ptr, $A, $B),
+      !ChannelConnect(ptr, $A, $B) ]
 
 rule Update_State:
     let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>

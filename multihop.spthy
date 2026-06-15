@@ -1,0 +1,579 @@
+theory multihop
+// configuration: "--stop-on-trace=seqdfs"
+// seqdfs is needed to find the multihop payment trace,
+// which is a search strategy that explores the state space of the
+// protocol sequentially, depth-first.
+begin
+
+builtins: hashing, signing
+
+// ── Library (PaymentChannels / 3.splib) ───────────────────────────────────
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk) ]
+
+rule Acquire_funds:
+    [ Fr(~f) ]
+    --[ FundsAcquired($A, ~f) ]->
+    [ Wallet($A, ~f) ]
+
+rule A_Send_Proposal:
+    let proposal = <'proposal', $A, $B, ~ptr>
+        sigA     = sign(proposal, ltkA)
+    in
+    [ Fr(~ptr), !Ltk($A, ltkA) ]
+    --[ A_ProposalSent($A, $B, ~ptr) ]->
+    [ A_WaitAck($A, $B, ~ptr),
+      Out(<'proposal', $A, $B, ~ptr, sigA>) ]
+
+rule B_Recv_Proposal:
+    let proposal = <'proposal', $A, $B, ptr>
+        sigB     = sign(proposal, ltkB)
+    in
+    [ !Ltk($B, ltkB), !Pk($A, pkA),
+      In(<'proposal', $A, $B, ptr, sigA>) ]
+    --[ ProposalExchange($A, $B, ptr),
+        Eq(verify(sigA, proposal, pkA), true) ]->
+    [ !ProposalCommitted($A, $B, ptr),
+      Out(<'proposal_ack', $A, $B, ptr, sigB>) ]
+
+rule A_Recv_From_B:
+    let proposal = <'proposal', $A, $B, ptr>
+    in
+    [ A_WaitAck($A, $B, ptr),
+      !Pk($B, pkB),
+      In(<'proposal_ack', $A, $B, ptr, sigB>) ]
+    --[ A_Received($A, $B, ptr),
+        Eq(verify(sigB, proposal, pkB), true) ]->
+    [ !A_HandshakeDone($A, $B, ptr) ]
+
+rule Create_State_A:
+    let commitA0 = <'commit', ptr, $A, $B, '0', h(~sA0)>
+        sigA0    = sign(commitA0, ltkA)
+    in
+    [ Fr(~sA0), !Ltk($A, ltkA),
+      !A_HandshakeDone($A, $B, ptr) ]
+    --[ StateCreated($A, '0', commitA0) ]->
+    [ CommittedStateA($A, $B, ptr, '0', ~sA0, commitA0, sigA0) ]
+
+rule Create_State_B:
+    let commitB0 = <'commit', ptr, $B, $A, '0', h(~sB0)>
+        sigB0    = sign(commitB0, ltkB)
+    in
+    [ Fr(~sB0), !Ltk($B, ltkB),
+      !ProposalCommitted($A, $B, ptr) ]
+    --[ StateCreated($B, '0', commitB0) ]->
+    [ CommittedStateB($A, $B, ptr, '0', ~sB0, commitB0, sigB0) ]
+
+rule Both_States_Committed:
+    [ CommittedStateA($A, $B, ptr, '0', sA0, commitA0, sigA0),
+      CommittedStateB($A, $B, ptr, '0', sB0, commitB0, sigB0),
+      !Pk($A, pkA), !Pk($B, pkB) ]
+    --[ Stage1Complete($A, $B, ptr),
+        Eq(verify(sigA0, commitA0, pkA), true),
+        Eq(verify(sigB0, commitB0, pkB), true) ]->
+    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0) ]
+
+rule Lock_Funds_And_Open:
+    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0),
+      Wallet($A, ~fA), Wallet($B, ~fB) ]
+    --[ ChannelOpen($A, $B, ptr), FundsLocked($A, $B, ptr),
+        NewStateBuilt($A, $B, ptr, '0', ~fA, ~fB) ]->
+    [ StateA($A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB),
+      StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
+      !ValidOnChain(ptr),
+      !ChannelRecord(ptr, $A, $B),
+      !ChannelConnect(ptr, $A, $B) ]
+
+rule Update_State:
+    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
+        newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
+        sigAnew    = sign(newCommitA, ltkA)
+        sigBnew    = sign(newCommitB, ltkB)
+    in
+    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
+      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
+      In(<fA_new, fB_new>) ]
+    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new) ]
+
+rule Revoke_Old_Secret:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !Pk($A, pkA), !Pk($B, pkB) ]
+    --[ StateUpdate($A, $B, ptr, n_new),
+        Revoke($A, n_old, sAold),
+        Revoke($B, n_old, sBold),
+        Eq(verify(sigAnew, newCommitA, pkA), true),
+        Eq(verify(sigBnew, newCommitB, pkB), true) ]->
+    [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
+      StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+
+rule Publish_Old_Grace_Period_A:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ PublishOldBeforeRevocation($A, n_old),
+        PublishState($A, n_old),
+        OnChainDelayedProduce($A, n_old),
+        OnChainInstantProduce($B, n_old) ]->
+    [ OnChainDelayed($A, n_old, oldCommitA),
+      OnChainInstant($B, n_old, oldCommitA) ]
+
+rule Publish_Old_Grace_Period_B:
+    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ PublishOldBeforeRevocation($B, n_old),
+        PublishState($B, n_old),
+        OnChainDelayedProduce($B, n_old),
+        OnChainInstantProduce($A, n_old) ]->
+    [ OnChainDelayed($B, n_old, oldCommitB),
+      OnChainInstant($A, n_old, oldCommitB) ]
+
+rule Publish_Current_A:
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB), !ValidOnChain(ptr) ]
+    --[ Publish($A, n, commitA),
+        PublishState($A, n),
+        OnChainDelayedProduce($A, n),
+        OnChainInstantProduce($B, n) ]->
+    [ OnChainDelayed($A, n, commitA),
+      OnChainInstant($B, n, commitA) ]
+
+rule Publish_Current_B:
+    [ StateB($A, $B, ptr, n, sB, commitB, fA, fB), !ValidOnChain(ptr) ]
+    --[ Publish($B, n, commitB),
+        PublishState($B, n),
+        OnChainDelayedProduce($B, n),
+        OnChainInstantProduce($A, n) ]->
+    [ OnChainDelayed($B, n, commitB),
+      OnChainInstant($A, n, commitB) ]
+
+rule Publish_Pending_A:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ Publish($A, n_new, newCommitA),
+        PublishFromPending($A, n_old, n_new),
+        OnChainDelayedProduce($A, n_new),
+        OnChainInstantProduce($B, n_new) ]->
+    [ OnChainDelayed($A, n_new, newCommitA),
+      OnChainInstant($B, n_new, newCommitA) ]
+
+rule Publish_Pending_B:
+    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ Publish($B, n_new, newCommitB),
+        PublishFromPending($B, n_old, n_new),
+        OnChainDelayedProduce($B, n_new),
+        OnChainInstantProduce($A, n_new) ]->
+    [ OnChainDelayed($B, n_new, newCommitB),
+      OnChainInstant($A, n_new, newCommitB) ]
+
+rule Honest_Close:
+    let closetx = <'commit', ptr, $A, $B, n, fA, fB>
+        signA   = sign(closetx, ltkA)
+        signB   = sign(closetx, ltkB)
+    in
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB),
+      StateB($A, $B, ptr, n, sB, commitB, fA, fB),
+      !ValidOnChain(ptr),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      !Pk($A, pkA),   !Pk($B, pkB) ]
+    --[ Close($A, $B, ptr, n),
+        OnChainInstantProduce($A, n),
+        OnChainInstantProduce($B, n),
+        Eq(verify(signA, closetx, pkA), true),
+        Eq(verify(signB, closetx, pkB), true) ]->
+    [ OnChainInstant($A, n, closetx),
+      OnChainInstant($B, n, closetx) ]
+
+rule Publish_Revoked_A:
+    [ !ChannelRecord(ptr, $A, $B),
+      !ValidOnChain(ptr),
+      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+    --[ PublishRevoked($A, n_old, oldCommitA),
+        Cheat($A, n_old) ]->
+    [ OnChainCheat($A, $B, n_old, oldCommitA) ]
+
+rule Publish_Revoked_B:
+    [ !ChannelRecord(ptr, $A, $B),
+      !ValidOnChain(ptr),
+      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+    --[ PublishRevoked($B, n_old, oldCommitB),
+        Cheat($B, n_old) ]->
+    [ OnChainCheat($B, $A, n_old, oldCommitB) ]
+
+rule Punish_A:
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+    --[ Punish($B, $A, n_old) ]->
+    [ AllFundsTo($B) ]
+
+rule Punish_B:
+    [ OnChainCheat($B, $A, n_old, oldCommitB),
+      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+    --[ Punish($A, $B, n_old) ]->
+    [ AllFundsTo($A) ]
+
+rule Instant_Funds_A:
+    [ OnChainInstant($A, n, txContent) ]
+    --[ FundsSettled($A, n), SettledTx($A, txContent) ]->
+    [ ]
+
+rule Instant_Funds_B:
+    [ OnChainInstant($B, n, txContent) ]
+    --[ FundsSettled($B, n), SettledTx($B, txContent) ]->
+    [ ]
+
+rule Claim_Funds_A:
+    [ OnChainDelayed($A, n, txContent) ]
+    --[ ClaimFunds($A, n), CSVPassed($A, n), SettledTx($A, txContent) ]->
+    [ FundsTo($A, n) ]
+
+rule Claim_Funds_B:
+    [ OnChainDelayed($B, n, txContent) ]
+    --[ ClaimFunds($B, n), CSVPassed($B, n), SettledTx($B, txContent) ]->
+    [ FundsTo($B, n) ]
+
+// ── Multihop payment rules ────────────────────────────────────────────────
+
+rule Dave_Create_Invoice:
+    let y       = h(~x)
+        invoice = <$Dave, $Alice, y>
+        sigD    = sign(invoice, ltkD)
+    in
+    [ Fr(~x), !Ltk($Dave, ltkD) ]
+    --[ InvoiceCreated($Dave, $Alice, y),
+        SecretPreimage($Dave, ~x) ]->
+    [ ReceiverInv($Dave, $Alice, ~x),
+      Out(<'SecretDA', invoice, sigD>) ]
+
+rule Alice_Offer_HTLC:
+    let invoice = <$Dave, $Alice, y>
+        offer   = <'htlc1', ptrAB, $Alice, $Bob, y>
+        sigA    = sign(offer, ltkA)
+    in
+    [ In(<'SecretDA', invoice, sigD>),
+      !Pk($Dave, pkD),
+      !Ltk($Alice, ltkA),
+      !ChannelConnect(ptrAB, $Alice, $Bob) ]
+    --[ HTLCOffered($Alice, $Bob, ptrAB, y),
+        HTLCAdded(ptrAB, y),
+        Eq(verify(sigD, invoice, pkD), true) ]->
+    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
+      Out(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>) ]
+
+rule Bob_Forward_HTLC:
+    let offer    = <'htlc1', ptrAB, $Alice, $Bob, y>
+        offerFwd = <'htlc2', ptrBC, $Bob, $Carol, y>
+        sigB     = sign(offerFwd, ltkB)
+    in
+    [ In(<'htlc1', ptrAB, $Alice, $Bob, y, sigA>),
+      !Pk($Alice, pkA), !Ltk($Bob, ltkB),
+      !ChannelConnect(ptrAB, $Alice, $Bob),
+      !ChannelConnect(ptrBC, $Bob, $Carol) ]
+    --[ HTLCForwarded1($Bob, $Carol, $Alice, ptrBC, y),
+        HTLCAdded(ptrBC, y),
+        ForwardHTLC($Bob, ptrAB, ptrBC, y),
+        Neq(ptrAB, ptrBC),
+        Eq(verify(sigA, offer, pkA), true) ]->
+    [ IntermediaryPending($Bob, $Alice, $Carol, ptrAB, ptrBC, y),
+      Out(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>) ]
+
+rule Carol_Forward_HTLC:
+    let offer    = <'htlc2', ptrBC, $Bob, $Carol, y>
+        offerFwd = <'htlc3', ptrCD, $Carol, $Dave, y>
+        sigC     = sign(offerFwd, ltkC)
+    in
+    [ In(<'htlc2', ptrBC, $Bob, $Carol, y, sigB>),
+      !Pk($Bob, pkB), !Ltk($Carol, ltkC),
+      !ChannelConnect(ptrBC, $Bob, $Carol),
+      !ChannelConnect(ptrCD, $Carol, $Dave) ]
+    --[ HTLCForwarded2($Carol, $Dave, $Bob, ptrCD, y),
+        HTLCAdded(ptrCD, y),
+        ForwardHTLC($Carol, ptrBC, ptrCD, y),
+        Neq(ptrBC, ptrCD),
+        Eq(verify(sigB, offer, pkB), true) ]->
+    [ IntermediaryPending($Carol, $Bob, $Dave, ptrBC, ptrCD, y),
+      Out(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>) ]
+
+rule Dave_Fulfill_HTLC:
+    let y        = h(x)
+        offerFwd = <'htlc3', ptrCD, $Carol, $Dave, y>
+    in
+    [ ReceiverInv($Dave, $Alice, x),
+      In(<'htlc3', ptrCD, $Carol, $Dave, y, sigC>),
+      !Pk($Carol, pkC),
+      !ChannelConnect(ptrCD, $Carol, $Dave) ]
+    --[ HTLCFulfilled($Dave, $Carol, ptrCD, y),
+        PreimageReleased($Dave, x),
+        Redeemed(ptrCD, y),
+        Eq(verify(sigC, offerFwd, pkC), true) ]->
+    [ Out(<'fulfill', ptrCD, x>) ]
+
+// MidP learned x on its outgoing channel (ptrOut) and redeems its
+// incoming HTLC (ptrIn) with the same x.
+rule Intermediary_Settle:
+    [ IntermediaryPending(MidP, InP, OutP, ptrIn, ptrOut, y),
+      In(<'fulfill', ptrOut, x>) ]
+    --[ IntermediaryClaimed(MidP, InP, ptrIn, x),
+        Redeemed(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Out(<'fulfill', ptrIn, x>) ]
+
+rule Alice_Settle:
+    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
+      In(<'fulfill', ptrAB, x>) ]
+    --[ SenderSettled($Alice, $Bob, $Dave, ptrAB, x),
+        PaymentComplete($Alice, $Dave, h(x)),
+        Redeemed(ptrAB, y),
+        Eq(h(x), y) ]->
+    [ ]
+
+rule Open_Timeout:
+    [ !ChannelConnect(ptr, A, B) ]
+    --[ TimedOut(ptr) ]->
+    [ !Timeout(ptr) ]
+
+rule Sender_Timeout_Refund:
+    [ SenderPending($Alice, $Bob, $Dave, ptrAB, y),
+      !Timeout(ptrAB) ]
+    --[ HTLCRefunded($Alice, ptrAB, y),
+        Refunded(ptrAB, y) ]->
+    [ ]
+
+rule Intermediary_Timeout_Refund:
+    [ IntermediaryPending(MidP, InP, OutP, ptrIn, ptrOut, y),
+      !Timeout(ptrOut) ]
+    --[ HTLCRefunded(MidP, ptrOut, y),
+        Refunded(ptrOut, y) ]->
+    [ ]
+
+// ── Restrictions ──────────────────────────────────────────────────────────
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction OneChannelPerPtr:
+    "All A B C D ptr #i #j.
+       ChannelOpen(A, B, ptr) @ #i
+     & ChannelOpen(C, D, ptr) @ #j
+     ==> #i = #j"
+
+// An HTLC has exactly one outcome: redeemed with the preimage or
+// refunded after timeout, never both.
+restriction OneOutcomePerHTLC:
+    "All ptr y #i #j.
+       Redeemed(ptr, y) @ #i & Refunded(ptr, y) @ #j ==> F"
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+
+// A channel pointer can time out at most once (follows from
+// OneOutcomePerHTLC but stated explicitly for clarity).
+restriction OneTimeoutPerPtr:
+    "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
+
+// ── Library lemmas ────────────────────────────────────────────────────────
+
+lemma state_update [use_induction]:
+    "All A B ptr n #i.
+       StateUpdate(A, B, ptr, n) @ #i
+     ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
+
+lemma delayed_funds:
+    "All A n #i.
+       ClaimFunds(A, n) @ #i
+     ==> Ex #j. OnChainDelayedProduce(A, n) @ #j & #j < #i"
+
+lemma instant_funds:
+    "All A n #i.
+       FundsSettled(A, n) @ #i
+     ==> Ex #j. OnChainInstantProduce(A, n) @ #j & #j < #i"
+
+lemma settlement_is_traceable:
+    "All A n #i.
+       FundsSettled(A, n) @ #i
+     ==> Ex tx #j. SettledTx(A, tx) @ #j & #j = #i"
+
+// ── Multihop lemmas ───────────────────────────────────────────────────────
+
+lemma Loss_Requires_Inaction:
+    "All P ptrIn ptrOut y #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #i
+      & Redeemed(ptrOut, y) @ #j
+      & Refunded(ptrIn, y) @ #k
+     ==> not (Ex #l. Redeemed(ptrIn, y) @ #l)"
+
+lemma Multihop_Payment_Possible:
+    exists-trace
+    "Ex A B C D ptrAB ptrBC ptrCD x #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.
+        InvoiceCreated(D, A, h(x))            @ #t1
+      & HTLCOffered(A, B, ptrAB, h(x))        @ #t2
+      & HTLCForwarded1(B, C, A, ptrBC, h(x))  @ #t3
+      & HTLCForwarded2(C, D, B, ptrCD, h(x))  @ #t4
+      & HTLCFulfilled(D, C, ptrCD, h(x))      @ #t5
+      & IntermediaryClaimed(C, B, ptrBC, x)   @ #t6
+      & IntermediaryClaimed(B, A, ptrAB, x)   @ #t7
+      & SenderSettled(A, B, D, ptrAB, x)      @ #t8
+      & #t1 < #t2 & #t2 < #t3 & #t3 < #t4 & #t4 < #t5
+      & #t5 < #t6 & #t6 < #t7 & #t7 < #t8
+      & not (Ex P #r. LtkCompromised(P) @ #r)
+      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
+      & not (Ex P n #u. PublishState(P, n) @ #u)
+      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
+      & not (Ex P n #u. Cheat(P, n) @ #u)
+      & not (Ex P p y2 #u. HTLCRefunded(P, p, y2) @ #u)"
+
+lemma Distinct_Parties_Configuration:
+    exists-trace
+    "Ex A B C D ptrAB ptrBC ptrCD #c1 #c2 #c3.
+        ChannelOpen(A, B, ptrAB) @ #c1
+      & ChannelOpen(B, C, ptrBC) @ #c2
+      & ChannelOpen(C, D, ptrCD) @ #c3
+      & not (A = B) & not (A = C) & not (A = D)
+      & not (B = C) & not (B = D) & not (C = D)
+      & not (Ex P #r. LtkCompromised(P) @ #r)
+      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
+      & not (Ex P n #u. PublishState(P, n) @ #u)
+      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
+      & not (Ex P n #u. Cheat(P, n) @ #u)"
+
+lemma Refund_Possible:
+    exists-trace
+    "Ex A B D p y #i #j #k.
+        InvoiceCreated(D, A, y) @ #j
+      & HTLCOffered(A, B, p, y) @ #k
+      & HTLCRefunded(A, p, y) @ #i
+      & #j < #k & #k < #i
+      & not (Ex S MidP R p2 x #u. SenderSettled(S, MidP, R, p2, x) @ #u)
+      & not (Ex P #r. LtkCompromised(P) @ #r)"
+
+lemma Preimage_Secret_Until_Released [reuse]:
+    "All D x #i #j.
+        SecretPreimage(D, x) @ #i
+      & K(x) @ #j
+     ==> Ex #k. PreimageReleased(D, x) @ #k & #k < #j"
+
+lemma Invoice_Has_Secret_Preimage [reuse]:
+    "All D A x #i.
+        InvoiceCreated(D, A, h(x)) @ #i
+     ==> SecretPreimage(D, x) @ #i"
+
+// An HTLC is only ever added on a channel that was opened first.
+// Holds via the provenance of !ChannelConnect (produced only by
+// Lock_Funds_And_Open, which emits ChannelOpen).
+lemma HTLC_On_Opened_Channel [reuse, use_induction]:
+    "All ptr y #i.
+        HTLCAdded(ptr, y) @ #i
+     ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
+
+lemma Settle_Requires_Receiver_Release:
+    "All A B D ptr x #i #j.
+        SenderSettled(A, B, D, ptr, x) @ #i
+      & InvoiceCreated(D, A, h(x)) @ #j
+     ==> Ex #k. PreimageReleased(D, x) @ #k & #k < #i"
+
+lemma Forward1_Requires_Offer [reuse]:
+    "All B C A ptrBC y #i.
+        HTLCForwarded1(B, C, A, ptrBC, y) @ #i
+     ==> (Ex ptrAB #j. HTLCOffered(A, B, ptrAB, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(A) @ #r & #r < #i)"
+
+lemma Forward2_Requires_Forward1 [reuse]:
+    "All C D B ptrCD y #i.
+        HTLCForwarded2(C, D, B, ptrCD, y) @ #i
+     ==> (Ex A ptrBC #j. HTLCForwarded1(B, C, A, ptrBC, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(B) @ #r & #r < #i)"
+
+lemma Fulfill_Requires_Forward2:
+    "All D C ptrCD y #i.
+        HTLCFulfilled(D, C, ptrCD, y) @ #i
+     ==> (Ex B #j. HTLCForwarded2(C, D, B, ptrCD, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(C) @ #r & #r < #i)"
+
+lemma Claim_Requires_Release:
+    "All MidP InP ptrIn D x #i #j.
+        IntermediaryClaimed(MidP, InP, ptrIn, x) @ #i
+      & SecretPreimage(D, x) @ #j
+     ==> Ex #k. PreimageReleased(D, x) @ #k & #k < #i"
+
+lemma Settle_Excludes_Sender_Refund:
+    "All A B D ptr x #i.
+        SenderSettled(A, B, D, ptr, x) @ #i
+     ==> not (Ex #j. HTLCRefunded(A, ptr, h(x)) @ #j)"
+
+// Every settlement corresponds to a genuine invoice from the named
+// receiver D, unless D's signing key was compromised.
+lemma Invoice_Authenticates_Settlement:
+    "All A B D ptr x #i.
+        SenderSettled(A, B, D, ptr, x) @ #i
+     ==> (Ex #j. InvoiceCreated(D, A, h(x)) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(D) @ #r & #r < #i)"
+
+// A forged-invoice settlement is reachable, but only via key compromise.
+lemma Forged_Invoice_Requires_Key_Compromise:
+    exists-trace
+    "Ex A B D ptr x #i #r.
+        SenderSettled(A, B, D, ptr, x) @ #i
+      & LtkCompromised(D) @ #r
+      & not (Ex #j. InvoiceCreated(D, A, h(x)) @ #j)"
+
+// TIER 1 PROBE — without a timing model, a routing node M can have its
+// outgoing leg claimed while its incoming leg is refunded: a net loss,
+// no key compromise needed.
+// EXPECTED RESULT: FALSIFIED, with an honest counterexample trace.
+lemma Intermediary_Never_Loses:
+    "All M ptrIn ptrOut y #f #i #j.
+        ForwardHTLC(M, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & Refunded(ptrIn, y) @ #j
+     ==> Ex #r. LtkCompromised(M) @ #r"
+
+// ── Future work note ──────────────────────────────────────────────────────
+//
+// No_HTLC_After_Close — that an HTLC cannot be offered on a channel after
+// that channel is closed — is deliberately omitted here.
+//
+// The model gates HTLC offers on the persistent fact !ChannelConnect(ptr,A,B),
+// which survives Honest_Close.  Enforcing the property therefore requires
+// coupling HTLC offers to a revocable condition.  The two natural Tamarin
+// approaches both have costs:
+//
+//   (a) consume-and-restore a linear ChannelActive(ptr) fact in each offer
+//       rule — structurally sound, but the backward source chain for
+//       ChannelActive cycles through the offer rules and never terminates.
+//
+//   (b) add a restriction that bars HTLCAdded after Close — sound but
+//       circular (it asserts the property rather than proves it from the
+//       operational model).
+//
+// The recommended implementation path is to extend the on-chain layer with
+// an explicit linear FundingUTXO(ptr) fact produced by Lock_Funds_And_Open
+// and consumed by each close rule, and to restructure HTLC commitment as
+// outputs within the commitment transaction referencing that UTXO.  This
+// makes "no HTLC after close" follow from the spend graph (the UTXO is
+// gone) rather than from gating an abstract state fact, removing the
+// backward-search cycle.  That extension is the same one needed to model
+// CLTV timeout guarantees and should be undertaken as a deliberate remodel
+// of the on-chain layer rather than as an incremental edit to this file.
+
+end
