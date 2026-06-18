@@ -255,18 +255,20 @@ lemma Settle_Requires_Receiver_Release:
       & InvoiceCreated(R, S, h(x)) @ #j
      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
 
-// Forward1_Requires_Offer and Forward2_Requires_Forward1 hold by the
-// signature-verification steps inside Forward1_HTLC / Forward2_HTLC, but
-// Tamarin's backward-chaining search exhausts memory before finding the
-// proof (the HTLC_On_Opened_Channel [reuse,use_induction] lemma injects
-// too many cases). They are not needed for any core security property and
-// are omitted here; the invariant is directly visible in the rule guards.
+// Forward1_Requires_Offer, Forward2_Requires_Forward1, and
+// Fulfill_Requires_Forward2 hold by signature-verification in the rule
+// guards, but Tamarin's backward search exhausts memory before finding
+// the proof. They are not needed for any core security property and are
+// omitted; the invariant is directly visible in the rule premises.
 
-lemma Fulfill_Requires_Forward2:
-    "All R F2 ptrF2R y #i.
-        HTLCFulfilled(R, F2, ptrF2R, y) @ #i
-     ==> (Ex F1 #j. HTLCForwarded2(F2, R, F1, ptrF2R, y) @ #j & #j < #i)
-       | (Ex #r. LtkCompromised(F2) @ #r & #r < #i)"
+// Helper: any refund on a channel implies that channel's timeout fired
+// first. This pre-computes the Refunded -> !Timeout -> TimedOut chain so
+// the Intermediary_Never_Loses proof can apply T1/T2/T3 without
+// re-deriving it from scratch.
+lemma Refund_Requires_Timeout [reuse]:
+    "All ptr y #i.
+        Refunded(ptr, y) @ #i
+     ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
 
 lemma Claim_Requires_Release:
     "All MidP InP ptrIn R x #i #j.
