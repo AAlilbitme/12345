@@ -210,10 +210,6 @@ lemma Multihop_Payment_Possible:
       & #t1 < #t2 & #t2 < #t3 & #t3 < #t4 & #t4 < #t5
       & #t5 < #t6 & #t6 < #t7 & #t7 < #t8
       & not (Ex P #r. LtkCompromised(P) @ #r)
-      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
-      & not (Ex P n #u. PublishState(P, n) @ #u)
-      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
-      & not (Ex P n #u. Cheat(P, n) @ #u)
       & not (Ex P p y2 #u. HTLCRefunded(P, p, y2) @ #u)"
 
 lemma Distinct_Parties_Configuration:
@@ -224,11 +220,7 @@ lemma Distinct_Parties_Configuration:
       & ChannelOpen(F2, R, ptrF2R)   @ #c3
       & not (S = F1) & not (S = F2) & not (S = R)
       & not (F1 = F2) & not (F1 = R) & not (F2 = R)
-      & not (Ex P #r. LtkCompromised(P) @ #r)
-      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
-      & not (Ex P n #u. PublishState(P, n) @ #u)
-      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
-      & not (Ex P n #u. Cheat(P, n) @ #u)"
+      & not (Ex P #r. LtkCompromised(P) @ #r)"
 
 lemma Refund_Possible:
     exists-trace
