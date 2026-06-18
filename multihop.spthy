@@ -270,6 +270,23 @@ lemma Refund_Requires_Timeout [reuse]:
         Refunded(ptr, y) @ #i
      ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
 
+// ---------------------------------------------------------------------------
+// Gap 2: Replay / freshness.
+// The invoice (ReceiverInv) is a linear fact consumed by Receiver_Fulfill_HTLC,
+// and ~x is fresh per invoice, so a given preimage is released at most once.
+// This makes the single-use / anti-replay guarantee explicit: even if the
+// adversary captures and replays the public 'fulfill' message carrying x, the
+// receiver cannot be made to release the preimage for that invoice a second
+// time, and the linear pending facts downstream redeem each HTLC at most once.
+// (A misbehaving sender re-offering the SAME invoice is a sender-side concern,
+// not a replay attack; the security-relevant anchor is receiver single-release.)
+// ---------------------------------------------------------------------------
+lemma Invoice_Released_Once [reuse]:
+    "All R x #i #j.
+        PreimageReleased(R, x) @ #i
+      & PreimageReleased(R, x) @ #j
+     ==> #i = #j"
+
 lemma Claim_Requires_Release:
     "All MidP InP ptrIn R x #i #j.
         IntermediaryClaimed(MidP, InP, ptrIn, x) @ #i

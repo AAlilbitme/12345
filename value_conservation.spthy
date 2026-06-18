@@ -1,0 +1,157 @@
+// ===========================================================================
+// Gap 6: Value / balance conservation.
+//
+// The core multihop.spthy model tracks HTLC *existence* and *outcome* but not
+// *amounts*, so it cannot express "no money is created or destroyed" across a
+// payment.  This theory threads a signed amount v through every hop and proves
+// value conservation: the amount the receiver is committed to in the invoice is
+// exactly the amount the sender locks, and that amount is preserved unchanged
+// at every forwarding hop -- unless a signing key was compromised.
+//
+// We model the zero-fee case (each hop forwards the same v).  A fee model would
+// replace the equality v_in = v_out with v_in = v_out + fee at each hop; the
+// conservation argument is structurally identical.
+// ===========================================================================
+theory value_conservation
+begin
+
+builtins: hashing, signing
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A, ~ltk) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk) ]
+
+rule Open_Channel:
+    [ Fr(~ptr) ]
+    --[ ChannelOpen($A, $B, ~ptr) ]->
+    [ !ChannelConnect(~ptr, $A, $B) ]
+
+// Receiver commits to BOTH the payment hash y and the amount v in a signed
+// invoice.  Binding v in the signature is what makes value non-malleable.
+rule Receiver_Create_Invoice:
+    let y       = h(~x)
+        invoice = <$Receiver, $Sender, y, v>
+        sigR    = sign(invoice, ltkR)
+    in
+    [ Fr(~x), In(v), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y, v),
+        SecretPreimage($Receiver, ~x) ]->
+    [ ReceiverInv($Receiver, $Sender, ~x, v),
+      Out(<'inv', invoice, sigR>) ]
+
+// Sender locks amount v on the first channel.  It only does so after checking
+// the receiver's signed invoice, so the v it locks is the v the receiver asked
+// for.
+rule Sender_Offer_HTLC:
+    let invoice = <$Receiver, $Sender, y, v>
+        offer   = <'htlc1', ptrSF1, $Sender, $Forward1, y, v>
+        sigS    = sign(offer, ltkS)
+    in
+    [ In(<'inv', invoice, sigR>),
+      !Pk($Receiver, pkR),
+      !Ltk($Sender, ltkS),
+      !ChannelConnect(ptrSF1, $Sender, $Forward1) ]
+    --[ SenderLocked($Sender, $Receiver, ptrSF1, y, v),
+        ValueOffered(ptrSF1, y, v),
+        Eq(verify(sigR, invoice, pkR), true) ]->
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y, v),
+      Out(<'htlc1', ptrSF1, $Sender, $Forward1, y, v, sigS>) ]
+
+// Each intermediary forwards the SAME amount v (zero-fee), re-signing the
+// outgoing HTLC.  It first verifies the incoming HTLC's signature, so the v it
+// forwards is bound to the v it received.
+rule Forward1_HTLC:
+    let offer    = <'htlc1', ptrSF1, $Sender, $Forward1, y, v>
+        offerFwd = <'htlc2', ptrF1F2, $Forward1, $Forward2, y, v>
+        sigF1    = sign(offerFwd, ltkF1)
+    in
+    [ In(<'htlc1', ptrSF1, $Sender, $Forward1, y, v, sigS>),
+      !Pk($Sender, pkS), !Ltk($Forward1, ltkF1),
+      !ChannelConnect(ptrSF1, $Sender, $Forward1),
+      !ChannelConnect(ptrF1F2, $Forward1, $Forward2) ]
+    --[ ValueForwarded($Forward1, ptrSF1, ptrF1F2, y, v),
+        ValueOffered(ptrF1F2, y, v),
+        Eq(verify(sigS, offer, pkS), true) ]->
+    [ IntermediaryPending($Forward1, $Sender, $Forward2, ptrSF1, ptrF1F2, y, v),
+      Out(<'htlc2', ptrF1F2, $Forward1, $Forward2, y, v, sigF1>) ]
+
+rule Forward2_HTLC:
+    let offer    = <'htlc2', ptrF1F2, $Forward1, $Forward2, y, v>
+        offerFwd = <'htlc3', ptrF2R, $Forward2, $Receiver, y, v>
+        sigF2    = sign(offerFwd, ltkF2)
+    in
+    [ In(<'htlc2', ptrF1F2, $Forward1, $Forward2, y, v, sigF1>),
+      !Pk($Forward1, pkF1), !Ltk($Forward2, ltkF2),
+      !ChannelConnect(ptrF1F2, $Forward1, $Forward2),
+      !ChannelConnect(ptrF2R, $Forward2, $Receiver) ]
+    --[ ValueForwarded($Forward2, ptrF1F2, ptrF2R, y, v),
+        ValueOffered(ptrF2R, y, v),
+        Eq(verify(sigF1, offer, pkF1), true) ]->
+    [ IntermediaryPending($Forward2, $Forward1, $Receiver, ptrF1F2, ptrF2R, y, v),
+      Out(<'htlc3', ptrF2R, $Forward2, $Receiver, y, v, sigF2>) ]
+
+// Receiver accepts the final HTLC.  It only does so if the amount v on the
+// incoming HTLC matches the amount v it committed to in its own invoice
+// (ReceiverInv carries v), so a mismatched amount is rejected.
+rule Receiver_Accept_HTLC:
+    let y        = h(x)
+        offerFwd = <'htlc3', ptrF2R, $Forward2, $Receiver, y, v>
+    in
+    [ ReceiverInv($Receiver, $Sender, x, v),
+      In(<'htlc3', ptrF2R, $Forward2, $Receiver, y, v, sigF2>),
+      !Pk($Forward2, pkF2),
+      !ChannelConnect(ptrF2R, $Forward2, $Receiver) ]
+    --[ ReceiverAccepted($Receiver, $Forward2, ptrF2R, y, v),
+        ValueClaimed($Receiver, y, v),
+        Eq(verify(sigF2, offerFwd, pkF2), true) ]->
+    [ ]
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+// ---------------------------------------------------------------------------
+// Lemmas
+// ---------------------------------------------------------------------------
+
+lemma Ltk_Known_Implies_Compromised [reuse]:
+    "All A ltk #i #j.
+        KeyGen(A, ltk) @ #i & !KU(ltk) @ #j
+     ==> Ex #r. LtkCompromised(A) @ #r"
+
+// Sanity: a full payment with a single consistent amount v is reachable.
+lemma Payment_With_Amount_Possible:
+    exists-trace
+    "Ex S F1 F2 R p1 p2 p3 y v #a #b #c #d.
+        SenderLocked(S, R, p1, y, v)        @ #a
+      & ValueForwarded(F1, p1, p2, y, v)    @ #b
+      & ValueForwarded(F2, p2, p3, y, v)    @ #c
+      & ValueClaimed(R, y, v)               @ #d
+      & not (Ex P #r. LtkCompromised(P) @ #r)"
+
+// CORE: value conservation.  If the sender locked amount v for payment hash y,
+// and the receiver claimed amount vr for the same y, then v = vr -- no value is
+// created or destroyed along the path -- unless some key was compromised.
+lemma Value_Conserved_End_To_End:
+    "All S R p y v vr #i #j.
+        SenderLocked(S, R, p, y, v) @ #i
+      & ValueClaimed(R, y, vr)      @ #j
+     ==> v = vr
+       | (Ex P #r. LtkCompromised(P) @ #r)"
+
+// Per-hop conservation: the amount a node forwards equals the amount that was
+// offered to it on the incoming channel (no skimming at a hop) unless that
+// node's upstream signer was compromised.
+lemma Value_Conserved_Per_Hop:
+    "All P pIn pOut y vIn vOut #i #j.
+        ValueOffered(pIn, y, vIn)        @ #i
+      & ValueForwarded(P, pIn, pOut, y, vOut) @ #j
+     ==> vIn = vOut
+       | (Ex Q #r. LtkCompromised(Q) @ #r)"
+
+end
