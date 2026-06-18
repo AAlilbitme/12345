@@ -186,6 +186,21 @@ restriction IntermediaryMustClaim:
       & #i < #k
      ==> Ex #l. Redeemed(ptrIn, y) @ #l"
 
+// (T4) Direct CLTV-delta invariant: the outgoing HTLC must be redeemed
+// strictly before the incoming channel's timeout fires, regardless of
+// whether the outgoing channel itself ever produces a TimedOut event.
+// T1+T2 only establish Redeemed(ptrOut) < TimedOut(ptrIn) when
+// TimedOut(ptrOut) is also present in the trace; T4 closes that gap.
+// Semantics: an outgoing redemption that happens after the incoming
+// timeout is not observable by the intermediary in time to sweep, so
+// the protocol forbids such redemptions from occurring.
+restriction ForwardTimeGapStrict:
+    "All P ptrIn ptrOut y #f #i #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & TimedOut(ptrIn)  @ #k
+     ==> #i < #k"
+
 // ---------------------------------------------------------------------------
 // Lemmas
 // ---------------------------------------------------------------------------
