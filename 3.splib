@@ -1,0 +1,59 @@
+// Shared preamble for the multihop Lightning Network model.
+// Provides key management, channel lifecycle, and stub rules for actions that
+// are negated in existence lemmas (so Tamarin can still find traces where they
+// do not fire).
+
+builtins: hashing, signing
+
+// ---------------------------------------------------------------------------
+// Key management
+// ---------------------------------------------------------------------------
+
+// KeyGen carries both the party name and the key so that
+// Ltk_Known_Implies_Compromised can relate !KU(ltk) back to the owner.
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A, ~ltk) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk) ]
+
+// ---------------------------------------------------------------------------
+// Channel lifecycle
+// ---------------------------------------------------------------------------
+
+// Opening a channel creates a persistent !ChannelConnect fact and records
+// the open event so HTLC_On_Opened_Channel can refer to it.
+rule Open_Channel:
+    [ Fr(~ptr) ]
+    --[ ChannelOpen($A, $B, ~ptr) ]->
+    [ !ChannelConnect(~ptr, $A, $B) ]
+
+// ---------------------------------------------------------------------------
+// Stub rules for off-chain state machine actions
+// These are only included so that existence lemmas can negate them;
+// they play no role in the payment-routing logic.
+// ---------------------------------------------------------------------------
+
+rule State_Update_Stub:
+    [ Fr(~ptr), Fr(~n) ]
+    --[ StateUpdate($A, $B, ~ptr, ~n) ]->
+    [ ]
+
+rule Publish_State_Stub:
+    [ Fr(~n) ]
+    --[ PublishState($A, ~n) ]->
+    [ ]
+
+rule Close_Stub:
+    [ Fr(~ptr), Fr(~n) ]
+    --[ Close($A, $B, ~ptr, ~n) ]->
+    [ ]
+
+rule Cheat_Stub:
+    [ Fr(~n) ]
+    --[ Cheat($A, ~n) ]->
+    [ ]
