@@ -2,10 +2,6 @@
 // channel network, with a timing model that makes Intermediary_Never_Loses
 // provable.
 theory multihop
-configuration: "--stop-on-trace=seqdfs"
-// seqdfs is needed to find the multihop payment trace,
-// which is a search strategy that explores the state space of the protocol
-// sequentially, depth-first.
 begin
 
 #include "3.splib"
@@ -136,7 +132,7 @@ rule Intermediary_Timeout_Refund:
 // Restrictions
 // ---------------------------------------------------------------------------
 
-// On-chain exclusivity: an HTLC has exactly one outcome — redeem with the
+// On-chain exclusivity: an HTLC has exactly one outcome -- redeem with the
 // preimage or refund after the timeout, never both.
 restriction OneOutcomePerHTLC:
     "All ptr y #i #j.
@@ -153,7 +149,7 @@ restriction OneTimeoutPerPtr:
     "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
 
 // ---------------------------------------------------------------------------
-// Timing model — these three restrictions together make
+// Timing model -- these three restrictions together make
 // Intermediary_Never_Loses provable without key compromise.
 // ---------------------------------------------------------------------------
 
@@ -321,9 +317,9 @@ lemma Loss_Requires_Inaction:
       & Refunded(ptrIn, y) @ #k
      ==> not (Ex #l. Redeemed(ptrIn, y) @ #l)"
 
-// With the timing model (T1–T3), this lemma is now provable: a routing node
+// With the timing model (T1-T3), this lemma is now provable: a routing node
 // that loses on a hop must have had its key compromised.
-// Without T1–T3 the lemma falsifies because the adversary can delay the
+// Without T1-T3 the lemma falsifies because the adversary can delay the
 // fulfill message past the incoming timeout with no key needed.
 //
 // Proof sketch:
@@ -331,7 +327,7 @@ lemma Loss_Requires_Inaction:
 //   By OneOutcomePerHTLC, Redeemed(ptrIn, y) never fires.
 //   But by T1, #i < TimedOut(ptrOut).
 //   By T2, TimedOut(ptrOut) < TimedOut(ptrIn)@#k.
-//   So #i < #k.  By T3, Redeemed(ptrIn, y) must fire — contradiction.
+//   So #i < #k.  By T3, Redeemed(ptrIn, y) must fire -- contradiction.
 //   Therefore the scenario is impossible without key compromise.
 lemma Intermediary_Never_Loses:
     "All P ptrIn ptrOut y #f #i #j.
