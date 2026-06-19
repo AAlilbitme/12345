@@ -89,7 +89,7 @@ restriction OneOutcome:
 
 // GAP 1 -- the state-integrity fix.  No HTLC can be added to a channel after it
 // has been closed: every HTLCAdded on ptr strictly precedes any close of ptr.
-lemma No_HTLC_After_Close:
+lemma No_HTLC_After_Close [use_induction]:
     "All ptr y #h #c.
         HTLCAdded(ptr, y) @ #h
       & ChannelClosed(ptr) @ #c
@@ -97,7 +97,7 @@ lemma No_HTLC_After_Close:
 
 // Supporting: an HTLC is only ever added on a channel that was opened first
 // (and the add sees the channel still open).
-lemma HTLC_Needs_Open_Channel [reuse]:
+lemma HTLC_Needs_Open_Channel [reuse, use_induction]:
     "All ptr y #h.
         HTLCAdded(ptr, y) @ #h
      ==> Ex A B #o. ChannelOpen(A, B, ptr) @ #o & #o < #h"
