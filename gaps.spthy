@@ -127,13 +127,13 @@ rule OnChain_Timeout:
 // ---------------------------------------------------------------------------
 
 restriction Lt_means_less:
-    "All a b #i. Lt(a, b) @ #i ==> a ⊏ b"
+    "All a b #i. Lt(a, b) @ #i ==> a << b"
 
 restriction WithinDeadline_means_not_past:
-    "All d b #i. WithinDeadline(d, b) @ #i ==> not(d ⊏ b)"
+    "All d b #i. WithinDeadline(d, b) @ #i ==> not(d << b)"
 
 restriction PastDeadline_means_past:
-    "All d b #i. PastDeadline(d, b) @ #i ==> d ⊏ b"
+    "All d b #i. PastDeadline(d, b) @ #i ==> d << b"
 
 restriction OneOutcomePerHTLC:
     "All ptr y #i #j. Redeemed(ptr, y) @ #i & Refunded(ptr, y) @ #j ==> F"
@@ -168,7 +168,7 @@ lemma Claim_Window_Exists:
         Forwarded(F, pIn, pOut, dIn, dOut, y) @ #f
       & RedeemedAt(pOut, y, bOut) @ #r
       & RefundedAt(pIn,  y, bRef) @ #u
-     ==> bOut ⊏ bRef"
+     ==> bOut << bRef"
 
 // GAP 4 (liveness boundary): loss = skipped claim; residual is pure liveness.
 lemma Loss_Implies_Skipped_Claim:
