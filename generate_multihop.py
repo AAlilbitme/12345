@@ -71,7 +71,7 @@ def gen_header(hops):
 theory multihop_{hops}hop
 begin
 
-#include "3.splib"
+builtins: hashing, signing, natural-numbers
 """
 
 
