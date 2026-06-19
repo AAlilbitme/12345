@@ -19,8 +19,10 @@
 // message injection.
 //
 // Run with:
-//   LANG=C.utf8 LC_ALL=C.utf8 tamarin-prover gaps.spthy \
-//       --derivcheck-timeout=0 --prove=<LemmaName>
+//   tamarin-prover gaps.spthy --derivcheck-timeout=0 --prove=<LemmaName>
+//
+// If your shell locale is not UTF-8 and Tamarin crashes on output, set once:
+//   export LANG=C.utf8 LC_ALL=C.utf8
 // ===========================================================================
 theory gap_proofs
 begin
