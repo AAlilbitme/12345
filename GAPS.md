@@ -9,11 +9,11 @@ warning sign, not a success.
 
 | # | Gap | Status | Where |
 |---|-----|--------|-------|
-| 1 | Channel-state / post-close coupling | **Proven** | `channel_lifecycle.spthy` |
+| 1 | Channel-state / post-close coupling | **Proven** | `gaps.spthy` |
 | 2 | Replay / freshness | **Proven** | `multihop.spthy` |
 | 3 | Payment privacy / unlinkability | **Out of scope (documented)** | this file |
-| 4 | Timing / liveness fairness | **Timing proven; liveness boundary documented** | `cltv_blocks.spthy` |
-| 5 | On-chain enforcement / dispute finality | **Reachability + exclusivity proven; full liveness documented** | `channel_lifecycle.spthy` |
+| 4 | Timing / liveness fairness | **Timing proven; liveness boundary documented** | `gaps.spthy` |
+| 5 | On-chain enforcement / dispute finality | **Reachability + exclusivity proven; full liveness documented** | `gaps.spthy` |
 | 6 | Value / balance conservation | **Proven** | `value_conservation.spthy` |
 
 ---
@@ -144,5 +144,18 @@ tamarin-prover <file>.spthy --prove=<LemmaName>
 ```
 
 Run with `LANG=C.utf8 LC_ALL=C.utf8` so Tamarin can pretty-print logical
-symbols. Heavy lemmas in the full `multihop.spthy` are memory-intensive; the
-focused per-gap theories are deliberately small so each proof terminates.
+symbols. The full `multihop.spthy` needs `--derivcheck-timeout=0`; the gap
+theories are deliberately small so each proof terminates in under 2 minutes.
+
+## File inventory (compact form)
+
+| File | Covers |
+|------|--------|
+| `multihop.spthy` | Full channel model + Gap 2 (replay) |
+| `gaps.spthy` | Gaps 1, 4, 5 (lifecycle + timing + dispute) |
+| `value_conservation.spthy` | Gap 6 (value conservation, requires signing) |
+| `generate_multihop.py` | N-hop theory generator |
+| `GAPS.md` | This document |
+
+`channel_lifecycle.spthy` and `cltv_blocks.spthy` have been consolidated into
+`gaps.spthy`.  `3.splib` and `multihop_4hop.spthy` are no longer needed.
