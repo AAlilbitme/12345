@@ -6,7 +6,11 @@
 // Gap 2 (replay/freshness) is in multihop.spthy (Invoice_Released_Once).
 // Gap 3 (privacy) is out of scope -- requires Sphinx + --diff mode.
 //
-// 2-hop model: Sender -> F -> Receiver.
+// 3-hop model: Sender -> F1 -> F2 -> Receiver  (slides' Alice->Bob->Carol->Dave).
+//
+// The staggered-timelock invariant from slide 28 (3t > 2t > t) is captured by
+// two chained Lt facts: dOut << dMid << dIn.  Claim_Window_Exists proves the
+// per-hop window; Transitive_Claim_Window_Exists proves the end-to-end chain.
 //
 // Model note: HTLC forwarding is modelled as direct state-machine handoffs
 // (no In/Out network messages on the HTLC path).  The adversary CAN open
@@ -112,6 +116,44 @@ rule Timeout_Refund:
         PastDeadline(%dIn, %bRef) ]->
     [ ]
 
+// Two-intermediary chain: F1 -> F2 (slides' Bob -> Carol).
+// Uses DISTINCT fact types (Hop1State, PendingHop2) so Receiver_Accept and
+// the existing backward search for 1-hop lemmas never explore this branch.
+//
+// F1 (first hop): consumes PendingIn from Sender, locks the HTLC on ptrMid,
+// and produces Hop1State (for F1's eventual upstream claim) + PendingHop2 (for F2).
+rule Forward_Hop1:
+    [ PendingIn($Prev, $F1, ptrIn, y, %dIn),
+      Channel(ptrMid, $F1, $Next, %dMid) ]
+    --[ Forwarded($F1, ptrIn, ptrMid, %dIn, %dMid, y),
+        HTLCAdded(ptrMid, y),
+        Lt(%dMid, %dIn) ]->
+    [ Channel(ptrMid, $F1, $Next, %dMid),
+      Hop1State($F1, ptrIn, ptrMid, %dIn, %dMid, y),
+      PendingHop2($F1, $Next, ptrMid, y, %dMid) ]
+
+// F2 (second hop): consumes PendingHop2, produces IntermediaryPending for Receiver_Accept.
+// Receiver_Accept then handles F2's redemption path normally.
+rule Forward_Hop2:
+    [ PendingHop2($F1, $F2, ptrMid, y, %dMid),
+      Channel(ptrOut, $F2, $Receiver, %dOut) ]
+    --[ Forwarded($F2, ptrMid, ptrOut, %dMid, %dOut, y),
+        HTLCAdded(ptrOut, y),
+        Lt(%dOut, %dMid) ]->
+    [ Channel(ptrOut, $F2, $Receiver, %dOut),
+      IntermediaryPending($F2, ptrMid, ptrOut, %dMid, %dOut, y) ]
+
+// F1 claims upstream once F2's downstream HTLC is claimable (preimage propagated).
+// Peeks at Claimable(F2) (consume + reproduce) to allow F2 to also claim/refund.
+rule Hop1_Claim:
+    [ Hop1State($F1, ptrIn, ptrMid, %dIn, %dMid, y),
+      Claimable($F2, ptrMid, ptrOut, %dMid, %dOut, y),
+      !BlockReached(%bClaim) ]
+    --[ ClaimedAt(ptrIn, y, %bClaim),
+        Redeemed(ptrIn, y),
+        WithinDeadline(%dIn, %bClaim) ]->
+    [ Claimable($F2, ptrMid, ptrOut, %dMid, %dOut, y) ]
+
 // Gap 5: on-chain claim -- short dispute path for Redeem_Reachable.
 rule OnChain_Claim:
     [ IntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
@@ -171,6 +213,33 @@ lemma Claim_Window_Exists:
       & RedeemedAt(pOut, y, bOut) @ #r
       & RefundedAt(pIn,  y, bRef) @ #u
      ==> bOut << bRef"
+
+// GAP 4 -- TRANSITIVE (slides' staggered chain: 3t > 2t > t, slides 15/28).
+// The slides' key safety property (slide 15): "it is crucial that the incoming
+// timelock exceeds the outgoing, to give Bob time to claim from Alice after Carol
+// posts."  For a two-intermediary chain dOut << dMid << dIn, the preimage is
+// always revealed (at block bOut <= dOut) while the UPSTREAM deadline dIn is
+// still in the future (bOut < dIn).  This is the transitive propagation of the
+// CLTV-delta invariant across the full 3-hop path.
+//
+// Pure arithmetic proof -- no RefundedAt needed, no Claimable exploration.
+// Chain: bOut <= dOut (WithinDeadline) << dMid (Lt) << dIn (Lt) => bOut < dIn.
+lemma Transitive_Preimage_Before_Upstream_Deadline:
+    "All F1 F2 pIn pMid pOut dIn dMid dOut y bOut #f1 #f2 #r.
+        Forwarded(F1, pIn,  pMid, dIn,  dMid, y) @ #f1
+      & Forwarded(F2, pMid, pOut, dMid, dOut, y) @ #f2
+      & RedeemedAt(pOut, y, bOut) @ #r
+     ==> bOut << dIn"
+
+// NON-VACUITY WITNESS: a 3-hop trace exists (Sender->F1->F2->Receiver).
+// Uses Redeemed (not RedeemedAt) to avoid Clock-ticking blowup.
+// Confirms that two chained Forwarded facts with a downstream redemption are reachable.
+lemma Two_Hop_Flow_Possible:
+    exists-trace
+    "Ex F1 F2 pIn pMid pOut dIn dMid dOut y #f1 #f2 #r.
+        Forwarded(F1, pIn,  pMid, dIn,  dMid, y) @ #f1
+      & Forwarded(F2, pMid, pOut, dMid, dOut, y) @ #f2
+      & Redeemed(pOut, y)                         @ #r"
 
 // GAP 4 (liveness boundary): loss = skipped claim; residual is pure liveness.
 lemma Loss_Implies_Skipped_Claim:
