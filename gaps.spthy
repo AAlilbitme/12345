@@ -197,4 +197,20 @@ lemma Refund_Reachable:
     exists-trace
     "Ex ptr y #i. Refunded(ptr, y) @ #i"
 
+// NON-VACUITY WITNESS for Claim_Window_Exists.  Proves the timing flow is
+// actually reachable: a forward that is redeemed downstream AND claimed
+// upstream.  If this verifies, Claim_Window_Exists is non-vacuous.
+lemma Honest_Flow_Possible:
+    exists-trace
+    "Ex P pIn pOut dIn dOut y bOut bClaim #f #r #c.
+        Forwarded(P, pIn, pOut, dIn, dOut, y) @ #f
+      & RedeemedAt(pOut, y, bOut)             @ #r
+      & ClaimedAt(pIn, y, bClaim)             @ #c"
+
+// NON-VACUITY WITNESS for the refund premise specifically: a trace where
+// RefundedAt actually fires (the premise most likely to die in a merge).
+lemma Timed_Refund_Reachable:
+    exists-trace
+    "Ex ptr y b #i. RefundedAt(ptr, y, b) @ #i"
+
 end
