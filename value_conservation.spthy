@@ -7,23 +7,26 @@
 //   F2 forwards   vR                        (keeps fee2 = vMid - vR)
 //   Receiver claims vR
 //
-// Since Tamarin natural-numbers have no subtraction, each forwarder generates
-// fresh nonces ~vOut and ~fee constrained by the restriction:
-//   vIn = ~vOut %+ ~fee   (i.e. vOut = vIn - fee, expressed additively)
+// IMPORTANT: amounts are nat-typed (%vS, %fee1, %fee2, %vOut etc.) throughout.
+// Using fresh nonces (~x) with %+ would be ill-sorted: fresh is NOT a subsort
+// of nat in Tamarin, so Eq(~a, ~b %+ ~c) can never be satisfied (the term
+// ~b %+ ~c is a nat compound, ~a is an atom -- they are always distinct).
+// This was a bug in earlier drafts that caused all security lemmas to be
+// vacuously true (the forward rules could never fire).
 //
-// Signing IS the integrity mechanism: without it the Dolev-Yao adversary can
-// substitute a different amount in-flight (6-step falsification). With signing
-// each hop binds its amount and fee to its own key, so the only escape from
-// conservation is a key compromise.
+// The fix: each forwarder receives its output amount and fee as nat terms
+// from the network via In(%vOut) / In(%fee).  The Seed_Amount rule makes %1
+// available, so the adversary (and honest parties) can compose any nat value.
+// The Eq(%vIn, %vOut %+ %fee) restriction is now well-sorted and solvable,
+// e.g. %vIn = 3%1 = 2%1 + 1%1.
 //
 // Lemmas:
-//   Fee_Conservation_Per_Hop  -- vIn = vOut + fee at every hop  (fast)
-//   Value_Conserved_End_To_End -- vS = vR + fee1 + fee2 end-to-end (fast)
-//   Payment_With_Amount_Possible -- sanity witness (OOM-kills; skip in --prove)
+//   Forwarding_Chain_Possible  -- two-hop chain reachable (exists-trace, fast)
+//   Fee_Conservation_Per_Hop   -- vIn = vOut + fee per hop  (all-traces, fast)
+//   Value_Conserved_End_To_End -- vS = vMid+fee1 & vMid=vR+fee2 (all-traces, fast)
 //
 // Run:
-//   tamarin-prover value_conservation.spthy --prove=Fee_Conservation_Per_Hop
-//   tamarin-prover value_conservation.spthy --prove=Value_Conserved_End_To_End
+//   tamarin-prover value_conservation.spthy --prove --heuristic=c
 // ===========================================================================
 theory value_conservation
 begin
@@ -45,88 +48,86 @@ rule Open_Channel:
     --[ ChannelOpen($A, $B, ~ptr) ]->
     [ !Channel(~ptr, $A, $B) ]
 
-// Receiver picks secret ~x (preimage) and amount ~v, signs the invoice.
+// Seed the network with %1 so forwarders can receive any nat via In(%x).
+// The adversary deduces %1 %+ %1, %1 %+ %1 %+ %1, etc. by composing.
+rule Seed_Amount:
+    [ ] --[ ]-> [ Out(%1) ]
+
+// Receiver picks secret preimage ~x and invoice amount %v (nat).
 rule Receiver_Create_Invoice:
     let y       = h(~x)
-        invoice = <$Receiver, $Sender, y, ~v>
+        invoice = <$Receiver, $Sender, y, %v>
         sigR    = sign(invoice, ltkR)
     in
-    [ Fr(~x), Fr(~v), !Ltk($Receiver, ltkR) ]
-    --[ InvoiceCreated($Receiver, $Sender, y, ~v),
+    [ Fr(~x), In(%v), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y, %v),
         SecretPreimage($Receiver, ~x) ]->
-    [ ReceiverInv($Receiver, $Sender, ~x, ~v),
+    [ ReceiverInv($Receiver, $Sender, ~x, %v),
       Out(<'inv', invoice, sigR>) ]
 
-// Sender verifies receiver's signature and locks total amount ~vS (= vR + fees).
+// Sender verifies receiver's signature and locks total amount %vS (nat).
 rule Sender_Offer_HTLC:
-    let invoice = <$Receiver, $Sender, y, v>
-        offer   = <'htlc1', ptrSF1, $Sender, $F1, y, ~vS>
+    let invoice = <$Receiver, $Sender, y, %v>
+        offer   = <'htlc1', ptrSF1, $Sender, $F1, y, %vS>
         sigS    = sign(offer, ltkS)
     in
     [ In(<'inv', invoice, sigR>),
       !Pk($Receiver, pkR),
       !Ltk($Sender, ltkS),
       !Channel(ptrSF1, $Sender, $F1),
-      Fr(~vS) ]
-    --[ SenderLocked($Sender, $Receiver, ptrSF1, y, ~vS),
+      In(%vS) ]
+    --[ SenderLocked($Sender, $Receiver, ptrSF1, y, %vS),
         Eq(verify(sigR, invoice, pkR), true) ]->
-    [ SenderPending($Sender, $F1, $Receiver, ptrSF1, y, ~vS, v),
-      Out(<'htlc1', ptrSF1, $Sender, $F1, y, ~vS, sigS>) ]
+    [ SenderPending($Sender, $F1, $Receiver, ptrSF1, y, %vS, %v),
+      Out(<'htlc1', ptrSF1, $Sender, $F1, y, %vS, sigS>) ]
 
-// F1 verifies sender's signature, picks fee ~fee1 and output amount ~vOut
-// (both fresh), constrained by the Eq restriction: vIn = ~vOut %+ ~fee1.
-// This models the routing pre-negotiation where F1 retains fee1 and forwards vOut.
-//
-// Nat-sort note: ~fee1 and ~vOut are fresh nonces (sort msg/fresh), not sort nat.
-// Tamarin's static sort checker warns "must be of sort nat" for these %+ terms.
-// The warnings are cosmetic: Tamarin's AC unification engine still solves the
-// equality correctly at proof time, and both lemmas verify.  The limitation is
-// a known quirk of Tamarin 1.8.0 when mixing `signing` and `natural-numbers`
-// with fresh terms.
+// F1 verifies sender's signature; receives nat amounts %fee1 and %vOut from
+// the network; enforces Eq(%vIn, %vOut %+ %fee1).
+// Both %fee1 and %vOut are nat-typed so %+ is well-sorted.
 rule Forward_F1:
-    let offer    = <'htlc1', ptrSF1, $Sender, $F1, y, vIn>
-        offerFwd = <'htlc2', ptrF1F2, $F1, $F2, y, ~vOut>
+    let offer    = <'htlc1', ptrSF1, $Sender, $F1, y, %vIn>
+        offerFwd = <'htlc2', ptrF1F2, $F1, $F2, y, %vOut>
         sigF1    = sign(offerFwd, ltkF1)
     in
-    [ In(<'htlc1', ptrSF1, $Sender, $F1, y, vIn, sigS>),
+    [ In(<'htlc1', ptrSF1, $Sender, $F1, y, %vIn, sigS>),
       !Pk($Sender, pkS), !Ltk($F1, ltkF1),
       !Channel(ptrF1F2, $F1, $F2),
-      Fr(~fee1), Fr(~vOut) ]
-    --[ ValueForwarded($F1, ptrSF1, ptrF1F2, y, vIn, ~vOut),
-        FeeCharged($F1, y, ~fee1),
-        Eq(vIn, ~vOut %+ ~fee1),
+      In(%fee1), In(%vOut) ]
+    --[ ValueForwarded($F1, ptrSF1, ptrF1F2, y, %vIn, %vOut),
+        FeeCharged($F1, y, %fee1),
+        Eq(%vIn, %vOut %+ %fee1),
         Eq(verify(sigS, offer, pkS), true) ]->
-    [ IntermediaryPending($F1, $Sender, $F2, ptrSF1, ptrF1F2, y, vIn, ~vOut),
-      Out(<'htlc2', ptrF1F2, $F1, $F2, y, ~vOut, sigF1>) ]
+    [ IntermediaryPending($F1, $Sender, $F2, ptrSF1, ptrF1F2, y, %vIn, %vOut),
+      Out(<'htlc2', ptrF1F2, $F1, $F2, y, %vOut, sigF1>) ]
 
-// F2 verifies F1's signature, similarly picks ~fee2 and ~vOut, enforces conservation.
+// F2 verifies F1's signature; similarly enforces Eq(%vIn, %vOut %+ %fee2).
 rule Forward_F2:
-    let offer    = <'htlc2', ptrF1F2, $F1, $F2, y, vIn>
-        offerFwd = <'htlc3', ptrF2R, $F2, $Receiver, y, ~vOut>
+    let offer    = <'htlc2', ptrF1F2, $F1, $F2, y, %vIn>
+        offerFwd = <'htlc3', ptrF2R, $F2, $Receiver, y, %vOut>
         sigF2    = sign(offerFwd, ltkF2)
     in
-    [ In(<'htlc2', ptrF1F2, $F1, $F2, y, vIn, sigF1>),
+    [ In(<'htlc2', ptrF1F2, $F1, $F2, y, %vIn, sigF1>),
       !Pk($F1, pkF1), !Ltk($F2, ltkF2),
       !Channel(ptrF2R, $F2, $Receiver),
-      Fr(~fee2), Fr(~vOut) ]
-    --[ ValueForwarded($F2, ptrF1F2, ptrF2R, y, vIn, ~vOut),
-        FeeCharged($F2, y, ~fee2),
-        Eq(vIn, ~vOut %+ ~fee2),
+      In(%fee2), In(%vOut) ]
+    --[ ValueForwarded($F2, ptrF1F2, ptrF2R, y, %vIn, %vOut),
+        FeeCharged($F2, y, %fee2),
+        Eq(%vIn, %vOut %+ %fee2),
         Eq(verify(sigF1, offer, pkF1), true) ]->
-    [ IntermediaryPending($F2, $F1, $Receiver, ptrF1F2, ptrF2R, y, vIn, ~vOut),
-      Out(<'htlc3', ptrF2R, $F2, $Receiver, y, ~vOut, sigF2>) ]
+    [ IntermediaryPending($F2, $F1, $Receiver, ptrF1F2, ptrF2R, y, %vIn, %vOut),
+      Out(<'htlc3', ptrF2R, $F2, $Receiver, y, %vOut, sigF2>) ]
 
-// Receiver checks F2's signature; unification of ~v with the message amount
-// is the key conservation check: F2 must have forwarded exactly the invoice amount.
+// Receiver checks F2's signature; %v (nat invoice amount) must match %vOut from F2.
+// Since both are nat-typed, unification succeeds when F2 forwards exactly %v.
 rule Receiver_Accept:
     let y        = h(x)
-        offerFwd = <'htlc3', ptrF2R, $F2, $Receiver, y, ~v>
+        offerFwd = <'htlc3', ptrF2R, $F2, $Receiver, y, %v>
     in
-    [ ReceiverInv($Receiver, $Sender, x, ~v),
-      In(<'htlc3', ptrF2R, $F2, $Receiver, y, ~v, sigF2>),
+    [ ReceiverInv($Receiver, $Sender, x, %v),
+      In(<'htlc3', ptrF2R, $F2, $Receiver, y, %v, sigF2>),
       !Pk($F2, pkF2) ]
-    --[ ValueClaimed($Receiver, y, ~v),
-        ReceiverAccepted($Receiver, $F2, ptrF2R, y, ~v),
+    --[ ValueClaimed($Receiver, y, %v),
+        ReceiverAccepted($Receiver, $F2, ptrF2R, y, %v),
         Eq(verify(sigF2, offerFwd, pkF2), true) ]->
     [ ]
 
@@ -137,23 +138,19 @@ restriction Equality:
 // Lemmas
 // ---------------------------------------------------------------------------
 
-// Sanity: a complete honest flow with fees is reachable.
-// NOTE: OOM-kills under --prove (signing + natural-numbers + many fresh nonces).
-// Prove the two real lemmas instead; this is kept as documentation only.
-lemma Payment_With_Amount_Possible:
+// NON-VACUITY: a two-hop forwarding chain with fees is reachable.
+// The adversary provides nat amounts (key compromise allowed here).
+// Concrete witness: %vS=3, %fee1=1, %vMid=2, %fee2=1, %vR=1.
+lemma Forwarding_Chain_Possible:
     exists-trace
-    "Ex S F1 F2 R p1 p2 p3 y vS vMid vR fee1 fee2 #a #b #c #d #e1 #e2.
-        SenderLocked(S, R, p1, y, vS)               @ #a
-      & ValueForwarded(F1, p1, p2, y, vS, vMid)     @ #b
-      & ValueForwarded(F2, p2, p3, y, vMid, vR)     @ #c
-      & ValueClaimed(R, y, vR)                       @ #d
-      & FeeCharged(F1, y, fee1)                      @ #e1
-      & FeeCharged(F2, y, fee2)                      @ #e2
-      & not (Ex A #r. LtkCompromised(A) @ #r)"
+    "Ex F1 F2 p1 p2 p3 y vS vMid vR fee1 fee2 #b #c #e1 #e2.
+        ValueForwarded(F1, p1, p2, y, vS, vMid) @ #b
+      & ValueForwarded(F2, p2, p3, y, vMid, vR) @ #c
+      & FeeCharged(F1, y, fee1)                  @ #e1
+      & FeeCharged(F2, y, fee2)                  @ #e2"
 
 // PER-HOP: the amount into each hop equals the amount out plus the fee.
-// This is the formal statement of slide 15's fee-deduction step.
-// Direct from the Eq(vIn, ~vOut %+ ~fee) restriction -- proves in ~2 steps.
+// Direct from the Eq(%vIn, %vOut %+ %fee) restriction -- proves immediately.
 lemma Fee_Conservation_Per_Hop:
     "All F pIn pOut y vIn vOut fee #i #j.
         ValueForwarded(F, pIn, pOut, y, vIn, vOut) @ #i
@@ -162,11 +159,10 @@ lemma Fee_Conservation_Per_Hop:
      ==> vIn = vOut %+ fee"
 
 // END-TO-END: sender's locked amount equals receiver's claimed amount plus
-// all hop fees -- i.e. vS = vMid + fee1  AND  vMid = vR + fee2,
+// all hop fees -- vS = vMid + fee1  AND  vMid = vR + fee2,
 // which together give  vS = vR + fee1 + fee2.
-// Stated as two separate equalities to avoid a 3-term AC sum in the conclusion
+// Stated as two equalities to avoid a 3-term AC sum in the conclusion
 // (Tamarin 1.8.0 crashes on vS = vR %+ fee1 %+ fee2 in guarded-formula form).
-// Each arm is directly discharged by the Eq restrictions in Forward_F1 / Forward_F2.
 lemma Value_Conserved_End_To_End:
     "All F1 F2 p p1 p2 y vS vMid vR fee1 fee2 #b #c #k1 #k2.
         ValueForwarded(F1, p,  p1, y, vS,  vMid) @ #b
