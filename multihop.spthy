@@ -1,11 +1,38 @@
 // Receiver, sender and two intermediaries in a Lightning Network payment
 // channel network, with full channel lifecycle (handshake, state-update,
-// revocation/punishment, on-chain settlement) and a timing model that makes
-// Intermediary_Never_Loses provable.
+// revocation/punishment, on-chain settlement) and a staggered-CLTV timing
+// model.
 //
 // Run with: tamarin-prover multihop.spthy --prove=<LemmaName>
 // Use LANG=C.utf8 LC_ALL=C.utf8 to avoid Unicode encoding crashes.
 // For the existence lemma: --prove=Multihop_Payment_Possible --stop-on-trace=SEQDFS
+//
+// --- Relationship to companion files ---
+// This file, gaps.spthy, value_conservation.spthy, and cltv_blocks.spthy are
+// FOUR SEPARATE TAMARIN THEORIES.  A property proved in one is not proved in
+// the system the others describe.  In particular:
+//   gaps.spthy      -- has the zombie-channel fix (linear ChannelOpen token,
+//                      NoHTLCAfterClose restriction) and a Lt-based clock.
+//   cltv_blocks.spthy -- derives the CLTV-delta arithmetic (windows are
+//                        non-empty, staggering is safe) as pure lemmas over
+//                        natural-number blocks; no protocol rules.
+//   this file       -- has Intermediary_Never_Loses and Payment_Atomicity but
+//                      NOT the zombie-channel enforcement from gaps.spthy.
+// The zombie-channel fix was prototyped and then reverted here because adding
+// ChannelClosed to Honest_Close caused Intermediary_Never_Loses to OOM in
+// this environment; the two properties do not currently coexist in one file.
+// That is a known limitation, not a hidden one.
+//
+// --- Liveness assumption (T2b / OutgoingTimeoutFirst) ---
+// Intermediary_Never_Loses and Payment_Atomicity are conditional on T2b.
+// T2b encodes the assumption that every honest party claims/publishes within
+// their CLTV window (i.e. TimedOut(ptrOut) fires before TimedOut(ptrIn)).
+// This is a LIVENESS assumption, not a derived fact.  cltv_blocks.spthy
+// proves that the claim windows are arithmetically non-empty; it does not
+// prove that parties act within them.  T2b is where the unproven "they act
+// in time" premise enters the model.  Without T2b, the early-timeout race
+// (adversary fires TimedOut(ptrIn) before Redeemed(ptrOut), making T3
+// inapplicable) is a genuine counterexample to both lemmas.
 theory multihop
 begin
 
@@ -450,11 +477,15 @@ restriction ForwardTimeGap:
       & TimedOut(ptrIn)  @ #k
      ==> #j < #k"
 
-// T2b: if the incoming HTLC times out, the outgoing HTLC must have timed out
-// first.  This is the physical consequence of CLTV-delta staggering: the
-// outgoing absolute timeout is strictly smaller than the incoming one, so it
-// fires first.  Without this restriction T3 is inapplicable when
-// TimedOut(ptrIn) is scheduled before Redeemed(ptrOut) is observed.
+// T2b (LIVENESS ASSUMPTION): if ForwardHTLC connects two channels and the
+// incoming channel times out, then the outgoing channel must have already
+// timed out.  This encodes "every honest party acts within their CLTV window"
+// as an axiom; it is NOT derived from anything in this file.  The arithmetic
+// that makes the window non-empty is proved in cltv_blocks.spthy, but whether
+// the node actually sweeps in time is assumed here.  This restriction was
+// added because without it, T3 (IntermediaryMustClaim) is inapplicable in the
+// race where TimedOut(ptrIn) fires before Redeemed(ptrOut) is observed, and
+// Intermediary_Never_Loses is genuinely falsifiable in that scenario.
 restriction OutgoingTimeoutFirst:
     "All P ptrIn ptrOut y #f #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
@@ -703,10 +734,13 @@ lemma Not_Refunded_If_Redeemed:
       & (not Ex P #r. LtkCompromised(P) @ #r)
      ==> not (Ex #j. Refunded(ptrIn, y) @ #j)"
 
-// Gap 4: with T1-T3 timing restrictions, an honest routing node whose
-// outgoing HTLC is redeemed cannot have its incoming HTLC refunded unless
-// its key was compromised.  For the assumption-free derivation of WHY T1-T3
-// are sufficient (via block-number CLTV arithmetic), see cltv_blocks.spthy.
+// Gap 4: conditional on T2b (liveness — see OutgoingTimeoutFirst above and
+// the file header), an honest routing node whose outgoing HTLC is redeemed
+// cannot have its incoming HTLC refunded unless its key was compromised.
+// The proof is 2 steps because T2b hands Tamarin the ordering it needs; the
+// interesting content is in the restriction, not the lemma.  A strengthened
+// unconditional version (without T2b) would require watchtower-liveness
+// as an explicit hypothesis rather than a baked-in axiom.
 lemma Intermediary_Never_Loses:
     "All P ptrIn ptrOut y #f #i #j.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
@@ -714,23 +748,15 @@ lemma Intermediary_Never_Loses:
       & Refunded(ptrIn, y) @ #j
      ==> Ex #r. LtkCompromised(P) @ #r"
 
-// Slide 14's "should happen atomically" (the red box): once the receiver
-// fulfills the final HTLC and publishes the preimage, the sender's HTLC
-// on the same payment cannot be refunded.  The staggered CLTV-delta ensures
-// the redemption cascade reaches the sender side before any timeout fires.
-//
-// Proof sketch: HTLCFulfilled fires Redeemed(ptrF2R, h(x)); T3 cascades
-// this to Redeemed(ptrF1F2) and Redeemed(ptrSF1); OneOutcomePerHTLC then
-// rules out Refunded(ptrSF1), and HTLCRefunded requires Refunded.
-//
-// Depends on T1-T3 (proved assumption-free for delta-staggered setups
-// in cltv_blocks.spthy, Staggered_Path_Safe).
-// Slide 14's "should happen atomically": if the final hop is redeemed and
-// the two-hop chain is connected via ForwardHTLC, no honest intermediary's
-// incoming HTLC can be refunded.  Uses Redeemed/Refunded (lower-level facts
-// close to the T3/OneOutcomePerHTLC restrictions) for efficient proof search.
-// Composition: T3 cascades Redeemed(ptrF2R) to Redeemed(ptrF1F2) to
-// Redeemed(ptrSF1); OneOutcomePerHTLC then blocks Refunded on any of them.
+// Slide 14's "should happen atomically" (red box) — CONDITIONAL on T2b.
+// This proves that once the receiver fulfills the final HTLC, the sender's
+// HTLC on the same payment hash cannot be refunded in the honest model.
+// The proof is 2 steps for the same reason as Intermediary_Never_Loses: T2b
+// asserts the liveness ordering that makes T3 applicable; the content of the
+// property is mostly in the restriction set.  This does NOT prove the
+// unconditional version from the slide (atomicity regardless of whether
+// parties claim in time).  The cltv_blocks.spthy arithmetic shows the windows
+// exist; T2b assumes parties use them.
 lemma Payment_Atomicity:
     "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.
         ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #f1
