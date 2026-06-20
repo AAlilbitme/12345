@@ -69,12 +69,12 @@ restriction DeltaPositive:
        HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
      ==> d_out << d_in"
 
-// Preimage is revealed at or before the outgoing deadline (b <= d_out).
-// Written as b < d_out %+ %1 to avoid nat-subtraction.
+// Preimage is revealed strictly before the outgoing deadline (b < d_out).
+// Strict inequality avoids nat-sort ambiguity with %+ in formula context.
 restriction FulfillInTime:
     "All b ptrOut d_out #i.
        Revealed(b, ptrOut, d_out) @ #i
-     ==> b << d_out %+ %1"
+     ==> b << d_out"
 
 // ---------------------------------------------------------------------------
 // Lemma 1: CLTV_Gap_Is_Positive

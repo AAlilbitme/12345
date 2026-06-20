@@ -77,6 +77,7 @@ multihop:
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Forward2_Requires_Forward1_Honest     $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Fulfill_Requires_Forward2_Honest      $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Payment_Atomicity                    $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=T2b_Counterexample_Blocked           $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 
 # ---------------------------------------------------------------------------
 # cltv_blocks.spthy -- 3 lemmas proving CLTV-delta inequality from block arithmetic

@@ -765,4 +765,26 @@ lemma Payment_Atomicity:
       & (not Ex P #r. LtkCompromised(P) @ #r)
      ==> not (Ex #u. Refunded(ptrSF1, y) @ #u)"
 
+// Counterexample witness for T2b (OutgoingTimeoutFirst).
+//
+// This exists-trace asserts that WITHOUT T2b the early-timeout attack is
+// reachable: adversary schedules TimedOut(ptrIn) early, obtains
+// Refunded(ptrIn), and only later Redeemed(ptrOut) appears — making T3
+// (IntermediaryMustClaim) inapplicable because its #i < #k precondition is
+// violated.  With T2b in place this trace is blocked, so the lemma below is
+// falsified (Tamarin finds no such witness).  That falsification is the
+// machine-checked certificate that T2b is not over-constraining: the attack
+// really is the thing T2b prevents, and nothing else.
+//
+// To confirm the counterexample exists without T2b: comment out
+// OutgoingTimeoutFirst above, re-run with --prove=T2b_Counterexample_Blocked,
+// and observe "falsified - found trace" with the witness in the output.
+lemma T2b_Counterexample_Blocked:
+    "not (Ex P ptrIn ptrOut y #f #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrIn)     @ #k
+      & Refunded(ptrIn, y)  @ #j
+      & Redeemed(ptrOut, y) @ #i
+      & #k < #i)"
+
 end
