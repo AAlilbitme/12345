@@ -2,9 +2,9 @@ TAMARIN   := tamarin-prover
 TFLAGS    := --heuristic=c --derivcheck-timeout=0
 LANG      := LANG=C.utf8 LC_ALL=C.utf8
 
-.PHONY: all gaps value_conservation payment_channels clean
+.PHONY: all gaps value_conservation payment_channels multihop clean
 
-all: gaps value_conservation payment_channels
+all: gaps value_conservation payment_channels multihop
 
 # ---------------------------------------------------------------------------
 # gaps.spthy -- 11 lemmas, proved sequentially to avoid OOM
@@ -38,6 +38,40 @@ value_conservation:
 payment_channels:
 	@echo "=== PaymentChannels.spthy ==="
 	$(LANG) $(TAMARIN) PaymentChannels.spthy --prove $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+
+# ---------------------------------------------------------------------------
+# multihop.spthy -- 28 lemmas, proved sequentially to avoid OOM
+# ---------------------------------------------------------------------------
+multihop:
+	@echo "=== multihop.spthy ==="
+	$(LANG) $(TAMARIN) multihop.spthy --prove=state_update                    $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=delayed_funds                   $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=instant_funds                   $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=settlement_is_traceable         $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Protocol_execution              $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=No_Punishment_Without_Cheating  $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Cooperative_Close_Execution     $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Funds_Locked_Before_Update      $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Update_Requires_Negotiation     $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Ltk_Known_Implies_Compromised   $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Invoice_Released_Once           $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Multihop_Payment_Possible       $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Distinct_Parties_Configuration  $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Refund_Possible                 $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Preimage_Secret_Until_Released  $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Invoice_Has_Secret_Preimage     $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=HTLC_On_Opened_Channel          $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Settle_Requires_Receiver_Release $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Forward1_Requires_Offer         $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Forward2_Requires_Forward1      $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Fulfill_Requires_Forward2       $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Claim_Requires_Release          $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Settle_Excludes_Sender_Refund   $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Invoice_Authenticates_Settlement $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Forged_Invoice_Requires_Key_Compromise $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Loss_Requires_Inaction          $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Refund_Requires_Timeout         $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Intermediary_Never_Loses        $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 
 clean:
 	@echo "Nothing to clean (Tamarin produces no build artifacts)"

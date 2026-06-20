@@ -511,6 +511,11 @@ lemma Funds_Locked_Before_Update [use_induction]:
        StateUpdate(A, B, ptr, n) @ #i
      ==> Ex #j. FundsLocked(A, B, ptr) @ #j & #j < #i"
 
+lemma Update_Requires_Negotiation [use_induction]:
+    "All A B ptr n #i.
+         StateUpdate(A, B, ptr, n) @ #i
+     ==> Ex fA fB #j. NewStateBuilt(A, B, ptr, n, fA, fB) @ #j & #j < #i"
+
 // ---------------------------------------------------------------------------
 // Lemmas -- HTLC / payment layer
 // ---------------------------------------------------------------------------
