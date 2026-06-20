@@ -689,16 +689,16 @@ lemma Refund_Requires_Timeout [reuse]:
         Refunded(ptr, y) @ #i
      ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
 
-// Helper for Payment_Atomicity: if the outgoing HTLC is redeemed and no key
-// is compromised, the incoming HTLC is also redeemed.  Proof: T1 gives
-// Redeemed(ptrOut) < TimedOut(ptrOut); T2 gives TimedOut(ptrOut) <
-// TimedOut(ptrIn); so Redeemed(ptrOut) < TimedOut(ptrIn) and T3 applies.
-lemma Redeemed_Cascades [reuse]:
+// Helper for Payment_Atomicity: honest intermediary whose outgoing HTLC is
+// redeemed cannot have its incoming HTLC refunded.  This is the honest-model
+// specialisation of Intermediary_Never_Loses (compromise disjunct removed).
+// Marked [reuse] so Payment_Atomicity can invoke it for each hop separately.
+lemma Not_Refunded_If_Redeemed [reuse]:
     "All F ptrIn ptrOut y #f #i.
         ForwardHTLC(F, ptrIn, ptrOut, y) @ #f
       & Redeemed(ptrOut, y) @ #i
       & (not Ex P #r. LtkCompromised(P) @ #r)
-     ==> Ex #j. Redeemed(ptrIn, y) @ #j"
+     ==> not (Ex #j. Refunded(ptrIn, y) @ #j)"
 
 // Gap 4: with T1-T3 timing restrictions, an honest routing node whose
 // outgoing HTLC is redeemed cannot have its incoming HTLC refunded unless
