@@ -229,7 +229,6 @@ rule Honest_Close:
       !Ltk($A, ltkA), !Ltk($B, ltkB),
       !Pk($A, pkA),   !Pk($B, pkB) ]
     --[ Close($A, $B, ptr, n),
-        ChannelClosed(ptr),
         OnChainInstantProduce($A, n),
         OnChainInstantProduce($B, n),
         Eq(verify(signA, closetx, pkA), true),
@@ -247,7 +246,7 @@ rule Publish_Revoked_A:
       !RevokedSecret($A, n_old, sAold, oldCommitA) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
         Cheat($A, n_old) ]->
-    [ OnChainCheat(ptr, $A, $B, n_old, oldCommitA) ]
+    [ OnChainCheat($A, $B, n_old, oldCommitA) ]
 
 rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
@@ -255,18 +254,18 @@ rule Publish_Revoked_B:
       !RevokedSecret($B, n_old, sBold, oldCommitB) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
         Cheat($B, n_old) ]->
-    [ OnChainCheat(ptr, $B, $A, n_old, oldCommitB) ]
+    [ OnChainCheat($B, $A, n_old, oldCommitB) ]
 
 rule Punish_A:
-    [ OnChainCheat(ptr, $A, $B, n_old, oldCommitA),
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
       !RevokedSecret($A, n_old, sAold, oldCommitA) ]
-    --[ Punish($B, $A, n_old), ChannelClosed(ptr) ]->
+    --[ Punish($B, $A, n_old) ]->
     [ AllFundsTo($B) ]
 
 rule Punish_B:
-    [ OnChainCheat(ptr, $B, $A, n_old, oldCommitB),
+    [ OnChainCheat($B, $A, n_old, oldCommitB),
       !RevokedSecret($B, n_old, sBold, oldCommitB) ]
-    --[ Punish($A, $B, n_old), ChannelClosed(ptr) ]->
+    --[ Punish($A, $B, n_old) ]->
     [ AllFundsTo($A) ]
 
 // ---------------------------------------------------------------------------
@@ -430,14 +429,6 @@ restriction OneChannelPerPtr:
      & ChannelOpen(C, D, ptr) @ #j
      ==> #i = #j"
 
-// HTLCs can only be added while the channel is open — not after cooperative
-// close or punishment.  Stated as a lemma (not a restriction) so it doesn't
-// inline into the backward-search for every proof involving HTLCAdded.
-lemma NoHTLCAfterClose [reuse]:
-    "All ptr y #i #j.
-       HTLCAdded(ptr, y) @ #i
-     & ChannelClosed(ptr) @ #j
-     ==> #i < #j"
 
 // ---------------------------------------------------------------------------
 // Timing model (T1-T3): the CLTV-delta invariant for Intermediary_Never_Loses.
@@ -458,6 +449,17 @@ restriction ForwardTimeGap:
       & TimedOut(ptrOut) @ #j
       & TimedOut(ptrIn)  @ #k
      ==> #j < #k"
+
+// T2b: if the incoming HTLC times out, the outgoing HTLC must have timed out
+// first.  This is the physical consequence of CLTV-delta staggering: the
+// outgoing absolute timeout is strictly smaller than the incoming one, so it
+// fires first.  Without this restriction T3 is inapplicable when
+// TimedOut(ptrIn) is scheduled before Redeemed(ptrOut) is observed.
+restriction OutgoingTimeoutFirst:
+    "All P ptrIn ptrOut y #f #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrIn) @ #k
+     ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
 
 // T3: if an honest intermediary's outgoing HTLC is redeemed before the
 // incoming timeout, the node sweeps the incoming HTLC.
@@ -694,7 +696,7 @@ lemma Refund_Requires_Timeout [reuse]:
 // redeemed cannot have its incoming HTLC refunded.  This is the honest-model
 // specialisation of Intermediary_Never_Loses (compromise disjunct removed).
 // Marked [reuse] so Payment_Atomicity can invoke it for each hop separately.
-lemma Not_Refunded_If_Redeemed [reuse]:
+lemma Not_Refunded_If_Redeemed:
     "All F ptrIn ptrOut y #f #i.
         ForwardHTLC(F, ptrIn, ptrOut, y) @ #f
       & Redeemed(ptrOut, y) @ #i

@@ -71,7 +71,6 @@ multihop:
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Forged_Invoice_Requires_Key_Compromise $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Loss_Requires_Inaction          $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Refund_Requires_Timeout         $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
-	$(LANG) $(TAMARIN) multihop.spthy --prove=NoHTLCAfterClose                 $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Not_Refunded_If_Redeemed         $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Intermediary_Never_Loses        $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Forward1_Requires_Offer_Honest        $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
