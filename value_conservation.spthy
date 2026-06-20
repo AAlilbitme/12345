@@ -143,20 +143,20 @@ restriction Equality:
 // Concrete witness: %vS=3, %fee1=1, %vMid=2, %fee2=1, %vR=1.
 lemma Forwarding_Chain_Possible:
     exists-trace
-    "Ex F1 F2 p1 p2 p3 y vS vMid vR fee1 fee2 #b #c #e1 #e2.
-        ValueForwarded(F1, p1, p2, y, vS, vMid) @ #b
-      & ValueForwarded(F2, p2, p3, y, vMid, vR) @ #c
-      & FeeCharged(F1, y, fee1)                  @ #e1
-      & FeeCharged(F2, y, fee2)                  @ #e2"
+    "Ex F1 F2 p1 p2 p3 y %vS %vMid %vR %fee1 %fee2 #b #c #e1 #e2.
+        ValueForwarded(F1, p1, p2, y, %vS,  %vMid) @ #b
+      & ValueForwarded(F2, p2, p3, y, %vMid, %vR)  @ #c
+      & FeeCharged(F1, y, %fee1)                    @ #e1
+      & FeeCharged(F2, y, %fee2)                    @ #e2"
 
 // PER-HOP: the amount into each hop equals the amount out plus the fee.
 // Direct from the Eq(%vIn, %vOut %+ %fee) restriction -- proves immediately.
 lemma Fee_Conservation_Per_Hop:
-    "All F pIn pOut y vIn vOut fee #i #j.
-        ValueForwarded(F, pIn, pOut, y, vIn, vOut) @ #i
-      & FeeCharged(F, y, fee)                       @ #j
+    "All F pIn pOut y %vIn %vOut %fee #i #j.
+        ValueForwarded(F, pIn, pOut, y, %vIn, %vOut) @ #i
+      & FeeCharged(F, y, %fee)                        @ #j
       & (not Ex A #r. LtkCompromised(A) @ #r)
-     ==> vIn = vOut %+ fee"
+     ==> %vIn = %vOut %+ %fee"
 
 // END-TO-END: sender's locked amount equals receiver's claimed amount plus
 // all hop fees -- vS = vMid + fee1  AND  vMid = vR + fee2,
@@ -164,12 +164,12 @@ lemma Fee_Conservation_Per_Hop:
 // Stated as two equalities to avoid a 3-term AC sum in the conclusion
 // (Tamarin 1.8.0 crashes on vS = vR %+ fee1 %+ fee2 in guarded-formula form).
 lemma Value_Conserved_End_To_End:
-    "All F1 F2 p p1 p2 y vS vMid vR fee1 fee2 #b #c #k1 #k2.
-        ValueForwarded(F1, p,  p1, y, vS,  vMid) @ #b
-      & FeeCharged(F1, y, fee1)                   @ #k1
-      & ValueForwarded(F2, p1, p2, y, vMid, vR)  @ #c
-      & FeeCharged(F2, y, fee2)                   @ #k2
+    "All F1 F2 p p1 p2 y %vS %vMid %vR %fee1 %fee2 #b #c #k1 #k2.
+        ValueForwarded(F1, p,  p1, y, %vS,  %vMid) @ #b
+      & FeeCharged(F1, y, %fee1)                    @ #k1
+      & ValueForwarded(F2, p1, p2, y, %vMid, %vR)  @ #c
+      & FeeCharged(F2, y, %fee2)                    @ #k2
       & (not Ex A #r. LtkCompromised(A) @ #r)
-     ==> (vS = vMid %+ fee1) & (vMid = vR %+ fee2)"
+     ==> (%vS = %vMid %+ %fee1) & (%vMid = %vR %+ %fee2)"
 
 end
