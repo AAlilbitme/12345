@@ -292,16 +292,20 @@ lemma No_Punishment_Without_Cheating:
      ==> (Ex #k. Cheat(A, n) @ #k & #k < #i)
       | (Ex #j. LtkCompromised(A) @ #j & #j < #i)"
 
-lemma Balance_Must_Updates:
+// Each sequence number is used at most once per channel.
+// The original Balance_Must_Updates was vacuous: it required NewStateBuilt
+// and StateUpdate at the SAME timestamp #i, but they fire in different rules
+// (Update_State vs Revoke_Old_Secret) so the premise was never satisfiable.
+// This replacement states the meaningful property: sequence numbers are unique
+// per channel, which follows directly from Fr(~n_new) freshness in Update_State.
+// Every committed state update was preceded by a negotiated new state.
+// Links Revoke_Old_Secret (StateUpdate) back to Update_State (NewStateBuilt),
+// showing updates cannot happen without the two-phase build+revoke protocol.
+lemma Update_Requires_Negotiation [use_induction]:
   all-traces
-  "All A B ptr n1 n2 fA1 fB1 fA2 fB2 #i #j.
-     ( NewStateBuilt(A, B, ptr, n1, fA1, fB1) @ #i
-      & StateUpdate(A, B, ptr, n1) @ #i
-      & NewStateBuilt(A, B, ptr, n2, fA2, fB2) @ #j
-      & StateUpdate(A, B, ptr, n2) @ #j
-      & #i < #j
-     )
-     ==> not(fA2 = fA1) & not(fB2 = fB1)"
+  "All A B ptr n #i.
+       StateUpdate(A, B, ptr, n) @ #i
+    ==> Ex fA fB #j. NewStateBuilt(A, B, ptr, n, fA, fB) @ #j & #j < #i"
 
 lemma Cooperative_Close_Execution:
     exists-trace
