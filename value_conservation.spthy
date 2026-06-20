@@ -151,24 +151,28 @@ lemma Forwarding_Chain_Possible:
 
 // PER-HOP: the amount into each hop equals the amount out plus the fee.
 // Direct from the Eq(%vIn, %vOut %+ %fee) restriction -- proves immediately.
+// Both ValueForwarded and FeeCharged fire from the same rule step, so they
+// share the same timestamp #i.  Using separate #i/#j would allow cross-pairing
+// of actions from different firings (a falsified trace where fee comes from a
+// different hop invocation than the amounts), which is not the intended property.
 lemma Fee_Conservation_Per_Hop:
-    "All F pIn pOut y %vIn %vOut %fee #i #j.
+    "All F pIn pOut y %vIn %vOut %fee #i.
         ValueForwarded(F, pIn, pOut, y, %vIn, %vOut) @ #i
-      & FeeCharged(F, y, %fee)                        @ #j
+      & FeeCharged(F, y, %fee)                        @ #i
       & (not Ex A #r. LtkCompromised(A) @ #r)
      ==> %vIn = %vOut %+ %fee"
 
 // END-TO-END: sender's locked amount equals receiver's claimed amount plus
-// all hop fees -- vS = vMid + fee1  AND  vMid = vR + fee2,
-// which together give  vS = vR + fee1 + fee2.
+// all hop fees -- vS = vMid + fee1  AND  vMid = vR + fee2.
+// Co-temporal pairing: FeeCharged shares timestamp with its ValueForwarded.
 // Stated as two equalities to avoid a 3-term AC sum in the conclusion
 // (Tamarin 1.8.0 crashes on vS = vR %+ fee1 %+ fee2 in guarded-formula form).
 lemma Value_Conserved_End_To_End:
-    "All F1 F2 p p1 p2 y %vS %vMid %vR %fee1 %fee2 #b #c #k1 #k2.
+    "All F1 F2 p p1 p2 y %vS %vMid %vR %fee1 %fee2 #b #c.
         ValueForwarded(F1, p,  p1, y, %vS,  %vMid) @ #b
-      & FeeCharged(F1, y, %fee1)                    @ #k1
+      & FeeCharged(F1, y, %fee1)                    @ #b
       & ValueForwarded(F2, p1, p2, y, %vMid, %vR)  @ #c
-      & FeeCharged(F2, y, %fee2)                    @ #k2
+      & FeeCharged(F2, y, %fee2)                    @ #c
       & (not Ex A #r. LtkCompromised(A) @ #r)
      ==> (%vS = %vMid %+ %fee1) & (%vMid = %vR %+ %fee2)"
 
