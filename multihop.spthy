@@ -431,8 +431,9 @@ restriction OneChannelPerPtr:
      ==> #i = #j"
 
 // HTLCs can only be added while the channel is open — not after cooperative
-// close or punishment.  (Model has no reopen rule, so this is final.)
-restriction NoHTLCAfterClose:
+// close or punishment.  Stated as a lemma (not a restriction) so it doesn't
+// inline into the backward-search for every proof involving HTLCAdded.
+lemma NoHTLCAfterClose [reuse]:
     "All ptr y #i #j.
        HTLCAdded(ptr, y) @ #i
      & ChannelClosed(ptr) @ #j
