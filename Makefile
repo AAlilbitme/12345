@@ -4,7 +4,7 @@ LANG      := LANG=C.utf8 LC_ALL=C.utf8
 
 .PHONY: all gaps value_conservation payment_channels multihop clean
 
-all: gaps value_conservation payment_channels multihop cltv_blocks
+all: gaps value_conservation payment_channels multihop t2b_attack cltv_blocks
 
 # ---------------------------------------------------------------------------
 # gaps.spthy -- 11 lemmas, proved sequentially to avoid OOM
@@ -78,6 +78,13 @@ multihop:
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Fulfill_Requires_Forward2_Honest      $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Payment_Atomicity                    $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=T2b_Counterexample_Blocked           $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+
+# ---------------------------------------------------------------------------
+# t2b_attack.spthy -- counterexample theory showing T2b is load-bearing
+# ---------------------------------------------------------------------------
+t2b_attack:
+	@echo "=== t2b_attack.spthy ==="
+	$(LANG) $(TAMARIN) t2b_attack.spthy --prove=Early_Timeout_Race $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 
 # ---------------------------------------------------------------------------
 # cltv_blocks.spthy -- 3 lemmas proving CLTV-delta inequality from block arithmetic

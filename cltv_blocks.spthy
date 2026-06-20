@@ -70,7 +70,11 @@ restriction DeltaPositive:
      ==> d_out << d_in"
 
 // Preimage is revealed strictly before the outgoing deadline (b < d_out).
-// Strict inequality avoids nat-sort ambiguity with %+ in formula context.
+// Uses strict < rather than b <= d_out (which would be b << d_out %+ %1)
+// because Tamarin 1.8 sort inference fails to resolve d_out as nat in the
+// formula context of d_out %+ %1, producing a wellformedness warning.  This
+// excludes same-block fulfilment for a sort-inference reason, not a modeling
+// one; same-block fulfilment is safe but cannot be expressed without %+.
 restriction FulfillInTime:
     "All b ptrOut d_out #i.
        Revealed(b, ptrOut, d_out) @ #i
