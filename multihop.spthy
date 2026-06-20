@@ -615,7 +615,7 @@ lemma Forward2_Requires_Forward1 [reuse]:
      ==> (Ex S ptrF1F2 #j. HTLCForwarded1(F1, F2, S, ptrF1F2, y) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(F1) @ #r & #r < #i)"
 
-lemma Fulfill_Requires_Forward2:
+lemma Fulfill_Requires_Forward2 [reuse]:
     "All R F2 ptrF2R y #i.
         HTLCFulfilled(R, F2, ptrF2R, y) @ #i
      ==> (Ex F1 #j. HTLCForwarded2(F2, R, F1, ptrF2R, y) @ #j & #j < #i)

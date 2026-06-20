@@ -257,6 +257,12 @@ restriction OneChannelPerPtr:
      & ChannelOpen(C, D, ptr) @ #j
      ==> #i = #j"
 
+restriction OnePublishPerParty:
+    "All A n1 n2 #i #j.
+       PublishState(A, n1) @ #i
+     & PublishState(A, n2) @ #j
+     ==> #i = #j"
+
 lemma state_update[use_induction]:   // inductionto avoid the problem of infinite trace(going in loop)
     "All A B ptr n #i.
        StateUpdate(A, B, ptr, n) @ #i
