@@ -72,6 +72,9 @@ multihop:
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Loss_Requires_Inaction          $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Refund_Requires_Timeout         $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Intermediary_Never_Loses        $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Forward1_Requires_Offer_Honest        $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Forward2_Requires_Forward1_Honest     $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Fulfill_Requires_Forward2_Honest      $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 
 clean:
 	@echo "Nothing to clean (Tamarin produces no build artifacts)"
