@@ -55,7 +55,7 @@ multihop:
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Update_Requires_Negotiation     $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Ltk_Known_Implies_Compromised   $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Invoice_Released_Once           $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
-	$(LANG) $(TAMARIN) multihop.spthy --prove=Multihop_Payment_Possible       $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
+	$(LANG) $(TAMARIN) multihop.spthy --prove=Multihop_Payment_Possible       $(TFLAGS) --stop-on-trace=SEQDFS 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Distinct_Parties_Configuration  $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Refund_Possible                 $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
 	$(LANG) $(TAMARIN) multihop.spthy --prove=Preimage_Secret_Until_Released  $(TFLAGS) 2>&1 | grep -E "verified|falsified|incomplete"
