@@ -278,13 +278,21 @@ rule Honest_Close:
 // Cheat / punishment
 // ---------------------------------------------------------------------------
 
+// Publish_Revoked_A/B consume a linear RevealedSecret fact (not the persistent
+// !RevokedSecret) so that Punish_A/B can fire at most once per cheat event.
+// In reality the penalty transaction spends the revocation-key output exactly
+// once; a persistent read would allow infinite re-punishment (a modelling bug,
+// not a protocol bug).  We create the linear fact here from the persistent
+// !RevokedSecret so the secret is still remembered for future state-update
+// checks, but the punishment path is one-shot.
 rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
       !RevokedSecret($A, n_old, sAold, oldCommitA) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
         Cheat($A, n_old) ]->
-    [ OnChainCheat($A, $B, n_old, oldCommitA) ]
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
 
 rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
@@ -292,17 +300,20 @@ rule Publish_Revoked_B:
       !RevokedSecret($B, n_old, sBold, oldCommitB) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
         Cheat($B, n_old) ]->
-    [ OnChainCheat($B, $A, n_old, oldCommitB) ]
+    [ OnChainCheat($B, $A, n_old, oldCommitB),
+      RevealedSecret($B, n_old, sBold, oldCommitB) ]
 
+// Punish rules consume both OnChainCheat and the linear RevealedSecret,
+// making the punishment a one-shot event (mirrors spending the penalty output).
 rule Punish_A:
     [ OnChainCheat($A, $B, n_old, oldCommitA),
-      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
     --[ Punish($B, $A, n_old) ]->
     [ AllFundsTo($B) ]
 
 rule Punish_B:
     [ OnChainCheat($B, $A, n_old, oldCommitB),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      RevealedSecret($B, n_old, sBold, oldCommitB) ]
     --[ Punish($A, $B, n_old) ]->
     [ AllFundsTo($A) ]
 

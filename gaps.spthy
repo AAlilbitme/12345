@@ -153,12 +153,15 @@ rule Hop1_Claim:
     [ Claimable($F2, ptrMid, ptrOut, %dMid, %dOut, y) ]
 
 // Gap 5: on-chain claim -- short dispute path for Redeem_Reachable.
+// Bypasses the block clock intentionally for exists-trace termination.
+// Do not use for timing lemmas; use Claim_Window_Exists / WithinDeadline instead.
 rule OnChain_Claim:
     [ IntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
     --[ Resolved(ptrOut, y), Redeemed(ptrOut, y) ]->
     [ ]
 
 // Gap 5: on-chain timeout -- short dispute path for Refund_Reachable.
+// Bypasses the block clock intentionally for exists-trace termination.
 rule OnChain_Timeout:
     [ IntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
     --[ Resolved(ptrOut, y), Refunded(ptrOut, y) ]->

@@ -157,6 +157,10 @@ lemma Forwarding_Possible:
 // share the same timestamp #i.  Using separate #i/#j would allow cross-pairing
 // of actions from different firings (a falsified trace where fee comes from a
 // different hop invocation than the amounts), which is not the intended property.
+// Proves amount conservation (vIn = vOut + fee), NOT economic rationality.
+// Fee values are adversarially chosen via In(%fee); we do not prove fee > 0.
+// The slides assume rational intermediaries pick positive fees; that is a
+// game-theoretic assumption outside the scope of symbolic verification.
 lemma Fee_Conservation_Per_Hop:
     "All F pIn pOut y %vIn %vOut %fee #i.
         ValueForwarded(F, pIn, pOut, y, %vIn, %vOut) @ #i
