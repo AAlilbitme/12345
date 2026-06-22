@@ -1,32 +1,30 @@
 // ===========================================================================
-// Unified gap proofs: Gaps 1, 4, 5 (channel lifecycle + CLTV timing).
+// gaps.spthy -- lifecycle and timing properties intentionally separated from
+//               the main model (multihop.spthy) for tractability.
 //
-// Gap 6 (value conservation) is in value_conservation.spthy -- signing
-// equational theory OOM-kills the channel induction here.
-// Gap 2 (replay/freshness) is in multihop.spthy (Invoice_Released_Once).
-// Gap 3 (privacy) is out of scope -- requires Sphinx + --diff mode.
+// This file checks things the main model does not safely prove:
+//   Gap 1: no HTLC after channel close (linear channel token enforces it)
+//   Gap 4: CLTV claim window is non-empty; on-chain redeem/refund reachable
+//   Gap 5: outcome exclusivity (redeem and refund mutually exclusive)
+//
+// Separated because:
+//   - Gap 6 (value conservation) OOM-kills the channel induction here due to
+//     the signing equational theory; it lives in value_conservation.spthy.
+//   - Gap 2 (replay/freshness) is in multihop.spthy (Invoice_Released_Once).
+//   - Gap 3 (privacy) is out of scope -- requires Sphinx + --diff mode.
 //
 // 3-hop model: Sender -> F1 -> F2 -> Receiver  (slides' Alice->Bob->Carol->Dave).
 //
 // The staggered-timelock invariant from slide 28 (3t > 2t > t) is captured by
 // two chained Lt facts: dOut << dMid << dIn.  Claim_Window_Exists proves the
-// per-hop window; Transitive_Claim_Window_Exists proves the end-to-end chain.
+// per-hop window; Transitive_Preimage_Before_Upstream_Deadline proves the
+// end-to-end chain.
 //
-// Model note: HTLC forwarding is modelled as direct state-machine handoffs
-// (no In/Out network messages on the HTLC path).  The adversary CAN open
-// channels, add HTLCs on any open channel, and close channels -- but cannot
-// intercept the forwarding state.  This is the right level for Gaps 1/4/5:
-// - Gap 1: post-close HTLC genuinely unreachable via linear channel token.
-// - Gap 4: arithmetic claim window from clock-anchored deadlines.
-// - Gap 5: dispute paths reachable and mutually exclusive.
-// All three properties are about the local state machine, not adversary
-// message injection.
+// Non-vacuity lemmas (exists-trace): Two_Hop_Flow_Possible, Honest_Flow_Possible,
+// Timed_Refund_Reachable, Redeem_Reachable, Refund_Reachable.
 //
 // Run with:
 //   tamarin-prover gaps.spthy --derivcheck-timeout=0 --prove=<LemmaName>
-//
-// If your shell locale is not UTF-8 and Tamarin crashes on output, set once:
-//   export LANG=C.utf8 LC_ALL=C.utf8
 // ===========================================================================
 theory gap_proofs
 begin

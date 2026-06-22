@@ -1,5 +1,10 @@
 // ===========================================================================
-// Gap 6: Value / balance conservation with fees.
+// value_conservation.spthy -- Gap 6: value and fee conservation.
+//
+// Value conservation is proved in a separate amount-focused abstraction, not
+// inside the full multihop theory.  The reason is tractability: combining the
+// signing equational theory (multihop.spthy) with nat-arithmetic induction
+// OOM-kills Tamarin.  The separation is intentional and documented.
 //
 // Models the slides' (14/15) fee-at-each-hop structure:
 //   Sender locks  vS  =  vR + fee1 + fee2
@@ -9,19 +14,16 @@
 //
 // IMPORTANT: amounts are nat-typed (%vS, %fee1, %fee2, %vOut etc.) throughout.
 // Using fresh nonces (~x) with %+ would be ill-sorted: fresh is NOT a subsort
-// of nat in Tamarin, so Eq(~a, ~b %+ ~c) can never be satisfied (the term
-// ~b %+ ~c is a nat compound, ~a is an atom -- they are always distinct).
-// This was a bug in earlier drafts that caused all security lemmas to be
-// vacuously true (the forward rules could never fire).
+// of nat in Tamarin, so Eq(~a, ~b %+ ~c) can never be satisfied.  This was a
+// bug in earlier drafts that made all security lemmas vacuously true (the
+// forward rules could never fire).
 //
-// The fix: each forwarder receives its output amount and fee as nat terms
-// from the network via In(%vOut) / In(%fee).  The Seed_Amount rule makes %1
-// available, so the adversary (and honest parties) can compose any nat value.
-// The Eq(%vIn, %vOut %+ %fee) restriction is now well-sorted and solvable,
-// e.g. %vIn = 3%1 = 2%1 + 1%1.
+// Fix: each forwarder receives its output amount and fee as nat terms via
+// In(%vOut) / In(%fee).  Seed_Amount makes %1 available so any nat is
+// composable.  Eq(%vIn, %vOut %+ %fee) is then well-sorted and solvable.
 //
 // Lemmas:
-//   Forwarding_Chain_Possible  -- two-hop chain reachable (exists-trace, fast)
+//   Forwarding_Possible        -- two-hop chain reachable (exists-trace, fast)
 //   Fee_Conservation_Per_Hop   -- vIn = vOut + fee per hop  (all-traces, fast)
 //   Value_Conserved_End_To_End -- vS = vMid+fee1 & vMid=vR+fee2 (all-traces, fast)
 //

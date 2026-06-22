@@ -1,20 +1,25 @@
 // ===========================================================================
-// cltv_blocks.spthy  —  Block-arithmetic derivation of the CLTV-delta safety
-//                        invariant referenced by multihop.spthy's T1-T3.
+// cltv_blocks.spthy -- arithmetic side of CLTV staggering.
+//
+// This theory proves the block-arithmetic invariants that justify the T1-T3
+// restrictions in multihop.spthy.  It does NOT prove that parties act in time;
+// that is the liveness assumption HonestPartiesActBeforeIncomingTimeout (T2b)
+// in multihop.spthy.  The two files cover complementary aspects:
+//   cltv_blocks.spthy  -- the windows EXIST arithmetically
+//   multihop.spthy     -- honest parties USE those windows (axiom, not derived)
 //
 // Maffei slides 15/28: "it is crucial that timeout_out < timeout_in" gives
 // the intermediary a delta-block window to claim after the receiver reveals x.
 //
-// This theory proves three lemmas from pure nat arithmetic + restrictions:
-//
-//  CLTV_Gap_Is_Positive   -- d_out < d_in  (T2 justification)
-//  Claim_Window_Nonempty  -- b_fulfill < d_in  (T1+T2 composed)
-//  Staggered_Path_Safe    -- two-hop stagger: b < d_mid & b < d_in  (T3)
+// Three lemmas from pure nat arithmetic + restrictions:
+//   CLTV_Gap_Is_Positive  -- d_out < d_in            (T2 justification)
+//   Claim_Window_Nonempty -- b_fulfill < d_in         (T1+T2 composed)
+//   Staggered_Path_Safe   -- two-hop: b < d_mid & b < d_in  (T3)
 //
 // Relationship to multihop.spthy restrictions:
-//   T1 (RedeemBeforeTimeout)  <--  Claim_Window_Nonempty
-//   T2 (ForwardTimeGap)       <--  CLTV_Gap_Is_Positive
-//   T3 (IntermediaryMustClaim)<--  Staggered_Path_Safe
+//   T1 (RedeemBeforeTimeout)   <--  Claim_Window_Nonempty
+//   T2 (ForwardTimeGap)        <--  CLTV_Gap_Is_Positive
+//   T3 (IntermediaryMustClaim) <--  Staggered_Path_Safe
 // ===========================================================================
 theory cltv_blocks
 begin

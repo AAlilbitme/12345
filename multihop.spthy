@@ -1,27 +1,37 @@
-// Receiver, sender and two intermediaries in a Lightning Network payment
-// channel network, with full channel lifecycle (handshake, state-update,
-// revocation/punishment, on-chain settlement) and a staggered-CLTV timing
-// model.
+// multihop.spthy -- main protocol and atomicity under liveness.
+//
+// This is the primary theory: full channel lifecycle (handshake, state-update,
+// revocation/punishment, on-chain settlement), staggered-CLTV timing model,
+// and the key security properties (payment atomicity, intermediary safety).
 //
 // Run with: tamarin-prover multihop.spthy --prove=<LemmaName>
 // Use LANG=C.utf8 LC_ALL=C.utf8 to avoid Unicode encoding crashes.
-// For the existence lemma: --prove=Multihop_Payment_Possible --stop-on-trace=SEQDFS
+// For existence lemmas: --stop-on-trace=SEQDFS
 //
-// --- Relationship to companion files ---
-// This file, gaps.spthy, value_conservation.spthy, and cltv_blocks.spthy are
-// FOUR SEPARATE TAMARIN THEORIES.  A property proved in one is not proved in
-// the system the others describe.  In particular:
-//   gaps.spthy      -- has the zombie-channel fix (linear ChannelOpen token,
-//                      NoHTLCAfterClose restriction) and a Lt-based clock.
-//   cltv_blocks.spthy -- derives the CLTV-delta arithmetic (windows are
-//                        non-empty, staggering is safe) as pure lemmas over
-//                        natural-number blocks; no protocol rules.
-//   this file       -- has Intermediary_Never_Loses and Payment_Atomicity but
-//                      NOT the zombie-channel enforcement from gaps.spthy.
-// The zombie-channel fix was prototyped and then reverted here because adding
-// ChannelClosed to Honest_Close caused Intermediary_Never_Loses to OOM in
-// this environment; the two properties do not currently coexist in one file.
-// That is a known limitation, not a hidden one.
+// --- Modular formalization (NOT a single complete proof) ---
+// This file is one part of a four-theory package.  Each theory proves a
+// distinct aspect; they do not share rules, so a property proved in one is
+// not automatically proved in the system the others describe.
+//
+//   multihop.spthy          (this file)
+//       Main protocol and atomicity under liveness assumption T2b.
+//       Does NOT include the zombie-channel enforcement from gaps.spthy
+//       (adding ChannelClosed to Honest_Close causes OOM here -- known
+//       limitation, not a hidden one).
+//
+//   gaps.spthy
+//       Lifecycle and timing safety properties separated for tractability:
+//       no HTLC after close (linear channel token), CLTV claim windows,
+//       on-chain redeem/refund reachability, outcome exclusivity.
+//
+//   value_conservation.spthy
+//       Amount and fee conservation in a separate nat-arithmetic abstraction.
+//       Separated because combining signing equational theory with nat
+//       induction OOM-kills Tamarin.
+//
+//   cltv_blocks.spthy
+//       Pure block-arithmetic derivation of CLTV staggering (the windows
+//       EXIST); does not prove parties act within them (that is T2b below).
 //
 // --- Liveness assumption (T2b / HonestPartiesActBeforeIncomingTimeout) ---
 // Intermediary_Never_Loses_Under_Liveness and Payment_Atomicity_Under_Liveness
