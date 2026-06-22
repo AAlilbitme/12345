@@ -44,44 +44,44 @@ FILES = [
 NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "value_conservation.spthy"}
 
 # Files proved one lemma at a time to avoid OOM.  Each entry maps a file to
-# a list of (lemma_name, use_seqdfs) pairs.  Order matters: cheap lemmas
-# first so [reuse] facts are warm when heavier ones run.
+# a list of (lemma_name, use_seqdfs, timeout_override_or_None) triples.
+# timeout_override overrides the --timeout arg for that specific lemma.
 PER_LEMMA = {
     "multihop.spthy": [
-        ("state_update",                       False),
-        ("delayed_funds",                      False),
-        ("instant_funds",                      False),
-        ("settlement_is_traceable",            False),
-        ("Protocol_execution",                 False),
-        ("No_Punishment_Without_Cheating",     False),
-        ("Cooperative_Close_Execution",        False),
-        ("Funds_Locked_Before_Update",         False),
-        ("Update_Requires_Negotiation",        False),
-        ("Ltk_Known_Implies_Compromised",      False),
-        ("Invoice_Released_Once",              False),
-        ("Multihop_Payment_Possible",          True),
-        ("Distinct_Parties_Configuration",     False),
-        ("Refund_Possible",                    True),
-        ("Preimage_Secret_Until_Released",     False),
-        ("Invoice_Has_Secret_Preimage",        False),
-        ("HTLC_On_Opened_Channel",             False),
-        ("Settle_Requires_Receiver_Release",   False),
-        ("Forward1_Requires_Offer",            False),
-        ("Forward2_Requires_Forward1",         False),
-        ("Fulfill_Requires_Forward2",          False),
-        ("Claim_Requires_Release",             False),
-        ("Settle_Excludes_Sender_Refund",      False),
-        ("Invoice_Authenticates_Settlement",   False),
-        ("Forged_Invoice_Requires_Key_Compromise", False),
-        ("Loss_Requires_Inaction",             False),
-        ("Refund_Requires_Timeout",            False),
-        ("Not_Refunded_If_Redeemed",           False),
-        ("Intermediary_Never_Loses_Under_Liveness", False),
-        ("Forward1_Requires_Offer_Honest",     False),
-        ("Forward2_Requires_Forward1_Honest",  False),
-        ("Fulfill_Requires_Forward2_Honest",   False),
-        ("Payment_Atomicity_Under_Liveness",   False),
-        ("T2b_Counterexample_Blocked",         False),
+        ("state_update",                       False, None),
+        ("delayed_funds",                      False, None),
+        ("instant_funds",                      False, None),
+        ("settlement_is_traceable",            False, None),
+        ("Protocol_execution",                 False, None),
+        ("No_Punishment_Without_Cheating",     False, None),
+        ("Cooperative_Close_Execution",        False, None),
+        ("Funds_Locked_Before_Update",         False, None),
+        ("Update_Requires_Negotiation",        False, None),
+        ("Ltk_Known_Implies_Compromised",      False, None),
+        ("Invoice_Released_Once",              False, None),
+        ("Multihop_Payment_Possible",          True,  600),
+        ("Distinct_Parties_Configuration",     False, None),
+        ("Refund_Possible",                    True,  600),
+        ("Preimage_Secret_Until_Released",     False, None),
+        ("Invoice_Has_Secret_Preimage",        False, None),
+        ("HTLC_On_Opened_Channel",             False, None),
+        ("Settle_Requires_Receiver_Release",   False, None),
+        ("Forward1_Requires_Offer",            False, None),
+        ("Forward2_Requires_Forward1",         False, None),
+        ("Fulfill_Requires_Forward2",          False, None),
+        ("Claim_Requires_Release",             False, None),
+        ("Settle_Excludes_Sender_Refund",      False, None),
+        ("Invoice_Authenticates_Settlement",   False, None),
+        ("Forged_Invoice_Requires_Key_Compromise", False, None),
+        ("Loss_Requires_Inaction",             False, None),
+        ("Refund_Requires_Timeout",            False, None),
+        ("Not_Refunded_If_Redeemed",           False, None),
+        ("Intermediary_Never_Loses_Under_Liveness", False, None),
+        ("Forward1_Requires_Offer_Honest",     False, None),
+        ("Forward2_Requires_Forward1_Honest",  False, None),
+        ("Fulfill_Requires_Forward2_Honest",   False, None),
+        ("Payment_Atomicity_Under_Liveness",   False, None),
+        ("T2b_Counterexample_Blocked",         False, None),
     ],
 }
 
@@ -137,9 +137,11 @@ def run_one(path, lemma, seqdfs, timeout, env):
 
     elapsed = time.monotonic() - start
     out = proc.stdout + proc.stderr
+    # Tamarin prints ALL lemma statuses even for --prove=LEMMA; filter to the
+    # specific lemma we asked about so we don't grab a stale status line.
     for line in out.splitlines():
         m = LINE_RE.match(line)
-        if m:
+        if m and m.group("name") == lemma:
             return {
                 "name":   m.group("name"),
                 "kind":   m.group("kind"),
@@ -202,10 +204,11 @@ def run_file_per_lemma(path, lemma_list, timeout):
     env = dict(os.environ, LANG="C.utf8", LC_ALL="C.utf8")
     lemmas = []
     total_elapsed = 0.0
-    for lemma, seqdfs in lemma_list:
+    for lemma, seqdfs, t_override in lemma_list:
+        t = t_override if t_override is not None else timeout
         cmd = base_cmd(path, seqdfs) + [f"--prove={lemma}"]
         print(f"   $ " + " ".join(cmd), flush=True)
-        result, elapsed = run_one(path, lemma, seqdfs, timeout, env)
+        result, elapsed = run_one(path, lemma, seqdfs, t, env)
         total_elapsed += elapsed
         lemmas.append(result)
         if result.get("error"):
