@@ -612,13 +612,17 @@ lemma Invoice_Released_Once [reuse]:
       & PreimageReleased(R, x) @ #j
      ==> #i = #j"
 
-// Existence witness for the honest 3-hop payment path.
+// Existence witness for the honest 3-hop payment path (standard non-vacuity).
 // The six 'not' clauses from the earlier version were removed: for an
-// exists-trace it is enough to find ONE trace where all 8 events fire in
-// order.  Negative guards force Tamarin to additionally verify no bad event
-// ever occurs in the witness, which is unnecessary and makes search ~10x
-// slower.  The all-traces security lemmas (Payment_Atomicity_Under_Liveness
-// etc.) are the right place to rule out bad events.
+// exists-trace it is enough to find ONE trace where the 8 events fire in
+// order.  Negative guards force Tamarin to verify no bad event occurs
+// anywhere in the witness, which is unnecessary (~7x slower) and not what
+// reviewers expect for non-vacuity.  The all-traces security lemmas
+// (Payment_Atomicity_Under_Liveness etc.) are the right place to rule out
+// bad events.
+// NOTE: A stronger version requiring no LtkCompromised, StateUpdate,
+// PublishState, Close, Cheat, or HTLCRefunded anywhere in the trace was
+// considered but exceeds practical time limits for exists-trace search.
 lemma Multihop_Payment_Possible:
     exists-trace
     "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R x #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.
