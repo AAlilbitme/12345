@@ -45,44 +45,45 @@ FILES = [
 NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "value_conservation.spthy"}
 
 # Files proved one lemma at a time to avoid OOM.  Each entry maps a file to
-# a list of (lemma_name, use_seqdfs, timeout_override_or_None) triples.
-# timeout_override overrides the --timeout arg for that specific lemma.
+# a list of (lemma_name, use_seqdfs, timeout_override_or_None, solo) tuples.
+# solo=True means the lemma runs alone (no concurrent tamarin processes) before
+# the parallel batch starts.  Use for heavy exists-traces that need full CPU.
 PER_LEMMA = {
     "multihop.spthy": [
-        ("state_update",                       False, None),
-        ("delayed_funds",                      False, None),
-        ("instant_funds",                      False, None),
-        ("settlement_is_traceable",            False, None),
-        ("Protocol_execution",                 False, None),
-        ("No_Punishment_Without_Cheating",     False, None),
-        ("Cooperative_Close_Execution",        False, None),
-        ("Funds_Locked_Before_Update",         False, None),
-        ("Update_Requires_Negotiation",        False, None),
-        ("Ltk_Known_Implies_Compromised",      False, None),
-        ("Invoice_Released_Once",              False, None),
-        ("Multihop_Payment_Possible",          True,  1000),
-        ("Distinct_Parties_Configuration",     False, None),
-        ("Refund_Possible",                    True,  600),
-        ("Preimage_Secret_Until_Released",     False, None),
-        ("Invoice_Has_Secret_Preimage",        False, None),
-        ("HTLC_On_Opened_Channel",             False, None),
-        ("Settle_Requires_Receiver_Release",   False, None),
-        ("Forward1_Requires_Offer",            False, None),
-        ("Forward2_Requires_Forward1",         False, None),
-        ("Fulfill_Requires_Forward2",          False, None),
-        ("Claim_Requires_Release",             False, None),
-        ("Settle_Excludes_Sender_Refund",      False, None),
-        ("Invoice_Authenticates_Settlement",   False, None),
-        ("Forged_Invoice_Requires_Key_Compromise", False, None),
-        ("Loss_Requires_Inaction",             False, None),
-        ("Refund_Requires_Timeout",            False, None),
-        ("Not_Refunded_If_Redeemed",           False, None),
-        ("Intermediary_Never_Loses_Under_Liveness", False, None),
-        ("Forward1_Requires_Offer_Honest",     False, None),
-        ("Forward2_Requires_Forward1_Honest",  False, None),
-        ("Fulfill_Requires_Forward2_Honest",   False, None),
-        ("Payment_Atomicity_Under_Liveness",   False, None),
-        ("T2b_Counterexample_Blocked",         False, None),
+        ("Multihop_Payment_Possible",          True,  1000, True),   # solo: ~850s, needs full CPU
+        ("Refund_Possible",                    True,  600,  True),   # solo: ~70s with seqdfs
+        ("state_update",                       False, None, False),
+        ("delayed_funds",                      False, None, False),
+        ("instant_funds",                      False, None, False),
+        ("settlement_is_traceable",            False, None, False),
+        ("Protocol_execution",                 False, None, False),
+        ("No_Punishment_Without_Cheating",     False, None, False),
+        ("Cooperative_Close_Execution",        False, None, False),
+        ("Funds_Locked_Before_Update",         False, None, False),
+        ("Update_Requires_Negotiation",        False, None, False),
+        ("Ltk_Known_Implies_Compromised",      False, None, False),
+        ("Invoice_Released_Once",              False, None, False),
+        ("Distinct_Parties_Configuration",     False, None, False),
+        ("Preimage_Secret_Until_Released",     False, None, False),
+        ("Invoice_Has_Secret_Preimage",        False, None, False),
+        ("HTLC_On_Opened_Channel",             False, None, False),
+        ("Settle_Requires_Receiver_Release",   False, None, False),
+        ("Forward1_Requires_Offer",            False, None, False),
+        ("Forward2_Requires_Forward1",         False, None, False),
+        ("Fulfill_Requires_Forward2",          False, None, False),
+        ("Claim_Requires_Release",             False, None, False),
+        ("Settle_Excludes_Sender_Refund",      False, None, False),
+        ("Invoice_Authenticates_Settlement",   False, None, False),
+        ("Forged_Invoice_Requires_Key_Compromise", False, None, False),
+        ("Loss_Requires_Inaction",             False, None, False),
+        ("Refund_Requires_Timeout",            False, None, False),
+        ("Not_Refunded_If_Redeemed",           False, None, False),
+        ("Intermediary_Never_Loses_Under_Liveness", False, None, False),
+        ("Forward1_Requires_Offer_Honest",     False, None, False),
+        ("Forward2_Requires_Forward1_Honest",  False, None, False),
+        ("Fulfill_Requires_Forward2_Honest",   False, None, False),
+        ("Payment_Atomicity_Under_Liveness",   False, None, False),
+        ("T2b_Counterexample_Blocked",         False, None, False),
     ],
 }
 
@@ -201,51 +202,58 @@ def run_file_bulk(path, timeout):
 
 
 def run_file_per_lemma(path, lemma_list, timeout, workers=4):
-    """Parallel per-lemma invocations using a thread pool.
+    """Run per-lemma proofs: solo lemmas first (full CPU), then the rest in parallel.
 
-    Workers default to 4 to limit concurrent tamarin processes (each can use
-    several GB of RAM).  The heavy seqdfs lemmas are submitted first so they
-    start while lighter lemmas warm up.
+    solo=True lemmas run one at a time before the parallel batch so they get
+    full CPU.  This matters for heavy exists-traces like Multihop_Payment_Possible
+    which needs ~850s and OOMs or times out when competing with 3 other processes.
     """
     env = dict(os.environ, LANG="C.utf8", LC_ALL="C.utf8")
     wall_start = time.monotonic()
     print_lock = threading.Lock()
 
-    # Results stored by original index so table order is preserved.
+    solo   = [(i, e) for i, e in enumerate(lemma_list) if e[3]]
+    batch  = [(i, e) for i, e in enumerate(lemma_list) if not e[3]]
     results = [None] * len(lemma_list)
+
+    def run_and_record(idx, lemma, seqdfs, t):
+        cmd = base_cmd(path, seqdfs) + [f"--prove={lemma}"]
+        with print_lock:
+            print(f"   $ " + " ".join(cmd), flush=True)
+        result, elapsed = run_one(path, lemma, seqdfs, t, env)
+        if result.get("error"):
+            status_str = YELLOW(f"!! {result['error']}")
+        elif result["status"] == "verified":
+            status_str = GREEN(f"{result['name']}: verified ({result['steps']} steps)")
+        else:
+            status_str = RED(f"{result['name']}: {result['status']}")
+        with print_lock:
+            print(f"     [{fmt_time(elapsed)}] {status_str}", flush=True)
+        results[idx] = result
+
+    # Phase 1: solo lemmas, strictly sequential, full CPU each.
+    for idx, (lemma, seqdfs, t_override, _) in solo:
+        t = t_override if t_override is not None else timeout
+        run_and_record(idx, lemma, seqdfs, t)
+
+    # Phase 2: remaining lemmas in parallel with a bounded worker pool.
     semaphore = threading.Semaphore(workers)
 
     def worker(idx, lemma, seqdfs, t):
         with semaphore:
-            cmd = base_cmd(path, seqdfs) + [f"--prove={lemma}"]
-            with print_lock:
-                print(f"   $ " + " ".join(cmd), flush=True)
-            result, elapsed = run_one(path, lemma, seqdfs, t, env)
-            if result.get("error"):
-                status_str = YELLOW(f"!! {result['error']}")
-            elif result["status"] == "verified":
-                status_str = GREEN(f"{result['name']}: verified ({result['steps']} steps)")
-            else:
-                status_str = RED(f"{result['name']}: {result['status']}")
-            with print_lock:
-                print(f"     [{fmt_time(elapsed)}] {status_str}", flush=True)
-            results[idx] = result
+            run_and_record(idx, lemma, seqdfs, t)
 
     threads = []
-    for idx, (lemma, seqdfs, t_override) in enumerate(lemma_list):
+    for idx, (lemma, seqdfs, t_override, _) in batch:
         t = t_override if t_override is not None else timeout
         th = threading.Thread(target=worker, args=(idx, lemma, seqdfs, t), daemon=True)
         threads.append(th)
-
-    # Start heavy (seqdfs) lemmas first so they don't queue behind light ones.
-    for th, (_, seqdfs, _) in sorted(zip(threads, lemma_list),
-                                      key=lambda x: 0 if x[1][1] else 1):
+    for th in threads:
         th.start()
     for th in threads:
         th.join()
 
-    wall_elapsed = time.monotonic() - wall_start
-    return results, None, wall_elapsed
+    return results, None, time.monotonic() - wall_start
 
 
 def print_table(path, lemmas, error, elapsed):
