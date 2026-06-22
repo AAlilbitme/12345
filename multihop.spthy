@@ -345,6 +345,9 @@ rule Sender_Offer_HTLC:
       !ChannelConnect(ptrSF1, $Sender, $Forward1) ]
     --[ HTLCOffered($Sender, $Forward1, ptrSF1, y),
         HTLCAdded(ptrSF1, y),
+        Neq($Sender, $Forward1),
+        Neq($Sender, $Receiver),
+        Neq($Forward1, $Receiver),
         Eq(verify(sigR, invoice, pkR), true) ]->
     [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y),
       Out(<'htlc1', ptrSF1, $Sender, $Forward1, y, sigS>) ]
@@ -362,6 +365,9 @@ rule Forward1_HTLC:
         HTLCAdded(ptrF1F2, y),
         ForwardHTLC($Forward1, ptrSF1, ptrF1F2, y),
         Neq(ptrSF1, ptrF1F2),
+        Neq($Sender, $Forward1),
+        Neq($Forward1, $Forward2),
+        Neq($Sender, $Forward2),
         Eq(verify(sigS, offer, pkS), true) ]->
     [ IntermediaryPending($Forward1, $Sender, $Forward2, ptrSF1, ptrF1F2, y),
       Out(<'htlc2', ptrF1F2, $Forward1, $Forward2, y, sigF1>) ]
@@ -379,6 +385,9 @@ rule Forward2_HTLC:
         HTLCAdded(ptrF2R, y),
         ForwardHTLC($Forward2, ptrF1F2, ptrF2R, y),
         Neq(ptrF1F2, ptrF2R),
+        Neq($Forward1, $Forward2),
+        Neq($Forward2, $Receiver),
+        Neq($Forward1, $Receiver),
         Eq(verify(sigF1, offer, pkF1), true) ]->
     [ IntermediaryPending($Forward2, $Forward1, $Receiver, ptrF1F2, ptrF2R, y),
       Out(<'htlc3', ptrF2R, $Forward2, $Receiver, y, sigF2>) ]
@@ -477,16 +486,17 @@ restriction ForwardTimeGap:
       & TimedOut(ptrIn)  @ #k
      ==> #j < #k"
 
-// T2b (LIVENESS ASSUMPTION): if ForwardHTLC connects two channels and the
-// incoming channel times out, then the outgoing channel must have already
-// timed out.  This encodes "every honest party acts within their CLTV window"
-// as an axiom; it is NOT derived from anything in this file.  The arithmetic
-// that makes the window non-empty is proved in cltv_blocks.spthy, but whether
-// the node actually sweeps in time is assumed here.  This restriction was
-// added because without it, T3 (IntermediaryMustClaim) is inapplicable in the
-// race where TimedOut(ptrIn) fires before Redeemed(ptrOut) is observed, and
-// Intermediary_Never_Loses is genuinely falsifiable in that scenario.
-restriction OutgoingTimeoutFirst:
+// LIVENESS ASSUMPTION (T2b): honest parties claim within their CLTV window.
+// If ForwardHTLC connects two channels and the incoming channel times out,
+// then the outgoing channel must have already timed out.  This encodes the
+// assumption that every honest intermediary acts before their incoming
+// deadline — it is NOT derived from the protocol rules.  The arithmetic that
+// makes the window non-empty is proved in cltv_blocks.spthy, but whether
+// the node actually sweeps in time is assumed here.  Without this restriction
+// the early-timeout race (TimedOut(ptrIn) before Redeemed(ptrOut)) leaves T3
+// inapplicable and Intermediary_Never_Loses is genuinely falsifiable.
+// See t2b_attack.spthy for the machine-checked exists-trace witness.
+restriction HonestPartiesActBeforeIncomingTimeout:
     "All P ptrIn ptrOut y #f #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
       & TimedOut(ptrIn) @ #k
@@ -627,7 +637,8 @@ lemma Refund_Possible:
 lemma Preimage_Secret_Until_Released [reuse]:
     "All R x #i #j.
         SecretPreimage(R, x) @ #i
-      & K(x) @ #j & #i = #j
+      & K(x) @ #j
+      & #i < #j
      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #j"
 
 lemma Invoice_Has_Secret_Preimage [reuse]:
