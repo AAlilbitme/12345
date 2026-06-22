@@ -50,7 +50,7 @@ NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "value_conservation.spthy"}
 # the parallel batch starts.  Use for heavy exists-traces that need full CPU.
 PER_LEMMA = {
     "multihop.spthy": [
-        ("Multihop_Payment_Possible",          True,  1000, True),   # solo: ~850s, needs full CPU
+        ("Multihop_Payment_Possible",          True,  300,  True),   # solo seqdfs exists-trace
         ("Refund_Possible",                    True,  600,  True),   # solo: ~70s with seqdfs
         ("state_update",                       False, None, False),
         ("delayed_funds",                      False, None, False),
