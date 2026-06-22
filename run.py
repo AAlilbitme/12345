@@ -59,7 +59,7 @@ PER_LEMMA = {
         ("Update_Requires_Negotiation",        False, None),
         ("Ltk_Known_Implies_Compromised",      False, None),
         ("Invoice_Released_Once",              False, None),
-        ("Multihop_Payment_Possible",          True,  900),
+        ("Multihop_Payment_Possible",          True,  1000),
         ("Distinct_Parties_Configuration",     False, None),
         ("Refund_Possible",                    True,  600),
         ("Preimage_Secret_Until_Released",     False, None),
