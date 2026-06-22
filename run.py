@@ -29,6 +29,7 @@ import re
 import subprocess
 import sys
 import time
+import threading
 
 # --- the project's theory files, in reading order -------------------------
 FILES = [
@@ -199,26 +200,52 @@ def run_file_bulk(path, timeout):
     return lemmas, None, elapsed
 
 
-def run_file_per_lemma(path, lemma_list, timeout):
-    """Sequential per-lemma invocations for heavy files."""
+def run_file_per_lemma(path, lemma_list, timeout, workers=4):
+    """Parallel per-lemma invocations using a thread pool.
+
+    Workers default to 4 to limit concurrent tamarin processes (each can use
+    several GB of RAM).  The heavy seqdfs lemmas are submitted first so they
+    start while lighter lemmas warm up.
+    """
     env = dict(os.environ, LANG="C.utf8", LC_ALL="C.utf8")
-    lemmas = []
-    total_elapsed = 0.0
-    for lemma, seqdfs, t_override in lemma_list:
+    wall_start = time.monotonic()
+    print_lock = threading.Lock()
+
+    # Results stored by original index so table order is preserved.
+    results = [None] * len(lemma_list)
+    semaphore = threading.Semaphore(workers)
+
+    def worker(idx, lemma, seqdfs, t):
+        with semaphore:
+            cmd = base_cmd(path, seqdfs) + [f"--prove={lemma}"]
+            with print_lock:
+                print(f"   $ " + " ".join(cmd), flush=True)
+            result, elapsed = run_one(path, lemma, seqdfs, t, env)
+            if result.get("error"):
+                status_str = YELLOW(f"!! {result['error']}")
+            elif result["status"] == "verified":
+                status_str = GREEN(f"{result['name']}: verified ({result['steps']} steps)")
+            else:
+                status_str = RED(f"{result['name']}: {result['status']}")
+            with print_lock:
+                print(f"     [{fmt_time(elapsed)}] {status_str}", flush=True)
+            results[idx] = result
+
+    threads = []
+    for idx, (lemma, seqdfs, t_override) in enumerate(lemma_list):
         t = t_override if t_override is not None else timeout
-        cmd = base_cmd(path, seqdfs) + [f"--prove={lemma}"]
-        print(f"   $ " + " ".join(cmd), flush=True)
-        result, elapsed = run_one(path, lemma, seqdfs, t, env)
-        total_elapsed += elapsed
-        lemmas.append(result)
-        if result.get("error"):
-            status_str = YELLOW(f"  !! {result['error']}")
-        elif result["status"] == "verified":
-            status_str = GREEN(f"  {result['name']}: verified ({result['steps']} steps)")
-        else:
-            status_str = RED(f"  {result['name']}: {result['status']}")
-        print(f"     [{fmt_time(elapsed)}] {status_str}", flush=True)
-    return lemmas, None, total_elapsed
+        th = threading.Thread(target=worker, args=(idx, lemma, seqdfs, t), daemon=True)
+        threads.append(th)
+
+    # Start heavy (seqdfs) lemmas first so they don't queue behind light ones.
+    for th, (_, seqdfs, _) in sorted(zip(threads, lemma_list),
+                                      key=lambda x: 0 if x[1][1] else 1):
+        th.start()
+    for th in threads:
+        th.join()
+
+    wall_elapsed = time.monotonic() - wall_start
+    return results, None, wall_elapsed
 
 
 def print_table(path, lemmas, error, elapsed):
@@ -251,6 +278,8 @@ def main():
     ap.add_argument("files", nargs="*", help="specific .spthy files (default: built-in list)")
     ap.add_argument("--timeout", type=int, default=300,
                     help="per-lemma wall-clock cap in seconds (default 300)")
+    ap.add_argument("--workers", type=int, default=4,
+                    help="parallel tamarin processes for per-lemma files (default 4)")
     args = ap.parse_args()
 
     files = args.files or FILES
@@ -272,7 +301,8 @@ def main():
             continue
         print(f"\n… proving {path} …", flush=True)
         if path in PER_LEMMA:
-            lemmas, error, elapsed = run_file_per_lemma(path, PER_LEMMA[path], args.timeout)
+            lemmas, error, elapsed = run_file_per_lemma(
+                path, PER_LEMMA[path], args.timeout, workers=args.workers)
         else:
             lemmas, error, elapsed = run_file_bulk(path, args.timeout * 10)
         n_ok, n_bad = print_table(path, lemmas, error, elapsed)
