@@ -77,7 +77,6 @@ PER_LEMMA = {
         ("Forged_Invoice_Requires_Key_Compromise", False, None, False),
         ("Loss_Requires_Inaction",             False, None, False),
         ("Refund_Requires_Timeout",            False, None, False),
-        ("Not_Refunded_If_Redeemed",           False, None, False),
         ("Intermediary_Never_Loses_Under_Liveness", False, None, False),
         ("Forward1_Requires_Offer_Honest",     False, None, False),
         ("Forward2_Requires_Forward1_Honest",  False, None, False),
