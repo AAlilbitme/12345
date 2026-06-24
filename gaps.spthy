@@ -29,7 +29,7 @@
 theory gap_proofs
 begin
 
-builtins: hashing, natural-numbers
+builtins: natural-numbers
 
 // ---------------------------------------------------------------------------
 // Block clock (Gap 4)
