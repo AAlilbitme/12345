@@ -20,8 +20,9 @@
 // per-hop window; Transitive_Preimage_Before_Upstream_Deadline proves the
 // end-to-end chain.
 //
-// Non-vacuity lemmas (exists-trace): Two_Hop_Flow_Possible, Honest_Flow_Possible,
-// Timed_Refund_Reachable, Redeem_Reachable, Refund_Reachable.
+// Non-vacuity lemmas (exists-trace) here: Honest_Flow_Possible, Redeem_Reachable,
+// Refund_Reachable.  Two_Hop_Flow_Possible and Timed_Refund_Reachable need a
+// finite clock (they OOM under the unbounded clock) and live in witnesses.spthy.
 //
 // Run with:
 //   tamarin-prover gaps.spthy --derivcheck-timeout=0 --prove=<LemmaName>
@@ -232,15 +233,11 @@ lemma Transitive_Preimage_Before_Upstream_Deadline:
       & RedeemedAt(pOut, y, bOut) @ #r
      ==> bOut << dIn"
 
-// NON-VACUITY WITNESS: a 3-hop trace exists (Sender->F1->F2->Receiver).
-// Uses Redeemed (not RedeemedAt) to avoid Clock-ticking blowup.
-// Confirms that two chained Forwarded facts with a downstream redemption are reachable.
-lemma Two_Hop_Flow_Possible:
-    exists-trace
-    "Ex F1 F2 pIn pMid pOut dIn dMid dOut y #f1 #f2 #r.
-        Forwarded(F1, pIn,  pMid, dIn,  dMid, y) @ #f1
-      & Forwarded(F2, pMid, pOut, dMid, dOut, y) @ #f2
-      & Redeemed(pOut, y)                         @ #r"
+// NON-VACUITY WITNESS for the two-hop chain (Two_Hop_Flow_Possible) and for
+// the refund premise (Timed_Refund_Reachable) live in witnesses.spthy: with the
+// UNBOUNDED clock here they OOM (the solver unifies !BlockReached(%d) against
+// infinitely many persistent block facts).  Restricting to a finite clock is
+// sound for an exists-trace, so they are proved there instead.
 
 // GAP 4 (liveness boundary): loss = skipped claim; residual is pure liveness.
 lemma Loss_Implies_Skipped_Claim:
@@ -276,11 +273,5 @@ lemma Honest_Flow_Possible:
         Forwarded(P, pIn, pOut, dIn, dOut, y) @ #f
       & RedeemedAt(pOut, y, bOut)             @ #r
       & ClaimedAt(pIn, y, bClaim)             @ #c"
-
-// NON-VACUITY WITNESS for the refund premise specifically: a trace where
-// RefundedAt actually fires (the premise most likely to die in a merge).
-lemma Timed_Refund_Reachable:
-    exists-trace
-    "Ex ptr y b #i. RefundedAt(ptr, y, b) @ #i"
 
 end

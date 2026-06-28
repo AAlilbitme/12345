@@ -37,12 +37,14 @@ FILES = [
     "PaymentChannels.spthy",
     "value_conservation.spthy",
     "gaps.spthy",
+    "witnesses.spthy",
     "t2b_attack.spthy",
     "multihop.spthy",
 ]
 
 # Files that must NOT use --stop-on-trace=seqdfs.
-NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "value_conservation.spthy"}
+NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "value_conservation.spthy",
+             "witnesses.spthy"}
 
 # Files proved one lemma at a time to avoid OOM.  Each entry maps a file to
 # a list of (lemma_name, use_seqdfs, timeout_override_or_None, solo) tuples.

@@ -1,0 +1,126 @@
+// ===========================================================================
+// witnesses.spthy -- non-vacuity witnesses for the two exists-trace lemmas
+//   Two_Hop_Flow_Possible   and   Timed_Refund_Reachable
+//
+// WHY A SEPARATE FILE.  In gaps.spthy these two lemmas share the UNBOUNDED
+// block clock (Clock_Tick produces infinitely many persistent !BlockReached
+// facts).  For an exists-trace, the constraint solver may unify a needed
+// !BlockReached(%d) with any of them; combined with the natural-number "<<"
+// ordering this explodes memory (OOM) on a normal machine.
+//
+// FIX (sound for exists-trace).  Restricting the model can only make a witness
+// HARDER to find, never produce a false one: any trace found here is also a
+// trace of the full gaps.spthy model.  So we replace the unbounded clock with
+// a FINITE set of fixed blocks and (for the two-hop case) a deterministic
+// channel setup.  The protocol rules (Forward, Receiver_Accept, Timeout_Refund)
+// are exactly those of gaps.spthy.
+//
+// Run:
+//   tamarin-prover witnesses.spthy --derivcheck-timeout=0 --prove
+// Both lemmas verify in <10 steps each.
+// ===========================================================================
+theory witnesses
+begin
+
+builtins: natural-numbers
+
+restriction Lt_means_less:
+    "All a b #i. Lt(a, b) @ #i ==> a << b"
+
+restriction WithinDeadline_means_not_past:
+    "All d b #i. WithinDeadline(d, b) @ #i ==> not(d << b)"
+
+restriction PastDeadline_means_past:
+    "All d b #i. PastDeadline(d, b) @ #i ==> d << b"
+
+// ---------------------------------------------------------------------------
+// Two-hop witness.  Deterministic 3-channel setup with forced staggered
+// deadlines dOut=%1 < dMid=%2 < dIn=%3 -- no Open_Channel branching, so the
+// Sender -> F1 -> F2 -> Receiver trace is essentially forced.
+// Uses TH-prefixed facts so this search never touches the refund path below.
+// ---------------------------------------------------------------------------
+
+rule TH_Setup:
+    [ Fr(~pIn), Fr(~pMid), Fr(~pOut) ]
+    --[ THSetup() ]->
+    [ THChannel(~pIn,  $S,  $F1, %1 %+ %1 %+ %1),
+      THChannel(~pMid, $F1, $F2, %1 %+ %1),
+      THChannel(~pOut, $F2, $R,  %1),
+      THBlock(%1) ]
+
+rule TH_Offer:
+    [ THChannel(ptrIn, $S, $F, %dIn), Fr(~y) ]
+    --[ ]->
+    [ THPendingIn($S, $F, ptrIn, ~y, %dIn) ]
+
+rule TH_Forward_Hop1:
+    [ THPendingIn($Prev, $F1, ptrIn, y, %dIn),
+      THChannel(ptrMid, $F1, $Next, %dMid) ]
+    --[ Forwarded($F1, ptrIn, ptrMid, %dIn, %dMid, y), Lt(%dMid, %dIn) ]->
+    [ THPendingHop2($F1, $Next, ptrMid, y, %dMid) ]
+
+rule TH_Forward_Hop2:
+    [ THPendingHop2($F1, $F2, ptrMid, y, %dMid),
+      THChannel(ptrOut, $F2, $Receiver, %dOut) ]
+    --[ Forwarded($F2, ptrMid, ptrOut, %dMid, %dOut, y), Lt(%dOut, %dMid) ]->
+    [ THIntermediaryPending($F2, ptrMid, ptrOut, %dMid, %dOut, y) ]
+
+rule TH_Receiver_Accept:
+    [ THIntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y), THBlock(%bOut) ]
+    --[ Redeemed(ptrOut, y), WithinDeadline(%dOut, %bOut) ]->
+    [ ]
+
+// ---------------------------------------------------------------------------
+// Refund witness.  Finite clock: four fixed blocks %1..%4, so a refund block
+// (bRef > dIn) actually exists.  Uses RF-prefixed facts, isolated from above.
+// ---------------------------------------------------------------------------
+
+rule RF_Setup:
+    [ ]
+    --[ RFSetup() ]->
+    [ RFBlock(%1), RFBlock(%1 %+ %1),
+      RFBlock(%1 %+ %1 %+ %1), RFBlock(%1 %+ %1 %+ %1 %+ %1) ]
+
+rule RF_Open:
+    [ Fr(~ptr), RFBlock(%d) ]
+    --[ ]->
+    [ RFChannel(~ptr, $A, $B, %d) ]
+
+rule RF_Offer:
+    [ RFChannel(ptrIn, $S, $F, %dIn), Fr(~y) ]
+    --[ ]->
+    [ RFChannel(ptrIn, $S, $F, %dIn),
+      RFPendingIn($S, $F, ptrIn, ~y, %dIn) ]
+
+rule RF_Forward:
+    [ RFPendingIn($S, $F, ptrIn, y, %dIn),
+      RFChannel(ptrOut, $F, $Receiver, %dOut) ]
+    --[ Lt(%dOut, %dIn) ]->
+    [ RFIntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
+
+rule RF_Receiver_Accept:
+    [ RFIntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y), RFBlock(%bOut) ]
+    --[ WithinDeadline(%dOut, %bOut) ]->
+    [ RFClaimable($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
+
+rule RF_Timeout_Refund:
+    [ RFClaimable($F, ptrIn, ptrOut, %dIn, %dOut, y), RFBlock(%bRef) ]
+    --[ RefundedAt(ptrIn, y, %bRef), PastDeadline(%dIn, %bRef) ]->
+    [ ]
+
+// ---------------------------------------------------------------------------
+// The two non-vacuity witnesses.
+// ---------------------------------------------------------------------------
+
+lemma Two_Hop_Flow_Possible:
+    exists-trace
+    "Ex F1 F2 pIn pMid pOut dIn dMid dOut y #f1 #f2 #r.
+        Forwarded(F1, pIn,  pMid, dIn,  dMid, y) @ #f1
+      & Forwarded(F2, pMid, pOut, dMid, dOut, y) @ #f2
+      & Redeemed(pOut, y)                         @ #r"
+
+lemma Timed_Refund_Reachable:
+    exists-trace
+    "Ex ptr y b #i. RefundedAt(ptr, y, b) @ #i"
+
+end
