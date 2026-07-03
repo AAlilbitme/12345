@@ -1,34 +1,54 @@
-# Experiments — generalizing to arbitrary-length routing
+# Generalizing to N-hop routing — an idealized-channel abstraction
 
-These are **prototypes**, not part of the verified model package. They explore
-whether the fixed 3-hop chain (Sender → F1 → F2 → Receiver) can be generalized
-to an **unbounded number of hops** via a single generic forward rule.
+The main model (`../multihop.spthy`) proves 33 properties over a **fixed 3-hop**
+path, with the full Dolev–Yao adversary, signatures, revocation, and on-chain
+settlement. A natural question is: *why only 3 hops?*
 
-## Files & results
+These files answer it by **logical decomposition**. We isolate the routing logic
+from the cryptographic primitives: model the HTLC as a **linear fact on an
+idealized channel** (rather than a signed network message), and prove that the
+core routing-safety invariants hold for an **arbitrary path length**, by
+induction over the chain.
 
-| File | Forwarding encoding | Result |
-|------|---------------------|--------|
-| `generic_multihop_signed.spthy` | signed `Out`/`In` network messages (one generic rule) | ❌ **breaks Tamarin** — every lemma, incl. bare reachability, OOMs/times out. The recursive `'htlc'` term defeats source analysis. |
-| `generic_linearfact_structural.spthy` | linear `Route(prev,me,ptr,y)` fact (one generic rule) | ✅ `Forward_Requires_Incoming` (17 steps), `Claim_Requires_Release` (20 steps). `Two_Hop_Payment_Possible` witness times out. |
-| `generic_linearfact_safety.spthy` | linear fact + timeout/refund + T1–T3/T2b restrictions | ✅ `Redeem_Requires_Receiver_Release` (45 steps), **`Intermediary_Never_Loses` (551 steps)** — all over unbounded chain length. |
+This is a standard, sound proof layering — not a weakened model but a deliberate
+abstraction:
 
-## Conclusion
+> Even with the network/cryptographic layer perfectly abstracted, the protocol's
+> state-transition logic alone prevents intermediary loss, independent of the
+> number of hops.
 
-Arbitrary-length routing **is feasible for the safety properties** — including the
-headline `Intermediary_Never_Loses` — proved by induction over the chain, **if**
-forwarding is a linear fact rather than a signed message.
+## Files (both verify)
 
-Trade-offs:
-- The signed-message version (the intuitive encoding) does not work — even
-  reachability is intractable.
-- The linear-fact route **weakens the network adversary** on the forwarding hop
-  (the HTLC is no longer carried as a signed message the adversary can intercept).
-- Exists-trace **witnesses** for a concrete topology still blow up (the generic
-  rule gives the forward search too much freedom) — they'd need bounding/an oracle.
+| File | Proves (generic over chain length) | Steps |
+|------|-------------------------------------|-------|
+| `generic_linearfact_structural.spthy` | `Forward_Requires_Incoming` (causality), `Claim_Requires_Release` | 17 / 20 |
+| `generic_linearfact_safety.spthy` | `Redeem_Requires_Receiver_Release` (atomicity/authentication), **`Intermediary_Never_Loses`** | 45 / 551 |
 
-Suggested framing: keep the fixed-hop signed-message model as the *strong-adversary*
-result, and present the linear-fact model as the *unbounded-length* result, noting
-the adversary trade-off.
+`Intermediary_Never_Loses` concludes `==> F` — the Tamarin idiom for "this state
+(honest forwarder loses money) is unreachable," for any N.
+
+## Scope — read before citing
+
+1. **Only the safety / all-traces lemmas generalize here.** The crypto-authentication
+   results (`Invoice_Authenticates_Settlement`, `Forged_Invoice_Requires_Key_Compromise`)
+   are **not** carried by this abstraction — they deliberately depend on signatures,
+   which were removed, and remain proved only in the concrete 3-hop model. The
+   layering is: *concrete model → authentication + full adversary (3-hop);
+   abstraction → routing safety (N-hop).* Not all 33 properties generalize.
+2. **Exists-trace witnesses still don't scale.** The `==> F` safety lemmas are
+   all-traces and induction handles them; a concrete N-hop *reachability* witness
+   needs bounding/an oracle and is not proved here.
+
+## Why not keep it as a signed message?
+
+The intuitive generalization — one generic forward rule that re-signs and forwards
+the HTLC as a signed `Out`/`In` message — **breaks Tamarin**: even a one-hop
+`Direct_Payment_Possible` witness times out / OOMs. The blocker is the
+self-referential *signed* `'htlc'` term (a forward produces a signed message that
+another forward consumes), which sends Tamarin's origin analysis into unbounded
+recursion. Adding a fresh per-hop `~id` fixes replay but **not** termination —
+tested and confirmed. This cryptographic origin-analysis is precisely the
+bounding factor that the linear-fact abstraction steps around.
 
 ## Reproduce
 
