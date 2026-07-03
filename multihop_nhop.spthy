@@ -5,18 +5,20 @@
 // over a linear Route fact, so the path Sender -> (Forward)* -> Receiver has ANY
 // length.  The invoice stays signed (invoice-authentication lemmas survive).
 //
-// STATUS: 25 / 29 lemmas verified (--heuristic=c --stop-on-trace=seqdfs).
+// STATUS: 28 / 29 lemmas verified (--heuristic=c --stop-on-trace=seqdfs).
 //   Verified: all channel-lifecycle lemmas; the generic causality/atomicity
 //   lemmas (Forward_Requires_Incoming 133, Redeem_Requires_Receiver_Release 175,
 //   Claim_Requires_Release 157); and the headline safety lemmas
 //   (Intermediary_Never_Loses_Under_Liveness, Payment_Atomicity_Under_Liveness,
 //   T2b_Counterexample_Blocked).
-//   NOT verified (4): the three exists-trace payment WITNESSES
-//   (Multihop_Payment_Possible, Refund_Possible, Forged_Invoice_Requires_Key_Compromise)
-//   and Settle_Requires_Receiver_Release -- the generic Forward rule gives the
-//   forward search too much freedom, so concrete-path witnesses blow up.  The
-//   all-traces SAFETY properties (the ones that matter) generalize; the
-//   reachability WITNESSES need the fixed-hop model or a bounded search.
+//   The three exists-trace payment WITNESSES (Multihop_Payment_Possible,
+//   Refund_Possible, Forged_Invoice_Requires_Key_Compromise) verify once the
+//   network is "frozen" with negative guards -- otherwise the generic Forward
+//   rule lets the witness search explore unboundedly many alternative routes.
+//   NOT verified (1): Settle_Requires_Receiver_Release -- resolving SenderSettled
+//   backward walks the whole generic settle chain and does not terminate.  It
+//   DOES verify in the fixed-hop multihop.spthy; it is the single open lemma of
+//   the N-hop variant.  All all-traces SAFETY properties generalize.
 //
 // The canonical, fully-verified model is still multihop.spthy (fixed 3-hop,
 // strong signed-message adversary).  This file is the "unbounded length"
@@ -626,7 +628,8 @@ lemma Refund_Possible:
       & HTLCRefunded(S, p, y) @ #i
       & #j < #k & #k < #i
       & not (Ex A MidP B p2 x #u. SenderSettled(A, MidP, B, p2, x) @ #u)
-      & not (Ex P #r. LtkCompromised(P) @ #r)"
+      & not (Ex P #r. LtkCompromised(P) @ #r)
+      & not (Ex Me Prev Next pi po y2 #u. HTLCForwarded(Me, Prev, Next, pi, po, y2) @ #u)"
 
 lemma Preimage_Secret_Until_Released:
     "All R x #i #j.
@@ -645,7 +648,10 @@ lemma HTLC_On_Opened_Channel [reuse, use_induction]:
         HTLCAdded(ptr, y) @ #i
      ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
 
-lemma Settle_Requires_Receiver_Release [use_induction]:
+// NOTE: verifies in the fixed-hop multihop.spthy; in this generic model the
+// backward resolution of SenderSettled walks the whole generic settle chain
+// and does not terminate.  Left as the single open lemma of the N-hop variant.
+lemma Settle_Requires_Receiver_Release:
     "All S F1 R ptr x #i #j.
         SenderSettled(S, F1, R, ptr, x) @ #i
       & InvoiceCreated(R, S, h(x)) @ #j
@@ -673,7 +679,8 @@ lemma Forged_Invoice_Requires_Key_Compromise:
     "Ex S F1 R ptr x #i #r.
         SenderSettled(S, F1, R, ptr, x) @ #i
       & LtkCompromised(R) @ #r
-      & not (Ex #j. InvoiceCreated(R, S, h(x)) @ #j)"
+      & not (Ex #j. InvoiceCreated(R, S, h(x)) @ #j)
+      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u)"
 
 lemma Loss_Requires_Inaction:
     "All P ptrIn ptrOut y #i #j #k.
@@ -737,6 +744,9 @@ lemma T2b_Counterexample_Blocked:
 // --- GENERALIZED routing lemmas (any chain length) ---------------------------
 
 // Non-vacuity: a two-intermediary chain settles (uses the generic Forward).
+// Non-vacuity: a two-intermediary chain settles.  The negative guards "freeze
+// the network" -- without them the generic Forward rule lets Tamarin explore
+// unboundedly many alternative routes and the witness search never terminates.
 lemma Multihop_Payment_Possible:
     exists-trace
     "Ex S F1 F2 R p0 p1 p2 x #t2 #t3 #t4 #t5.
@@ -744,7 +754,11 @@ lemma Multihop_Payment_Possible:
       & HTLCForwarded(F1, S, F2, p0, p1, h(x))    @ #t3
       & HTLCForwarded(F2, F1, R, p1, p2, h(x))    @ #t4
       & HTLCFulfilled(R, F2, p2, h(x))            @ #t5
-      & #t2 < #t3 & #t3 < #t4 & #t4 < #t5"
+      & #t2 < #t3 & #t3 < #t4 & #t4 < #t5
+      & not (Ex A B p y #u. HTLCOffered(A, B, p, y) @ #u & not(A=S & B=F1))
+      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u
+             & not(Me=F1 & Prev=S & Next=F2)
+             & not(Me=F2 & Prev=F1 & Next=R))"
 
 // Causality (any hop): a forward is preceded by the offer or the previous forward.
 lemma Forward_Requires_Incoming [use_induction]:
