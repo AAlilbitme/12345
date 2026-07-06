@@ -128,11 +128,15 @@ guards were *removed* for being ~7× slower — a nice illustration that the rig
 tactic depends on the rule set.)
 
 **The one open lemma.** `Settle_Requires_Receiver_Release` does **not** verify in
-the N-hop model. Resolving `SenderSettled` backward forces Tamarin to walk the
-entire generic settle chain, which does not terminate — every attempted tactic
-(no-induction, `[use_induction]`, `[reuse]` of the atomicity lemma, a
-`SenderSettled_Yields_Redeemed` bridge lemma) was tried and timed out; even the
-"trivial" bridge lemma times out. It **does** verify in the fixed-hop
+the N-hop model. The root cause was pinned down empirically: **any lemma keyed on
+`SenderSettled` is intractable here**, because `SenderSettled` is the terminal
+event of the backward settle chain and resolving it forces Tamarin to unroll the
+entire generic `Route`/`Fulfill` chain. Six tactics were tried and all timed out:
+no-induction, `[use_induction]`, `[reuse]` of the atomicity lemma, a
+`SenderSettled_Yields_Redeemed` bridge lemma (even that "trivial" bridge times
+out), and a reformulation dropping the strict before-ordering — *both* with and
+without induction. Since dropping the timing did not help, the blocker is the
+`SenderSettled` key, not the ordering. The lemma **does** verify in the fixed-hop
 `multihop.spthy`. It is the single, clearly-scoped open lemma of the N-hop
 variant, documented in the file header.
 
