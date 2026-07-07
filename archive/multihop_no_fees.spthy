@@ -1,25 +1,8 @@
-// multihop.spthy -- main protocol, value/fee conservation, and atomicity
-//                    under liveness.
+// multihop.spthy -- main protocol and atomicity under liveness.
 //
 // This is the primary theory: full channel lifecycle (handshake, state-update,
 // revocation/punishment, on-chain settlement), staggered-CLTV timing model,
-// invoice amounts + per-hop fees (Eq(%vIn, %vOut %+ %fee)), and the key
-// security properties (payment atomicity, intermediary safety, value
-// conservation).
-//
-// HISTORY: this file merges what used to be two separate theories --
-// multihop.spthy (fixed 3-hop, signed HTLC routing, no amounts) and
-// value_conservation.spthy (amount/fee conservation in a separate
-// nat-arithmetic abstraction, kept apart because combining signing + nat
-// induction was assumed to OOM Tamarin). That assumption was tested, not
-// just asserted: the merged file below verifies all 33 lemmas
-// (17 channel/structural + 16 HTLC/value, incl. all 4 ported value lemmas)
-// with --heuristic=c --stop-on-trace=seqdfs. The prior OOM was caused by
-// combining signing + nat induction + an UNBOUNDED BLOCK CLOCK (see
-// gaps.spthy's history); this file has no clock -- timing stays relational
-// (TimedOut ordering) -- so two of the three ingredients alone did not
-// reproduce the failure. Both former files are kept in archive/ as the
-// tested precedent and for reference; nothing in them is missing here.
+// and the key security properties (payment atomicity, intermediary safety).
 //
 // Run with: tamarin-prover multihop.spthy --prove=<LemmaName>
 // Use LANG=C.utf8 LC_ALL=C.utf8 to avoid Unicode encoding crashes.
@@ -31,15 +14,20 @@
 // not automatically proved in the system the others describe.
 //
 //   multihop.spthy          (this file)
-//       Main protocol, value/fee conservation, and atomicity under liveness
-//       assumption T2b. Does NOT include the zombie-channel enforcement from
-//       gaps.spthy (adding ChannelClosed to Honest_Close causes OOM here --
-//       known limitation, not a hidden one).
+//       Main protocol and atomicity under liveness assumption T2b.
+//       Does NOT include the zombie-channel enforcement from gaps.spthy
+//       (adding ChannelClosed to Honest_Close causes OOM here -- known
+//       limitation, not a hidden one).
 //
 //   gaps.spthy
 //       Lifecycle and timing safety properties separated for tractability:
 //       no HTLC after close (linear channel token), CLTV claim windows,
 //       on-chain redeem/refund reachability, outcome exclusivity.
+//
+//   value_conservation.spthy
+//       Amount and fee conservation in a separate nat-arithmetic abstraction.
+//       Separated because combining signing equational theory with nat
+//       induction OOM-kills Tamarin.
 //
 //   cltv_blocks.spthy
 //       Pure block-arithmetic derivation of CLTV staggering (the windows
@@ -59,7 +47,7 @@
 theory multihop
 begin
 
-builtins: hashing, signing, natural-numbers
+builtins: hashing, signing
 
 // ---------------------------------------------------------------------------
 // Key management
@@ -357,114 +345,102 @@ rule Claim_Funds_B:
 // HTLC layer
 // ---------------------------------------------------------------------------
 
-rule Int_Amount:
-    [ ] --[ ]-> [ Out(%1) ]
-
 rule Receiver_Create_Invoice:
     let y = h(~x)
-        invoice = <$Receiver, $Sender, y, %v>
+        invoice = <$Receiver, $Sender, y>
         sigR    = sign(invoice, ltkR)
     in
-    [ Fr(~x), In(%v), !Ltk($Receiver, ltkR) ]
-    --[ InvoiceCreated($Receiver, $Sender, y, %v),
+    [ Fr(~x), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y),
         SecretPreimage($Receiver, ~x) ]->
-    [ ReceiverInv($Receiver, $Sender, ~x, %v),
+    [ ReceiverInv($Receiver, $Sender, ~x),
       Out(<'SecretRS', invoice, sigR>) ]
 
 rule Sender_Offer_HTLC:
-    let invoice = <$Receiver, $Sender, y, %v>
-        offer   = <'htlc1', ptrSF1, $Sender, $Forward1, y, %vS>
+    let invoice = <$Receiver, $Sender, y>
+        offer   = <'htlc1', ptrSF1, $Sender, $Forward1, y>
         sigS    = sign(offer, ltkS)
     in
     [ In(<'SecretRS', invoice, sigR>),
-      In(%vS),
       !Pk($Receiver, pkR),
       !Ltk($Sender, ltkS),
       !ChannelConnect(ptrSF1, $Sender, $Forward1) ]
-    --[ HTLCOffered($Sender, $Forward1, ptrSF1, y, %vS),
+    --[ HTLCOffered($Sender, $Forward1, ptrSF1, y),
         HTLCAdded(ptrSF1, y),
         Neq($Sender, $Forward1),
         Neq($Sender, $Receiver),
         Neq($Forward1, $Receiver),
         Eq(verify(sigR, invoice, pkR), true) ]->
-    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y, %vS),
-      Out(<'htlc1', ptrSF1, $Sender, $Forward1, y, %vS, sigS>) ]
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y),
+      Out(<'htlc1', ptrSF1, $Sender, $Forward1, y, sigS>) ]
 
 rule Forward1_HTLC:
-    let offer    = <'htlc1', ptrSF1, $Sender, $Forward1, y, %vIn>
-        offerFwd = <'htlc2', ptrF1F2, $Forward1, $Forward2, y, %vOut>
+    let offer    = <'htlc1', ptrSF1, $Sender, $Forward1, y>
+        offerFwd = <'htlc2', ptrF1F2, $Forward1, $Forward2, y>
         sigF1    = sign(offerFwd, ltkF1)
     in
-    [ In(<'htlc1', ptrSF1, $Sender, $Forward1, y, %vIn, sigS>),
+    [ In(<'htlc1', ptrSF1, $Sender, $Forward1, y, sigS>),
       !Pk($Sender, pkS), !Ltk($Forward1, ltkF1),
       !ChannelConnect(ptrSF1, $Sender, $Forward1),
-      !ChannelConnect(ptrF1F2, $Forward1, $Forward2),
-      In(%fee), In(%vOut) ]
-    --[ HTLCForwarded1($Forward1, $Forward2, $Sender, ptrF1F2, y, %vIn, %vOut),
+      !ChannelConnect(ptrF1F2, $Forward1, $Forward2) ]
+    --[ HTLCForwarded1($Forward1, $Forward2, $Sender, ptrF1F2, y),
         HTLCAdded(ptrF1F2, y),
         ForwardHTLC($Forward1, ptrSF1, ptrF1F2, y),
-        FeeCharged($Forward1, y, %fee),
-        Eq(%vIn, %vOut %+ %fee),
         Neq(ptrSF1, ptrF1F2),
         Neq($Sender, $Forward1),
         Neq($Forward1, $Forward2),
         Neq($Sender, $Forward2),
         Eq(verify(sigS, offer, pkS), true) ]->
-    [ IntermediaryPending($Forward1, $Sender, $Forward2, ptrSF1, ptrF1F2, y, %vIn, %vOut, %fee),
-      Out(<'htlc2', ptrF1F2, $Forward1, $Forward2, y, %vOut, sigF1>) ]
+    [ IntermediaryPending($Forward1, $Sender, $Forward2, ptrSF1, ptrF1F2, y),
+      Out(<'htlc2', ptrF1F2, $Forward1, $Forward2, y, sigF1>) ]
 
 rule Forward2_HTLC:
-    let offer    = <'htlc2', ptrF1F2, $Forward1, $Forward2, y, %vIn>
-        offerFwd = <'htlc3', ptrF2R, $Forward2, $Receiver, y, %vOut>
+    let offer    = <'htlc2', ptrF1F2, $Forward1, $Forward2, y>
+        offerFwd = <'htlc3', ptrF2R, $Forward2, $Receiver, y>
         sigF2    = sign(offerFwd, ltkF2)
     in
-    [ In(<'htlc2', ptrF1F2, $Forward1, $Forward2, y, %vIn, sigF1>),
+    [ In(<'htlc2', ptrF1F2, $Forward1, $Forward2, y, sigF1>),
       !Pk($Forward1, pkF1), !Ltk($Forward2, ltkF2),
       !ChannelConnect(ptrF1F2, $Forward1, $Forward2),
-      !ChannelConnect(ptrF2R, $Forward2, $Receiver),
-      In(%fee), In(%vOut) ]
-    --[ HTLCForwarded2($Forward2, $Receiver, $Forward1, ptrF2R, y, %vIn, %vOut),
+      !ChannelConnect(ptrF2R, $Forward2, $Receiver) ]
+    --[ HTLCForwarded2($Forward2, $Receiver, $Forward1, ptrF2R, y),
         HTLCAdded(ptrF2R, y),
         ForwardHTLC($Forward2, ptrF1F2, ptrF2R, y),
-        FeeCharged($Forward2, y, %fee),
-        Eq(%vIn, %vOut %+ %fee),
         Neq(ptrF1F2, ptrF2R),
         Neq($Forward1, $Forward2),
         Neq($Forward2, $Receiver),
         Neq($Forward1, $Receiver),
         Eq(verify(sigF1, offer, pkF1), true) ]->
-    [ IntermediaryPending($Forward2, $Forward1, $Receiver, ptrF1F2, ptrF2R, y, %vIn, %vOut, %fee),
-      Out(<'htlc3', ptrF2R, $Forward2, $Receiver, y, %vOut, sigF2>) ]
+    [ IntermediaryPending($Forward2, $Forward1, $Receiver, ptrF1F2, ptrF2R, y),
+      Out(<'htlc3', ptrF2R, $Forward2, $Receiver, y, sigF2>) ]
 
 rule Receiver_Fulfill_HTLC:
     let y        = h(x)
-        offerFwd = <'htlc3', ptrF2R, $Forward2, $Receiver, y, %v>
+        offerFwd = <'htlc3', ptrF2R, $Forward2, $Receiver, y>
     in
-    [ ReceiverInv($Receiver, $Sender, x, %v),
-      In(<'htlc3', ptrF2R, $Forward2, $Receiver, y, %v, sigF2>),
+    [ ReceiverInv($Receiver, $Sender, x),
+      In(<'htlc3', ptrF2R, $Forward2, $Receiver, y, sigF2>),
       !Pk($Forward2, pkF2),
       !ChannelConnect(ptrF2R, $Forward2, $Receiver) ]
-    --[ HTLCFulfilled($Receiver, $Forward2, ptrF2R, y, %v),
-        ReceiverPaid($Receiver, y, %v),
+    --[ HTLCFulfilled($Receiver, $Forward2, ptrF2R, y),
         PreimageReleased($Receiver, x),
         Redeemed(ptrF2R, y),
         Eq(verify(sigF2, offerFwd, pkF2), true) ]->
     [ Out(<'fulfill', ptrF2R, x>) ]
 
 rule Intermediary_Settle:
-    [ IntermediaryPending(MidP, InP, OutP, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+    [ IntermediaryPending(MidP, InP, OutP, ptrIn, ptrOut, y),
       In(<'fulfill', ptrOut, x>) ]
     --[ IntermediaryClaimed(MidP, InP, ptrIn, x),
-        FeeEarned(MidP, ptrIn, ptrOut, y, %fee),
         Redeemed(ptrIn, y),
         Eq(h(x), y) ]->
     [ Out(<'fulfill', ptrIn, x>) ]
 
 rule Sender_Settle:
-    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y, %vS),
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y),
       In(<'fulfill', ptrSF1, x>) ]
     --[ SenderSettled($Sender, $Forward1, $Receiver, ptrSF1, x),
-        PaymentComplete($Sender, $Receiver, h(x), %vS),
+        PaymentComplete($Sender, $Receiver, h(x)),
         Redeemed(ptrSF1, y),
         Eq(h(x), y) ]->
     [ ]
@@ -475,14 +451,14 @@ rule Open_Timeout:
     [ !Timeout(ptr) ]
 
 rule Sender_Timeout_Refund:
-    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y, %vS),
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF1, y),
       !Timeout(ptrSF1) ]
     --[ HTLCRefunded($Sender, ptrSF1, y),
         Refunded(ptrSF1, y) ]->
     [ ]
 
 rule Intermediary_Timeout_Refund:
-    [ IntermediaryPending(MidP, InP, OutP, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+    [ IntermediaryPending(MidP, InP, OutP, ptrIn, ptrOut, y),
       !Timeout(ptrOut) ]
     --[ HTLCRefunded(MidP, ptrOut, y),
         Refunded(ptrOut, y) ]->
@@ -649,12 +625,12 @@ lemma Invoice_Released_Once [reuse]:
 // considered but exceeds practical time limits for exists-trace search.
 lemma Multihop_Payment_Possible:
     exists-trace
-    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R x %v %vS %vMid #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.
-        InvoiceCreated(R, S, h(x), %v)                        @ #t1
-      & HTLCOffered(S, F1, ptrSF1, h(x), %vS)                 @ #t2
-      & HTLCForwarded1(F1, F2, S, ptrF1F2, h(x), %vS, %vMid)  @ #t3
-      & HTLCForwarded2(F2, R, F1, ptrF2R, h(x), %vMid, %v)    @ #t4
-      & HTLCFulfilled(R, F2, ptrF2R, h(x), %v)                @ #t5
+    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R x #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.
+        InvoiceCreated(R, S, h(x))               @ #t1
+      & HTLCOffered(S, F1, ptrSF1, h(x))         @ #t2
+      & HTLCForwarded1(F1, F2, S, ptrF1F2, h(x)) @ #t3
+      & HTLCForwarded2(F2, R, F1, ptrF2R, h(x))  @ #t4
+      & HTLCFulfilled(R, F2, ptrF2R, h(x))       @ #t5
       & IntermediaryClaimed(F2, F1, ptrF1F2, x)  @ #t6
       & IntermediaryClaimed(F1, S, ptrSF1, x)    @ #t7
       & SenderSettled(S, F1, R, ptrSF1, x)       @ #t8
@@ -677,9 +653,9 @@ lemma Distinct_Parties_Configuration:
 
 lemma Refund_Possible:
     exists-trace
-    "Ex S F1 R p y %v %vS #i #j #k.
-        InvoiceCreated(R, S, y, %v) @ #j
-      & HTLCOffered(S, F1, p, y, %vS) @ #k
+    "Ex S F1 R p y #i #j #k.
+        InvoiceCreated(R, S, y) @ #j
+      & HTLCOffered(S, F1, p, y) @ #k
       & HTLCRefunded(S, p, y) @ #i
       & #j < #k & #k < #i
       & not (Ex A MidP B p2 x #u. SenderSettled(A, MidP, B, p2, x) @ #u)
@@ -693,8 +669,8 @@ lemma Preimage_Secret_Until_Released:
      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #j"
 
 lemma Invoice_Has_Secret_Preimage [reuse]:
-    "All R S x %v #i.
-        InvoiceCreated(R, S, h(x), %v) @ #i
+    "All R S x #i.
+        InvoiceCreated(R, S, h(x)) @ #i
      ==> SecretPreimage(R, x) @ #i"
 
 lemma HTLC_On_Opened_Channel [reuse, use_induction]:
@@ -703,51 +679,49 @@ lemma HTLC_On_Opened_Channel [reuse, use_induction]:
      ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
 
 lemma Settle_Requires_Receiver_Release:
-    "All S F1 R ptr x %v #i #j.
+    "All S F1 R ptr x #i #j.
         SenderSettled(S, F1, R, ptr, x) @ #i
-      & InvoiceCreated(R, S, h(x), %v) @ #j
+      & InvoiceCreated(R, S, h(x)) @ #j
      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
 
 lemma Forward1_Requires_Offer:
-    "All F1 F2 S ptrF1F2 y %vIn %vOut #i.
-        HTLCForwarded1(F1, F2, S, ptrF1F2, y, %vIn, %vOut) @ #i
-     ==> (Ex ptrSF1 #j. HTLCOffered(S, F1, ptrSF1, y, %vIn) @ #j & #j < #i)
+    "All F1 F2 S ptrF1F2 y #i.
+        HTLCForwarded1(F1, F2, S, ptrF1F2, y) @ #i
+     ==> (Ex ptrSF1 #j. HTLCOffered(S, F1, ptrSF1, y) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(S) @ #r & #r < #i)"
 
 lemma Forward2_Requires_Forward1:
-    "All F2 R F1 ptrF2R y %vIn %vOut #i.
-        HTLCForwarded2(F2, R, F1, ptrF2R, y, %vIn, %vOut) @ #i
-     ==> (Ex S ptrF1F2 %vPrev #j.
-            HTLCForwarded1(F1, F2, S, ptrF1F2, y, %vPrev, %vIn) @ #j & #j < #i)
+    "All F2 R F1 ptrF2R y #i.
+        HTLCForwarded2(F2, R, F1, ptrF2R, y) @ #i
+     ==> (Ex S ptrF1F2 #j. HTLCForwarded1(F1, F2, S, ptrF1F2, y) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(F1) @ #r & #r < #i)"
 
 lemma Fulfill_Requires_Forward2:
-    "All R F2 ptrF2R y %v #i.
-        HTLCFulfilled(R, F2, ptrF2R, y, %v) @ #i
-     ==> (Ex F1 %vIn #j. HTLCForwarded2(F2, R, F1, ptrF2R, y, %vIn, %v) @ #j & #j < #i)
+    "All R F2 ptrF2R y #i.
+        HTLCFulfilled(R, F2, ptrF2R, y) @ #i
+     ==> (Ex F1 #j. HTLCForwarded2(F2, R, F1, ptrF2R, y) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(F2) @ #r & #r < #i)"
 
 // Compromise-guarded variants: prove the honest branch is doing real work,
 // not just the "or LtkCompromised" disjunct.  If these hold, the routing
 // chain is authenticated under the honest model independently of key compromise.
 lemma Forward1_Requires_Offer_Honest:
-    "All F1 F2 S ptrF1F2 y %vIn %vOut #i.
-        HTLCForwarded1(F1, F2, S, ptrF1F2, y, %vIn, %vOut) @ #i
+    "All F1 F2 S ptrF1F2 y #i.
+        HTLCForwarded1(F1, F2, S, ptrF1F2, y) @ #i
       & (not Ex P #r. LtkCompromised(P) @ #r)
-     ==> Ex ptrSF1 #j. HTLCOffered(S, F1, ptrSF1, y, %vIn) @ #j & #j < #i"
+     ==> Ex ptrSF1 #j. HTLCOffered(S, F1, ptrSF1, y) @ #j & #j < #i"
 
 lemma Forward2_Requires_Forward1_Honest:
-    "All F2 R F1 ptrF2R y %vIn %vOut #i.
-        HTLCForwarded2(F2, R, F1, ptrF2R, y, %vIn, %vOut) @ #i
+    "All F2 R F1 ptrF2R y #i.
+        HTLCForwarded2(F2, R, F1, ptrF2R, y) @ #i
       & (not Ex P #r. LtkCompromised(P) @ #r)
-     ==> Ex S ptrF1F2 %vPrev #j.
-           HTLCForwarded1(F1, F2, S, ptrF1F2, y, %vPrev, %vIn) @ #j & #j < #i"
+     ==> Ex S ptrF1F2 #j. HTLCForwarded1(F1, F2, S, ptrF1F2, y) @ #j & #j < #i"
 
 lemma Fulfill_Requires_Forward2_Honest:
-    "All R F2 ptrF2R y %v #i.
-        HTLCFulfilled(R, F2, ptrF2R, y, %v) @ #i
+    "All R F2 ptrF2R y #i.
+        HTLCFulfilled(R, F2, ptrF2R, y) @ #i
       & (not Ex P #r. LtkCompromised(P) @ #r)
-     ==> Ex F1 %vIn #j. HTLCForwarded2(F2, R, F1, ptrF2R, y, %vIn, %v) @ #j & #j < #i"
+     ==> Ex F1 #j. HTLCForwarded2(F2, R, F1, ptrF2R, y) @ #j & #j < #i"
 
 // Gap 2 helper (see Invoice_Released_Once above for the main replay lemma).
 lemma Claim_Requires_Release:
@@ -764,7 +738,7 @@ lemma Settle_Excludes_Sender_Refund:
 lemma Invoice_Authenticates_Settlement:
     "All S F1 R ptr x #i.
         SenderSettled(S, F1, R, ptr, x) @ #i
-     ==> (Ex %v #j. InvoiceCreated(R, S, h(x), %v) @ #j & #j < #i)
+     ==> (Ex #j. InvoiceCreated(R, S, h(x)) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(R) @ #r & #r < #i)"
 
 lemma Forged_Invoice_Requires_Key_Compromise:
@@ -772,7 +746,7 @@ lemma Forged_Invoice_Requires_Key_Compromise:
     "Ex S F1 R ptr x #i #r.
         SenderSettled(S, F1, R, ptr, x) @ #i
       & LtkCompromised(R) @ #r
-      & not (Ex %v #j. InvoiceCreated(R, S, h(x), %v) @ #j)"
+      & not (Ex #j. InvoiceCreated(R, S, h(x)) @ #j)"
 
 lemma Loss_Requires_Inaction:
     "All P ptrIn ptrOut y #i #j #k.
@@ -832,32 +806,5 @@ lemma T2b_Counterexample_Blocked:
       & Refunded(ptrIn, y)  @ #j
       & Redeemed(ptrOut, y) @ #i
       & #k < #i)"
-// ---------------------------------------------------------------------------
-// Value / fee lemmas (ported from value_conservation.spthy)
-// ---------------------------------------------------------------------------
-
-lemma Fee_Conservation_Hop1:
-    "All F1 F2 S p y %vIn %vOut %fee #i.
-        HTLCForwarded1(F1, F2, S, p, y, %vIn, %vOut) @ #i
-      & FeeCharged(F1, y, %fee) @ #i
-     ==> %vIn = %vOut %+ %fee"
-
-lemma Fee_Conservation_Hop2:
-    "All F2 R F1 p y %vIn %vOut %fee #i.
-        HTLCForwarded2(F2, R, F1, p, y, %vIn, %vOut) @ #i
-      & FeeCharged(F2, y, %fee) @ #i
-     ==> %vIn = %vOut %+ %fee"
-
-lemma Receiver_Paid_Invoice_Amount:
-    "All R y %v #i.
-        ReceiverPaid(R, y, %v) @ #i
-     ==> Ex S #j. InvoiceCreated(R, S, y, %v) @ #j & #j < #i"
-
-lemma Fees_Charged_On_Path_Possible:
-    exists-trace
-    "Ex F1 F2 y %f1 %f2 #i #j.
-        FeeCharged(F1, y, %f1) @ #i
-      & FeeCharged(F2, y, %f2) @ #j
-      & not (F1 = F2)"
 
 end

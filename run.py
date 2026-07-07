@@ -32,10 +32,12 @@ import time
 import threading
 
 # --- the project's theory files, in reading order -------------------------
+# PaymentChannels.spthy and value_conservation.spthy were retired: both are
+# fully subsumed by multihop.spthy (channel layer + amounts/fees merged in,
+# tested end to end -- see multihop.spthy's header). Kept in archive/ as the
+# tested precedent for the signing+nat combination.
 FILES = [
     "cltv_blocks.spthy",
-    "PaymentChannels.spthy",
-    "value_conservation.spthy",
     "gaps.spthy",
     "witnesses.spthy",
     "t2b_attack.spthy",
@@ -43,8 +45,7 @@ FILES = [
 ]
 
 # Files that must NOT use --stop-on-trace=seqdfs.
-NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "value_conservation.spthy",
-             "witnesses.spthy"}
+NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "witnesses.spthy"}
 
 # Files proved one lemma at a time to avoid OOM.  Each entry maps a file to
 # a list of (lemma_name, use_seqdfs, timeout_override_or_None, solo) tuples.
@@ -85,6 +86,10 @@ PER_LEMMA = {
         ("Fulfill_Requires_Forward2_Honest",   False, None, False),
         ("Payment_Atomicity_Under_Liveness",   False, None, False),
         ("T2b_Counterexample_Blocked",         False, None, False),
+        ("Fee_Conservation_Hop1",              False, None, False),
+        ("Fee_Conservation_Hop2",              False, None, False),
+        ("Receiver_Paid_Invoice_Amount",       False, None, False),
+        ("Fees_Charged_On_Path_Possible",      False, None, False),
     ],
 }
 
