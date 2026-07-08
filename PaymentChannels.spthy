@@ -2,7 +2,7 @@ theory paymentchannel
 begin
 
 builtins: hashing, signing
- 
+
 rule Register_key:
     [ Fr(~ltk) ]
     --[ KeyGen($A) ]->
@@ -75,6 +75,9 @@ rule Both_States_Committed:
         Eq(verify(sigB0, commitB0, pkB), true) ]->
     [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0) ]
 
+// FundingUTXO(ptr) is a linear fact representing the on-chain funding
+// output.  It is produced exactly once here and permanently consumed by
+// any rule that broadcasts a closing or punishing transaction.
 rule Lock_Funds_And_Open:
     [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0),
       Wallet($A, ~fA), Wallet($B, ~fB) ]
@@ -82,106 +85,113 @@ rule Lock_Funds_And_Open:
         NewStateBuilt($A, $B, ptr, '0', ~fA, ~fB) ]->
     [ StateA($A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB),
       StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
-      !ValidOnChain(ptr),
+      FundingUTXO(ptr),
       !ChannelRecord(ptr, $A, $B),
       !ChannelConnect(ptr, $A, $B) ]
 
-rule Update_State:
-    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
-        newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
-        sigAnew    = sign(newCommitA, ltkA)
-        sigBnew    = sign(newCommitB, ltkB)
+// 2-step async update: A commits first (Initiate), B completes (Complete).
+// FundingUTXO is consumed-and-reproduced so that HTLC offers, state
+// updates, and close rules are mutually exclusive within the same step.
+
+rule Initiate_Update:
+    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sA_new)>
+        sigA_new   = sign(newCommitA, ltkA)
     in
-    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew),
-      !Ltk($A, ltkA), !Ltk($B, ltkB),
-      StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
-      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
+    [ Fr(~n_new), Fr(~sA_new),
+      !Ltk($A, ltkA),
+      StateA($A, $B, ptr, n_old, sA_old, oldCommitA, fA, fB),
+      FundingUTXO(ptr) ]
+    --[ UpdateInitiated($A, $B, ptr, ~n_new) ]->
+    [ UpdatePending($A, $B, ptr, n_old, sA_old, oldCommitA,
+                    ~n_new, ~sA_new, newCommitA, sigA_new, fA, fB),
+      FundingUTXO(ptr) ]
+
+// B verifies A's commitment, signs the new B-side commit, and both
+// parties exchange revocation secrets for the old state atomically.
+// !OldCommit is persistent so Publish_Revoked can read it; StoredRevocation
+// is linear so the punishment token can be spent only once.
+rule Complete_Update:
+    let newCommitA = <'commit', ptr, $A, $B, n_new, h(sA_new)>
+        newCommitB = <'commit', ptr, $B, $A, n_new, h(~sB_new)>
+        sigB_new   = sign(newCommitB, ltkB)
+    in
+    [ Fr(~sB_new),
+      !Ltk($B, ltkB), !Pk($A, pkA),
+      UpdatePending($A, $B, ptr, n_old, sA_old, oldCommitA,
+                    n_new, sA_new, newCommitA, sigA_new, fA, fB),
+      StateB($A, $B, ptr, n_old, sB_old, oldCommitB, fA, fB),
+      FundingUTXO(ptr),
       In(<fA_new, fB_new>) ]
-    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
-    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
-               ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
-      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
-               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new) ]
-
-rule Revoke_Old_Secret:
-    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
-               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
-      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
-               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
-      !Pk($A, pkA), !Pk($B, pkB) ]
     --[ StateUpdate($A, $B, ptr, n_new),
-        Revoke($A, n_old, sAold),
-        Revoke($B, n_old, sBold),
-        Eq(verify(sigAnew, newCommitA, pkA), true),
-        Eq(verify(sigBnew, newCommitB, pkB), true) ]->
-    [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
-      StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
-      !RevokedSecret($A, n_old, sAold, oldCommitA),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+        NewStateBuilt($A, $B, ptr, n_new, fA_new, fB_new),
+        Revoke($A, n_old, sA_old),
+        Revoke($B, n_old, sB_old),
+        Eq(verify(sigA_new, newCommitA, pkA), true) ]->
+    [ StateA($A, $B, ptr, n_new, sA_new, newCommitA, fA_new, fB_new),
+      StateB($A, $B, ptr, n_new, ~sB_new, newCommitB, fA_new, fB_new),
+      FundingUTXO(ptr),
+      !OldCommit($A, ptr, n_old, oldCommitA),
+      !OldCommit($B, ptr, n_old, oldCommitB),
+      StoredRevocation($B, $A, ptr, n_old, sA_old),
+      StoredRevocation($A, $B, ptr, n_old, sB_old) ]
 
-rule Publish_Old_Grace_Period_A:
-    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
-               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
-      !ValidOnChain(ptr) ]
-    --[ PublishOldBeforeRevocation($A, n_old),
-        PublishState($A, n_old),
+// A publishes the last confirmed state when B never completes an update.
+// FundingUTXO is permanently consumed — no further channel ops are possible.
+rule Abort_Update_Publish:
+    [ UpdatePending($A, $B, ptr, n_old, sA_old, oldCommitA,
+                    n_new, sA_new, newCommitA, sigA_new, fA, fB),
+      FundingUTXO(ptr) ]
+    --[ PublishState($A, n_old),
+        FundingSpent(ptr),
         OnChainDelayedProduce($A, n_old),
         OnChainInstantProduce($B, n_old) ]->
     [ OnChainDelayed($A, n_old, oldCommitA),
       OnChainInstant($B, n_old, oldCommitA) ]
 
-rule Publish_Old_Grace_Period_B:
-    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
-               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
-      !ValidOnChain(ptr) ]
-    --[ PublishOldBeforeRevocation($B, n_old),
-        PublishState($B, n_old),
-        OnChainDelayedProduce($B, n_old),
-        OnChainInstantProduce($A, n_old) ]->
-    [ OnChainDelayed($B, n_old, oldCommitB),
-      OnChainInstant($A, n_old, oldCommitB) ]
+// Cooperative close while an update is in flight: uses the last confirmed
+// balances (fA, fB from the UpdatePending / StateB pair).
+rule Close_During_Update:
+    let closetx = <'commit', ptr, $A, $B, n_old, fA, fB>
+        signA   = sign(closetx, ltkA)
+        signB   = sign(closetx, ltkB)
+    in
+    [ UpdatePending($A, $B, ptr, n_old, sA_old, oldCommitA,
+                    n_new, sA_new, newCommitA, sigA_new, fA, fB),
+      StateB($A, $B, ptr, n_old, sB_old, oldCommitB, fA, fB),
+      FundingUTXO(ptr),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      !Pk($A, pkA),   !Pk($B, pkB) ]
+    --[ Close($A, $B, ptr, n_old),
+        FundingSpent(ptr),
+        OnChainInstantProduce($A, n_old),
+        OnChainInstantProduce($B, n_old),
+        Eq(verify(signA, closetx, pkA), true),
+        Eq(verify(signB, closetx, pkB), true) ]->
+    [ OnChainInstant($A, n_old, closetx),
+      OnChainInstant($B, n_old, closetx) ]
 
 rule Publish_Current_A:
-    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB), !ValidOnChain(ptr) ]
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB),
+      FundingUTXO(ptr) ]
     --[ Publish($A, n, commitA),
         PublishState($A, n),
+        FundingSpent(ptr),
         OnChainDelayedProduce($A, n),
         OnChainInstantProduce($B, n) ]->
     [ OnChainDelayed($A, n, commitA),
       OnChainInstant($B, n, commitA) ]
 
 rule Publish_Current_B:
-    [ StateB($A, $B, ptr, n, sB, commitB, fA, fB), !ValidOnChain(ptr) ]
+    [ StateB($A, $B, ptr, n, sB, commitB, fA, fB),
+      FundingUTXO(ptr) ]
     --[ Publish($B, n, commitB),
         PublishState($B, n),
+        FundingSpent(ptr),
         OnChainDelayedProduce($B, n),
         OnChainInstantProduce($A, n) ]->
     [ OnChainDelayed($B, n, commitB),
       OnChainInstant($A, n, commitB) ]
 
-rule Publish_Pending_A:
-    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
-               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
-      !ValidOnChain(ptr) ]
-    --[ Publish($A, n_new, newCommitA),
-        PublishFromPending($A, n_old, n_new),
-        OnChainDelayedProduce($A, n_new),
-        OnChainInstantProduce($B, n_new) ]->
-    [ OnChainDelayed($A, n_new, newCommitA),
-      OnChainInstant($B, n_new, newCommitA) ]
-
-rule Publish_Pending_B:
-    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
-               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
-      !ValidOnChain(ptr) ]
-    --[ Publish($B, n_new, newCommitB),
-        PublishFromPending($B, n_old, n_new),
-        OnChainDelayedProduce($B, n_new),
-        OnChainInstantProduce($A, n_new) ]->
-    [ OnChainDelayed($B, n_new, newCommitB),
-      OnChainInstant($A, n_new, newCommitB) ]
-
-// Honest Closing
 rule Honest_Close:
     let closetx = <'commit', ptr, $A, $B, n, fA, fB>
         signA   = sign(closetx, ltkA)
@@ -189,10 +199,11 @@ rule Honest_Close:
     in
     [ StateA($A, $B, ptr, n, sA, commitA, fA, fB),
       StateB($A, $B, ptr, n, sB, commitB, fA, fB),
-      !ValidOnChain(ptr),
+      FundingUTXO(ptr),
       !Ltk($A, ltkA), !Ltk($B, ltkB),
       !Pk($A, pkA),   !Pk($B, pkB) ]
     --[ Close($A, $B, ptr, n),
+        FundingSpent(ptr),
         OnChainInstantProduce($A, n),
         OnChainInstantProduce($B, n),
         Eq(verify(signA, closetx, pkA), true),
@@ -200,35 +211,40 @@ rule Honest_Close:
     [ OnChainInstant($A, n, closetx),
       OnChainInstant($B, n, closetx) ]
 
+// !OldCommit is persistent so it can be read here even if StoredRevocation
+// is already gone.  FundingUTXO is permanently consumed — only one old
+// commit can ever be broadcast for a given channel.
 rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
-      !ValidOnChain(ptr),
-      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+      FundingUTXO(ptr),
+      !OldCommit($A, ptr, n_old, oldCommitA) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
-        Cheat($A, n_old) ]->
-    [ OnChainCheat($A, $B, n_old, oldCommitA) ]
+        Cheat($A, n_old),
+        FundingSpent(ptr) ]->
+    [ OnChainCheat($A, $B, ptr, n_old, oldCommitA) ]
 
 rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
-      !ValidOnChain(ptr),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      FundingUTXO(ptr),
+      !OldCommit($B, ptr, n_old, oldCommitB) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
-        Cheat($B, n_old) ]->
-    [ OnChainCheat($B, $A, n_old, oldCommitB) ]
+        Cheat($B, n_old),
+        FundingSpent(ptr) ]->
+    [ OnChainCheat($B, $A, ptr, n_old, oldCommitB) ]
 
+// StoredRevocation is linear: B can spend A's revocation exactly once.
 rule Punish_A:
-    [ OnChainCheat($A, $B, n_old, oldCommitA),
-      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+    [ OnChainCheat($A, $B, ptr, n_old, oldCommitA),
+      StoredRevocation($B, $A, ptr, n_old, sAold) ]
     --[ Punish($B, $A, n_old) ]->
     [ AllFundsTo($B) ]
 
 rule Punish_B:
-    [ OnChainCheat($B, $A, n_old, oldCommitB),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+    [ OnChainCheat($B, $A, ptr, n_old, oldCommitB),
+      StoredRevocation($A, $B, ptr, n_old, sBold) ]
     --[ Punish($A, $B, n_old) ]->
     [ AllFundsTo($A) ]
 
-// Settlement rules: generic txContent unifies with both 'commit' tuples
 rule Instant_Funds_A:
     [ OnChainInstant($A, n, txContent) ]
     --[ FundsSettled($A, n), SettledTx($A, txContent) ]->
@@ -258,7 +274,7 @@ restriction OneChannelPerPtr:
      & ChannelOpen(C, D, ptr) @ #j
      ==> #i = #j"
 
-lemma state_update[use_induction]:   // inductionto avoid the problem of infinite trace(going in loop)
+lemma state_update [use_induction]:
     "All A B ptr n #i.
        StateUpdate(A, B, ptr, n) @ #i
      ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
@@ -278,14 +294,24 @@ lemma settlement_is_traceable:
        FundsSettled(A, n) @ #i
      ==> Ex tx #j. SettledTx(A, tx) @ #j & #j = #i"
 
+// NewStateBuilt and StateUpdate are co-emitted by Complete_Update (#j = #k).
 lemma Protocol_execution:
     exists-trace
-    "Ex A B ptr n fA vB #i #j #k #l.
+    "Ex A B ptr n fA fB #i #j #k.
         ChannelOpen(A, B, ptr) @ #i
-      & NewStateBuilt(A, B, ptr, n, fA, vB) @ #j
+      & NewStateBuilt(A, B, ptr, n, fA, fB) @ #j
+      & StateUpdate(A, B, ptr, n) @ #j
+      & Close(A, B, ptr, n) @ #k
+      & #i < #j & #j < #k"
+
+// Sanity check: the 2-step update (Initiate then Complete) is reachable.
+lemma Async_Update_Possible:
+    exists-trace
+    "Ex A B ptr n #i #j #k.
+        ChannelOpen(A, B, ptr) @ #i
+      & UpdateInitiated(A, B, ptr, n) @ #j
       & StateUpdate(A, B, ptr, n) @ #k
-      & Close(A, B, ptr, n) @ #l
-      & #i < #j & #j < #k & #k < #l"
+      & #i < #j & #j < #k"
 
 lemma No_Punishment_Without_Cheating:
     "All A B n #i.
@@ -294,15 +320,15 @@ lemma No_Punishment_Without_Cheating:
       | (Ex #j. LtkCompromised(A) @ #j & #j < #i)"
 
 lemma Balance_Must_Updates:
-  all-traces
-  "All A B ptr n1 n2 fA1 fB1 fA2 fB2 #i #j.
-     ( NewStateBuilt(A, B, ptr, n1, fA1, fB1) @ #i
-      & StateUpdate(A, B, ptr, n1) @ #i
-      & NewStateBuilt(A, B, ptr, n2, fA2, fB2) @ #j
-      & StateUpdate(A, B, ptr, n2) @ #j
-      & #i < #j
-     )
-     ==> not(fA2 = fA1) & not(fB2 = fB1)"
+    all-traces
+    "All A B ptr n1 n2 fA1 fB1 fA2 fB2 #i #j.
+       ( NewStateBuilt(A, B, ptr, n1, fA1, fB1) @ #i
+        & StateUpdate(A, B, ptr, n1) @ #i
+        & NewStateBuilt(A, B, ptr, n2, fA2, fB2) @ #j
+        & StateUpdate(A, B, ptr, n2) @ #j
+        & #i < #j
+       )
+       ==> not(fA2 = fA1) & not(fB2 = fB1)"
 
 lemma Cooperative_Close_Execution:
     exists-trace
