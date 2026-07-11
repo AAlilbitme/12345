@@ -7,6 +7,17 @@
 // security properties (payment atomicity, intermediary safety, value
 // conservation).
 //
+// REPLAY HARDENING (OneHTLCPerPtr): the forwarding rules are gated only by a
+// public In(<'htlc..'>) offer and read the outgoing amount/fee from In(...), so
+// a Dolev-Yao replay of an offer could re-fire an honest forward and lock a
+// second HTLC on the SAME channel output with an adversary-chosen amount. The
+// OneHTLCPerPtr restriction forbids two HTLC-adds on one output pointer, which
+// matches the on-chain reality that a funding output is spent once. This was
+// found and closed via the audit probes (double-forward: reachable -> blocked;
+// double-redeem: NOT a vulnerability -- the redeem/settle rules each consume a
+// linear *Pending fact, so the two Redeemed(ptrSF1) events in an honest run are
+// the two endpoints' views of one hop, not two spends).
+//
 // HISTORY: this file merges what used to be two separate theories --
 // multihop.spthy (fixed 3-hop, signed HTLC routing, no amounts) and
 // value_conservation.spthy (amount/fee conservation in a separate
@@ -504,6 +515,19 @@ restriction Equality:
 
 restriction OneTimeoutPerPtr:
     "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
+
+// Each channel output (identified by its pointer) can host at most one HTLC.
+// The forwarding rules read the outgoing amount/fee from In(...) and are gated
+// only by a public In(<'htlc..'>) offer, so without this a replayed offer would
+// re-fire an honest forward and lock a second HTLC on the SAME output with an
+// adversary-chosen amount.  On-chain a funding output is spent once; this makes
+// the symbolic model match that.  (The redeem/settle rules are already immune:
+// each consumes a linear *Pending fact, so a replayed 'fulfill' cannot double-
+// spend an output -- the two Redeemed(ptrSF1) events in an honest run are the
+// two endpoints' views of one hop, not two spends.)
+restriction OneHTLCPerPtr:
+    "All ptr y1 y2 #i #j.
+       HTLCAdded(ptr, y1) @ #i & HTLCAdded(ptr, y2) @ #j ==> #i = #j"
 
 restriction OneChannelPerPtr:
     "All A B C D ptr #i #j.

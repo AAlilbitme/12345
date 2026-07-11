@@ -166,3 +166,35 @@ tamarin-prover multihop_nhop.spthy --heuristic=c --stop-on-trace=seqdfs --derivc
 tamarin-prover multihop_nhop.spthy --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=Multihop_Payment_Possible
 # ... (Settle_Requires_Receiver_Release is the one lemma that does not terminate here)
 ```
+
+## 7. Security review & replay hardening (OneHTLCPerPtr)
+
+A Dolev-Yao replay review of `multihop.spthy` was run empirically (audit
+exists-trace probes, not assertions):
+
+- **Double-forward — real gap, now closed.** The forwarding rules
+  (`Intermediary_Forward_HTLC`, `Intermediary_Forward2`) are gated only by a
+  public `In(<'htlc..'>)` offer and read the outgoing amount/fee from `In(...)`.
+  A replayed offer therefore re-fired an honest forward, locking a second HTLC
+  on the *same* channel output with an adversary-chosen amount
+  (`AUDIT_Double_Forward_Reachable`: verified/reachable). Fixed by
+  `restriction OneHTLCPerPtr` — at most one `HTLCAdded` per output pointer,
+  matching the on-chain fact that a funding output is spent once. After the fix
+  the probe is `falsified` (blocked) and all 37 lemmas still verify (honest
+  witness `Multihop_Payment_Possible` at 67 steps).
+
+- **Double-redeem — NOT a vulnerability (false positive).** The redeem/settle
+  rules each consume a linear `*Pending` fact, so a replayed `'fulfill'` cannot
+  double-spend an output. The two `Redeemed(ptrSF1)` events in an honest run are
+  the two endpoints' views of one hop, not two spends. A naive
+  `OneRedeemPerPtr` restriction was tested and *rejected* because it falsified
+  the honest witness — documented here so it is not re-attempted.
+
+- **Linear-fact variants** (`multihop_nhop*.spthy`, `experiments/`) were already
+  immune to both, since forwarding there consumes a linear routing fact.
+
+Reproduce:
+```bash
+export LANG=C.utf8 && export LC_ALL=C.utf8
+tamarin-prover multihop.spthy --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=Multihop_Payment_Possible
+```
