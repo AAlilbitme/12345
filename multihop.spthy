@@ -23,8 +23,8 @@
 // value_conservation.spthy (amount/fee conservation in a separate
 // nat-arithmetic abstraction, kept apart because combining signing + nat
 // induction was assumed to OOM Tamarin). That assumption was tested, not
-// just asserted: the merged file below verifies all 33 lemmas
-// (17 channel/structural + 16 HTLC/value, incl. all 4 ported value lemmas)
+// just asserted: the merged file below verifies all 37 lemmas
+// (16 channel/structural + 21 HTLC/value, incl. all 4 ported value lemmas)
 // with --heuristic=c --stop-on-trace=seqdfs. The prior OOM was caused by
 // combining signing + nat induction + an UNBOUNDED BLOCK CLOCK (see
 // gaps.spthy's history); this file has no clock -- timing stays relational

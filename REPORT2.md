@@ -143,7 +143,7 @@ variant, documented in the file header.
 ## 5. What this contributes
 
 The reviewer question *"why only 3 hops?"* is neutralised by decomposition:
-- the **concrete** `multihop.spthy` proves all 33 properties over 3 hops with the
+- the **concrete** `multihop.spthy` proves all 37 properties over 3 hops with the
   full signed-message adversary;
 - the **N-hop** models prove that the routing-safety invariants (atomicity,
   intermediary safety, causality) are **independent of path length**, and
