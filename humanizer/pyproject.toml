@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text-humanizer"
+version = "0.1.0"
+description = "Turn a paragraph or PDF into more human-sounding text using the v2.0 sound-human prompt plus a rule engine."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+pdf = ["pypdf>=4.0.0"]
+
+[project.scripts]
+humanize = "humanizer.cli:main"
+
+[tool.setuptools]
+packages = ["humanizer"]
+package-dir = { "humanizer" = "." }
