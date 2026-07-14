@@ -7,16 +7,21 @@
 // security properties (payment atomicity, intermediary safety, value
 // conservation).
 //
-// REPLAY HARDENING (OneHTLCPerPtr): the forwarding rules are gated only by a
-// public In(<'htlc..'>) offer and read the outgoing amount/fee from In(...), so
-// a Dolev-Yao replay of an offer could re-fire an honest forward and lock a
-// second HTLC on the SAME channel output with an adversary-chosen amount. The
-// OneHTLCPerPtr restriction forbids two HTLC-adds on one output pointer, which
-// matches the on-chain reality that a funding output is spent once. This was
-// found and closed via the audit probes (double-forward: reachable -> blocked;
-// double-redeem: NOT a vulnerability -- the redeem/settle rules each consume a
-// linear *Pending fact, so the two Redeemed(ptrSF1) events in an honest run are
-// the two endpoints' views of one hop, not two spends).
+// REPLAY HARDENING (structural, via the linear Free(ptr) slot): the forwarding
+// rules read the outgoing amount/fee from In(...), so a Dolev-Yao replay of an
+// offer could otherwise re-fire an honest forward and lock a second HTLC on the
+// SAME channel output with an adversary-chosen amount. Each channel open emits
+// ONE linear Free(ptr) token, and every HTLC-add (offer/forward) CONSUMES the
+// Free(ptr) of the output it locks. So "at most one HTLC per output" is now a
+// STRUCTURAL consequence of linear-fact consumption -- not a global axiom.
+// (An earlier version stated this as a restriction OneHTLCPerPtr; the slot model
+// replaced it -- one fewer assumption, same guarantee, double-forward still
+// falsified.) Double-redeem was never a vulnerability: the redeem/settle rules
+// each consume a linear *Pending fact, so the two Redeemed(ptrSF1) events in an
+// honest run are the two endpoints' views of one hop, not two spends.
+// NOTE: Free(ptr) is consumed and not reproduced, so each channel hosts a single
+// HTLC over its life (Stage 1). Reusable channels (reproduce Free on resolution)
+// are future work.
 //
 // HISTORY: this file merges what used to be two separate theories --
 // multihop.spthy (fixed 3-hop, signed HTLC routing, no amounts) and
@@ -170,7 +175,8 @@ rule Lock_Funds_And_Open:
       !ValidOnChain(ptr),
       !ChannelRecord(ptr, $A, $B),
       !ChannelConnect(ptr, $A, $B),   // permits HTLC from A to B
-      !ChannelConnect(ptr, $B, $A) ]  // permits HTLC from B to A (Neq restriction distinguishes hops)
+      !ChannelConnect(ptr, $B, $A),   // permits HTLC from B to A (Neq restriction distinguishes hops)
+      Free(ptr) ]  // linear HTLC slot: consumed by an HTLC-add on this output
 
 // ---------------------------------------------------------------------------
 // State update & revocation
@@ -391,7 +397,8 @@ rule Sender_Offer_HTLC:
       In(%vS),
       !Pk($Receiver, pkR),
       !Ltk($Sender, ltkS),
-      !ChannelConnect(ptrSF1, $Sender, $Forward1) ]
+      !ChannelConnect(ptrSF1, $Sender, $Forward1),
+      Free(ptrSF1) ]
     --[ HTLCOffered($Sender, $Forward1, ptrSF1, y, %vS),
         HTLCAdded(ptrSF1, y),
         Neq($Sender, $Forward1),
@@ -410,6 +417,7 @@ rule Forward1_HTLC:
       !Pk($Sender, pkS), !Ltk($Forward1, ltkF1),
       !ChannelConnect(ptrSF1, $Sender, $Forward1),
       !ChannelConnect(ptrF1F2, $Forward1, $Forward2),
+      Free(ptrF1F2),
       In(%fee), In(%vOut) ]
     --[ HTLCForwarded1($Forward1, $Forward2, $Sender, ptrF1F2, y, %vIn, %vOut),
         HTLCAdded(ptrF1F2, y),
@@ -433,6 +441,7 @@ rule Forward2_HTLC:
       !Pk($Forward1, pkF1), !Ltk($Forward2, ltkF2),
       !ChannelConnect(ptrF1F2, $Forward1, $Forward2),
       !ChannelConnect(ptrF2R, $Forward2, $Receiver),
+      Free(ptrF2R),
       In(%fee), In(%vOut) ]
     --[ HTLCForwarded2($Forward2, $Receiver, $Forward1, ptrF2R, y, %vIn, %vOut),
         HTLCAdded(ptrF2R, y),
@@ -515,19 +524,6 @@ restriction Equality:
 
 restriction OneTimeoutPerPtr:
     "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
-
-// Each channel output (identified by its pointer) can host at most one HTLC.
-// The forwarding rules read the outgoing amount/fee from In(...) and are gated
-// only by a public In(<'htlc..'>) offer, so without this a replayed offer would
-// re-fire an honest forward and lock a second HTLC on the SAME output with an
-// adversary-chosen amount.  On-chain a funding output is spent once; this makes
-// the symbolic model match that.  (The redeem/settle rules are already immune:
-// each consumes a linear *Pending fact, so a replayed 'fulfill' cannot double-
-// spend an output -- the two Redeemed(ptrSF1) events in an honest run are the
-// two endpoints' views of one hop, not two spends.)
-restriction OneHTLCPerPtr:
-    "All ptr y1 y2 #i #j.
-       HTLCAdded(ptr, y1) @ #i & HTLCAdded(ptr, y2) @ #j ==> #i = #j"
 
 restriction OneChannelPerPtr:
     "All A B C D ptr #i #j.
