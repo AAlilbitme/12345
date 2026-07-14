@@ -90,7 +90,8 @@ PER_LEMMA = {
         ("Fee_Conservation_Hop2",              False, None, False),
         ("Receiver_Paid_Invoice_Amount",       False, None, False),
         ("Fees_Charged_On_Path_Possible",      False, None, False),
-        ("Wormhole_Fee_Theft_Reachable",       False, None, False),  # NDSS'19 attack, exists-trace
+        ("Wormhole_Fee_Theft_Reachable",       False, None, False),  # NDSS.19 attack, exists-trace
+        ("Wormhole_Steals_Exactly_The_Fees",    False, None, False),  # quantified: theft = path fees
     ],
 }
 
