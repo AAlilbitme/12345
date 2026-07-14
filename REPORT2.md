@@ -283,3 +283,34 @@ made a known DoS explicit, not a new attack. Combined with the machine-checked
 wormhole, the model's economic layer is now characterised on both sides:
 what it guarantees (conservation, positive fees, no value creation) and how it
 fails (wormhole fee theft, griefing).
+
+## 11. Linear channel state & reusable channels (Stage 1 shipped, Stage 2 boundary)
+
+The `OneHTLCPerPtr` restriction was a global axiom asserting "one HTLC per
+output". Two staged refactors replaced/extended it; both were run, not assumed.
+
+**Stage 1 (shipped in `multihop.spthy`).** Each channel open emits one linear
+`Free(ptr)` token; every HTLC-add consumes the `Free(ptr)` of the output it
+locks. "At most one HTLC per output" becomes a **structural consequence of
+linear-fact consumption**, and `OneHTLCPerPtr` is removed — one fewer assumption
+for the same guarantee. All 43 lemmas re-verify; double-forward stays falsified
+(now structurally, 100 steps, no axiom).
+
+**Stage 2 (spike — `experiments/reusable_channel_stage2.spthy`, NOT shipped).**
+Make the channel reusable: each resolution (settle/refund) reproduces `Free(ptr)`
+so one output carries sequential HTLCs, as real channels do. Tested outcome — a
+clean Tamarin tractability boundary:
+
+| Lemma class | Result |
+|-------------|--------|
+| Any lemma, no `--auto-sources` | **all "analysis incomplete"** — the reuse loop leaves unbounded partial deconstructions; precomputation never finishes |
+| Backward-reasoning safety (`Intermediary_Never_Loses`, `Payment_Atomicity`, `EndToEnd_Value_Conservation`) **with** `--auto-sources` | **verified** (~45s each) |
+| exists-trace witnesses (`Multihop_Payment_Possible`, `Wormhole_*`, `Channel_Reuse_Possible`) | **do not converge** (killed 500–700s) |
+| Interval lemma `No_Concurrent_HTLC_Per_Output` | **does not converge** (killed 700s) |
+
+**Conclusion.** Reusable channels are *expressible* and their core safety
+*survives* (under `--auto-sources`), but the reuse loop reintroduces the
+witness/liveness non-termination the modular split was built to avoid. Stage 1 —
+structural single-HTLC-per-output — is the right shipped model; Stage 2 is kept
+as a documented boundary, another concrete data point for where Tamarin's
+automated search stops scaling on this protocol.

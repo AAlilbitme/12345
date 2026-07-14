@@ -59,3 +59,12 @@ tamarin-prover generic_linearfact_structural.spthy --heuristic=c --derivcheck-ti
 tamarin-prover generic_linearfact_safety.spthy     --heuristic=c --derivcheck-timeout=0 --prove=Redeem_Requires_Receiver_Release
 tamarin-prover generic_linearfact_safety.spthy     --heuristic=c --derivcheck-timeout=0 --prove=Intermediary_Never_Loses
 ```
+
+
+## `reusable_channel_stage2.spthy` (SPIKE — not shipped)
+
+Stage 2 of the linear-channel refactor: reusable channels (resolution reproduces
+the `Free(ptr)` slot). Documented Tamarin boundary — safety lemmas verify with
+`--auto-sources` (~45s each), but exists-trace witnesses and interval lemmas do
+not converge (killed 500-700s). See REPORT2.md section 11. Stage 1 (structural
+single-HTLC-per-output) is the shipped model in `../multihop.spthy`.
