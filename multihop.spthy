@@ -574,6 +574,11 @@ restriction HonestPartiesActBeforeIncomingTimeout:
 
 // T3: if an honest intermediary's outgoing HTLC is redeemed before the
 // incoming timeout, the node sweeps the incoming HTLC.
+// NOT redundant with T1/T2b: tested by removing this restriction and re-running
+// the suite -- Intermediary_Never_Loses_Under_Liveness is then FALSIFIED
+// (Tamarin finds a 59-step counterexample).  T2b orders the timeouts but does
+// not force the node to actually sweep the incoming HTLC once the outgoing one
+// is redeemed; T3 is what encodes that action.  Load-bearing, kept.
 restriction IntermediaryMustClaim:
     "All P ptrIn ptrOut y #f #i #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
@@ -798,6 +803,11 @@ lemma Forged_Invoice_Requires_Key_Compromise:
       & LtkCompromised(R) @ #r
       & not (Ex %v #j. InvoiceCreated(R, S, h(x), %v) @ #j)"
 
+// Sanity corollary (not an independent result): a redeemed-out + refunded-in
+// pair cannot ALSO have a redeemed-in.  Follows directly from OneOutcomePerHTLC
+// (Redeemed and Refunded on the same ptr are mutually exclusive), which is why
+// the proof is trivial.  Kept as an explicit non-vacuity check; the substantive
+// intermediary-safety statement is Intermediary_Never_Loses_Under_Liveness.
 lemma Loss_Requires_Inaction:
     "All P ptrIn ptrOut y #i #j #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #i

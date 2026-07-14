@@ -198,3 +198,19 @@ Reproduce:
 export LANG=C.utf8 && export LC_ALL=C.utf8
 tamarin-prover multihop.spthy --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=Multihop_Payment_Possible
 ```
+
+## 8. Assumption-minimality check: is T3 redundant? (No.)
+
+A natural optimization question: given T1 (`RedeemBeforeTimeout`) and T2b
+(`HonestPartiesActBeforeIncomingTimeout`), is T3 (`IntermediaryMustClaim`)
+still needed? Tested empirically by removing T3 and re-running the full suite:
+
+- **`Intermediary_Never_Loses_Under_Liveness` is FALSIFIED** without T3 —
+  Tamarin finds a concrete 59-step counterexample. T2b orders the two timeouts
+  (`TimedOut(ptrOut) < TimedOut(ptrIn)`) but does not force the node to *sweep*
+  the incoming HTLC once the outgoing one is redeemed; that action is exactly
+  what T3 encodes.
+
+Conclusion: the three timing restrictions are minimal — none is implied by the
+others. T3 is kept, with a comment in `multihop.spthy` recording this result so
+it is not re-attempted as a "simplification".
