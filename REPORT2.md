@@ -143,7 +143,7 @@ variant, documented in the file header.
 ## 5. What this contributes
 
 The reviewer question *"why only 3 hops?"* is neutralised by decomposition:
-- the **concrete** `multihop.spthy` proves all 37 properties over 3 hops with the
+- the **concrete** `multihop.spthy` proves all 38 properties over 3 hops with the
   full signed-message adversary;
 - the **N-hop** models prove that the routing-safety invariants (atomicity,
   intermediary safety, causality) are **independent of path length**, and
@@ -180,7 +180,7 @@ exists-trace probes, not assertions):
   (`AUDIT_Double_Forward_Reachable`: verified/reachable). Fixed by
   `restriction OneHTLCPerPtr` — at most one `HTLCAdded` per output pointer,
   matching the on-chain fact that a funding output is spent once. After the fix
-  the probe is `falsified` (blocked) and all 37 lemmas still verify (honest
+  the probe is `falsified` (blocked) and all lemmas still verify (honest
   witness `Multihop_Payment_Possible` at 67 steps).
 
 - **Double-redeem — NOT a vulnerability (false positive).** The redeem/settle
@@ -214,3 +214,27 @@ still needed? Tested empirically by removing T3 and re-running the full suite:
 Conclusion: the three timing restrictions are minimal — none is implied by the
 others. T3 is kept, with a comment in `multihop.spthy` recording this result so
 it is not re-attempted as a "simplification".
+
+## 9. Wormhole attack — machine-checked (NDSS'19)
+
+The Malavolta et al. wormhole attack is now reachable in the model as a lemma,
+not just discussed. Two colluding path members relay the preimage `x` through
+an out-of-band channel, skipping the honest intermediary between them; the
+payment settles end-to-end but the bypassed node forwards value while earning
+no fee. In the symbolic model the Dolev-Yao network IS that side channel:
+`'fulfill'` carrying `x` is a public `Out` message, so the adversary relays it
+from the receiver's release directly to the sender.
+
+- **`Wormhole_Fee_Theft_Reachable`** (exists-trace): **verified (51 steps)** —
+  a concrete trace where the sender settles and the receiver is paid, yet the
+  middle hop `ptrF1F2` is never `Redeemed` and neither intermediary emits a
+  `FeeEarned` event, with **no key compromise**.
+- Companion probe `No_Wormhole_Would_Require` (the claim that settlement forces
+  the middle hop to be redeemed) is **falsified (17 steps)** — precisely why the
+  wormhole exists: the base HTLC construction does not bind the hops together.
+
+This is the known limitation the base (non-PTLC) protocol has by design; the
+fix in the literature is anonymous multi-hop locks / PTLCs, which is out of
+scope for this HTLC model. Documenting it as a verified reachability result
+turns "we didn't model the wormhole" into "we machine-checked that the HTLC
+model exhibits it, and why."

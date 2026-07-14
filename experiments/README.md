@@ -1,6 +1,6 @@
 # Generalizing to N-hop routing — an idealized-channel abstraction
 
-The main model (`../multihop.spthy`) proves 37 properties over a **fixed 3-hop**
+The main model (`../multihop.spthy`) proves 38 properties over a **fixed 3-hop**
 path, with the full Dolev–Yao adversary, signatures, revocation, and on-chain
 settlement. A natural question is: *why only 3 hops?*
 
@@ -34,7 +34,7 @@ abstraction:
    are **not** carried by this abstraction — they deliberately depend on signatures,
    which were removed, and remain proved only in the concrete 3-hop model. The
    layering is: *concrete model → authentication + full adversary (3-hop);
-   abstraction → routing safety (N-hop).* Not all 37 properties generalize.
+   abstraction → routing safety (N-hop).* Not all 38 properties generalize.
 2. **Exists-trace witnesses still don't scale.** The `==> F` safety lemmas are
    all-traces and induction handles them; a concrete N-hop *reachability* witness
    needs bounding/an oracle and is not proved here.
