@@ -229,6 +229,13 @@ from the receiver's release directly to the sender.
   a concrete trace where the sender settles and the receiver is paid, yet the
   middle hop `ptrF1F2` is never `Redeemed` and neither intermediary emits a
   `FeeEarned` event, with **no key compromise**.
+- **`Wormhole_Steals_Exactly_The_Fees`** (exists-trace): **verified (81 steps)**
+  — quantifies the theft. Both hops charged fees `%f1`, `%f2` and the sender
+  locked `%vS = %v %+ %f1 %+ %f2`, yet the payment settles with neither
+  intermediary earning: the colluders capture *precisely* the path fees
+  `%f1 %+ %f2`. This ties the attack to the value layer — the hop-by-hop
+  conservation (`Fee_Conservation_Hop1/2`) is exactly what measures the loss
+  when the middle settle is bypassed.
 - Companion probe `No_Wormhole_Would_Require` (the claim that settlement forces
   the middle hop to be redeemed) is **falsified (17 steps)** — precisely why the
   wormhole exists: the base HTLC construction does not bind the hops together.
