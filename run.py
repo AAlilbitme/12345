@@ -92,6 +92,10 @@ PER_LEMMA = {
         ("Fees_Charged_On_Path_Possible",      False, None, False),
         ("Wormhole_Fee_Theft_Reachable",       False, None, False),  # NDSS.19 attack, exists-trace
         ("Wormhole_Steals_Exactly_The_Fees",    False, None, False),  # quantified: theft = path fees
+        ("Fee_Strictly_Positive_Hop1",          False, None, False),
+        ("Fee_Strictly_Positive_Hop2",          False, None, False),
+        ("EndToEnd_Value_Conservation",         False, None, False),
+        ("Griefing_Capital_Lock_Reachable",     False, None, False),  # PCN griefing DoS, exists-trace
     ],
 }
 

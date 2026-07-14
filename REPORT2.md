@@ -143,7 +143,7 @@ variant, documented in the file header.
 ## 5. What this contributes
 
 The reviewer question *"why only 3 hops?"* is neutralised by decomposition:
-- the **concrete** `multihop.spthy` proves all 39 properties over 3 hops with the
+- the **concrete** `multihop.spthy` proves all 43 properties over 3 hops with the
   full signed-message adversary;
 - the **N-hop** models prove that the routing-safety invariants (atomicity,
   intermediary safety, causality) are **independent of path length**, and
@@ -245,3 +245,41 @@ fix in the literature is anonymous multi-hop locks / PTLCs, which is out of
 scope for this HTLC model. Documenting it as a verified reachability result
 turns "we didn't model the wormhole" into "we machine-checked that the HTLC
 model exhibits it, and why."
+
+## 10. Novelty hunt: economic soundness + a caught false positive
+
+A focused pass probed for properties the value layer can express beyond the
+known results. Everything was run, and one candidate "attack" was rejected by
+adversarial verification.
+
+**New all-traces theorems (verified):**
+- **`EndToEnd_Value_Conservation`** — over a full linked 3-hop payment the
+  sender locks the receiver's amount plus a strictly positive total fee; value
+  is neither created nor destroyed. Strengthens the per-hop `Fee_Conservation`
+  lemmas into an end-to-end guarantee.
+- **`Fee_Strictly_Positive_Hop1/Hop2`** — every forward strictly decreases the
+  routed amount. Never assumed; it holds because the natural-number sort has no
+  `%0`, so the fee is always `>= %1`. A probe for a zero-fee "free forward" is
+  correspondingly **falsified** (unreachable).
+
+**New reachability (verified):**
+- **`Griefing_Capital_Lock_Reachable`** — an honest intermediary is induced to
+  lock capital by forwarding and then forced to refund on timeout, with no
+  payment completing and no key compromise. The standard PCN griefing DoS, shown
+  reachable (known attack, here made explicit in the model).
+
+**A false positive, caught (methodology).** An initial exists-trace probe that
+required only the *hash* `y` to be shared between a sender offer and a receiver
+payment "verified" what looked like value creation (receiver paid more than the
+sender locked, no compromise). Tightening it to a single **linked** payment
+chain (same pointers threaded offer→fwd1→fwd2→paid) **falsified** it, while a
+control confirmed the chain is otherwise reachable — so the apparent attack was
+just invoice-hash reuse across two unrelated offers, not a soundness bug. This
+is exactly the adversarial-verification discipline the review used throughout:
+a plausible exists-trace is not trusted until a tightened variant survives.
+
+**Honest bottom line.** The hunt produced strengthened *soundness theorems* and
+made a known DoS explicit, not a new attack. Combined with the machine-checked
+wormhole, the model's economic layer is now characterised on both sides:
+what it guarantees (conservation, positive fees, no value creation) and how it
+fails (wormhole fee theft, griefing).

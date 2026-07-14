@@ -7,7 +7,7 @@ suite.
 - **`multihop_no_fees.spthy`** — the original `multihop.spthy` (fixed 3-hop,
   signed HTLC routing, no invoice amounts). Replaced by the current
   `multihop.spthy`, which merges this file with `value_conservation.spthy`
-  and verifies all 39 lemmas (16 channel/structural + 23 HTLC/value).
+  and verifies all 43 lemmas (16 channel/structural + 27 HTLC/value).
 
 - **`value_conservation.spthy`** — amount/fee conservation in a separate
   nat-arithmetic abstraction, originally kept apart because combining the

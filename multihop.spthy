@@ -23,8 +23,8 @@
 // value_conservation.spthy (amount/fee conservation in a separate
 // nat-arithmetic abstraction, kept apart because combining signing + nat
 // induction was assumed to OOM Tamarin). That assumption was tested, not
-// just asserted: the merged file below verifies all 39 lemmas
-// (16 channel/structural + 23 HTLC/value, incl. all 4 ported value lemmas)
+// just asserted: the merged file below verifies all 43 lemmas
+// (16 channel/structural + 27 HTLC/value, incl. all 4 ported value lemmas)
 // with --heuristic=c --stop-on-trace=seqdfs. The prior OOM was caused by
 // combining signing + nat induction + an UNBOUNDED BLOCK CLOCK (see
 // gaps.spthy's history); this file has no clock -- timing stays relational
@@ -948,5 +948,51 @@ lemma Wormhole_Steals_Exactly_The_Fees:
       & not (Ex p1 p2 yy %f #w. FeeEarned(F1, p1, p2, yy, %f) @ #w)
       & not (Ex p1 p2 yy %f #w. FeeEarned(F2, p1, p2, yy, %f) @ #w)
       & not (Ex P #r. LtkCompromised(P) @ #r)"
+
+// ---------------------------------------------------------------------------
+// Economic soundness (all-traces theorems).
+// These strengthen the per-hop Fee_Conservation lemmas into end-to-end
+// guarantees and pin down two properties that are never assumed anywhere.
+// ---------------------------------------------------------------------------
+
+// Every forward strictly DECREASES the routed amount: the per-hop fee is
+// strictly positive.  This is nowhere assumed -- it holds because the
+// natural-number sort has no %0, so the %fee in Eq(%vIn, %vOut %+ %fee) is
+// always >= %1.  A "free forward" (%vIn = %vOut) is therefore unreachable.
+lemma Fee_Strictly_Positive_Hop1:
+    "All F1 F2 S p y %vIn %vOut #i.
+        HTLCForwarded1(F1, F2, S, p, y, %vIn, %vOut) @ #i
+     ==> Ex %d. %vIn = %vOut %+ %d"
+
+lemma Fee_Strictly_Positive_Hop2:
+    "All F2 R F1 p y %vIn %vOut #i.
+        HTLCForwarded2(F2, R, F1, p, y, %vIn, %vOut) @ #i
+     ==> Ex %d. %vIn = %vOut %+ %d"
+
+// End-to-end conservation / NO value creation: over a full linked 3-hop
+// payment the sender always locks the receiver's amount PLUS a strictly
+// positive total fee.  Value is neither created nor destroyed -- only fees are
+// skimmed -- so the receiver can never be paid more than the sender committed.
+// (An earlier exists-trace probe that shared only the hash y across two
+// UNRELATED offers appeared to show "value creation"; tightening it to a single
+// linked chain falsified it, which is why this is stated over the full chain.)
+lemma EndToEnd_Value_Conservation:
+    "All S F1 F2 R pS pF pR y %vS %vM %v #o #f1 #f2.
+        HTLCOffered(S, F1, pS, y, %vS) @ #o
+      & HTLCForwarded1(F1, F2, S, pF, y, %vS, %vM) @ #f1
+      & HTLCForwarded2(F2, R, F1, pR, y, %vM, %v) @ #f2
+     ==> Ex %d. %vS = %v %+ %d"
+
+// Griefing (liquidity lockup): an honest intermediary is induced to lock
+// capital by forwarding, then forced to refund on timeout, with NO payment
+// completing anywhere and no key compromise.  The capital was locked for
+// nothing -- the standard PCN griefing DoS, here shown reachable.
+lemma Griefing_Capital_Lock_Reachable:
+    exists-trace
+    "Ex F ptrIn ptrOut y #f #r.
+        ForwardHTLC(F, ptrIn, ptrOut, y) @ #f
+      & Refunded(ptrOut, y) @ #r
+      & not (Ex a b rr p x #s. SenderSettled(a, b, rr, p, x) @ #s)
+      & not (Ex P #c. LtkCompromised(P) @ #c)"
 
 end
