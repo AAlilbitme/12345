@@ -11,25 +11,28 @@ merged N-hop model that verifies 28/29 lemmas.
 
 The protocol is formalised as a **modular package of five theories**. Each proves
 a distinct aspect; they do not share rules, so a property proved in one is not
-silently assumed in another. The split is deliberate — one combined theory
-OOM-kills Tamarin (signing + nat induction + unbounded clock cannot coexist in
-one tractable search space).
+silently assumed in another. The split is deliberate — combining all three of
+signing + nat induction + an unbounded block clock OOM-kills Tamarin. (Notably,
+`multihop.spthy` does combine signing + nat once the clock is dropped and timing
+is kept relational — see its header — which is why value/fee conservation could
+be merged into it rather than kept apart.)
 
-| File | Aspect | Builtins |
-|------|--------|----------|
-| `multihop.spthy` | Channel lifecycle + HTLC routing + atomicity (fixed 3-hop) | hashing, signing |
-| `Clock.spthy` | Block-clock lifecycle & CLTV timing safety | natural-numbers |
-| `Cltv.spthy` | Pure CLTV block arithmetic | natural-numbers |
-| `timeout.spthy` | Early-timeout race counterexample | none |
-| `value_cons.spthy` | Value & fee conservation | hashing, signing, nat |
+| File | Aspect | Builtins | Lemmas |
+|------|--------|----------|--------|
+| `multihop.spthy` | Channel lifecycle + HTLC routing + atomicity + value/fees (fixed 3-hop) | hashing, signing, natural-numbers | 43 |
+| `gaps.spthy` | Block-clock lifecycle & CLTV timing safety | natural-numbers | 9 |
+| `cltv_blocks.spthy` | Pure CLTV block arithmetic | natural-numbers | 3 |
+| `t2b_attack.spthy` | Early-timeout race counterexample (T2b removed) | none | 1 |
+| `witnesses.spthy` | Finite-clock reachability witnesses | natural-numbers | 2 |
 
-**Headline results (49 lemmas total):**
+**Headline results (58 lemmas total across the five theories):**
 1. **Payment atomicity** — once the receiver is paid, the sender's HTLC cannot be refunded.
 2. **Intermediary safety** — an honest, timely forwarder never loses funds unless its key is compromised.
 3. **Routing causality & authentication** — each hop requires the previous one; preimages stay secret until release; settlements trace back to a genuine signed invoice.
 4. **Timing safety** — staggered CLTV windows are non-empty; redeem/refund are mutually exclusive; no HTLC survives a channel close.
-5. **Value conservation** — money in = money out + fee at every hop and end to end.
-6. **The liveness assumption (T2b) is necessary** — a two-sided certificate: remove it and the early-timeout race reappears (`timeout.spthy`); keep it and the race is blocked (`multihop.spthy`).
+5. **Value conservation** — money in = money out + fee at every hop and end to end; fees are strictly positive; no value creation.
+6. **The liveness assumption (T2b) is necessary** — a two-sided certificate: remove it and the early-timeout race reappears (`t2b_attack.spthy`); keep it and the race is blocked (`multihop.spthy`, `T2b_Counterexample_Blocked`).
+7. **Known attacks, machine-checked** — the wormhole fee theft (reachable + quantified to the exact fees) and griefing capital-lock are exhibited as traces (`multihop.spthy`, §9–10).
 
 Per-lemma detail and the "what we tried first / why it failed / how we fixed it"
 history are in `REPORT.md`. The main limitation is stated there and stands:
