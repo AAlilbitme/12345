@@ -3,7 +3,7 @@
     <marker id="agrey" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#90a4ae"/></marker>
   </defs>
   <rect x="0" y="0" width="1120" height="580" fill="#ffffff"/>
-  <text x="40" y="44" font-size="19" font-weight="700" fill="#222">Verification map — 5 theories · 3 figures · 58 lemmas</text>
+  <text x="40" y="44" font-size="19" font-weight="700" fill="#222">Verification map — 5 core theories · 3 protocol views + master map · 58 lemmas</text>
   <text x="40" y="66" font-size="12.5" fill="#777">where each file's lemmas live, and how the figures fit together</text>
 
   <!-- column headers -->
@@ -63,8 +63,8 @@
   <text x="845" y="371" font-size="11.5" fill="#777" font-style="italic">Fig 1 (route over channels) →</text>
   <text x="845" y="386" font-size="11.5" fill="#777" font-style="italic">Fig 3 (why the timing is safe).</text>
 
-  <text x="560" y="440" font-size="12" fill="#555" text-anchor="middle">multihop.spthy also carries the N-hop generalization (separate: multihop_nhop_fees.spthy, 30/30) and the</text>
+  <text x="560" y="440" font-size="12" fill="#555" text-anchor="middle">The package also includes a separate idealised N-hop abstraction (multihop_nhop_fees.spthy, 31/31) and the</text>
   <text x="560" y="457" font-size="12" fill="#555" text-anchor="middle">reusable-channel boundary spike (experiments/), documented in REPORT2.md.</text>
 
-  <text x="560" y="558" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — master index. Open here, then drill into Fig 1 / 2 / 3.</text>
+  <text x="560" y="558" font-size="11.5" fill="#888" text-anchor="middle">Read this map first, then the routing, channel-lifecycle, and timing views.</text>
 </svg>

@@ -79,7 +79,7 @@
   <text x="410" y="688" font-size="12.5" fill="#c62828" text-anchor="middle">… the other PUNISHES with the revocation secret → takes all funds</text>
 
   <text x="410" y="762" font-size="11.5" fill="#777" text-anchor="middle" font-style="italic">The HTLC attached to this channel (hashlock + timelock) is what the 4-party figure routes;</text>
-  <text x="410" y="778" font-size="11.5" fill="#777" text-anchor="middle" font-style="italic">its add consumes the linear Free(ptr) slot — one HTLC per output, structural.</text>
+  <text x="410" y="778" font-size="11.5" fill="#777" text-anchor="middle" font-style="italic">its add consumes Free(ptr) — structurally one HTLC over the modelled channel lifetime.</text>
 
   <!-- ============ RAIL ============ -->
   <line x1="815" y1="110" x2="815" y2="800" stroke="#ddd"/>
@@ -116,5 +116,5 @@
   <text x="835" y="440" font-size="10.5" fill="#777">Routing / value / attack lemmas are on the</text>
   <text x="835" y="455" font-size="10.5" fill="#777">4-party figure (anchors ①–⑧ there).</text>
 
-  <text x="440" y="900" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — channel-layer lemmas mapped. Next: timing theories (gaps / cltv_blocks / t2b_attack).</text>
+  <text x="440" y="900" font-size="11.5" fill="#888" text-anchor="middle">Channel-layer lemmas in the fixed-hop abstraction; routing and timing are shown separately.</text>
 </svg>
