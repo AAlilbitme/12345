@@ -13,6 +13,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{longtable}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{xcolor}
 \usepackage{listings}
@@ -36,6 +37,7 @@
 \author{(author)}
 \date{\today}
 
+\emergencystretch=3em
 \begin{document}
 \maketitle
 
@@ -107,11 +109,12 @@ carries all three (Table~\ref{tab:files}).
 
 \begin{table}[h]
 \centering
+\small
 \begin{tabular}{@{}llrl@{}}
 \toprule
 \textbf{File} & \textbf{Aspect} & \textbf{Lemmas} & \textbf{Builtins} \\
 \midrule
-\texttt{multihop.spthy}    & channel lifecycle + routing + value/fees + atomicity & 43 & hashing, signing, nat \\
+\texttt{multihop.spthy}    & lifecycle + routing + value/fees + atomicity & 43 & hashing, signing, nat \\
 \texttt{gaps.spthy}        & block-clock lifecycle \& CLTV timing safety          & 9  & natural-numbers \\
 \texttt{cltv_blocks.spthy} & pure CLTV block arithmetic                           & 3  & natural-numbers \\
 \texttt{t2b_attack.spthy}  & early-timeout race (liveness assumption removed)     & 1  & --- \\
@@ -315,13 +318,13 @@ rules with one \emph{generic} rule was attempted in several encodings, all run:
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{@{}p{5.2cm}p{7.5cm}c@{}}
+\begin{tabular}{@{}p{4.9cm}p{7.4cm}c@{}}
 \toprule
 \textbf{Encoding} & \textbf{Outcome} & \\
 \midrule
-Signed-message generic forward & self-referential signed term $\Rightarrow$ Tamarin origin analysis recurses; even a one-hop witness OOMs & \rc \\
-\;\; $+$ fresh per-hop id & fixes replay but \emph{not} termination---still a signed term producible only by another forward & \rc \\
-Linear-fact routing (idealised channel) & safety invariants verify by induction over the chain, for any $N$ & \gc \\
+Signed-message generic forward & self-referential signed term; origin analysis recurses, even a one-hop witness OOMs & \rc \\
+\;\; $+$ fresh per-hop id & fixes replay but \emph{not} termination---still a signed term producible only by a forward & \rc \\
+Linear-fact routing (idealised channel) & safety invariants verify by induction over the chain, any $N$ & \gc \\
 \bottomrule
 \end{tabular}
 \caption{$N$-hop encodings. The bounding factor is cryptographic
