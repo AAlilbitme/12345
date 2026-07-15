@@ -79,17 +79,28 @@ refund); red = malicious / attack shown reachable.}
 % ===========================================================================
 \section{Introduction and scope}
 
-Lightning is a Layer-2 payment-channel network: parties transact off-chain and
-use the blockchain only to settle disputes. A multi-hop payment routes value
+Lightning~\cite{poon-dryja} is a Layer-2 payment-channel network: parties
+transact off-chain and use the blockchain only to settle disputes. A multi-hop payment routes value
 along a path $\text{Alice}\!\to\!\text{Bob}\!\to\!\text{Carol}\!\to\!\text{Dave}$
 by chaining HTLCs that share one payment hash $y=H(x)$; the receiver reveals
 the preimage $x$, which propagates back along the path, redeeming each HTLC.
-Our reference model is the standard textbook presentation (Maffei, TU Wien,
-\emph{Cryptocurrencies}, Lecture~11): a four-party path, per-hop fees, staggered
-CLTV timelocks $3t/2t/t$, and a two-round ``lock then release'' commit.
+Our reference model is the standard textbook presentation~\cite{maffei}: a
+four-party path, per-hop fees, staggered CLTV timelocks $3t/2t/t$, and a
+two-round ``lock then release'' commit.
 
-\paragraph{Scope.} We model integrity and safety under a Dolev--Yao adversary
-who controls the network and may compromise long-term keys. We \emph{do not}
+\paragraph{Contributions.} In brief: (1)~a modular, fully machine-checked model
+of the two-party channel lifecycle and multi-hop HTLC routing with fees
+(58~lemmas); (2)~a forwarding-replay hardening that replaces a global axiom with
+a structural linear-resource guard; (3)~a machine-checked treatment of the
+wormhole attack, both reachable and quantified to the exact stolen fees, plus a
+griefing DoS and economic-soundness theorems; (4)~an empirical assumption-%
+minimality result (removing the intermediary-claim restriction yields a concrete
+counterexample); and (5)~a map of the prover's tractability boundaries---the
+signing/nat/clock OOM triple, signed-message $N$-hop routing, and reusable
+channels.
+
+\paragraph{Scope.} We model integrity and safety under a Dolev--Yao
+adversary~\cite{dolev-yao} who controls the network and may compromise long-term keys. We \emph{do not}
 model payment privacy / unlinkability (a confidentiality property requiring
 onion routing and observational-equivalence proofs)---this is stated as an
 explicit exclusion, not silently omitted. Timing is treated relationally
@@ -100,7 +111,7 @@ used to \emph{derive} the CLTV windows.
 \section{Architecture: a modular five-theory package}
 \label{sec:arch}
 
-A single monolithic theory is intractable: combining Tamarin's
+A single monolithic theory is intractable: combining Tamarin's~\cite{tamarin}
 signing equational theory, natural-number induction, and an unbounded block
 clock exhausts memory. Crucially this was \emph{tested}, not assumed---any
 \emph{two} of the three ingredients remain tractable; only the full triple
@@ -272,7 +283,7 @@ consume a linear pending fact, so replay cannot double-spend an output.
 
 \subsection{Wormhole attack (reachable and quantified)}
 
-The wormhole attack (Malavolta et al., NDSS'19): two colluding path members
+The wormhole attack~\cite{malavolta}: two colluding path members
 relay the preimage out-of-band, skipping an honest intermediary who forwards
 value but earns no fee. In the symbolic model the Dolev--Yao network \emph{is}
 the colluders' side channel. We machine-check it twice:
@@ -408,11 +419,35 @@ wormhole attack (reachable and quantified) and a griefing DoS, proved
 economic-soundness theorems, and established the minimality of the timing
 assumptions empirically. Equally, we mapped where the prover stops scaling: the
 three-ingredient OOM, signed-message $N$-hop routing, and reusable channels.
-The protocol-level results confirm expectations; the durable contribution is
-methodological---what it takes to keep Tamarin tractable on a stateful,
+The protocol-level results confirm expectations---consistent with the
+composable cryptographic treatment of Lightning~\cite{kiayias-litos}, which our
+symbolic model complements at the routing layer; the durable contribution here
+is methodological---what it takes to keep Tamarin tractable on a stateful,
 time-locked, arithmetic protocol, with Lightning as the validating case study,
 and a discipline in which every claim (positive or negative) was executed rather
 than asserted.
+
+\begin{thebibliography}{9}
+\bibitem{poon-dryja} J.~Poon and T.~Dryja.
+  \emph{The Bitcoin Lightning Network: Scalable Off-Chain Instant Payments}.
+  Technical report (draft~0.5.9.2), 2016.
+\bibitem{maffei} M.~Maffei.
+  \emph{Cryptocurrencies, Lecture~11: Scalability} (payment channels and
+  payment-channel networks). TU Wien, 2024.
+\bibitem{malavolta} G.~Malavolta, P.~Moreno-Sanchez, C.~Schneidewind, A.~Kate,
+  and M.~Maffei.
+  \emph{Anonymous Multi-Hop Locks for Blockchain Scalability and
+  Interoperability}. In \emph{NDSS}, 2019.
+\bibitem{kiayias-litos} A.~Kiayias and O.~S.~T.~Litos.
+  \emph{A Composable Security Treatment of the Lightning Network}. In
+  \emph{IEEE CSF}, 2020.
+\bibitem{tamarin} S.~Meier, B.~Schmidt, C.~Cremers, and D.~Basin.
+  \emph{The TAMARIN Prover for the Symbolic Analysis of Security Protocols}.
+  In \emph{CAV}, 2013.
+\bibitem{dolev-yao} D.~Dolev and A.~C.~Yao.
+  \emph{On the Security of Public Key Protocols}.
+  \emph{IEEE Transactions on Information Theory}, 29(2), 1983.
+\end{thebibliography}
 
 \appendix
 \section{Figure index}
