@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1340" height="820" viewBox="0 0 1340 820" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2e7d32"/></marker>
+    <marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#ed6c02"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#c62828"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1340" height="820" fill="#ffffff"/>
+  <text x="40" y="42" font-size="18" font-weight="700" fill="#222">Multi-hop payment:  Alice &#8594; Bob &#8594; Carol &#8594; Dave</text>
+  <text x="40" y="62" font-size="12.5" fill="#777">annotated with multihop.spthy lemmas — see rail →</text>
+
+  <!-- legend -->
+  <rect x="470" y="26" width="13" height="13" fill="#2e7d32"/><text x="489" y="37" font-size="11.5" fill="#333">honest success / safety proved</text>
+  <rect x="700" y="26" width="13" height="13" fill="#ed6c02"/><text x="719" y="37" font-size="11.5" fill="#333">timeout / refund</text>
+  <rect x="820" y="26" width="13" height="13" fill="#c62828"/><text x="839" y="37" font-size="11.5" fill="#333">attack (reachable)</text>
+
+  <!-- lifelines -->
+  <g font-size="15" font-weight="600" fill="#fff" text-anchor="middle">
+    <rect x="90"  y="72" width="80" height="28" rx="4" fill="#37474f"/><text x="130" y="91">Alice</text>
+    <rect x="330" y="72" width="80" height="28" rx="4" fill="#37474f"/><text x="370" y="91">Bob</text>
+    <rect x="570" y="72" width="80" height="28" rx="4" fill="#37474f"/><text x="610" y="91">Carol</text>
+    <rect x="810" y="72" width="80" height="28" rx="4" fill="#37474f"/><text x="850" y="91">Dave</text>
+  </g>
+  <g stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="2,3">
+    <line x1="130" y1="100" x2="130" y2="640"/><line x1="370" y1="100" x2="370" y2="640"/>
+    <line x1="610" y1="100" x2="610" y2="640"/><line x1="850" y1="100" x2="850" y2="640"/>
+  </g>
+
+  <!-- number-anchor helper style: colored circle + white number -->
+  <!-- 0/invoice -->
+  <line x1="846" y1="128" x2="134" y2="128" stroke="#2e7d32" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#ag)"/>
+  <text x="490" y="122" font-size="12.5" fill="#2e7d32" text-anchor="middle">0.  Dave samples x, sends invoice  y = H(x)  to Alice</text>
+  <circle cx="108" cy="128" r="11" fill="#2e7d32"/><text x="108" y="132" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+
+  <!-- ROUND 1 LOCK -->
+  <rect x="30" y="156" width="24" height="140" rx="4" fill="#e8f5e9"/>
+  <text x="42" y="226" font-size="11" font-weight="700" fill="#2e7d32" text-anchor="middle" transform="rotate(-90 42 226)">ROUND 1 · LOCK</text>
+  <g stroke="#2e7d32" stroke-width="2" marker-end="url(#ag)">
+    <line x1="132" y1="186" x2="368" y2="186"/>
+    <line x1="372" y1="231" x2="608" y2="231"/>
+    <line x1="612" y1="276" x2="848" y2="276"/>
+  </g>
+  <g font-size="12" fill="#1b5e20" text-anchor="middle">
+    <text x="250" y="179">HTLC(A&#8594;B,  5,  y,  3t)</text>
+    <text x="490" y="224">HTLC(B&#8594;C,  5,  y,  2t)</text>
+    <text x="730" y="269">HTLC(C&#8594;D,  5,  y,  t)</text>
+  </g>
+  <circle cx="72" cy="186" r="11" fill="#2e7d32"/><text x="72" y="190" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+  <circle cx="900" cy="231" r="11" fill="#2e7d32"/><text x="900" y="235" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+
+  <line x1="70" y1="311" x2="930" y2="311" stroke="#e0e0e0"/>
+
+  <!-- ROUND 2 RELEASE -->
+  <rect x="30" y="336" width="24" height="150" rx="4" fill="#e8f5e9"/>
+  <text x="42" y="411" font-size="11" font-weight="700" fill="#2e7d32" text-anchor="middle" transform="rotate(-90 42 411)">ROUND 2 · RELEASE</text>
+  <g stroke="#2e7d32" stroke-width="2" marker-end="url(#ag)">
+    <line x1="848" y1="366" x2="612" y2="366"/>
+    <line x1="608" y1="411" x2="372" y2="411"/>
+    <line x1="368" y1="456" x2="132" y2="456"/>
+  </g>
+  <g font-size="12" fill="#1b5e20" text-anchor="middle">
+    <text x="730" y="359">redeem(x)   — Dave reveals x</text>
+    <text x="490" y="404">redeem(x)</text>
+    <text x="250" y="449">redeem(x)</text>
+  </g>
+  <circle cx="72" cy="366" r="11" fill="#2e7d32"/><text x="72" y="370" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+
+  <text x="490" y="496" font-size="13" font-weight="700" fill="#1b5e20" text-anchor="middle">&#8594; payment completes (receiver paid; intermediaries claim in the honest trace)</text>
+  <circle cx="108" cy="491" r="11" fill="#2e7d32"/><text x="108" y="495" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+
+  <line x1="70" y1="521" x2="930" y2="521" stroke="#e0e0e0"/>
+  <text x="60" y="539" font-size="12" font-weight="700" fill="#555">WHAT CAN GO WRONG</text>
+
+  <!-- orange refund -->
+  <line x1="848" y1="571" x2="132" y2="571" stroke="#ed6c02" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#ao)"/>
+  <text x="490" y="564" font-size="11.5" fill="#ed6c02" text-anchor="middle">if x never arrives: each HTLC refunds after its timeout. Staggering t &lt; 2t &lt; 3t → every intermediary redeems inbound before its outbound expires.</text>
+  <circle cx="108" cy="571" r="11" fill="#ed6c02"/><text x="108" y="575" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">6</text>
+
+  <!-- red wormhole -->
+  <line x1="608" y1="616" x2="132" y2="616" stroke="#c62828" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#ar)"/>
+  <text x="455" y="609" font-size="11.5" fill="#c62828" text-anchor="middle">wormhole: Alice &amp; Carol collude, relay x off-path → Bob skipped, forwards value but earns no fee</text>
+  <circle cx="108" cy="616" r="11" fill="#c62828"/><text x="108" y="620" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">7</text>
+
+  <!-- staggered timelock strip -->
+  <text x="60" y="672" font-size="12" font-weight="700" fill="#555">STAGGERED TIMELOCKS (block height →)</text>
+  <circle cx="42" cy="668" r="11" fill="#2e7d32"/><text x="42" y="672" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">8</text>
+  <line x1="130" y1="712" x2="880" y2="712" stroke="#555" stroke-width="1.5" marker-end="url(#ag)"/>
+  <g font-size="11.5" text-anchor="middle">
+    <line x1="300" y1="705" x2="300" y2="758" stroke="#c62828" stroke-width="1.2"/><text x="300" y="772" fill="#c62828">t  (C→D)</text>
+    <line x1="500" y1="705" x2="500" y2="758" stroke="#c62828" stroke-width="1.2"/><text x="500" y="772" fill="#c62828">2t (B→C)</text>
+    <line x1="700" y1="705" x2="700" y2="758" stroke="#c62828" stroke-width="1.2"/><text x="700" y="772" fill="#c62828">3t (A→B)</text>
+  </g>
+  <rect x="130" y="700" width="170" height="10" fill="#2e7d32" opacity="0.25"/>
+  <rect x="130" y="712" width="370" height="10" fill="#2e7d32" opacity="0.18"/>
+  <rect x="130" y="724" width="570" height="10" fill="#2e7d32" opacity="0.12"/>
+  <text x="892" y="716" font-size="11" fill="#2e7d32">redeem windows (nested)</text>
+
+  <!-- ============ LEMMA RAIL ============ -->
+  <line x1="965" y1="110" x2="965" y2="790" stroke="#ddd"/>
+  <text x="985" y="120" font-size="14" font-weight="700" fill="#222">LEMMAS · multihop.spthy</text>
+
+  <g font-size="10.5">
+    <!-- 1 -->
+    <circle cx="994" cy="146" r="9" fill="#2e7d32"/><text x="994" y="149.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+    <text x="1012" y="143" font-weight="700" fill="#2e7d32">Invoice &amp; preimage authentication</text>
+    <text x="1012" y="157" fill="#444">Invoice_Authenticates_Settlement · Preimage_Secret_Until_Released</text>
+    <text x="1012" y="169" fill="#444">Forged_Invoice_Requires_Key_Compromise · Invoice_Released_Once ✓</text>
+    <!-- 2 -->
+    <circle cx="994" cy="196" r="9" fill="#2e7d32"/><text x="994" y="199.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+    <text x="1012" y="193" font-weight="700" fill="#2e7d32">Lock causality (forward needs previous)</text>
+    <text x="1012" y="207" fill="#444">Forward1_Requires_Offer · Forward2_Requires_Forward1</text>
+    <text x="1012" y="219" fill="#444">HTLC_On_Opened_Channel ✓</text>
+    <!-- 3 -->
+    <circle cx="994" cy="246" r="9" fill="#2e7d32"/><text x="994" y="249.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+    <text x="1012" y="243" font-weight="700" fill="#2e7d32">Release causality (redeem needs preimage)</text>
+    <text x="1012" y="257" fill="#444">Fulfill_Requires_Forward2 · Claim_Requires_Release</text>
+    <text x="1012" y="269" fill="#444">Settle_Requires_Receiver_Release ✓</text>
+    <!-- 4 -->
+    <circle cx="994" cy="296" r="9" fill="#2e7d32"/><text x="994" y="299.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+    <text x="1012" y="293" font-weight="700" fill="#2e7d32">Atomicity + non-vacuity</text>
+    <text x="1012" y="307" fill="#444">Payment_Atomicity_Under_Liveness ✓</text>
+    <text x="1012" y="319" fill="#444">Multihop_Payment_Possible ✓ (witness)</text>
+    <!-- 5 -->
+    <circle cx="994" cy="346" r="9" fill="#2e7d32"/><text x="994" y="349.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+    <text x="1012" y="343" font-weight="700" fill="#2e7d32">Value &amp; fee conservation</text>
+    <text x="1012" y="357" fill="#444">EndToEnd_Value_Conservation · Fee_Conservation_Hop1/2</text>
+    <text x="1012" y="369" fill="#444">Fee_Strictly_Positive_Hop1/2 · Receiver_Paid_Invoice_Amount ✓</text>
+    <!-- 6 -->
+    <circle cx="994" cy="396" r="9" fill="#ed6c02"/><text x="994" y="399.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">6</text>
+    <text x="1012" y="393" font-weight="700" fill="#ed6c02">Refund / griefing</text>
+    <text x="1012" y="407" fill="#444">Refund_Requires_Timeout · Loss_Requires_Inaction ✓</text>
+    <text x="1012" y="419" fill="#444">Griefing_Capital_Lock_Reachable ✓ (reachable DoS)</text>
+    <!-- 7 -->
+    <circle cx="994" cy="446" r="9" fill="#c62828"/><text x="994" y="449.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">7</text>
+    <text x="1012" y="443" font-weight="700" fill="#c62828">Wormhole fee theft</text>
+    <text x="1012" y="457" fill="#444">Wormhole_Fee_Theft_Reachable ✓</text>
+    <text x="1012" y="469" fill="#444">Wormhole_Steals_Exactly_The_Fees ✓ (theft = path fees)</text>
+    <!-- 8 -->
+    <circle cx="994" cy="496" r="9" fill="#2e7d32"/><text x="994" y="499.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">8</text>
+    <text x="1012" y="493" font-weight="700" fill="#2e7d32">Intermediary safety (under liveness T2b)</text>
+    <text x="1012" y="507" fill="#444">Intermediary_Never_Loses_Under_Liveness ✓</text>
+    <text x="1012" y="519" fill="#444">T2b_Counterexample_Blocked ✓ (race blocked with T2b)</text>
+  </g>
+
+  <line x1="985" y1="540" x2="1320" y2="540" stroke="#eee"/>
+  <text x="985" y="560" font-size="10.5" fill="#777">✓ = machine-checked in multihop.spthy (43/43).</text>
+  <text x="985" y="575" font-size="10.5" fill="#777">green = all-traces safety · orange = benign/reachable</text>
+  <text x="985" y="590" font-size="10.5" fill="#777">red = attack shown reachable (by design, no PTLC).</text>
+  <text x="985" y="612" font-size="10.5" fill="#777" font-style="italic">Channel-layer lemmas (open/update/close/punish)</text>
+  <text x="985" y="626" font-size="10.5" fill="#777" font-style="italic">live on the Alice↔Bob figure.</text>
+
+  <text x="490" y="806" font-size="11.5" fill="#888" text-anchor="middle">Fixed three-hop signed-message model; timing and post-close properties use separate abstractions.</text>
+</svg>

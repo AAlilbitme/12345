@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="580" viewBox="0 0 1120 580" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="agrey" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#90a4ae"/></marker>
+  </defs>
+  <rect x="0" y="0" width="1120" height="580" fill="#ffffff"/>
+  <text x="40" y="44" font-size="19" font-weight="700" fill="#222">Verification map — 5 core theories · 3 protocol views + master map · 58 lemmas</text>
+  <text x="40" y="66" font-size="12.5" fill="#777">where each file's lemmas live, and how the figures fit together</text>
+
+  <!-- column headers -->
+  <text x="170" y="108" font-size="13" font-weight="700" fill="#555" text-anchor="middle">THEORY FILES</text>
+  <text x="620" y="108" font-size="13" font-weight="700" fill="#555" text-anchor="middle">FIGURES</text>
+
+  <!-- file chips -->
+  <g font-size="13">
+    <rect x="60" y="130" width="240" height="42" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="150" font-weight="700" fill="#1b5e20">multihop.spthy</text><text x="74" y="166" font-size="11" fill="#33691e">routing + value + atomicity + channel · 43</text>
+    <rect x="60" y="186" width="240" height="38" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="204" font-weight="700" fill="#1b5e20">gaps.spthy</text><text x="74" y="219" font-size="11" fill="#33691e">block-clock lifecycle &amp; timing · 9</text>
+    <rect x="60" y="238" width="240" height="38" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="256" font-weight="700" fill="#1b5e20">cltv_blocks.spthy</text><text x="74" y="271" font-size="11" fill="#33691e">CLTV block arithmetic · 3</text>
+    <rect x="60" y="290" width="240" height="38" rx="6" fill="#ffebee" stroke="#c62828"/><text x="74" y="308" font-weight="700" fill="#b71c1c">t2b_attack.spthy</text><text x="74" y="323" font-size="11" fill="#7f1d1d">early-timeout race (T2b removed) · 1</text>
+    <rect x="60" y="342" width="240" height="38" rx="6" fill="#fff8e1" stroke="#ed6c02"/><text x="74" y="360" font-weight="700" fill="#8d4e00">witnesses.spthy</text><text x="74" y="375" font-size="11" fill="#8d4e00">finite-clock reachability · 2</text>
+  </g>
+
+  <!-- figure boxes -->
+  <g>
+    <rect x="470" y="130" width="300" height="70" rx="8" fill="#f5f7fa" stroke="#90a4ae"/>
+    <text x="486" y="154" font-size="14" font-weight="700" fill="#37474f">Figure 1 — 4-party multi-hop</text>
+    <text x="486" y="173" font-size="11.5" fill="#607d8b">lock → release → success; refund; wormhole;</text>
+    <text x="486" y="188" font-size="11.5" fill="#607d8b">staggered timelocks · anchors ①–⑧</text>
+
+    <rect x="470" y="220" width="300" height="70" rx="8" fill="#f5f7fa" stroke="#90a4ae"/>
+    <text x="486" y="244" font-size="14" font-weight="700" fill="#37474f">Figure 2 — Alice↔Bob channel</text>
+    <text x="486" y="263" font-size="11.5" fill="#607d8b">open · update · refund · cooperative close ·</text>
+    <text x="486" y="278" font-size="11.5" fill="#607d8b">punishment · anchors ①–⑤</text>
+
+    <rect x="470" y="310" width="300" height="70" rx="8" fill="#f5f7fa" stroke="#90a4ae"/>
+    <text x="486" y="334" font-size="14" font-weight="700" fill="#37474f">Figure 3 — staggered timelocks</text>
+    <text x="486" y="353" font-size="11.5" fill="#607d8b">windows exist · claim-in-time · the T2b</text>
+    <text x="486" y="368" font-size="11.5" fill="#607d8b">race · anchors ①–③</text>
+  </g>
+
+  <!-- connectors -->
+  <g stroke="#90a4ae" stroke-width="1.6" fill="none" marker-end="url(#agrey)">
+    <path d="M300,151 C 380,151 400,165 468,165"/>          <!-- multihop -> Fig1 -->
+    <path d="M300,158 C 380,220 400,255 468,255"/>          <!-- multihop -> Fig2 -->
+    <path d="M300,205 C 380,260 400,330 468,338"/>          <!-- gaps -> Fig3 -->
+    <path d="M300,257 C 390,300 405,342 468,348"/>          <!-- cltv -> Fig3 -->
+    <path d="M300,309 C 385,330 410,352 468,356"/>          <!-- t2b -> Fig3 -->
+    <path d="M300,361 C 380,362 405,362 468,364"/>          <!-- witnesses -> Fig3 -->
+  </g>
+
+  <!-- right: legend + totals -->
+  <line x1="820" y1="120" x2="820" y2="400" stroke="#eee"/>
+  <text x="845" y="140" font-size="13" font-weight="700" fill="#222">COLOUR KEY</text>
+  <rect x="845" y="152" width="14" height="14" fill="#2e7d32"/><text x="866" y="164" font-size="12" fill="#333">honest success / safety proved</text>
+  <rect x="845" y="174" width="14" height="14" fill="#ed6c02"/><text x="866" y="186" font-size="12" fill="#333">benign failure (timeout / refund)</text>
+  <rect x="845" y="196" width="14" height="14" fill="#c62828"/><text x="866" y="208" font-size="12" fill="#333">malicious / attack (reachable)</text>
+
+  <text x="845" y="250" font-size="13" font-weight="700" fill="#222">TOTALS</text>
+  <text x="845" y="272" font-size="12" fill="#333">multihop 43 · gaps 9 · cltv 3 · t2b 1 · wit 2</text>
+  <text x="845" y="296" font-size="15" font-weight="700" fill="#1b5e20">58 / 58 machine-checked ✓</text>
+  <text x="845" y="320" font-size="11" fill="#777">(Tamarin 1.8, per-lemma to avoid OOM)</text>
+
+  <text x="845" y="356" font-size="11.5" fill="#777" font-style="italic">Read order: Fig 2 (one channel) →</text>
+  <text x="845" y="371" font-size="11.5" fill="#777" font-style="italic">Fig 1 (route over channels) →</text>
+  <text x="845" y="386" font-size="11.5" fill="#777" font-style="italic">Fig 3 (why the timing is safe).</text>
+
+  <text x="560" y="440" font-size="12" fill="#555" text-anchor="middle">The package also includes a separate idealised N-hop abstraction (multihop_nhop_fees.spthy, 31/31) and the</text>
+  <text x="560" y="457" font-size="12" fill="#555" text-anchor="middle">reusable-channel boundary spike (experiments/), documented in REPORT2.md.</text>
+
+  <text x="560" y="558" font-size="11.5" fill="#888" text-anchor="middle">Read this map first, then the routing, channel-lifecycle, and timing views.</text>
+</svg>

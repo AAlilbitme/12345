@@ -1,0 +1,75 @@
+// ===========================================================================
+// t2b_attack.spthy  —  Machine-checked counterexample for OutgoingTimeoutFirst
+//
+// This is the minimal theory that demonstrates the early-timeout race that
+// T2b (OutgoingTimeoutFirst) in multihop.spthy closes.  It contains just
+// enough structure to produce:
+//
+//   ForwardHTLC(P, ptrIn, ptrOut, y)   -- intermediary P forwards a payment
+//   TimedOut(ptrIn)     @ #k           -- incoming channel times out
+//   Refunded(ptrIn, y)  @ #j  (#j > #k)-- incoming HTLC refunded after timeout
+//   Redeemed(ptrOut, y) @ #i  (#i > #k)-- outgoing HTLC redeemed even later
+//   #k < #i                            -- timeout fires BEFORE redemption
+//
+// With this ordering, T3 (IntermediaryMustClaim in multihop.spthy) is
+// inapplicable because its precondition requires #i < #k (outgoing redeemed
+// BEFORE incoming times out).  The intermediary therefore loses: ptrIn is
+// refunded and ptrOut is redeemed with no key compromise required.
+//
+// OutgoingTimeoutFirst is deliberately absent here.  The exists-trace lemma
+// below finds a concrete witness, confirming T2b is load-bearing — the race
+// is genuinely reachable without it.  The companion lemma
+// T2b_Counterexample_Blocked in multihop.spthy (which includes T2b) confirms
+// the race is blocked with it.  The pair constitutes the two-sided certificate.
+// ===========================================================================
+theory t2b_attack
+begin
+
+// ---------------------------------------------------------------------------
+// Minimal rules — enough to construct the race, nothing more
+// ---------------------------------------------------------------------------
+
+// An intermediary registers a forwarding relationship between two channels.
+rule Register_Forward:
+    [ Fr(~ptrIn), Fr(~ptrOut) ]
+    --[ ForwardHTLC($P, ~ptrIn, ~ptrOut, $y) ]->
+    [ !Chan(~ptrIn), !Chan(~ptrOut), !Link(~ptrIn, ~ptrOut, $y) ]
+
+// Either channel can time out at any point (mirrors Open_Timeout in
+// multihop.spthy, which fires freely on the persistent !ChannelConnect fact).
+// No OutgoingTimeoutFirst restriction here — ptrIn can time out independently.
+rule Timeout:
+    [ !Chan(~ptr) ]
+    --[ TimedOut(~ptr) ]->
+    [ !Timed(~ptr) ]
+
+// After ptrIn times out, the incoming HTLC can be refunded.
+rule Refund:
+    [ !Timed(~ptrIn), !Link(~ptrIn, ~ptrOut, $y) ]
+    --[ Refunded(~ptrIn, $y) ]->
+    []
+
+// The outgoing HTLC can be redeemed at any time — independently of ptrIn.
+rule Redeem:
+    [ !Link(~ptrIn, ~ptrOut, $y) ]
+    --[ Redeemed(~ptrOut, $y) ]->
+    []
+
+// ---------------------------------------------------------------------------
+// The race
+// ---------------------------------------------------------------------------
+
+// Tamarin finds a trace where ptrIn times out (@ #k) and gets refunded, but
+// ptrOut is only redeemed later (@ #i > #k).  T3's precondition #i < #k is
+// violated, so no restriction forces Redeemed(ptrIn) — the intermediary loses
+// without any key compromise.
+lemma Early_Timeout_Race:
+    exists-trace
+    "Ex P ptrIn ptrOut y #f #k #j #i.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrIn)     @ #k
+      & Refunded(ptrIn, y)  @ #j
+      & Redeemed(ptrOut, y) @ #i
+      & #k < #i"
+
+end

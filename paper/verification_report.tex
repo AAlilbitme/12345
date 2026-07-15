@@ -1,0 +1,594 @@
+\documentclass[11pt]{article}
+
+% ---------------------------------------------------------------------------
+% Formal Verification of Lightning Network Multi-Hop HTLC Routing
+% Self-contained report: what we modelled, what we proved, what failed,
+% statistics, and figures.  Compile with pdflatex (>=2 passes).
+% Figures are in ./figures/*.pdf (also provided as .svg).
+% ---------------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{underscore}     % lets us write Lemma_Names with literal underscores
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black}
+\input{glyphtounicode}
+\pdfgentounicode=1
+\pdfminorversion=7
+
+\definecolor{okgreen}{RGB}{46,125,50}
+\definecolor{amber}{RGB}{237,108,2}
+\definecolor{red}{RGB}{198,40,40}
+\newcommand{\gc}{\textcolor{okgreen}{$\blacksquare$}}
+\newcommand{\ac}{\textcolor{amber}{$\blacksquare$}}
+\newcommand{\rc}{\textcolor{red}{$\blacksquare$}}
+\newcommand{\ck}{\textcolor{okgreen}{\checkmark}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\lstset{basicstyle=\ttfamily\small, breaklines=true, columns=fullflexible,
+        frame=single, framesep=4pt, backgroundcolor=\color{gray!6}}
+
+\title{\textbf{Formal Verification of Lightning Network\\ Multi-Hop HTLC Routing in Tamarin}\\[4pt]
+\large A modular, machine-checked model with security analysis and\\ an empirical study of the prover's tractability boundaries}
+\author{Anonymous Author}
+\date{\today}
+
+\emergencystretch=3em
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We formalise an abstraction of Lightning Network multi-hop HTLC (Hash
+Time-Locked Contract) routing in the Tamarin symbolic prover under a
+Dolev--Yao network adversary. The artefact is a \emph{modular package of five
+theories} totalling \textbf{58 machine-checked lemmas}. It covers a two-party
+channel lifecycle, fixed three-hop signed routing, relational and block-level
+timing abstractions, and finite-clock witnesses. The principal guarantees are
+\emph{conditional}: payment atomicity and intermediary safety rely on explicit
+online-action assumptions, while conservation concerns symbolic routed HTLC
+amounts rather than the balances of Bitcoin commitment outputs. Within this
+scope, we (i) replace a global forwarding-replay axiom with a structural
+linear-resource guard;
+(ii) machine-check the known \emph{wormhole} fee-theft attack, both as a
+reachability result and as an equality between the skipped amount and the
+symbolic path-fee difference; (iii) prove routed-amount equations and expose a
+griefing DoS; and (iv) demonstrate empirically that the intermediary-claim
+assumption T3 is load-bearing.
+A recurring theme is \emph{tractability}: in the tested configuration, signing
+$+$ natural-number induction $+$ an unbounded block clock exhausts the prover
+under our resource bounds. We also map two further empirical
+boundaries---signed-message $N$-hop routing and reusable channels---where
+automated search stops scaling.
+All reported prover verdicts and bounded timeouts were executed under the
+commands and limits stated in the artefact.
+\end{abstract}
+
+\tableofcontents
+\medskip
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_index.pdf}
+\caption{Verification map: five core theory files, three protocol views
+(plus this master map), and 58 lemmas.
+Green = honest success / safety proved; amber = benign failure (timeout /
+refund); red = malicious / attack shown reachable.}
+\label{fig:index}
+\end{figure}
+
+% ===========================================================================
+\section{Introduction and scope}
+
+Lightning is a Layer-2 payment-channel network: parties transact off-chain and
+use the blockchain only to settle disputes. A multi-hop payment routes value
+along a path $\text{Alice}\!\to\!\text{Bob}\!\to\!\text{Carol}\!\to\!\text{Dave}$
+by chaining HTLCs that share one payment hash $y=H(x)$; the receiver reveals
+the preimage $x$, which propagates back along the path, redeeming each HTLC.
+Our reference model is the standard textbook presentation
+\cite{maffei-slides}: a four-party path, per-hop fees, staggered CLTV timelocks
+$3t/2t/t$, and a two-round ``lock then release'' commit. The Lightning
+specification itself is maintained as the BOLT documents \cite{bolts}.
+
+\paragraph{Threat model.} The adversary controls the symbolic network: it may
+intercept, replay, synthesize, and reroute any derivable message, and may reveal
+long-term signing keys through explicit compromise rules. Cryptographic
+primitives are perfect modulo Tamarin's equational theories. The adversary does
+not break hashes or signatures, control Bitcoin consensus, or violate the
+trace restrictions stated below.
+
+\paragraph{Scope and limitations.} We model integrity and trace safety, not
+payment privacy or unlinkability (which require onion routing and
+observational-equivalence proofs). The five theories are separate labelled
+transition systems: their results support one another conceptually, but no
+formal refinement theorem transfers a lemma from one theory to another. In the
+shipped fixed-hop model, the linear \texttt{Free(ptr)} guard is consumed and
+not returned, so a channel hosts one HTLC over its modelled lifetime. HTLC
+amounts are related by symbolic natural-number equations but are not debited
+from the \texttt{StateA}/\texttt{StateB} channel balances; ``value
+conservation'' below therefore means routed-amount conservation, not ledger
+solvency. Timing is relational in the main theory, while separate theories
+show that numerical CLTV claim windows exist. They do not prove that an online
+party acts; T2b/T3 state that liveness boundary explicitly.
+
+\paragraph{Contributions.} Within those limits, the artefact contributes:
+(1) a signed fixed-hop Dolev--Yao model with an explicit assumption matrix;
+(2) structural replay hardening using a linear resource rather than a global
+single-spend axiom; (3) machine-checked reachability of known wormhole and
+griefing behaviours; (4) an idealised linear-fact generalisation of routing
+safety to arbitrary path length; and (5) reproducible positive and negative
+results characterising where Tamarin's automated search ceases to scale.
+
+\paragraph{Artefact.} Sources, figures, and the runner are available at
+\url{https://github.com/AAlilbitme/12345}. The core Stage~1 model corresponds
+to commit \texttt{d78740a}; the reusable-channel experiment to
+\texttt{2700974}. Exact commands appear in Section~\ref{sec:reproduction}.
+
+% ===========================================================================
+\section{Architecture: a modular five-theory package}
+\label{sec:arch}
+
+A single monolithic theory is intractable: combining Tamarin's
+signing equational theory, natural-number induction, and an unbounded block
+clock exhausted memory in the tested configuration. Pairwise experimental
+variants remained tractable under the recorded bounds. This is empirical tool
+evidence, not a general complexity claim. The model is therefore split so that
+no single core theory carries all three (Table~\ref{tab:files}).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lYrl@{}}
+\toprule
+\textbf{File} & \textbf{Aspect} & \textbf{Lemmas} & \textbf{Builtins} \\
+\midrule
+\texttt{multihop.spthy}    & lifecycle + routing + value/fees + atomicity & 43 & hashing, signing, nat \\
+\texttt{gaps.spthy}        & block-clock lifecycle \& CLTV timing safety          & 9  & natural-numbers \\
+\texttt{cltv_blocks.spthy} & pure CLTV block arithmetic                           & 3  & natural-numbers \\
+\texttt{t2b_attack.spthy}  & early-timeout race (liveness assumption removed)     & 1  & --- \\
+\texttt{witnesses.spthy}   & finite-clock reachability witnesses                  & 2  & natural-numbers \\
+\midrule
+\textbf{Total} & & \textbf{58} & \\
+\bottomrule
+\end{tabularx}
+\caption{The five theories. \texttt{multihop.spthy} combines signing $+$ nat
+once the unbounded clock is dropped and timing is kept relational---which is why
+value/fee conservation could be merged into it.}
+\label{tab:files}
+\end{table}
+
+% ===========================================================================
+\section{Related work}
+
+Tamarin performs symbolic trace reasoning over multiset-rewriting rules and
+equational theories \cite{tamarin-csf,tamarin-cav}. Boyd, Gjøsteen, and Wu
+model a blockchain and an HTLC-based cross-chain protocol in Tamarin
+\cite{boyd-htlc}; their ledger and global-time treatment is richer than the
+relational timing abstraction in our main theory. Hüttel and Staroveški use
+ProVerif to study secrecy and authenticity of four Lightning subprotocols
+\cite{huttel-staroveski}. Grundmann and Hartenstein model check Lightning in
+TLA+ using explicit refinement arguments to separate channel and multi-hop
+reasoning \cite{grundmann-hartenstein}; in contrast, our modular split is a
+tractability device without a machine-checked refinement between theories.
+Malavolta et al.\ identify the wormhole attack and propose anonymous multi-hop
+locks \cite{amhl}; our contribution is not discovery of that attack, but a
+Tamarin witness and symbolic fee-difference characterization in this model.
+The original Lightning proposal and the BOLT specifications provide the
+protocol context \cite{poon-dryja,bolts}.
+
+% ===========================================================================
+\section{Methodology}
+
+All results were produced under a strict \emph{test-first} discipline: a
+property is claimed only after Tamarin reports it, and any ``plausible''
+existence result is re-checked with a tightened variant before being trusted
+(Section~\ref{sec:falsepos} shows this catching a false positive). Restrictions
+(global trace filters) are treated as \emph{assumptions}, not proofs; a
+suspiciously short proof is a warning sign. Arithmetic theories motivate the
+timing orderings, while online action remains an explicit liveness assumption.
+Likewise, a timeout is a measured negative tool outcome under a stated command
+and wall-clock bound, not a theorem that no proof or witness exists.
+
+Per-lemma invocation (rather than one bulk \texttt{--prove}) is used on the
+large theory to avoid OOM:
+\begin{lstlisting}
+LANG=C.utf8 LC_ALL=C.utf8 tamarin-prover multihop.spthy \
+  --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=<Lemma>
+\end{lstlisting}
+The flag \texttt{--stop-on-trace=seqdfs} rescues the heavy existence witnesses
+but \emph{hangs} the natural-number arithmetic theories, so the runner applies
+it per file and lemma. The whole suite is driven by \texttt{run.py}; the
+\texttt{Makefile} is a thin wrapper.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}YYY@{}}
+\toprule
+\textbf{Claim family} & \textbf{Theory / mechanism} & \textbf{Assumptions or limits} \\
+\midrule
+Fixed-hop authentication and causality &
+\texttt{multihop.spthy}; signatures and linear pending facts &
+Three fixed hops; perfect cryptography; one HTLC per channel lifetime \\
+Atomicity and intermediary safety &
+\texttt{multihop.spthy}; T1/T2/T2b/T3 restrictions &
+Conditional on timely online action; short proofs mostly discharge restrictions \\
+Routed-amount equations &
+\texttt{multihop.spthy}; natural-number action equations &
+Not tied to commitment balances or capacity \\
+Post-close exclusion and CLTV windows &
+\texttt{gaps.spthy}, \texttt{cltv_blocks.spthy} &
+Separate abstract transition systems; no refinement into the main model \\
+Arbitrary-length routing safety &
+\texttt{multihop_nhop_fees.spthy}; linear Route/Fulfill facts &
+Idealised internal channel; no signed forwarding-message adversary \\
+\bottomrule
+\end{tabularx}
+\caption{Assumption and abstraction matrix. A Tamarin verdict is interpreted
+relative to the theory and assumptions in its row.}
+\label{tab:assumptions}
+\end{table}
+
+% ===========================================================================
+\section{Results: the core model}
+
+\subsection{Multi-hop routing (\texttt{multihop.spthy})}
+
+Figure~\ref{fig:4party} maps the routing, value, and attack lemmas onto the
+four-party flow; Figure~\ref{fig:channel} maps the channel-lifecycle lemmas
+onto a single Alice$\leftrightarrow$Bob channel. All 43 lemmas verify.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_4party.pdf}
+\caption{Four-party multi-hop payment. Round~1 locks HTLCs forward with
+staggered timelocks $3t/2t/t$; Round~2 releases the preimage backward.
+Numbered anchors 1--8 key to the
+\texttt{multihop.spthy} lemma rail. The red line is the wormhole; the amber
+line the timeout/refund unwind.}
+\label{fig:4party}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig_channel.pdf}
+\caption{The Alice$\leftrightarrow$Bob channel lifecycle (a zoom of one hop):
+open, state update, refund, cooperative close, and punishment. Note anchor
+5: the red trace is the \emph{cheat}, but the lemma
+\texttt{No_Punishment_Without_Cheating} is a safety guarantee (punishment
+$\Rightarrow$ prior cheat).}
+\label{fig:channel}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}llp{7.2cm}@{}}
+\toprule
+\textbf{Group} & \textbf{Class} & \textbf{Representative lemmas} \\
+\midrule
+Invoice / preimage auth & \gc & \texttt{Invoice_Authenticates_Settlement}, \texttt{Preimage_Secret_Until_Released}, \texttt{Forged_Invoice_Requires_Key_Compromise} \\
+Lock causality          & \gc & \texttt{Forward1_Requires_Offer}, \texttt{Forward2_Requires_Forward1}, \texttt{HTLC_On_Opened_Channel} \\
+Release causality       & \gc & \texttt{Fulfill_Requires_Forward2}, \texttt{Claim_Requires_Release}, \texttt{Settle_Requires_Receiver_Release} \\
+Atomicity / non-vacuity & \gc & \texttt{Payment_Atomicity_Under_Liveness}, \texttt{Multihop_Payment_Possible} \\
+Value \& fees           & \gc & \texttt{EndToEnd_Value_Conservation}, \texttt{Fee_Conservation_Hop1/2}, \texttt{Fee_Strictly_Positive_Hop1/2}, \texttt{Receiver_Paid_Invoice_Amount} \\
+Refund / griefing       & \ac & \texttt{Refund_Requires_Timeout}, \texttt{Loss_Requires_Inaction}, \texttt{Griefing_Capital_Lock_Reachable} \\
+Wormhole                & \rc & \texttt{Wormhole_Fee_Theft_Reachable}, \texttt{Wormhole_Steals_Exactly_The_Fees} \\
+Intermediary safety     & \gc & \texttt{Intermediary_Never_Loses_Under_Liveness}, \texttt{T2b_Counterexample_Blocked} \\
+Channel lifecycle       & \gc & \texttt{state_update}, \texttt{Protocol_execution}, \texttt{Cooperative_Close_Execution}, \texttt{No_Punishment_Without_Cheating}, \texttt{Funds_Locked_Before_Update} \\
+\bottomrule
+\end{tabular}
+\caption{Lemma groups in \texttt{multihop.spthy} (43 total). Class:
+\gc\,safety proved, \ac\,benign/reachable, \rc\,attack reachable.}
+\label{tab:multihop}
+\end{table}
+
+\subsection{Timing safety (\texttt{cltv_blocks}, \texttt{gaps}, \texttt{t2b_attack})}
+
+Figure~\ref{fig:timing} shows the staggered-timelock story.
+\texttt{cltv_blocks} proves arithmetic consequences of explicit deadline
+restrictions---in particular that the assumed stagger gives a non-empty claim
+window. \texttt{gaps} proves lifecycle properties in a \emph{different},
+linear-channel/block-clock abstraction (including no HTLC addition after close)
+and provides redeem/refund witnesses. These lemmas do not automatically hold in
+\texttt{multihop.spthy}. Finally, \texttt{t2b_attack} is a minimal
+over-approximating theory that exhibits the early-timeout ordering possible
+without T2b; it is not literally the main theory with one restriction deleted.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_timing.pdf}
+\caption{Staggered CLTV timelocks in the timing abstractions. The arithmetic
+model shows a $\Delta$ margin when every inbound deadline is later than its
+outbound one. Bottom (red): a minimal theory without T2b admits an ordering in
+which the inbound timeout precedes the outbound redemption
+(\texttt{Early_Timeout_Race}). Together with the blocked formula in the main
+model, this is evidence that T2b is load-bearing, not a cross-theory refinement
+proof.}
+\label{fig:timing}
+\end{figure}
+
+\subsection{Statistics}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Lemma (representative)} & \textbf{Steps} & \textbf{Time} & \textbf{Kind} \\
+\midrule
+\texttt{Multihop_Payment_Possible}        & 70  & $\sim$77\,s & exists-trace (heaviest) \\
+\texttt{Forward2_Requires_Forward1}        & 274 & $\sim$47\,s & all-traces \\
+\texttt{Forward1_Requires_Offer}           & 266 & $\sim$46\,s & all-traces \\
+\texttt{Wormhole_Steals_Exactly_The_Fees}  & 81  & $\sim$45\,s & exists-trace \\
+\texttt{Wormhole_Fee_Theft_Reachable}      & 51  & $\sim$40\,s & exists-trace \\
+\texttt{Intermediary_Never_Loses_Under_Liveness} & 2 & $<$1\,s & all-traces (under T2b) \\
+\texttt{EndToEnd_Value_Conservation}       & 2   & $<$1\,s & all-traces \\
+\bottomrule
+\end{tabular}
+\caption{Representative per-lemma statistics for \texttt{multihop.spthy}
+(43 lemmas verify per-lemma sequentially in $\approx$16\,min total on the test
+machine; average $\approx$26\,s; many trivial lemmas finish in $<$1\,s).}
+\label{tab:stats}
+\end{table}
+
+% ===========================================================================
+\section{Security analysis}
+
+\subsection{Forwarding-replay hardening (axiom to structure)}
+
+The forwarding rules read the outgoing amount/fee from the network and are
+gated only by a public HTLC-offer message. A Dolev--Yao replay of that offer
+could re-fire an honest forward, locking a \emph{second} HTLC on the same
+channel output with an adversary-chosen amount. This was found empirically via
+an audit probe (double-forward: reachable) and initially blocked with a global
+axiom \texttt{OneHTLCPerPtr}. We then replaced the axiom with a \emph{structural}
+guard: each channel open emits one linear \texttt{Free(ptr)} token, and every
+HTLC-add consumes it. ``At most one HTLC per output'' is now a consequence of
+linear-fact consumption---one fewer assumption for the same guarantee. After
+the change the double-forward probe is falsified structurally (100 steps, no
+axiom) and all 43 lemmas still verify. We also confirmed that a symmetric
+``double-redeem'' is \emph{not} a vulnerability: the redeem/settle rules each
+consume a linear pending fact, so replay cannot double-spend an output.
+
+\subsection{Wormhole attack (reachable and quantified)}
+
+The wormhole attack (Malavolta et al., NDSS'19): two colluding path members
+relay the preimage out-of-band, skipping an honest intermediary who forwards
+value but earns no fee \cite{amhl}. In the symbolic model the public
+Dolev--Yao network over-approximates such a side channel; collusion and final
+account ownership are not represented explicitly. We machine-check it twice:
+\texttt{Wormhole_Fee_Theft_Reachable} (51 steps) exhibits a trace where the
+payment settles yet the middle hop is never redeemed and no intermediary earns
+a fee, with \emph{no} key compromise; and
+\texttt{Wormhole_Steals_Exactly_The_Fees} (81 steps) shows that the symbolic
+sender/receiver amount difference equals $\%f_1 \%{+}\,\%f_2$ while neither
+intermediary emits \texttt{FeeEarned}. Because channel balances and transfers
+to colluders are not modeled, this is a skipped-fee characterization rather
+than a ledger-level proof of who receives stolen coins. Anonymous multi-hop
+locks address the known attack class \cite{amhl}.
+
+\subsection{Economic soundness and griefing}
+
+The routed-amount lemmas are direct consequences of equations emitted by the
+forward rules. \texttt{EndToEnd_Value_Conservation} composes the two per-hop
+equations, but does not constrain the separate channel-state balances.
+\texttt{Fee_Strictly_Positive_Hop1/2} follows because this encoding uses
+Tamarin's positive-natural sort (there is no $\%0$); it therefore records a
+modeling choice and should not be read as a claim that Lightning forbids
+zero-fee channels. As a reachability result,
+\texttt{Griefing_Capital_Lock_Reachable} shows a trace labeled as capital
+lock/refund with no completed payment, abstracting the standard PCN griefing
+DoS.
+
+\subsection{Assumption minimality (T3 is load-bearing)}
+\label{sec:t3}
+
+A natural question is whether the intermediary-claim restriction T3 is redundant
+given T1 (redeem-before-timeout) and T2b (honest parties act before the inbound
+timeout). We tested it by removing T3 and re-running the suite: the safety lemma
+\texttt{Intermediary_Never_Loses_Under_Liveness} is then \emph{falsified},
+Tamarin finding a concrete 59-step counterexample. T2b orders the two timeouts
+but does not force the node to \emph{sweep} the incoming HTLC once its outgoing
+one is redeemed; that action is exactly what T3 encodes. This establishes that
+T3 is load-bearing relative to the remaining assumptions. It does \emph{not}
+establish independent minimality of every timing restriction; doing so would
+require one removal experiment and reproducible counterexample per restriction.
+
+% ===========================================================================
+\section{Generalisation to N hops}
+
+The core model fixes the path at three hops. Replacing the two hardcoded forward
+rules with one \emph{generic} rule was attempted in several encodings, all run:
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}p{4.9cm}p{7.4cm}c@{}}
+\toprule
+\textbf{Encoding} & \textbf{Outcome} & \\
+\midrule
+Signed-message generic forward & self-referential signed term; origin analysis recurses, even a one-hop witness OOMs & \rc \\
+\;\; $+$ fresh per-hop id & fixes replay but \emph{not} termination---still a signed term producible only by a forward & \rc \\
+Linear-fact routing (idealised channel) & safety invariants verify by induction over the chain, any $N$ & \gc \\
+\bottomrule
+\end{tabular}
+\caption{$N$-hop encodings. The bounding factor is cryptographic
+origin-analysis recursion on self-referential signed messages, not path length.}
+\label{tab:nhop}
+\end{table}
+
+The linear-fact route yields \texttt{multihop_nhop.spthy} (28/29 lemmas; the one
+open lemma, \texttt{Settle_Requires_Receiver_Release}, keys on the terminal
+settle and does not terminate) and, with amounts/fees added,
+\texttt{multihop_nhop_fees.spthy} (31/31, verified in 2\,min\,02\,s on the
+test machine). The latter signs the invoice but represents forwarding and
+fulfilment by internal linear facts rather than network messages. It is
+therefore an idealised routing-state abstraction, not a cryptographic
+generalisation of the fixed-hop model. The two layers have no formal refinement
+proof.
+
+% ===========================================================================
+\section{What failed, and the tractability boundaries}
+\label{sec:failed}
+
+We record negative results explicitly---they are the paper's methodological
+contribution as much as the positive ones.
+
+\begin{itemize}
+\item \textbf{The three-ingredient OOM.} Signing $+$ natural-number induction
+  $+$ an unbounded block clock together exhausted the tested configuration.
+  Selected pairwise variants remained tractable; the artefact should be read as
+  empirical evidence under the stated resource limits, not a general
+  complexity theorem. This motivates the modular split
+  (Section~\ref{sec:arch}).
+
+\item \textbf{Signed-message $N$-hop routing} (Table~\ref{tab:nhop}): origin
+  analysis on the self-referential \texttt{'htlc'} term does not terminate,
+  even for reachability, even with a fresh id.
+
+\item \textbf{A rejected restriction.} An initial fix \texttt{OneRedeemPerPtr}
+  (``at most one redeem per output'') was tested and \emph{rejected}: it
+  falsified the honest witness \texttt{Multihop_Payment_Possible}, because the
+  two \texttt{Redeemed} events on the sender's output in an honest run are the
+  two endpoints' views of one hop, not two spends. The correct guard was
+  \texttt{OneHTLCPerPtr} (later made structural).
+
+\item \textbf{A caught false positive.} \label{sec:falsepos}
+  An exists-trace probe that shared only the payment \emph{hash} between an
+  offer and a payment appeared to show ``value creation'' (receiver paid more
+  than the sender locked, no compromise). Tightening it to a single
+  \emph{linked} payment chain \emph{falsified} it, while a control confirmed the
+  chain is otherwise reachable---so the apparent attack was invoice-hash reuse
+  across two unrelated offers, not a soundness bug. This is the
+  adversarial-verification discipline in action.
+
+\item \textbf{Reusable channels (boundary).} We staged a refactor toward
+  faithful reusable channels: Stage~1 (structural single-HTLC-per-output via the
+  \texttt{Free(ptr)} slot) ships and re-verifies 43/43. Stage~2 (return
+  \texttt{Free(ptr)} on resolution, so a channel carries sequential HTLCs) was
+  spiked and is a clean tractability boundary: without \texttt{--auto-sources}
+  every lemma returns ``analysis incomplete'' (the reuse loop leaves unbounded
+  partial deconstructions); \emph{with} \texttt{--auto-sources} the
+  backward-reasoning safety lemmas verify ($\sim$45\,s each), but every
+  exists-trace witness and the interval lemma
+  \texttt{No_Concurrent_HTLC_Per_Output} fail to converge. The original
+  interval formula was unguarded; after splitting redeem/refund into two
+  guarded existential disjuncts, the theory passes
+  \texttt{--quit-on-warning}, but the corrected lemma still produced no result
+  after approximately 786\,s. A tightly constrained sender-only reuse witness
+  timed out at 900\,s under both default and SEQDFS search.
+  Reusable channels are expressible and their core safety survives, but the loop
+  reintroduces the witness/liveness non-termination the modular split avoids;
+  Stage~1 is therefore the shipped model.
+\end{itemize}
+
+% ===========================================================================
+\section{Reproduction}
+\label{sec:reproduction}
+
+\begin{lstlisting}
+export LANG=C.utf8 LC_ALL=C.utf8
+python3 run.py                 # full core suite (5 theories)
+python3 run.py multihop.spthy  # one theory
+make nhop                      # N-hop fee abstraction (31/31)
+\end{lstlisting}
+The recorded core results use Tamarin 1.8 and Maude 3.1. The N-hop-fee suite
+was additionally re-run with Tamarin 1.12.0 and Maude 3.5 (31/31); step counts
+may differ across versions. The Makefile delegates to \texttt{run.py}, which
+selects per-file strategies and returns nonzero if a lemma is falsified,
+incomplete, missing, or timed out. The Stage~2 experiment requires
+\texttt{--auto-sources}; its timeout observations use the explicit limits
+reported above.
+
+% ===========================================================================
+\section{Conclusion}
+
+We delivered a modular, machine-checked \emph{abstraction} of Lightning
+multi-hop HTLC routing (58 lemmas over five separate theories). The fixed-hop
+model replaces a replay-prevention axiom with a linear structural guard,
+reproduces known wormhole and griefing behaviours, and verifies authentication,
+causality, and routed-amount equations under explicit assumptions. Separate
+theories establish arithmetic claim windows, post-close exclusion in a linear
+channel abstraction, and finite-clock witnesses. These results do not constitute
+a unified balance-correctness proof of the BOLT protocol: channel-balance
+integration, formal refinement between theories, privacy, concurrent HTLCs, and
+unbounded reusable channels remain open. The durable contribution is
+methodological and empirical---a reproducible account of which abstractions keep
+Tamarin tractable, which assumptions carry the conditional guarantees, and
+where signed generic routing and reusable-state witness search stop scaling.
+
+{\small
+\begin{thebibliography}{9}
+
+\bibitem{tamarin-csf}
+B.~Schmidt, S.~Meier, C.~Cremers, and D.~Basin.
+\newblock Automated analysis of Diffie--Hellman protocols and advanced
+security properties.
+\newblock In \emph{25th IEEE Computer Security Foundations Symposium (CSF)},
+pages 78--94, 2012.
+
+\bibitem{tamarin-cav}
+S.~Meier, B.~Schmidt, C.~Cremers, and D.~Basin.
+\newblock The Tamarin prover for the symbolic analysis of security protocols.
+\newblock In \emph{25th International Conference on Computer Aided
+Verification (CAV)}, 2013.
+
+\bibitem{poon-dryja}
+J.~Poon and T.~Dryja.
+\newblock The Bitcoin Lightning Network: Scalable off-chain instant payments.
+\newblock Technical report, 2016.
+
+\bibitem{bolts}
+Lightning Network specification contributors.
+\newblock Basis of Lightning Technology (BOLTs).
+\newblock \url{https://github.com/lightning/bolts}, accessed July 2026.
+
+\bibitem{boyd-htlc}
+C.~Boyd, K.~Gjøsteen, and S.~Wu.
+\newblock A blockchain model in Tamarin and formal analysis of Hash Time Lock
+Contract.
+\newblock In \emph{2nd Workshop on Formal Methods for Blockchains (FMBC)},
+OASIcs 84, 2020. DOI: 10.4230/OASIcs.FMBC.2020.5.
+
+\bibitem{huttel-staroveski}
+H.~Hüttel and V.~Staroveški.
+\newblock Secrecy and authenticity properties of the Lightning Network
+protocol.
+\newblock In \emph{6th International Conference on Information Systems
+Security and Privacy (ICISSP)}, pages 119--130, 2020.
+
+\bibitem{grundmann-hartenstein}
+M.~Grundmann and H.~Hartenstein.
+\newblock Security of the Lightning Network: Model checking a stepwise
+refinement with TLA+.
+\newblock In \emph{20th International Conference on Integrated Formal Methods
+(iFM)}, 2025. DOI: 10.1007/978-3-032-10794-7\_16.
+
+\bibitem{amhl}
+G.~Malavolta, P.~Moreno-Sanchez, A.~Schneidewind, A.~Kate, and M.~Maffei.
+\newblock Anonymous multi-hop locks for blockchain scalability and
+interoperability.
+\newblock In \emph{Network and Distributed System Security Symposium (NDSS)},
+2019.
+
+\bibitem{maffei-slides}
+M.~Maffei.
+\newblock Cryptocurrencies, Lecture 11: Scalability.
+\newblock TU Wien lecture slides, December 2024.
+
+\end{thebibliography}
+}
+
+\end{document}
