@@ -1033,5 +1033,6 @@ lemma Channel_Reuse_Possible:
 lemma No_Concurrent_HTLC_Per_Output:
     "All ptr y1 y2 #a #b.
         HTLCAdded(ptr, y1) @ #a & HTLCAdded(ptr, y2) @ #b & #a < #b
-     ==> Ex z #r. (Redeemed(ptr, z) @ #r | Refunded(ptr, z) @ #r) & #a < #r & #r < #b"
+     ==> (Ex z #r. Redeemed(ptr, z) @ #r & #a < #r & #r < #b)
+       | (Ex z #r. Refunded(ptr, z) @ #r & #a < #r & #r < #b)"
 end

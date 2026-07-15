@@ -306,7 +306,16 @@ clean Tamarin tractability boundary:
 | Any lemma, no `--auto-sources` | **all "analysis incomplete"** — the reuse loop leaves unbounded partial deconstructions; precomputation never finishes |
 | Backward-reasoning safety (`Intermediary_Never_Loses`, `Payment_Atomicity`, `EndToEnd_Value_Conservation`) **with** `--auto-sources` | **verified** (~45s each) |
 | exists-trace witnesses (`Multihop_Payment_Possible`, `Wormhole_*`, `Channel_Reuse_Possible`) | **do not converge** (killed 500–700s) |
-| Interval lemma `No_Concurrent_HTLC_Per_Output` | **does not converge** (killed 700s) |
+| Interval lemma `No_Concurrent_HTLC_Per_Output` | Corrected to a guarded formula; **does not converge** (killed after ~786s with `--auto-sources`) |
+
+The original interval formula placed a disjunction inside one existential:
+`Ex z #r. (Redeemed(...) | Refunded(...)) & ...`. Tamarin rejected that as
+unguarded, so the earlier run was not a valid proof attempt. Splitting it into
+two guarded existential disjuncts makes the complete theory pass
+`--quit-on-warning`; the corrected lemma still does not converge. A stricter
+sender-only witness (`offer -> timeout refund -> second offer`) was also tested
+under both SEQDFS and default search and timed out at 900s, confirming that the
+exists-trace boundary is not merely caused by an underconstrained query.
 
 **Conclusion.** Reusable channels are *expressible* and their core safety
 *survives* (under `--auto-sources`), but the reuse loop reintroduces the
