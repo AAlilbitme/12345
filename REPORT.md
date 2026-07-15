@@ -1,5 +1,15 @@
 # Formal Verification Report — Lightning Network Multi-Hop HTLC Routing (Tamarin 1.8)
 
+> **Historical note (Report 1.0).** This document reflects the *pre-merge* layout.
+> Some filenames below have since changed and some theories were consolidated:
+> `Clock.spthy` → `gaps.spthy`, `Cltv.spthy` → `cltv_blocks.spthy`,
+> `timeout.spthy` → `t2b_attack.spthy`, and `value_cons.spthy` was **merged into**
+> `multihop.spthy` (value/fee conservation now lives there). For the current
+> 5-theory structure, lemma counts, and the later results (replay hardening,
+> wormhole, griefing, economic soundness, the reusable-channel boundary), see
+> **REPORT2.md**. The canonical run configuration is **`run.py`** (or `make`).
+> The modelling narrative below remains accurate for the theories as they were.
+
 The protocol is formalised as a **modular package of five theories**. Each proves
 a distinct aspect; they do not share rules, so a property proved in one is not
 silently assumed in another. The split is deliberate — one combined theory
