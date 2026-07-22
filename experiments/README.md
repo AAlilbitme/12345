@@ -68,3 +68,40 @@ the `Free(ptr)` slot). Documented Tamarin boundary — safety lemmas verify with
 `--auto-sources` (~45s each), but exists-trace witnesses and interval lemmas do
 not converge (killed 500-700s). See REPORT2.md section 11. Stage 1 (structural
 single-HTLC-per-output) is the shipped model in `../multihop.spthy`.
+
+## `bounded_reusable_channel.spthy` (finite balance-coupled refinement)
+
+This standalone theory is the positive, tractable companion to the Stage-2
+boundary. It models one channel through two explicit state versions:
+
+```text
+Open0 -> Lock0 -> Open1 -> Lock1 -> Open2
+```
+
+The same channel pointer carries two sequential unit HTLCs. The first settles,
+transferring one unit from payer to payee; the second refunds, restoring its
+locked unit. The theory verifies:
+
+- a concrete two-HTLC reuse witness with balances `(3,1) -> (2,2) -> (2,2)`;
+- the second add requires an earlier first-HTLC resolution;
+- settlement and refund each produce the next resolved channel state.
+
+It is deliberately finite and does **not** claim unbounded reusable channels,
+signature authentication, multi-hop routing, CLTV semantics, or a refinement
+proof for `multihop.spthy`. Its purpose is to establish a minimal, executable
+target semantics for eventual HTLC-bearing channel-state integration.
+
+```bash
+tamarin-prover bounded_reusable_channel.spthy --heuristic=c \
+  --derivcheck-timeout=0 --prove
+```
+
+## Revoked-commitment single-spend audit
+
+`revocation_uniqueness.spthy` preserves the pre-fix model and proves a
+54-step duplicate-publication/duplicate-punishment witness: persistent
+revocation knowledge could recreate a fresh penalty input repeatedly. The
+shipped `../multihop.spthy` now separates persistent `!RevokedSecret`
+knowledge from the linear `RevokedCommitmentUnspent(...)` output token. That
+change makes the UTXO single-spend resource explicit; a general automatic
+uniqueness proof remains a source-search challenge in the full signed model.

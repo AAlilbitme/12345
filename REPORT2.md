@@ -309,7 +309,7 @@ clean Tamarin tractability boundary:
 | Any lemma, no `--auto-sources` | **all "analysis incomplete"** — the reuse loop leaves unbounded partial deconstructions; precomputation never finishes |
 | Backward-reasoning safety (`Intermediary_Never_Loses`, `Payment_Atomicity`, `EndToEnd_Value_Conservation`) **with** `--auto-sources` | **verified** (~45s each) |
 | exists-trace witnesses (`Multihop_Payment_Possible`, `Wormhole_*`, `Channel_Reuse_Possible`) | **do not converge** (killed 500–700s) |
-| Interval lemma `No_Concurrent_HTLC_Per_Output` | **does not converge** (killed 700s) |
+| Interval lemma `No_Concurrent_HTLC_Per_Output` | Corrected to a guarded formula; **does not converge** (killed after ~786s with `--auto-sources`) |
 
 **Conclusion.** Reusable channels are *expressible* and their core safety
 *survives* (under `--auto-sources`), but the reuse loop reintroduces the
@@ -317,3 +317,43 @@ witness/liveness non-termination the modular split was built to avoid. Stage 1 �
 structural single-HTLC-per-output — is the right shipped model; Stage 2 is kept
 as a documented boundary, another concrete data point for where Tamarin's
 automated search stops scaling on this protocol.
+
+The original interval formula placed a redeem/refund disjunction inside one
+existential and was therefore unguarded. Splitting it into two guarded
+existential alternatives makes the theory pass `--quit-on-warning`; the
+corrected interval proof still does not converge. A sender-only reuse witness
+(`offer -> timeout refund -> second offer`) also timed out at 900s under both
+default and SEQDFS search. Thus the boundary is not an artefact of the original
+formula or an underconstrained witness.
+
+## 12. Interaction audit and bounded HTLC-bearing channel refinement
+
+The reusable-slot experiment keeps `Free(ptr)` independent of the channel
+commitment state and balances. To identify the next integration target, we
+audited the revocation path in the original model. The audit found a modelling
+flaw: `Publish_Revoked_A/B` read only persistent revocation knowledge, so the
+same revoked commitment could be published and punished twice. The
+`Duplicate_Revocation_Punishment_Reachable` witness in
+`experiments/revocation_uniqueness.spthy` verifies in 54 steps; the intended
+one-publication invariant is falsified in 23 steps.
+
+The shipped fix separates persistent knowledge from spendability:
+`Revoke_Old_Secret` creates a linear
+`RevokedCommitmentUnspent(ptr,owner,peer,n,commit)` token and each
+`Publish_Revoked_*` rule consumes it. This models the one-shot UTXO resource
+directly. A general uniqueness lemma over the full signed state-update loop
+does not currently converge, so the result is reported as a discovered model
+flaw plus a structural correction, not as a new Lightning vulnerability.
+
+`experiments/bounded_reusable_channel.spthy` supplies the executable positive
+target missing from Stage 2. Its finite acyclic state chain
+`Open0 -> Lock0 -> Open1 -> Lock1 -> Open2` verifies in under two seconds:
+
+- two sequential HTLCs use the same pointer;
+- the first settles with balances `(3,1) -> (2,2)`;
+- the second refunds and preserves `(2,2)`;
+- the second add requires resolution of the first.
+
+It does not refine the full signed multi-hop model and does not establish
+unbounded reuse. Its contribution is a checked target semantics for the future
+integration of HTLC outcomes into channel commitments and balances.
