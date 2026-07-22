@@ -1,0 +1,59 @@
+% Draft subsection: the persistent-vs-linear single-spend pitfall.
+% Two confirmed instances (HTLC output) + one pending machine-verification
+% (revoked commitment). Frame the second honestly until re-verified.
+%%%BEGIN revocation-finding
+
+\subsection{A recurring pitfall: one-shot on-chain resources modeled as
+persistent facts}
+\label{sec:singlespend}
+
+A symbolic model of an off-chain protocol must decide how to represent
+\emph{on-chain} resources that can be spent exactly once---a funding output, an
+HTLC output, a revocable commitment. Modeling such a resource as a Tamarin
+\emph{persistent} fact (prefixed \texttt{!}, never consumed) is convenient but
+unsound: a persistent fact can license the same rule to fire unboundedly, i.e.\
+the ``output'' can be spent more than once. We found this pitfall twice, in two
+different layers, and in each case the fix is the same: replace the persistent
+fact with a \emph{linear} single-spend token, produced once and consumed on use.
+
+\paragraph{Instance 1 --- the HTLC output (confirmed).}
+The forwarding rules were gated only by a public offer message; nothing consumed
+a per-output resource, so a replayed offer could re-fire an honest forward and
+lock a second HTLC on the same channel output with an adversary-chosen amount
+(machine-checked reachable). Replacing the implicit persistent permission with a
+linear \texttt{Free(ptr)} slot---emitted once per channel open, consumed by each
+HTLC-add---makes ``at most one HTLC per output'' a structural consequence; the
+double-forward probe is then falsified with no axiom, and all lemmas still
+verify.
+
+\paragraph{Instance 2 --- the revoked commitment (analytical; re-verification
+pending).}
+The punishment rules \texttt{Publish\_Revoked\_A/B} were gated only by
+persistent facts (\texttt{!RevokedSecret}, \texttt{!ValidOnChain}). A revoked
+commitment transaction spends the funding output once on-chain, and the
+counterparty's penalty claim spends the resulting output once; yet the
+persistent gating lets \texttt{Publish\_Revoked}---and hence \texttt{Punish}%
+---fire arbitrarily many times for a single revoked state. The fix mirrors
+Instance~1: \texttt{Revoke\_Old\_Secret} emits a linear
+\texttt{RevokedCommitmentUnspent} token (one per revoked commitment), consumed
+by \texttt{Publish\_Revoked}, so the revoked output is spent at most once.
+Persistent \emph{knowledge} of the revocation secret is retained
+(\texttt{!RevokedSecret}); only the one-shot \emph{spend} is made linear.
+
+By a monotonicity argument---adding an input fact only restricts a rule's
+firings---every all-traces safety property is preserved and no existence witness
+routes through the double-publish path, so we expect all $43$ lemmas to remain
+verified and the probe \texttt{AUDIT\_Double\_Publish\_Revoked} to become
+falsified. (This instance is stated as analytically sound pending machine
+re-verification.)
+
+\paragraph{Takeaway.}
+The two instances are not coincidental: they are the same category error in two
+sublayers, and the linear-token remedy is uniform. We suggest that
+\emph{``every one-shot on-chain output is a linear fact''} be treated as a
+modeling invariant for symbolic PCN analyses, and that persistent facts be
+reserved for genuinely non-consumable knowledge (keys, revealed secrets,
+channel identity). This turns an easy-to-miss soundness gap into a checkable
+discipline.
+
+%%%END revocation-finding
