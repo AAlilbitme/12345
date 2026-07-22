@@ -89,13 +89,13 @@ PER_LEMMA = {
         ("Fee_Conservation_Hop1",              False, None, False),
         ("Fee_Conservation_Hop2",              False, None, False),
         ("Receiver_Paid_Invoice_Amount",       False, None, False),
-        ("Fees_Charged_On_Path_Possible",      False, None, False),
-        ("Wormhole_Fee_Theft_Reachable",       False, None, False),  # NDSS.19 attack, exists-trace
-        ("Wormhole_Steals_Exactly_The_Fees",    False, None, False),  # quantified: theft = path fees
+        ("Fees_Charged_On_Path_Possible",      True,  300, True),   # solo exists-trace
+        ("Wormhole_Fee_Theft_Reachable",       True,  600, True),   # solo NDSS'19 witness
+        ("Wormhole_Steals_Exactly_The_Fees",    True,  600, True),   # solo quantified witness
         ("Fee_Strictly_Positive_Hop1",          False, None, False),
         ("Fee_Strictly_Positive_Hop2",          False, None, False),
         ("EndToEnd_Value_Conservation",         False, None, False),
-        ("Griefing_Capital_Lock_Reachable",     False, None, False),  # PCN griefing DoS, exists-trace
+        ("Griefing_Capital_Lock_Reachable",     True,  300, True),   # solo PCN griefing witness
     ],
 }
 

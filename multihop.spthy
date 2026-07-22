@@ -213,7 +213,12 @@ rule Revoke_Old_Secret:
     [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
       StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
       !RevokedSecret($A, n_old, sAold, oldCommitA),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      // Knowledge of a revoked secret is persistent, but the corresponding
+      // commitment output is spendable exactly once. These linear facts model
+      // that UTXO-level single-spend resource.
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
 
 // ---------------------------------------------------------------------------
 // On-chain publish paths
@@ -307,17 +312,14 @@ rule Honest_Close:
 // Cheat / punishment
 // ---------------------------------------------------------------------------
 
-// Publish_Revoked_A/B consume a linear RevealedSecret fact (not the persistent
-// !RevokedSecret) so that Punish_A/B can fire at most once per cheat event.
-// In reality the penalty transaction spends the revocation-key output exactly
-// once; a persistent read would allow infinite re-punishment (a modelling bug,
-// not a protocol bug).  We create the linear fact here from the persistent
-// !RevokedSecret so the secret is still remembered for future state-update
-// checks, but the punishment path is one-shot.
+// A revoked commitment can be published only once: each rule consumes its
+// RevokedCommitmentUnspent token. !RevokedSecret remains persistent historical
+// knowledge, while the linear token represents the actual one-shot UTXO.
 rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
-      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
         Cheat($A, n_old) ]->
     [ OnChainCheat($A, $B, n_old, oldCommitA),
@@ -326,7 +328,8 @@ rule Publish_Revoked_A:
 rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
         Cheat($B, n_old) ]->
     [ OnChainCheat($B, $A, n_old, oldCommitB),
@@ -621,6 +624,7 @@ lemma No_Punishment_Without_Cheating:
         Punish(B, A, n) @ #i
      ==> (Ex #k. Cheat(A, n) @ #k & #k < #i)
        | (Ex #j. LtkCompromised(A) @ #j & #j < #i)"
+
 
 lemma Cooperative_Close_Execution:
     exists-trace
