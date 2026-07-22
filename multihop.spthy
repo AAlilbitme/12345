@@ -23,6 +23,16 @@
 // HTLC over its life (Stage 1). Reusable channels (reproduce Free on resolution)
 // are future work.
 //
+// REVOCATION SINGLE-SPEND (same pattern, revocation layer): a revoked
+// commitment is a one-shot on-chain output, but Publish_Revoked was gated only
+// by the persistent !RevokedSecret, so it -- and hence Punish -- could fire
+// arbitrarily many times for one revoked state. Revoke_Old_Secret now emits a
+// linear RevokedCommitmentUnspent token consumed by Publish_Revoked, making the
+// penalty path one-shot. The 43 lemmas were re-verified after this change (all
+// pass). The diagnostic lemma AUDIT_Double_Publish_Revoked (at the end) is
+// expected to be falsified structurally, pending complete automated
+// confirmation (its exists-trace search did not terminate automatically).
+//
 // HISTORY: this file merges what used to be two separate theories --
 // multihop.spthy (fixed 3-hop, signed HTLC routing, no amounts) and
 // value_conservation.spthy (amount/fee conservation in a separate
@@ -42,9 +52,12 @@
 // For existence lemmas: --stop-on-trace=SEQDFS
 //
 // --- Modular formalization (NOT a single complete proof) ---
-// This file is one part of a four-theory package.  Each theory proves a
+// This file is one part of a five-theory package.  Each theory proves a
 // distinct aspect; they do not share rules, so a property proved in one is
 // not automatically proved in the system the others describe.
+// The five: multihop.spthy (this file), gaps.spthy, cltv_blocks.spthy,
+// t2b_attack.spthy (the T2b race counterexample), and witnesses.spthy
+// (finite-clock reachability witnesses).
 //
 //   multihop.spthy          (this file)
 //       Main protocol, value/fee conservation, and atomicity under liveness
@@ -213,7 +226,12 @@ rule Revoke_Old_Secret:
     [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
       StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
       !RevokedSecret($A, n_old, sAold, oldCommitA),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      // !RevokedSecret is persistent historical knowledge of the secret; the
+      // linear RevokedCommitmentUnspent token is the one-shot revoked commitment
+      // OUTPUT, spendable exactly once. Publishing consumes it (below).
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
 
 // ---------------------------------------------------------------------------
 // On-chain publish paths
@@ -307,17 +325,15 @@ rule Honest_Close:
 // Cheat / punishment
 // ---------------------------------------------------------------------------
 
-// Publish_Revoked_A/B consume a linear RevealedSecret fact (not the persistent
-// !RevokedSecret) so that Punish_A/B can fire at most once per cheat event.
-// In reality the penalty transaction spends the revocation-key output exactly
-// once; a persistent read would allow infinite re-punishment (a modelling bug,
-// not a protocol bug).  We create the linear fact here from the persistent
-// !RevokedSecret so the secret is still remembered for future state-update
-// checks, but the punishment path is one-shot.
+// !RevokedSecret is persistent historical knowledge. The corresponding
+// RevokedCommitmentUnspent token is linear and represents the one-shot
+// revoked commitment output. Publishing consumes that token, so the same
+// commitment cannot enter the penalty path twice.
 rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
-      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
         Cheat($A, n_old) ]->
     [ OnChainCheat($A, $B, n_old, oldCommitA),
@@ -326,7 +342,8 @@ rule Publish_Revoked_A:
 rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
-      !RevokedSecret($B, n_old, sBold, oldCommitB) ]
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
         Cheat($B, n_old) ]->
     [ OnChainCheat($B, $A, n_old, oldCommitB),
@@ -990,5 +1007,17 @@ lemma Griefing_Capital_Lock_Reachable:
       & Refunded(ptrOut, y) @ #r
       & not (Ex a b rr p x #s. SenderSettled(a, b, rr, p, x) @ #s)
       & not (Ex P #c. LtkCompromised(P) @ #c)"
+
+// Diagnostic probe for the revocation single-spend hardening: can the SAME
+// revoked commitment be published (and thus punished) twice?  With the linear
+// RevokedCommitmentUnspent token consumed by Publish_Revoked, this should be
+// structurally impossible.
+// Expected: falsified structurally; pending complete automated confirmation
+// (the exists-trace search did not terminate automatically in testing).
+lemma AUDIT_Double_Publish_Revoked:
+    exists-trace
+    "Ex A n c #i #j.
+        PublishRevoked(A, n, c) @ #i
+      & PublishRevoked(A, n, c) @ #j & not(#i = #j)"
 
 end
