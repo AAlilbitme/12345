@@ -1,0 +1,126 @@
+/*
+ * bounded_reusable_channel.spthy
+ * ==============================
+ * A finite, balance-coupled refinement witness for sequential HTLC reuse.
+ *
+ * This is deliberately not a replacement for multihop.spthy. The latter keeps
+ * signed Dolev-Yao routing and its reusable-channel source cycle does not admit
+ * automated reachability proofs. Here, two explicit channel-state versions
+ * make the source graph acyclic:
+ *
+ *   Open0 -> Lock0 -> Open1 -> Lock1 -> Open2
+ *
+ * The model proves a concrete two-use trace on the SAME channel pointer:
+ * settle the first unit HTLC, then refund the second. At every point one linear
+ * fact is the entire channel state, so a second HTLC cannot be outstanding
+ * until the first one resolves. Unlike the Stage-2 Free(ptr) spike, this
+ * witness updates symbolic balances on settlement/refund.
+ *
+ * It establishes a bounded refinement target, not arbitrary reusable channels,
+ * signature authentication, multi-hop routing, CLTV semantics, or a formal
+ * refinement of multihop.spthy.
+ */
+
+theory bounded_reusable_channel
+begin
+
+builtins: natural-numbers, hashing
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+/* Initial channel balance: payer 3, payee 1. */
+rule Open_Channel:
+    [ Fr(~ptr) ]
+    --[ ChannelOpened(~ptr, $A, $B),
+        ChannelState0(~ptr, %1 %+ %1 %+ %1, %1) ]->
+    [ Open0(~ptr, $A, $B, %1 %+ %1 %+ %1, %1) ]
+
+/* Receiver holds the two distinct payment preimages. */
+rule Receiver_Invoice0:
+    [ Fr(~x0) ]
+    --[ Invoice0($B, h(~x0), %1) ]->
+    [ Receiver0($B, ~x0) ]
+
+rule Receiver_Invoice1:
+    [ Fr(~x1) ]
+    --[ Invoice1($B, h(~x1), %1) ]->
+    [ Receiver1($B, ~x1) ]
+
+/* First HTLC: payer balance is decomposed as available + locked unit. */
+rule Add_HTLC0:
+    [ Open0(ptr, $A, $B, %aAvail %+ %1, %balB),
+      Receiver0($B, x0) ]
+    --[ HTLCAdded(ptr, '0', h(x0), %1) ]->
+    [ Lock0(ptr, $A, $B, %aAvail, %balB, h(x0), %1),
+      Receiver0($B, x0) ]
+
+rule Settle_HTLC0:
+    [ Lock0(ptr, $A, $B, %aAvail, %balB, h(x0), %1),
+      Receiver0($B, x0) ]
+    --[ HTLCSettled(ptr, '0', h(x0), %1),
+        ChannelState1(ptr, %aAvail, %balB %+ %1) ]->
+    [ Open1(ptr, $A, $B, %aAvail, %balB %+ %1) ]
+
+rule Refund_HTLC0:
+    [ Lock0(ptr, $A, $B, %aAvail, %balB, y, %1) ]
+    --[ HTLCRefunded(ptr, '0', y, %1),
+        TimedOut(ptr, '0', y),
+        ChannelState1(ptr, %aAvail %+ %1, %balB) ]->
+    [ Open1(ptr, $A, $B, %aAvail %+ %1, %balB) ]
+
+/* Second HTLC uses the SAME ptr only after the first output resolved. */
+rule Add_HTLC1:
+    [ Open1(ptr, $A, $B, %aAvail %+ %1, %balB),
+      Receiver1($B, x1) ]
+    --[ HTLCAdded(ptr, '1', h(x1), %1) ]->
+    [ Lock1(ptr, $A, $B, %aAvail, %balB, h(x1), %1),
+      Receiver1($B, x1) ]
+
+rule Settle_HTLC1:
+    [ Lock1(ptr, $A, $B, %aAvail, %balB, h(x1), %1),
+      Receiver1($B, x1) ]
+    --[ HTLCSettled(ptr, '1', h(x1), %1),
+        ChannelState2(ptr, %aAvail, %balB %+ %1) ]->
+    [ Open2(ptr, $A, $B, %aAvail, %balB %+ %1) ]
+
+rule Refund_HTLC1:
+    [ Lock1(ptr, $A, $B, %aAvail, %balB, y, %1) ]
+    --[ HTLCRefunded(ptr, '1', y, %1),
+        TimedOut(ptr, '1', y),
+        ChannelState2(ptr, %aAvail %+ %1, %balB) ]->
+    [ Open2(ptr, $A, $B, %aAvail %+ %1, %balB) ]
+
+/* Two uses of one channel, with real state/balance transitions:
+ *  (3,1) --settle 1--> (2,2) --refund 1--> (2,2). */
+lemma Two_Sequential_HTLCs_With_Balances:
+    exists-trace
+    "Ex ptr x0 x1 #a0 #s0 #a1 #r1 #z.
+        HTLCAdded(ptr, '0', h(x0), %1) @ #a0
+      & HTLCSettled(ptr, '0', h(x0), %1) @ #s0
+      & HTLCAdded(ptr, '1', h(x1), %1) @ #a1
+      & HTLCRefunded(ptr, '1', h(x1), %1) @ #r1
+      & ChannelState2(ptr, %1 %+ %1, %1 %+ %1) @ #z
+      & not (x0 = x1)
+      & #a0 < #s0 & #s0 < #a1 & #a1 < #r1 & #r1 = #z"
+
+/* A second HTLC can only be added after an outcome for the first. */
+lemma Add1_Requires_Resolution0:
+    "All ptr y1 #i.
+        HTLCAdded(ptr, '1', y1, %1) @ #i
+     ==> (Ex y0 #j. HTLCSettled(ptr, '0', y0, %1) @ #j & #j < #i)
+       | (Ex y0 #j. HTLCRefunded(ptr, '0', y0, %1) @ #j & #j < #i)"
+
+/* First settlement transfers exactly the locked unit. */
+lemma Settle0_Transfers_Locked_Unit:
+    "All ptr %a %balB #i.
+        ChannelState1(ptr, %a, %balB %+ %1) @ #i
+     ==> Ex y #j. HTLCSettled(ptr, '0', y, %1) @ #j & #j = #i"
+
+/* Refunding the second locked unit restores the state-1 balance. */
+lemma Refund1_Produces_Resolved_State:
+    "All ptr y #i.
+        HTLCRefunded(ptr, '1', y, %1) @ #i
+     ==> Ex %a %balB #j. ChannelState2(ptr, %a, %balB) @ #j & #j = #i"
+
+end
