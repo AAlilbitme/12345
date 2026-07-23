@@ -341,9 +341,12 @@ The shipped fix separates persistent knowledge from spendability:
 `Revoke_Old_Secret` creates a linear
 `RevokedCommitmentUnspent(ptr,owner,peer,n,commit)` token and each
 `Publish_Revoked_*` rule consumes it. This models the one-shot UTXO resource
-directly. A general uniqueness lemma over the full signed state-update loop
-does not currently converge, so the result is reported as a discovered model
-flaw plus a structural correction, not as a new Lightning vulnerability.
+directly. The same correction is ported to both N-hop theories because they
+duplicate the channel-lifecycle rules. `multihop_nhop_fees.spthy` re-verifies
+all 31 lemmas after the port (2m34s with Tamarin 1.12 / Maude 3.5). A general
+uniqueness lemma over the full signed state-update loop does not currently
+converge, so the result is reported as a discovered model flaw plus a
+structural correction, not as a new Lightning vulnerability.
 
 `experiments/bounded_reusable_channel.spthy` supplies the executable positive
 target missing from Stage 2. Its finite acyclic state chain
