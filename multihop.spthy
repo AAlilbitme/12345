@@ -28,10 +28,12 @@
 // by the persistent !RevokedSecret, so it -- and hence Punish -- could fire
 // arbitrarily many times for one revoked state. Revoke_Old_Secret now emits a
 // linear RevokedCommitmentUnspent token consumed by Publish_Revoked, making the
-// penalty path one-shot. The 43 lemmas were re-verified after this change (all
-// pass). The diagnostic lemma AUDIT_Double_Publish_Revoked (at the end) is
-// expected to be falsified structurally, pending complete automated
-// confirmation (its exists-trace search did not terminate automatically).
+// penalty path one-shot. CONFIRMED: all 43 lemmas re-verify after this change
+// (bulk run, 262s, Tamarin 1.8) -- the fix breaks no safety property or witness.
+// The diagnostic lemma AUDIT_Double_Publish_Revoked (at the end) is expected to
+// be falsified structurally, still pending a terminating verdict (its
+// exists-trace search did not converge automatically; run it without
+// --stop-on-trace to force the falsification).
 //
 // HISTORY: this file merges what used to be two separate theories --
 // multihop.spthy (fixed 3-hop, signed HTLC routing, no amounts) and
