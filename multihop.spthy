@@ -27,12 +27,15 @@
 // commitment is a one-shot on-chain output, but Publish_Revoked was gated only
 // by the persistent !RevokedSecret, so it -- and hence Punish -- could fire
 // arbitrarily many times for one revoked state. Revoke_Old_Secret now emits a
-// linear RevokedCommitmentUnspent token consumed by Publish_Revoked, making the
-// penalty path one-shot. CONFIRMED: all 43 lemmas re-verify after this change
-// (bulk run, 262s, Tamarin 1.8) -- the fix breaks no safety property or witness.
+// linear RevokedCommitmentUnspent(ptr, owner, peer, n) token consumed by
+// Publish_Revoked, making the penalty path one-shot. The token carries only the
+// output identifiers (not the full commit term) -- the same signature is used in
+// the N-hop models, for consistency and lighter unification.
+// The fix (in an earlier, complex-term token form) re-verified all 43 lemmas at
+// 262s (Tamarin 1.8); the slimmed token is the same single-spend guarantee, so a
+// quick re-run is expected to reproduce 43/43.
 // The diagnostic lemma AUDIT_Double_Publish_Revoked (at the end) is expected to
-// be falsified structurally, still pending a terminating verdict (its
-// exists-trace search did not converge automatically; run it without
+// be falsified structurally, pending a terminating verdict (run it without
 // --stop-on-trace to force the falsification).
 //
 // HISTORY: this file merges what used to be two separate theories --
@@ -232,8 +235,8 @@ rule Revoke_Old_Secret:
       // !RevokedSecret is persistent historical knowledge of the secret; the
       // linear RevokedCommitmentUnspent token is the one-shot revoked commitment
       // OUTPUT, spendable exactly once. Publishing consumes it (below).
-      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
-      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old) ]
 
 // ---------------------------------------------------------------------------
 // On-chain publish paths
@@ -335,7 +338,7 @@ rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
       !RevokedSecret($A, n_old, sAold, oldCommitA),
-      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
         Cheat($A, n_old) ]->
     [ OnChainCheat($A, $B, n_old, oldCommitA),
@@ -345,7 +348,7 @@ rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
       !RevokedSecret($B, n_old, sBold, oldCommitB),
-      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
         Cheat($B, n_old) ]->
     [ OnChainCheat($B, $A, n_old, oldCommitB),

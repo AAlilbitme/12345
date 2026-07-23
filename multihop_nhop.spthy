@@ -212,8 +212,8 @@ rule Revoke_Old_Secret:
       !RevokedSecret($B, n_old, sBold, oldCommitB),
       // linear one-shot revoked-commitment outputs (single-spend); mirrors the
       // multihop.spthy revocation hardening.
-      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
-      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old) ]
 
 // ---------------------------------------------------------------------------
 // On-chain publish paths
@@ -318,7 +318,7 @@ rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
       !RevokedSecret($A, n_old, sAold, oldCommitA),
-      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old) ]
     --[ PublishRevoked($A, n_old, oldCommitA),
         Cheat($A, n_old) ]->
     [ OnChainCheat($A, $B, n_old, oldCommitA),
@@ -328,7 +328,7 @@ rule Publish_Revoked_B:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
       !RevokedSecret($B, n_old, sBold, oldCommitB),
-      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old) ]
     --[ PublishRevoked($B, n_old, oldCommitB),
         Cheat($B, n_old) ]->
     [ OnChainCheat($B, $A, n_old, oldCommitB),
