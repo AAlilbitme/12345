@@ -1,26 +1,3 @@
-// ===========================================================================
-// cltv_blocks.spthy -- arithmetic side of CLTV staggering.
-//
-// This theory proves the block-arithmetic invariants that justify the T1-T3
-// restrictions in multihop.spthy.  It does NOT prove that parties act in time;
-// that is the liveness assumption HonestPartiesActBeforeIncomingTimeout (T2b)
-// in multihop.spthy.  The two files cover complementary aspects:
-//   cltv_blocks.spthy  -- the windows EXIST arithmetically
-//   multihop.spthy     -- honest parties USE those windows (axiom, not derived)
-//
-// Maffei slides 15/28: "it is crucial that timeout_out < timeout_in" gives
-// the intermediary a delta-block window to claim after the receiver reveals x.
-//
-// Three lemmas from pure nat arithmetic + restrictions:
-//   CLTV_Gap_Is_Positive  -- d_out < d_in            (T2 justification)
-//   Claim_Window_Nonempty -- b_fulfill < d_in         (T1+T2 composed)
-//   Staggered_Path_Safe   -- two-hop: b < d_mid & b < d_in  (T3)
-//
-// Relationship to multihop.spthy restrictions:
-//   T1 (RedeemBeforeTimeout)   <--  Claim_Window_Nonempty
-//   T2 (ForwardTimeGap)        <--  CLTV_Gap_Is_Positive
-//   T3 (IntermediaryMustClaim) <--  Staggered_Path_Safe
-// ===========================================================================
 theory cltv_blocks
 begin
 
@@ -33,6 +10,8 @@ builtins: natural-numbers
 rule Clock_Init:
     [] --[]-> [ BlockHeight(%1) ]
 
+
+//// advance clock by one block and record the height as a persistent witness
 rule Clock_Tick:
     [ BlockHeight(%b) ]
     --[ Block(%b) ]->
@@ -40,25 +19,26 @@ rule Clock_Tick:
 
 // ---------------------------------------------------------------------------
 // CLTV hop setup
-//
+// ---------------------------------------------------------------------------
 // A hop is defined by (ptrOut, ptrIn, d_out, d_in) where d_out < d_in.
 // The forwarder picks a positive delta and sets d_in = d_out %+ delta.
 // ---------------------------------------------------------------------------
-
-// Seed the initial outgoing deadline from the clock.
-rule Seed_Deadline:
-    [ Fr(~ptr), BlockHeight(%b), In(%extra) ]
-    --[ SeedDeadline(~ptr, %b %+ %extra) ]->
+// Outgoing = Bob → Carol (d_out)
+// Incoming = Alice → Bob (d_in)
+// the initial outgoing deadline from the clock.
+rule Int_Deadline:
+    [ Fr(~ptr), BlockHeight(%b), In(%extra) ]   // b is the current block height, extra is some extra time to add to the deadline
+    --[ IntDeadline(~ptr, %b %+ %extra) ]->   // the initial deadline is set to the current block height plus some extra time
     [ !Deadline(~ptr, %b %+ %extra) ]
 
-// Register a hop: outgoing pointer has deadline d_out, incoming pointer has
-// deadline d_in = d_out %+ delta.  DeltaPositive restriction enforces delta > 0.
+// Outgoing pointer has deadline d_out, incoming pointer has
+// deadline d_in = d_out %+ delta. 
 rule Register_Hop:
-    [ !Deadline(~ptrOut, %d_out), In(%delta), Fr(~ptrIn) ]
-    --[ HopRegistered(~ptrOut, ~ptrIn, %d_out, %d_out %+ %delta) ]->
+    [ !Deadline(~ptrOut, %d_out), In(%delta), Fr(~ptrIn) ]   // d is the outgoing deadline, delta is the extra time for the incoming deadline
+    --[ HopRegistered(~ptrOut, ~ptrIn, %d_out, %d_out %+ %delta) ]->   // register the hop with the outgoing and incoming deadlines
     [ !Deadline(~ptrIn, %d_out %+ %delta) ]
 
-// Preimage revealed at block b — must be before or at d_out (FulfillInTime).
+// witness a preimage reveal at some block height already reached
 rule Reveal_Preimage:
     [ !Deadline(~ptrOut, %d_out), !BlockReached(%b) ]
     --[ Revealed(%b, ~ptrOut, %d_out) ]->
@@ -72,56 +52,29 @@ rule Reveal_Preimage:
 restriction DeltaPositive:
     "All ptrOut ptrIn d_out d_in #i.
        HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
-     ==> d_out << d_in"
+     ==> d_out << d_in"   //deadline of outgoing pointer must be strictly less than the deadline of the incoming
 
 // Preimage is revealed strictly before the outgoing deadline (b < d_out).
-// Uses strict < rather than b <= d_out (which would be b << d_out %+ %1)
-// because Tamarin 1.8 sort inference fails to resolve d_out as nat in the
-// formula context of d_out %+ %1, producing a wellformedness warning.  This
-// excludes same-block fulfilment for a sort-inference reason, not a modeling
-// one; same-block fulfilment is safe but cannot be expressed without %+.
 restriction FulfillInTime:
     "All b ptrOut d_out #i.
        Revealed(b, ptrOut, d_out) @ #i
      ==> b << d_out"
 
-// ---------------------------------------------------------------------------
 // Lemma 1: CLTV_Gap_Is_Positive
-//
-// d_out < d_in follows from DeltaPositive restriction.
-// Justifies T2 (ForwardTimeGap): the outgoing HTLC times out strictly before
-// the incoming HTLC.
-// ---------------------------------------------------------------------------
 lemma CLTV_Gap_Is_Positive:
     "All ptrOut ptrIn d_out d_in #i.
        HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
      ==> d_out << d_in"
 
-// ---------------------------------------------------------------------------
-// Lemma 2: Claim_Window_Nonempty
-//
-// b_fulfill <= d_out < d_in  ==>  b_fulfill < d_in.
-// The intermediary's window [b_fulfill, d_in) is non-empty.
-// Justifies T1 (RedeemBeforeTimeout) + T2 composed: preimage appears before
-// the incoming HTLC times out, giving the intermediary time to claim.
-// ---------------------------------------------------------------------------
+// Claim_Window_Nonempty
 lemma Claim_Window_Nonempty:
     "All ptrOut ptrIn d_out d_in b #i #j.
        HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
      & Revealed(b, ptrOut, d_out) @ #j
      ==> b << d_in"
 
-// ---------------------------------------------------------------------------
-// Lemma 3: Staggered_Path_Safe
-//
-// Two-hop chain (ptr1 -> ptr2 -> ptr3) with successive deltas:
-//   d1 < d2 < d3
 // If preimage is revealed at block b <= d1 (the tightest deadline),
 // then b < d2 and b < d3 — both intermediaries have non-empty claim windows.
-//
-// This is the assumption-free derivation of why T1-T3 are simultaneously
-// satisfiable: staggered CLTVs guarantee the cascade works.
-// ---------------------------------------------------------------------------
 lemma Staggered_Path_Safe:
     "All ptr1 ptr2 ptr2b ptr3 d1 d2 d3 b #i #j #k.
        HopRegistered(ptr1, ptr2, d1, d2) @ #i

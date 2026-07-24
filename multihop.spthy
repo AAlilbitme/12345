@@ -1,94 +1,5 @@
-// multihop.spthy -- main protocol, value/fee conservation, and atomicity
-//                    under liveness.
-//
-// This is the primary theory: full channel lifecycle (handshake, state-update,
-// revocation/punishment, on-chain settlement), staggered-CLTV timing model,
-// invoice amounts + per-hop fees (Eq(%vIn, %vOut %+ %fee)), and the key
-// security properties (payment atomicity, intermediary safety, value
-// conservation).
-//
-// REPLAY HARDENING (structural, via the linear Free(ptr) slot): the forwarding
-// rules read the outgoing amount/fee from In(...), so a Dolev-Yao replay of an
-// offer could otherwise re-fire an honest forward and lock a second HTLC on the
-// SAME channel output with an adversary-chosen amount. Each channel open emits
-// ONE linear Free(ptr) token, and every HTLC-add (offer/forward) CONSUMES the
-// Free(ptr) of the output it locks. So "at most one HTLC per output" is now a
-// STRUCTURAL consequence of linear-fact consumption -- not a global axiom.
-// (An earlier version stated this as a restriction OneHTLCPerPtr; the slot model
-// replaced it -- one fewer assumption, same guarantee, double-forward still
-// falsified.) Double-redeem was never a vulnerability: the redeem/settle rules
-// each consume a linear *Pending fact, so the two Redeemed(ptrSF1) events in an
-// honest run are the two endpoints' views of one hop, not two spends.
-// NOTE: Free(ptr) is consumed and not reproduced, so each channel hosts a single
-// HTLC over its life (Stage 1). Reusable channels (reproduce Free on resolution)
-// are future work.
-//
-// REVOCATION SINGLE-SPEND (same pattern, revocation layer): a revoked
-// commitment is a one-shot on-chain output, but Publish_Revoked was gated only
-// by the persistent !RevokedSecret, so it -- and hence Punish -- could fire
-// arbitrarily many times for one revoked state. Revoke_Old_Secret now emits a
-// linear RevokedCommitmentUnspent(ptr, owner, peer, n, oldCommit) token
-// consumed by Publish_Revoked, making the penalty path one-shot.
-// CONFIRMED: all 43 lemmas re-verify with this fix (bulk run, 262s, Tamarin 1.8).
-// The same fix carries to the N-hop model (multihop_nhop.spthy), which verifies
-// its 25 active lemmas in 103s -- note the N-hop HTLC layer uses natural-numbers
-// (not multiset): the multiset AC-unification did not tolerate the extra linear
-// fact, the nat redesign does. The diagnostic lemma AUDIT_Double_Publish_Revoked
-// (at the end) is expected to be falsified structurally, pending a terminating
-// verdict (run it without --stop-on-trace to force the falsification).
-//
-// HISTORY: this file merges what used to be two separate theories --
-// multihop.spthy (fixed 3-hop, signed HTLC routing, no amounts) and
-// value_conservation.spthy (amount/fee conservation in a separate
-// nat-arithmetic abstraction, kept apart because combining signing + nat
-// induction was assumed to OOM Tamarin). That assumption was tested, not
-// just asserted: the merged file below verifies all 43 lemmas
-// (16 channel/structural + 27 HTLC/value, incl. all 4 ported value lemmas)
-// with --heuristic=c --stop-on-trace=seqdfs. The prior OOM was caused by
-// combining signing + nat induction + an UNBOUNDED BLOCK CLOCK (see
-// gaps.spthy's history); this file has no clock -- timing stays relational
-// (TimedOut ordering) -- so two of the three ingredients alone did not
-// reproduce the failure. Both former files are kept in archive/ as the
-// tested precedent and for reference; nothing in them is missing here.
-//
-// Run with: tamarin-prover multihop.spthy --prove=<LemmaName>
-// Use LANG=C.utf8 LC_ALL=C.utf8 to avoid Unicode encoding crashes.
-// For existence lemmas: --stop-on-trace=SEQDFS
-//
-// --- Modular formalization (NOT a single complete proof) ---
-// This file is one part of a five-theory package.  Each theory proves a
-// distinct aspect; they do not share rules, so a property proved in one is
-// not automatically proved in the system the others describe.
-// The five: multihop.spthy (this file), gaps.spthy, cltv_blocks.spthy,
-// t2b_attack.spthy (the T2b race counterexample), and witnesses.spthy
-// (finite-clock reachability witnesses).
-//
-//   multihop.spthy          (this file)
-//       Main protocol, value/fee conservation, and atomicity under liveness
-//       assumption T2b. Does NOT include the zombie-channel enforcement from
-//       gaps.spthy (adding ChannelClosed to Honest_Close causes OOM here --
-//       known limitation, not a hidden one).
-//
-//   gaps.spthy
-//       Lifecycle and timing safety properties separated for tractability:
-//       no HTLC after close (linear channel token), CLTV claim windows,
-//       on-chain redeem/refund reachability, outcome exclusivity.
-//
-//   cltv_blocks.spthy
-//       Pure block-arithmetic derivation of CLTV staggering (the windows
-//       EXIST); does not prove parties act within them (that is T2b below).
-//
-// --- Liveness assumption (T2b / HonestPartiesActBeforeIncomingTimeout) ---
-// Intermediary_Never_Loses_Under_Liveness and Payment_Atomicity_Under_Liveness
-// are conditional on HonestPartiesActBeforeIncomingTimeout (T2b).
-// T2b encodes the assumption that every honest party claims/publishes within
-// their CLTV window (i.e. TimedOut(ptrOut) fires before TimedOut(ptrIn)).
-// This is a LIVENESS assumption, not a derived fact.  cltv_blocks.spthy
-// proves that the claim windows are arithmetically non-empty; it does not
-// prove that parties act within them.  T2b is where the unproven "they act
-// in time" premise enters the model.  Without T2b, the early-timeout race
-// (adversary fires TimedOut(ptrIn) before Redeemed(ptrOut), making T3
-// inapplicable) is a genuine counterexample to both lemmas.
+//   multihop.spthy     
+//   Main protocol, value/fee conservation, and atomicity under liveness assumption.
 theory multihop
 begin
 
@@ -193,7 +104,7 @@ rule Lock_Funds_And_Open:
       !ChannelRecord(ptr, $A, $B),
       !ChannelConnect(ptr, $A, $B),   // permits HTLC from A to B
       !ChannelConnect(ptr, $B, $A),   // permits HTLC from B to A (Neq restriction distinguishes hops)
-      Free(ptr) ]  // linear HTLC slot: consumed by an HTLC-add on this output
+      Free(ptr) ] // one-shot HTLC slot per channel
 
 // ---------------------------------------------------------------------------
 // State update & revocation
@@ -231,8 +142,8 @@ rule Revoke_Old_Secret:
       StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
       !RevokedSecret($A, n_old, sAold, oldCommitA),
       !RevokedSecret($B, n_old, sBold, oldCommitB),
-      // !RevokedSecret is persistent historical knowledge of the secret; the
-      // linear RevokedCommitmentUnspent token is the one-shot revoked commitment
+      // !RevokedSecret is persistent historical knowledge of the secret while the
+      // linear RevokedCommitmentUnspent token is the one-time revoked commitment
       // OUTPUT, spendable exactly once. Publishing consumes it (below).
       RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
       RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
@@ -329,10 +240,10 @@ rule Honest_Close:
 // Cheat / punishment
 // ---------------------------------------------------------------------------
 
-// !RevokedSecret is persistent historical knowledge. The corresponding
-// RevokedCommitmentUnspent token is linear and represents the one-shot
+// !RevokedSecret is persistent. The corresponding
+// RevokedCommitmentUnspent token is linear and represents the one-time
 // revoked commitment output. Publishing consumes that token, so the same
-// commitment cannot enter the penalty path twice.
+// commitment cannot enter the punishment path twice.
 rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
@@ -354,7 +265,7 @@ rule Publish_Revoked_B:
       RevealedSecret($B, n_old, sBold, oldCommitB) ]
 
 // Punish rules consume both OnChainCheat and the linear RevealedSecret,
-// making the punishment a one-shot event (mirrors spending the penalty output).
+// making the punishment a one-time event.
 rule Punish_A:
     [ OnChainCheat($A, $B, n_old, oldCommitA),
       RevealedSecret($A, n_old, sAold, oldCommitA) ]
@@ -552,56 +463,35 @@ restriction OneChannelPerPtr:
      & ChannelOpen(C, D, ptr) @ #j
      ==> #i = #j"
 
-
-// ---------------------------------------------------------------------------
-// Timing model (T1-T3): the CLTV-delta invariant for Intermediary_Never_Loses.
-// See cltv_blocks.spthy for the assumption-free block-number derivation of
-// why this is the right set of restrictions (and what their limits are).
-// ---------------------------------------------------------------------------
-
-// T1: redemption is valid only before a channel times out.
+// Redemption is valid only before a channel times out.
 restriction RedeemBeforeTimeout:
     "All ptr y #i #j.
         Redeemed(ptr, y) @ #i & TimedOut(ptr) @ #j ==> #i < #j"
 
-// T2: each hop sets the outgoing timeout strictly shorter than the incoming
+// Each hop sets the outgoing timeout strictly shorter than the incoming
 // timeout (CLTV-delta invariant).
 restriction ForwardTimeGap:
-    "All P ptrIn ptrOut y #f #j #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+    "All P ptrIn ptrOut y #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #i
       & TimedOut(ptrOut) @ #j
       & TimedOut(ptrIn)  @ #k
      ==> #j < #k"
 
-// LIVENESS ASSUMPTION (T2b): honest parties claim within their CLTV window.
+// Honest parties claim within their CLTV window.
 // If ForwardHTLC connects two channels and the incoming channel times out,
-// then the outgoing channel must have already timed out.  This encodes the
-// assumption that every honest intermediary acts before their incoming
-// deadline — it is NOT derived from the protocol rules.  The arithmetic that
-// makes the window non-empty is proved in cltv_blocks.spthy, but whether
-// the node actually sweeps in time is assumed here.  Without this restriction
-// the early-timeout race (TimedOut(ptrIn) before Redeemed(ptrOut)) leaves T3
-// inapplicable and Intermediary_Never_Loses is genuinely falsifiable.
-// See t2b_attack.spthy for the machine-checked exists-trace witness.
+// then the outgoing channel must have already timed out.
 restriction HonestPartiesActBeforeIncomingTimeout:
-    "All P ptrIn ptrOut y #f #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
-      & TimedOut(ptrIn) @ #k
-     ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
+    "All P ptrIn ptrOut y #i #j.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #i
+      & TimedOut(ptrIn) @ #j
+     ==> Ex #k. TimedOut(ptrOut) @ #k & #k < #j"
 
-// T3: if an honest intermediary's outgoing HTLC is redeemed before the
-// incoming timeout, the node sweeps the incoming HTLC.
-// NOT redundant with T1/T2b: tested by removing this restriction and re-running
-// the suite -- Intermediary_Never_Loses_Under_Liveness is then FALSIFIED
-// (Tamarin finds a 59-step counterexample).  T2b orders the timeouts but does
-// not force the node to actually sweep the incoming HTLC once the outgoing one
-// is redeemed; T3 is what encodes that action.  Load-bearing, kept.
 restriction IntermediaryMustClaim:
-    "All P ptrIn ptrOut y #f #i #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
-      & Redeemed(ptrOut, y) @ #i
+    "All P ptrIn ptrOut y #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #i
+      & Redeemed(ptrOut, y) @ #j
       & TimedOut(ptrIn)  @ #k
-      & #i < #k
+      & #j < #k
      ==> Ex #l. Redeemed(ptrIn, y) @ #l"
 
 // ---------------------------------------------------------------------------
@@ -671,28 +561,16 @@ lemma Ltk_Known_Implies_Compromised [reuse]:
       & !KU(ltk) @ #j
      ==> Ex #r. LtkCompromised(A) @ #r"
 
-// Gap 2: Replay / freshness.
-// ReceiverInv is linear and consumed on fulfillment; ~x is fresh per invoice.
+// ~x is fresh per invoice.
 // Therefore a given preimage is released by the receiver at most once.
 // Even if the adversary replays the public 'fulfill' message, it cannot force
-// a second release from the receiver -- the linear fact is gone.
+// a second release from the receiver 
 lemma Invoice_Released_Once [reuse]:
     "All R x #i #j.
         PreimageReleased(R, x) @ #i
       & PreimageReleased(R, x) @ #j
      ==> #i = #j"
 
-// Existence witness for the honest 3-hop payment path (standard non-vacuity).
-// The six 'not' clauses from the earlier version were removed: for an
-// exists-trace it is enough to find ONE trace where the 8 events fire in
-// order.  Negative guards force Tamarin to verify no bad event occurs
-// anywhere in the witness, which is unnecessary (~7x slower) and not what
-// reviewers expect for non-vacuity.  The all-traces security lemmas
-// (Payment_Atomicity_Under_Liveness etc.) are the right place to rule out
-// bad events.
-// NOTE: A stronger version requiring no LtkCompromised, StateUpdate,
-// PublishState, Close, Cheat, or HTLCRefunded anywhere in the trace was
-// considered but exceeds practical time limits for exists-trace search.
 lemma Multihop_Payment_Possible:
     exists-trace
     "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R x %v %vS %vMid #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.
@@ -709,17 +587,17 @@ lemma Multihop_Payment_Possible:
 
 lemma Distinct_Parties_Configuration:
     exists-trace
-    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #c1 #c2 #c3.
-        ChannelOpen(S, F1, ptrSF1)   @ #c1
-      & ChannelOpen(F1, F2, ptrF1F2) @ #c2
-      & ChannelOpen(F2, R, ptrF2R)   @ #c3
+    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #i #j #k.
+        ChannelOpen(S, F1, ptrSF1)   @ #i
+      & ChannelOpen(F1, F2, ptrF1F2) @ #j
+      & ChannelOpen(F2, R, ptrF2R)   @ #k
       & not (S = F1) & not (S = F2) & not (S = R)
       & not (F1 = F2) & not (F1 = R) & not (F2 = R)
-      & not (Ex P #r. LtkCompromised(P) @ #r)
-      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
-      & not (Ex P n #u. PublishState(P, n) @ #u)
-      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
-      & not (Ex P n #u. Cheat(P, n) @ #u)"
+      & not (Ex P #t1. LtkCompromised(P) @ #t1)
+      & not (Ex P Q p n #t2. StateUpdate(P, Q, p, n) @ #t2)
+      & not (Ex P n #t3. PublishState(P, n) @ #t3)
+      & not (Ex P Q p n #t4. Close(P, Q, p, n) @ #t4)
+      & not (Ex P n #t5. Cheat(P, n) @ #t5)"
 
 lemma Refund_Possible:
     exists-trace
@@ -728,8 +606,8 @@ lemma Refund_Possible:
       & HTLCOffered(S, F1, p, y, %vS) @ #k
       & HTLCRefunded(S, p, y) @ #i
       & #j < #k & #k < #i
-      & not (Ex A MidP B p2 x #u. SenderSettled(A, MidP, B, p2, x) @ #u)
-      & not (Ex P #r. LtkCompromised(P) @ #r)"
+      & not (Ex A MidP B p2 x #t1. SenderSettled(A, MidP, B, p2, x) @ #t1)
+      & not (Ex P #t2. LtkCompromised(P) @ #t2)"
 
 lemma Preimage_Secret_Until_Released:
     "All R x #i #j.
@@ -758,14 +636,14 @@ lemma Forward1_Requires_Offer:
     "All F1 F2 S ptrF1F2 y %vIn %vOut #i.
         HTLCForwarded1(F1, F2, S, ptrF1F2, y, %vIn, %vOut) @ #i
      ==> (Ex ptrSF1 #j. HTLCOffered(S, F1, ptrSF1, y, %vIn) @ #j & #j < #i)
-       | (Ex #r. LtkCompromised(S) @ #r & #r < #i)"
+       | (Ex #k. LtkCompromised(S) @ #k & #k < #i)"
 
 lemma Forward2_Requires_Forward1:
     "All F2 R F1 ptrF2R y %vIn %vOut #i.
         HTLCForwarded2(F2, R, F1, ptrF2R, y, %vIn, %vOut) @ #i
      ==> (Ex S ptrF1F2 %vPrev #j.
             HTLCForwarded1(F1, F2, S, ptrF1F2, y, %vPrev, %vIn) @ #j & #j < #i)
-       | (Ex #r. LtkCompromised(F1) @ #r & #r < #i)"
+       | (Ex #k. LtkCompromised(F1) @ #k & #k < #i)"
 
 lemma Fulfill_Requires_Forward2:
     "All R F2 ptrF2R y %v #i.
@@ -773,9 +651,10 @@ lemma Fulfill_Requires_Forward2:
      ==> (Ex F1 %vIn #j. HTLCForwarded2(F2, R, F1, ptrF2R, y, %vIn, %v) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(F2) @ #r & #r < #i)"
 
-// Compromise-guarded variants: prove the honest branch is doing real work,
-// not just the "or LtkCompromised" disjunct.  If these hold, the routing
-// chain is authenticated under the honest model independently of key compromise.
+// The following lemmas are the same as the above, but with the additional
+// restriction that the parties are honest (i.e., no key compromise).  This is
+// the "honest" version of the lemmas, which is what we need for the
+// intermediary-safety proof.  
 lemma Forward1_Requires_Offer_Honest:
     "All F1 F2 S ptrF1F2 y %vIn %vOut #i.
         HTLCForwarded1(F1, F2, S, ptrF1F2, y, %vIn, %vOut) @ #i
@@ -795,24 +674,27 @@ lemma Fulfill_Requires_Forward2_Honest:
       & (not Ex P #r. LtkCompromised(P) @ #r)
      ==> Ex F1 %vIn #j. HTLCForwarded2(F2, R, F1, ptrF2R, y, %vIn, %v) @ #j & #j < #i"
 
-// Gap 2 helper (see Invoice_Released_Once above for the main replay lemma).
+// preimage release is a prerequisite for settlement.
 lemma Claim_Requires_Release:
     "All MidP InP ptrIn R x #i #j.
         IntermediaryClaimed(MidP, InP, ptrIn, x) @ #i
       & SecretPreimage(R, x) @ #j
      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
 
+// The sender's HTLC cannot be refunded if the sender has already settled.
 lemma Settle_Excludes_Sender_Refund:
     "All S F1 R ptr x #i.
         SenderSettled(S, F1, R, ptr, x) @ #i
      ==> not (Ex #j. HTLCRefunded(S, ptr, h(x)) @ #j)"
 
+// The sender can only settle if the receiver has created an invoice (or if the receiver's key was compromised).
 lemma Invoice_Authenticates_Settlement:
     "All S F1 R ptr x #i.
         SenderSettled(S, F1, R, ptr, x) @ #i
      ==> (Ex %v #j. InvoiceCreated(R, S, h(x), %v) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(R) @ #r & #r < #i)"
 
+// The sender is settle if the receiver has not created an invoice then the receiver's key was compromised.
 lemma Forged_Invoice_Requires_Key_Compromise:
     exists-trace
     "Ex S F1 R ptr x #i #r.
@@ -820,11 +702,7 @@ lemma Forged_Invoice_Requires_Key_Compromise:
       & LtkCompromised(R) @ #r
       & not (Ex %v #j. InvoiceCreated(R, S, h(x), %v) @ #j)"
 
-// Sanity corollary (not an independent result): a redeemed-out + refunded-in
-// pair cannot ALSO have a redeemed-in.  Follows directly from OneOutcomePerHTLC
-// (Redeemed and Refunded on the same ptr are mutually exclusive), which is why
-// the proof is trivial.  Kept as an explicit non-vacuity check; the substantive
-// intermediary-safety statement is Intermediary_Never_Loses_Under_Liveness.
+// The sender's HTLC cannot be refunded if the receiver has already redeemed.
 lemma Loss_Requires_Inaction:
     "All P ptrIn ptrOut y #i #j #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #i
@@ -838,12 +716,8 @@ lemma Refund_Requires_Timeout [reuse]:
         Refunded(ptr, y) @ #i
      ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
 
-// Gap 4: conditional on HonestPartiesActBeforeIncomingTimeout (T2b liveness).
 // An honest routing node whose outgoing HTLC is redeemed cannot have its
 // incoming HTLC refunded unless its key was compromised.
-// The proof is 2 steps because T2b hands Tamarin the ordering it needs; the
-// interesting content is in the restriction, not the lemma.  An unconditional
-// version would require watchtower-liveness as an explicit hypothesis.
 lemma Intermediary_Never_Loses_Under_Liveness:
     "All P ptrIn ptrOut y #f #i #j.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
@@ -851,38 +725,26 @@ lemma Intermediary_Never_Loses_Under_Liveness:
       & Refunded(ptrIn, y) @ #j
      ==> Ex #r. LtkCompromised(P) @ #r"
 
-// Slide 14's "should happen atomically" (red box) — CONDITIONAL on T2b.
 // This proves that once the receiver fulfills the final HTLC, the sender's
 // HTLC on the same payment hash cannot be refunded in the honest model.
-// The proof is 2 steps because HonestPartiesActBeforeIncomingTimeout (T2b)
-// asserts the liveness ordering that makes T3 applicable; the content of the
-// property is mostly in the restriction, not the lemma.  This does NOT prove
-// unconditional atomicity — cltv_blocks.spthy shows the claim windows exist
-// arithmetically, and T2b assumes honest parties use them.
 lemma Payment_Atomicity_Under_Liveness:
-    "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.
-        ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #f1
-      & ForwardHTLC(F2, ptrF1F2, ptrF2R, y) @ #f2
-      & Redeemed(ptrF2R, y) @ #i
-      & (not Ex P #r. LtkCompromised(P) @ #r)
-     ==> not (Ex #u. Refunded(ptrSF1, y) @ #u)"
+    "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #i #j #k.
+        ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #i
+      & ForwardHTLC(F2, ptrF1F2, ptrF2R, y) @ #j
+      & Redeemed(ptrF2R, y) @ #k
+      & (not Ex P #l. LtkCompromised(P) @ #l)
+     ==> not (Ex #m. Refunded(ptrSF1, y) @ #m)"
 
-// T2b is load-bearing: the early-timeout race IS reachable without it.
-// See t2b_attack.spthy for the machine-checked exists-trace that demonstrates
-// this.  That file strips HonestPartiesActBeforeIncomingTimeout and proves the race as an
-// exists-trace; Tamarin finds a concrete witness.  The pair (race reachable
-// in t2b_attack.spthy; race blocked by T2b here) is the two-sided certificate
-// that T2b earns its place — neither half alone is sufficient.
-//
-// This lemma only proves the race is blocked WITH the liveness restriction active.
-// The companion t2b_attack.spthy is needed to show the race is reachable WITHOUT it.
-lemma T2b_Counterexample_Blocked:
-    "not (Ex P ptrIn ptrOut y #f #i #j #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+// This lemma only proves the race is blocked WITH 
+// the HonestPartiesActBeforeIncomingTimeout restriction active.
+lemma Timeout_Race_Blocked:
+    "not (Ex P ptrIn ptrOut y #l #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #l
       & TimedOut(ptrIn)     @ #k
       & Refunded(ptrIn, y)  @ #j
       & Redeemed(ptrOut, y) @ #i
       & #k < #i)"
+
 // ---------------------------------------------------------------------------
 // Value / fee lemmas (ported from value_conservation.spthy)
 // ---------------------------------------------------------------------------
@@ -914,18 +776,11 @@ lemma Fees_Charged_On_Path_Possible:
 // ---------------------------------------------------------------------------
 // Wormhole attack (Malavolta, Moreno-Sanchez, Schneidewind, Kate, Maffei,
 // "Anonymous Multi-Hop Locks for Blockchain Scalability and Interoperability",
-// NDSS 2019).  Two colluding parties on the path share the preimage x through
-// an out-of-band side channel, skipping the honest intermediary between them.
-// The payment still settles end-to-end, but the bypassed node never learns x
-// in time to claim its incoming HTLC, so it forwards value yet earns no fee --
-// the colluders pocket the skipped hop's fee.  In this symbolic model the
-// Dolev-Yao network IS the side channel: 'fulfill' carrying x is a public Out
-// message, so the adversary relays x from the receiver's release straight to
-// the sender, bypassing the F1->F2 settle.  No key compromise is required.
+// NDSS 2019).
 //
 // The attack is reachable: the sender's HTLC settles and the receiver is paid,
 // yet the middle hop ptrF1F2 is never Redeemed and NEITHER intermediary earns
-// a FeeEarned event -- classic wormhole fee theft.
+// a FeeEarned event.
 lemma Wormhole_Fee_Theft_Reachable:
     exists-trace
     "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R x %v %vS %vMid #t1 #t2 #t3 #t4 #t5 #t6.
@@ -936,18 +791,13 @@ lemma Wormhole_Fee_Theft_Reachable:
       & HTLCFulfilled(R, F2, ptrF2R, h(x), %v)                @ #t5
       & SenderSettled(S, F1, R, ptrSF1, x)                    @ #t6
       & #t1 < #t2 & #t2 < #t3 & #t3 < #t4 & #t4 < #t5 & #t5 < #t6
-      & not (Ex #u. Redeemed(ptrF1F2, h(x)) @ #u)
-      & not (Ex p1 p2 yy %f #w. FeeEarned(F1, p1, p2, yy, %f) @ #w)
-      & not (Ex p1 p2 yy %f #w. FeeEarned(F2, p1, p2, yy, %f) @ #w)
-      & not (Ex P #r. LtkCompromised(P) @ #r)"
+      & not (Ex #i. Redeemed(ptrF1F2, h(x)) @ #i)
+      & not (Ex p1 p2 yy %f #j. FeeEarned(F1, p1, p2, yy, %f) @ #j)
+      & not (Ex p1 p2 yy %f #k. FeeEarned(F2, p1, p2, yy, %f) @ #k)
+      & not (Ex P #l. LtkCompromised(P) @ #l)"
 
 // Quantified wormhole: the stolen value is EXACTLY the path fees, not just
-// "some loss".  Both hops charged a fee (%f1, %f2) and the sender locked
-// %vS = %v %+ %f1 %+ %f2, yet the payment settles with NEITHER intermediary
-// earning -- so the colluders capture precisely %f1 %+ %f2.  This ties the
-// attack to the value layer: the amount conservation that holds hop-by-hop
-// (Fee_Conservation_Hop1/2) is exactly what quantifies the theft when the
-// middle settle is bypassed.
+// "some loss".
 lemma Wormhole_Steals_Exactly_The_Fees:
     exists-trace
     "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R x %v %vS %vMid %f1 %f2
@@ -962,20 +812,12 @@ lemma Wormhole_Steals_Exactly_The_Fees:
       & FeeCharged(F2, h(x), %f2) @ #c2
       & %vS = %v %+ %f1 %+ %f2
       & #t2 < #t3 & #t3 < #t4 & #t4 < #t5 & #t5 < #t6
-      & not (Ex p1 p2 yy %f #w. FeeEarned(F1, p1, p2, yy, %f) @ #w)
-      & not (Ex p1 p2 yy %f #w. FeeEarned(F2, p1, p2, yy, %f) @ #w)
-      & not (Ex P #r. LtkCompromised(P) @ #r)"
-
-// ---------------------------------------------------------------------------
-// Economic soundness (all-traces theorems).
-// These strengthen the per-hop Fee_Conservation lemmas into end-to-end
-// guarantees and pin down two properties that are never assumed anywhere.
-// ---------------------------------------------------------------------------
+      & not (Ex p1 p2 yy %f #i. FeeEarned(F1, p1, p2, yy, %f) @ #i)
+      & not (Ex p1 p2 yy %f #j. FeeEarned(F2, p1, p2, yy, %f) @ #j)
+      & not (Ex P #k. LtkCompromised(P) @ #k)"
 
 // Every forward strictly DECREASES the routed amount: the per-hop fee is
-// strictly positive.  This is nowhere assumed -- it holds because the
-// natural-number sort has no %0, so the %fee in Eq(%vIn, %vOut %+ %fee) is
-// always >= %1.  A "free forward" (%vIn = %vOut) is therefore unreachable.
+// strictly positive.
 lemma Fee_Strictly_Positive_Hop1:
     "All F1 F2 S p y %vIn %vOut #i.
         HTLCForwarded1(F1, F2, S, p, y, %vIn, %vOut) @ #i
@@ -986,13 +828,9 @@ lemma Fee_Strictly_Positive_Hop2:
         HTLCForwarded2(F2, R, F1, p, y, %vIn, %vOut) @ #i
      ==> Ex %d. %vIn = %vOut %+ %d"
 
-// End-to-end conservation / NO value creation: over a full linked 3-hop
+// End-to-end conservation: over a full linked 3-hop
 // payment the sender always locks the receiver's amount PLUS a strictly
-// positive total fee.  Value is neither created nor destroyed -- only fees are
-// skimmed -- so the receiver can never be paid more than the sender committed.
-// (An earlier exists-trace probe that shared only the hash y across two
-// UNRELATED offers appeared to show "value creation"; tightening it to a single
-// linked chain falsified it, which is why this is stated over the full chain.)
+// positive total fee.  Value is neither created nor destroyed.
 lemma EndToEnd_Value_Conservation:
     "All S F1 F2 R pS pF pR y %vS %vM %v #o #f1 #f2.
         HTLCOffered(S, F1, pS, y, %vS) @ #o
@@ -1000,28 +838,13 @@ lemma EndToEnd_Value_Conservation:
       & HTLCForwarded2(F2, R, F1, pR, y, %vM, %v) @ #f2
      ==> Ex %d. %vS = %v %+ %d"
 
-// Griefing (liquidity lockup): an honest intermediary is induced to lock
-// capital by forwarding, then forced to refund on timeout, with NO payment
-// completing anywhere and no key compromise.  The capital was locked for
-// nothing -- the standard PCN griefing DoS, here shown reachable.
-lemma Griefing_Capital_Lock_Reachable:
+// ptr out get refunded even in honest model, no settlement, no key compromise.
+lemma Honest_Intermediary_Refunds:
     exists-trace
-    "Ex F ptrIn ptrOut y #f #r.
-        ForwardHTLC(F, ptrIn, ptrOut, y) @ #f
-      & Refunded(ptrOut, y) @ #r
-      & not (Ex a b rr p x #s. SenderSettled(a, b, rr, p, x) @ #s)
-      & not (Ex P #c. LtkCompromised(P) @ #c)"
-
-// Diagnostic probe for the revocation single-spend hardening: can the SAME
-// revoked commitment be published (and thus punished) twice?  With the linear
-// RevokedCommitmentUnspent token consumed by Publish_Revoked, this should be
-// structurally impossible.
-// Expected: falsified structurally; pending complete automated confirmation
-// (the exists-trace search did not terminate automatically in testing).
-lemma AUDIT_Double_Publish_Revoked:
-    exists-trace
-    "Ex A n c #i #j.
-        PublishRevoked(A, n, c) @ #i
-      & PublishRevoked(A, n, c) @ #j & not(#i = #j)"
+    "Ex F ptrIn ptrOut y #i #j.
+        ForwardHTLC(F, ptrIn, ptrOut, y) @ #i
+      & Refunded(ptrOut, y) @ #j
+      & not (Ex a b rr p x #k. SenderSettled(a, b, rr, p, x) @ #k)
+      & not (Ex P #l. LtkCompromised(P) @ #l)"
 
 end

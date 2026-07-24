@@ -1,0 +1,213 @@
+theory Clock
+begin
+
+builtins: natural-numbers
+
+rule Clock_Start:
+    [ ]
+    --[ ClockStart() ]->
+    [ Clock(%1), !BlockReached(%1) ]
+
+rule Clock_Tick:
+    [ Clock(%b) ]
+    --[ ]->
+    [ Clock(%b %+ %1), !BlockReached(%b %+ %1) ]
+
+// Channels carry a concrete CLTV deadline drawn from the clock.
+rule Open_Channel:
+    [ Fr(~ptr), !BlockReached(%d) ]
+    --[ ChannelOpen($A, $B, ~ptr, %d) ]->
+    [ Channel(~ptr, $A, $B, %d) ]
+
+// Close CONSUMES the channel token 
+rule Close_Channel:
+    [ Channel(ptr, A, B, d) ]
+    --[ ChannelClosed(ptr) ]->
+    [ ]
+
+// Sender locks hash ~y on the incoming (S->F) channel.
+rule Sender_Offer:
+    [ Channel(ptrIn, $Sender, $F, %dIn), Fr(~y) ]
+    --[ HTLCAdded(ptrIn, ~y),
+        ValueOffered(ptrIn, ~y) ]->
+    [ Channel(ptrIn, $Sender, $F, %dIn),
+      PendingIn($Sender, $F, ptrIn, ~y, %dIn) ]
+
+// F forwards: consumes PendingIn to get authentic %dIn, reads %dOut from
+// its own outgoing channel (authentic), enforces CLTV-delta dOut < dIn.
+rule Forward_HTLC:
+    [ PendingIn($Sender, $F, ptrIn, y, %dIn),
+      Channel(ptrOut, $F, $Receiver, %dOut) ]
+    --[ Forwarded($F, ptrIn, ptrOut, %dIn, %dOut, y),
+        HTLCAdded(ptrOut, y),
+        Lt(%dOut, %dIn) ]->
+    [ Channel(ptrOut, $F, $Receiver, %dOut),
+      IntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
+
+// Receiver accepts at block bOut <= dOut 
+rule Receiver_Accept:
+    [ IntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y),
+      !BlockReached(%bOut) ]
+    --[ RedeemedAt(ptrOut, y, %bOut),
+        Redeemed(ptrOut, y),
+        WithinDeadline(%dOut, %bOut) ]->
+    [ Claimable($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
+
+// Intermediary claims upstream before incoming deadline 
+rule Intermediary_Claim:
+    [ Claimable($F, ptrIn, ptrOut, %dIn, %dOut, y),
+      !BlockReached(%bClaim) ]
+    --[ ClaimedAt(ptrIn, y, %bClaim),
+        Redeemed(ptrIn, y),
+        WithinDeadline(%dIn, %bClaim) ]->
+    [ ]
+
+// Upstream refund after incoming deadline 
+rule Timeout_Refund:
+    [ Claimable($F, ptrIn, ptrOut, %dIn, %dOut, y),
+      !BlockReached(%bRef) ]
+    --[ RefundedAt(ptrIn, y, %bRef),
+        Refunded(ptrIn, y),
+        PastDeadline(%dIn, %bRef) ]->
+    [ ]
+
+// F1 (first hop): consumes PendingIn from Sender, locks the HTLC on ptrMid,
+// and produces Hop1State (for F1's eventual upstream claim) + PendingHop2 (for F2).
+rule Forward_Hop1:
+    [ PendingIn($Prev, $F1, ptrIn, y, %dIn),
+      Channel(ptrMid, $F1, $Next, %dMid) ]
+    --[ Forwarded($F1, ptrIn, ptrMid, %dIn, %dMid, y),
+        HTLCAdded(ptrMid, y),
+        Lt(%dMid, %dIn) ]->
+    [ Channel(ptrMid, $F1, $Next, %dMid),
+      Hop1State($F1, ptrIn, ptrMid, %dIn, %dMid, y),
+      PendingHop2($F1, $Next, ptrMid, y, %dMid) ]
+
+// F2 (second hop): consumes PendingHop2, produces IntermediaryPending for Receiver_Accept.
+// Receiver_Accept then handles F2's redemption path normally.
+rule Forward_Hop2:
+    [ PendingHop2($F1, $F2, ptrMid, y, %dMid),
+      Channel(ptrOut, $F2, $Receiver, %dOut) ]
+    --[ Forwarded($F2, ptrMid, ptrOut, %dMid, %dOut, y),
+        HTLCAdded(ptrOut, y),
+        Lt(%dOut, %dMid) ]->
+    [ Channel(ptrOut, $F2, $Receiver, %dOut),
+      IntermediaryPending($F2, ptrMid, ptrOut, %dMid, %dOut, y) ]
+
+// F1 claims upstream once F2's downstream HTLC is claimable (preimage propagated).
+// Peeks at Claimable(F2) (consume + reproduce) to allow F2 to also claim/refund.
+rule Hop1_Claim:
+    [ Hop1State($F1, ptrIn, ptrMid, %dIn, %dMid, y),
+      Claimable($F2, ptrMid, ptrOut, %dMid, %dOut, y),
+      !BlockReached(%bClaim) ]
+    --[ ClaimedAt(ptrIn, y, %bClaim),
+        Redeemed(ptrIn, y),
+        WithinDeadline(%dIn, %bClaim) ]->
+    [ Claimable($F2, ptrMid, ptrOut, %dMid, %dOut, y) ]
+
+// On-chain claim -- short dispute path for Redeem_Reachable.
+rule OnChain_Claim:
+    [ IntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
+    --[ Resolved(ptrOut, y), Redeemed(ptrOut, y) ]->
+    [ ]
+
+// On-chain timeout -- short dispute path for Refund_Reachable.
+rule OnChain_Timeout:
+    [ IntermediaryPending($F, ptrIn, ptrOut, %dIn, %dOut, y) ]
+    --[ Resolved(ptrOut, y), Refunded(ptrOut, y) ]->
+    [ ]
+
+// ---------------------------------------------------------------------------
+// Restrictions
+// ---------------------------------------------------------------------------
+
+// Lt action forces strict natural number ordering
+restriction Lt_means_less:
+    "All a b #i. Lt(a, b) @ #i ==> a << b"
+// deadline not yet passed at the moment of the action
+restriction WithinDeadline_means_not_past:
+    "All d b #i. WithinDeadline(d, b) @ #i ==> not(d << b)"
+// deadline has already passed at the moment of the action(opposite of WithinDeadline)
+restriction PastDeadline_means_past:
+    "All d b #i. PastDeadline(d, b) @ #i ==> d << b"
+// each HTLC resolves exactly one way: redeem and refund are mutually exclusive
+restriction OneOutcomePerHTLC:
+    "All ptr y #i #j. Redeemed(ptr, y) @ #i & Refunded(ptr, y) @ #j ==> F"
+// the same HTLC cannot be resolved twice
+restriction OneResolution:
+    "All ptr y #i #j. Resolved(ptr, y) @ #i & Resolved(ptr, y) @ #j ==> #i = #j"
+
+// ---------------------------------------------------------------------------
+// Lemmas
+// ---------------------------------------------------------------------------
+
+// Helper: every HTLCAdded requires a prior Open_Channel.
+lemma HTLC_Needs_Open_Channel [use_induction]:
+    "All ptr y #h.
+        HTLCAdded(ptr, y) @ #h
+     ==> Ex A B d #o. ChannelOpen(A, B, ptr, d) @ #o & #o < #h"
+
+// No HTLC can be added after the channel is closed.
+// It was looping when i added to multihop.spthy.
+lemma No_HTLC_After_Close [use_induction]:
+    "All ptr y #h #c.
+        HTLCAdded(ptr, y) @ #h
+      & ChannelClosed(ptr) @ #c
+     ==> #h < #c"
+
+// bOut <= dOut  (WithinDeadline in Receiver_Accept)
+// dOut < dIn   (Lt in Forward_HTLC, both from honest channel state)
+// dIn < bRef   (PastDeadline in Timeout_Refund)
+// => bOut < bRef
+lemma Claim_Window_Exists:
+    "All F pIn pOut dIn dOut y bOut bRef #f #r #u.
+        Forwarded(F, pIn, pOut, dIn, dOut, y) @ #f
+      & RedeemedAt(pOut, y, bOut) @ #r
+      & RefundedAt(pIn,  y, bRef) @ #u
+     ==> bOut << bRef"
+
+// block height of the upstream claim is strictly less than the block height of the downstream redemption
+lemma Transitive_Preimage_Before_Upstream_Deadline:
+    "All F1 F2 pIn pMid pOut dIn dMid dOut y bOut #f1 #f2 #r.
+        Forwarded(F1, pIn,  pMid, dIn,  dMid, y) @ #f1
+      & Forwarded(F2, pMid, pOut, dMid, dOut, y) @ #f2
+      & RedeemedAt(pOut, y, bOut) @ #r
+     ==> bOut << dIn"
+
+
+// loss = skipped claim; residual is pure liveness.
+lemma Loss_Implies_Skipped_Claim:
+    "All F pIn pOut dIn dOut y #f #r #u.
+        Forwarded(F, pIn, pOut, dIn, dOut, y) @ #f
+      & Redeemed(pOut, y) @ #r
+      & Refunded(pIn,  y) @ #u
+     ==> not (Ex b #c. ClaimedAt(pIn, y, b) @ #c)"
+
+// Mutually exclusive outcomes.
+lemma Outcome_Exclusive:
+    "All ptr y #i #j.
+        Redeemed(ptr, y) @ #i
+      & Refunded(ptr, y) @ #j
+     ==> F"
+
+// Claim path reachable (via OnChain_Claim).
+lemma Redeem_Reachable:
+    exists-trace
+    "Ex ptr y #i. Redeemed(ptr, y) @ #i"
+
+// refund path reachable (via OnChain_Timeout).
+lemma Refund_Reachable:
+    exists-trace
+    "Ex ptr y #i. Refunded(ptr, y) @ #i"
+
+// Proves the timing flow is actually reachable: a forward that is redeemed downstream AND claimed
+// upstream.
+lemma Honest_Flow_Possible:
+    exists-trace
+    "Ex P pIn pOut dIn dOut y bOut bClaim #f #r #c.
+        Forwarded(P, pIn, pOut, dIn, dOut, y) @ #f
+      & RedeemedAt(pOut, y, bOut)             @ #r
+      & ClaimedAt(pIn, y, bClaim)             @ #c"
+
+
+end

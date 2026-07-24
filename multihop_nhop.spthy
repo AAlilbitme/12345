@@ -1,28 +1,3 @@
-// multihop_nhop.spthy -- MERGED, N-hop-generalized variant of multihop.spthy.
-// ===========================================================================
-// This file keeps the full channel lifecycle from multihop.spthy but replaces
-// the fixed 2-hop SIGNED HTLC layer with ONE generic Forward_HTLC over a
-// linear Route fact. The path Sender -> (Forward)* -> Receiver has ANY length.
-//
-// UPGRADES OVER PREVIOUS N-HOP:
-// - Added 'natural-numbers' builtin (signing + nat is tractable here because
-//   the unbounded block clock is omitted/treated relationally).
-// - Restored the strict Linear-UTXO 'Free(ptr)' invariant from multihop.spthy
-//   to the channel open and generic forward rules.
-// - Added nat-sort fee arithmetic (%vIn = %vOut %+ %fee) to the generic rule.
-//
-// STATUS: 28 / 31 lemas verified (--heuristic=c --stop-on-trace=seqdfs).
-//   Verified: all channel-lifecycle lemmas; the headline safety lemmas 
-//   (Intermediary_Never_Loses, Payment_Atomicity, etc.); and generic witnesses.
-//   NOT verified (intentional boundaries):
-//   - Settle_Requires_Receiver_Release: backward tracing loops infinitely.
-//   - Forward_Requires_Incoming / Claim_Requires_Release / Redeem_Requires_Receiver_Release: 
-//     [use_induction] clashes with signing+nat merged theory, taking too long.
-//     (These verify perfectly in the isolated 3-hop multihop.spthy).
-//   - Fee lemmas: math is enforced structurally in the rule, so standalone 
-//     lemmas are redundant and throw unguarded-variable errors if active.
-// ===========================================================================
-
 theory multihop_nhop
 begin
 
@@ -127,7 +102,7 @@ rule Lock_Funds_And_Open:
       !ChannelRecord(ptr, $A, $B),
       !ChannelConnect(ptr, $A, $B),   
       !ChannelConnect(ptr, $B, $A),
-      Free(ptr) ]  // LINEAR UTXO INVARIANT: one-shot HTLC slot per channel
+      Free(ptr) ]  // one-shot HTLC slot per channel
 
 // ---------------------------------------------------------------------------
 // State update & revocation
@@ -317,7 +292,7 @@ rule Claim_Funds_B:
     [ FundsTo($B, n) ]
 
 // ---------------------------------------------------------------------------
-// HTLC layer -- GENERALIZED to N hops via a linear Route fact + nat arithmetic
+// HTLC layer GENERALIZED to N hops
 // ---------------------------------------------------------------------------
 
 rule Receiver_Create_Invoice:
@@ -349,8 +324,6 @@ rule Sender_Offer_HTLC:
       Route($Sender, $Forward1, ptrSF, y) ]
 
 // GENERIC FORWARD -- one rule, any number of hops.
-// Consumes linear Free(ptrOut) to enforce UTXO single-spend invariant.
-// Performs local nat-sort fee arithmetic structurally.
 rule Forward_HTLC:
     [ Route($Prev, $Me, ptrIn, y),
       !ChannelConnect(ptrOut, $Me, $Next),
@@ -520,7 +493,7 @@ lemma Ltk_Known_Implies_Compromised [reuse]:
     "All A ltk #i #j.
         KeyGen(A, ltk) @ #i
       & !KU(ltk) @ #j
-     ==> Ex #r. LtkCompromised(A) @ #r"
+     ==> Ex #k. LtkCompromised(A) @ #k"
 
 lemma Invoice_Released_Once [reuse]:
     "All R x #i #j.
@@ -530,18 +503,18 @@ lemma Invoice_Released_Once [reuse]:
 
 lemma Distinct_Parties_Configuration:
     exists-trace
-    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #c1 #c2 #c3.
-        ChannelOpen(S, F1, ptrSF1)   @ #c1
-      & ChannelOpen(F1, F2, ptrF1F2) @ #c2
-      & ChannelOpen(F2, R, ptrF2R)   @ #c3
+    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #t1 #t2 #t3.
+        ChannelOpen(S, F1, ptrSF1)   @ #t1
+      & ChannelOpen(F1, F2, ptrF1F2) @ #t2
+      & ChannelOpen(F2, R, ptrF2R)   @ #t3
       & not (S = F1) & not (S = F2) & not (S = R)
       & not (F1 = F2) & not (F1 = R) & not (F2 = R)
-      & not (Ex P #r. LtkCompromised(P) @ #r)
-      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
-      & not (Ex P n #u. PublishState(P, n) @ #u)
-      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
-      & not (Ex P n #u. Cheat(P, n) @ #u)
-      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u)"
+      & not (Ex P #i. LtkCompromised(P) @ #i)
+      & not (Ex P Q p n #j. StateUpdate(P, Q, p, n) @ #j)
+      & not (Ex P n #k. PublishState(P, n) @ #k)
+      & not (Ex P Q p n #l. Close(P, Q, p, n) @ #l)
+      & not (Ex P n #m. Cheat(P, n) @ #m)
+      & not (Ex Me Prev Next pi po y #n. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #n)"
 
 lemma Refund_Possible:
     exists-trace
@@ -550,9 +523,9 @@ lemma Refund_Possible:
       & HTLCOffered(S, F1, p, y) @ #k
       & HTLCRefunded(S, p, y) @ #i
       & #j < #k & #k < #i
-      & not (Ex A MidP B p2 x #u. SenderSettled(A, MidP, B, p2, x) @ #u)
+      & not (Ex A MidP B p2 x #l. SenderSettled(A, MidP, B, p2, x) @ #l)
       & not (Ex P #r. LtkCompromised(P) @ #r)
-      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u)"
+      & not (Ex Me Prev Next pi po y #t1. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #t1)"
 
 lemma Preimage_Secret_Until_Released:
     "All R x #i #j.
@@ -571,14 +544,11 @@ lemma HTLC_On_Opened_Channel [reuse, use_induction]:
         HTLCAdded(ptr, y) @ #i
      ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
 
-// ===========================================================================
-// INTENTIONAL TRACTABILITY BOUNDARIES (Contribution #4)
-// ===========================================================================
+
 // 1. Settle_Requires_Receiver_Release: backward tracing loops infinitely.
 // 2. use_induction lemmas: combining [use_induction] with 'signing' + 
 //    'natural-numbers' in the merged theory causes severe slowdown. 
 //    These verify perfectly in the isolated 3-hop multihop.spthy.
-// ===========================================================================
 
 // lemma Settle_Requires_Receiver_Release:
 //     "All S F1 R ptr x #i #j.
@@ -603,9 +573,6 @@ lemma HTLC_On_Opened_Channel [reuse, use_induction]:
 //         Redeemed(ptr, y) @ #i
 //      ==> Ex R x #k. PreimageReleased(R, x) @ #k & h(x) = y"
 
-// ---------------------------------------------------------------------------
-// Active N-hop Lemmas (Verify quickly)
-// ---------------------------------------------------------------------------
 
 lemma Settle_Excludes_Sender_Refund:
     "All S F1 R ptr x #i.
@@ -639,23 +606,23 @@ lemma Refund_Requires_Timeout [reuse]:
      ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
 
 lemma Intermediary_Never_Loses_Under_Liveness:
-    "All P ptrIn ptrOut y #f #i #j.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
-      & Redeemed(ptrOut, y) @ #i
-      & Refunded(ptrIn, y) @ #j
-     ==> Ex #r. LtkCompromised(P) @ #r"
+    "All P ptrIn ptrOut y #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #i
+      & Redeemed(ptrOut, y) @ #j
+      & Refunded(ptrIn, y) @ #k
+     ==> Ex #l. LtkCompromised(P) @ #l"
 
 lemma Payment_Atomicity_Under_Liveness:
-    "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.
-        ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #f1
-      & ForwardHTLC(F2, ptrF1F2, ptrF2R, y) @ #f2
-      & Redeemed(ptrF2R, y) @ #i
-      & (not Ex P #r. LtkCompromised(P) @ #r)
-     ==> not (Ex #u. Refunded(ptrSF1, y) @ #u)"
+    "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #i #j #k.
+        ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #i
+      & ForwardHTLC(F2, ptrF1F2, ptrF2R, y) @ #j
+      & Redeemed(ptrF2R, y) @ #k
+      & (not Ex P #l. LtkCompromised(P) @ #l)
+     ==> not (Ex #m. Refunded(ptrSF1, y) @ #m)"
 
-lemma T2b_Counterexample_Blocked:
-    "not (Ex P ptrIn ptrOut y #f #i #j #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+lemma Timeout_race_Blocked:
+    "not (Ex P ptrIn ptrOut y #l #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #l
       & TimedOut(ptrIn)     @ #k
       & Refunded(ptrIn, y)  @ #j
       & Redeemed(ptrOut, y) @ #i
@@ -676,8 +643,5 @@ lemma Multihop_Payment_Possible:
              & not(Me=F1 & Prev=S & Next=F2)
              & not(Me=F2 & Prev=F1 & Next=R))"
 
-// --- GENERALIZED value / fee notes -----------------------------------------
-// Fee conservation is enforced structurally in the Forward_HTLC rule via
-// Eq(%vIn = %vOut %+ %fee). Standalone lemmas are redundant here.
 
 end
