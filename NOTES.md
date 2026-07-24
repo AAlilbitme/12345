@@ -12,10 +12,29 @@ signing + natural-numbers + an unbounded clock together exhaust the prover.
 | `Clock.spthy` | A live block clock (`Clock_Tick`) run through the **full forward lifecycle**: derives the actual claim window between hops (`Claim_Window_Exists`, `Transitive_Preimage_Before_Upstream_Deadline`), shows a loss is exactly a *skipped claim*, and adds lifecycle safety (no HTLC after close, outcome-exclusive) + redeem/refund/honest-flow reachability — all at concrete block heights. |
 | `timeout.spthy` | The **counterexample**: with the liveness assumption T2b removed, the early-timeout race is reachable (`Early_Timeout_Race`). Pairs with `Timeout_Race_Blocked` in `multihop.spthy` to prove T2b is load-bearing. |
 
-Everything else — channel lifecycle, revocation/punishment, HTLC routing, fees,
-value conservation, wormhole, atomicity — is in `multihop.spthy` (fixed 3-hop,
-full crypto) and generalised to arbitrary length in `multihop_nhop.spthy`
-(idealised linear-fact route).
+## multihop.spthy vs multihop_nhop.spthy
+
+Both share the **same channel lifecycle** (handshake, state-update,
+revocation/punishment with the linear `RevokedCommitmentUnspent` single-spend,
+on-chain settlement) and the **same safety lemmas** (atomicity,
+intermediary-never-loses, value conservation). They differ only in the HTLC
+routing layer:
+
+| | `multihop.spthy` | `multihop_nhop.spthy` |
+|--|------------------|------------------------|
+| Path | Fixed **3 hops** (S → F1 → F2 → R) | **Any length** N |
+| HTLC forward | **Signed message** over `Out`/`In`, full Dolev–Yao adversary | **Generic linear-fact** `Route(prev,me,ptr,y)` (idealised channel) |
+| Forward rules | Two hard-coded (`Forward1_HTLC`, `Forward2_HTLC`) | One generic `Forward_HTLC` that fires at every hop |
+| Wormhole attack | **Yes** — reachable + fee-quantified (needs the signed network) | **No** — the idealised route removes the collusion side channel |
+| Per-hop auth | Machine-checked (`Forward1_Requires_Offer`, `Forward2_Requires_Forward1`) | Abstracted (transferred by the refinement theorem) |
+| Boundaries | none (43/43) | 4 `[use_induction]` causality lemmas commented out (don't terminate on the generic chain) |
+
+The two form a **proof layering**: concrete crypto at 3 hops, idealised route
+for safety at arbitrary N. The bridge is `paper/nhop_soundness.tex`.
+
+Everything else — fees, value conservation, wormhole, atomicity — is in
+`multihop.spthy` and (except the wormhole) carried to arbitrary length in
+`multihop_nhop.spthy`.
 
 ## Files documented in the paper
 
