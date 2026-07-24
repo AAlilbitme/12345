@@ -129,7 +129,7 @@
     <circle cx="994" cy="396" r="9" fill="#ed6c02"/><text x="994" y="399.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">6</text>
     <text x="1012" y="393" font-weight="700" fill="#ed6c02">Refund / griefing</text>
     <text x="1012" y="407" fill="#444">Refund_Requires_Timeout · Loss_Requires_Inaction ✓</text>
-    <text x="1012" y="419" fill="#444">Griefing_Capital_Lock_Reachable ✓ (reachable DoS)</text>
+    <text x="1012" y="419" fill="#444">Honest_Intermediary_Refunds ✓ (reachable refund/DoS)</text>
     <!-- 7 -->
     <circle cx="994" cy="446" r="9" fill="#c62828"/><text x="994" y="449.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">7</text>
     <text x="1012" y="443" font-weight="700" fill="#c62828">Wormhole fee theft</text>
@@ -139,7 +139,7 @@
     <circle cx="994" cy="496" r="9" fill="#2e7d32"/><text x="994" y="499.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">8</text>
     <text x="1012" y="493" font-weight="700" fill="#2e7d32">Intermediary safety (under liveness T2b)</text>
     <text x="1012" y="507" fill="#444">Intermediary_Never_Loses_Under_Liveness ✓</text>
-    <text x="1012" y="519" fill="#444">T2b_Counterexample_Blocked ✓ (race blocked with T2b)</text>
+    <text x="1012" y="519" fill="#444">Timeout_Race_Blocked ✓ (race blocked with T2b)</text>
   </g>
 
   <line x1="985" y1="540" x2="1320" y2="540" stroke="#eee"/>
@@ -149,5 +149,5 @@
   <text x="985" y="612" font-size="10.5" fill="#777" font-style="italic">Channel-layer lemmas (open/update/close/punish)</text>
   <text x="985" y="626" font-size="10.5" fill="#777" font-style="italic">live on the Alice↔Bob figure.</text>
 
-  <text x="490" y="806" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — multihop.spthy lemmas mapped to the 4-party flow. Next: gaps / cltv_blocks / t2b_attack.</text>
+  <text x="490" y="806" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — multihop.spthy lemmas mapped to the 4-party flow. Next: cltv_blocks / Clock / timeout.</text>
 </svg>

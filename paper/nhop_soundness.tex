@@ -35,7 +35,7 @@ is authenticated by verifying the previous hop's signature.
 \end{definition}
 
 \begin{definition}[Abstract model $\mathcal{A}$]
-The linear-fact routing theory (\texttt{multihop\_nhop\_fees.spthy}): the HTLC is
+The linear-fact routing theory (\texttt{multihop\_nhop.spthy}): the HTLC is
 handed hop-to-hop as an internal linear fact \texttt{Route(prev,me,ptr,y)}
 (an \emph{idealised channel}) rather than a signed broadcast. A single generic
 forward rule fires at every hop, so paths have arbitrary length~$N$.
@@ -151,7 +151,7 @@ in $\pi(t)$. $\square$
 \textbf{Ingredient} & \textbf{Where} & \textbf{Status} \\
 \midrule
 \textsc{Auth}, per-hop, local & $\mathcal{C}$ (\texttt{multihop.spthy}) & machine-checked (266 / 274 steps) \\
-All-$N$ routing safety ($\varphi$) & $\mathcal{A}$ (\texttt{*\_nhop\_fees}) & machine-checked (28/29; 30/30; 551-step \texttt{Intermediary\_Never\_Loses}) \\
+All-$N$ routing safety ($\varphi$) & $\mathcal{A}$ (\texttt{multihop\_nhop}) & machine-checked (25 active lemmas, $\approx$103.5\,s) \\
 $\Sigma$-alignment / projection $\pi$ & both & by inspection ($\Sigma$ shared verbatim) \\
 Simulation + induction (Thm.~\ref{thm:main}) & meta & pen-and-paper \\
 Generic single-rule \textsc{Auth} & --- & \emph{boundary}: sources non-termination (Rem.~\ref{rem:local}) \\

@@ -28,7 +28,10 @@ PY
 
 | Figure | Covers |
 |--------|--------|
-| `fig_index`   | master map: 5 files -> 3 figures, 58 lemmas |
+| `fig_index`   | master map: 5 files -> 4 figures, 81 lemmas |
 | `fig_4party`  | multi-hop routing / value / attack lemmas (multihop.spthy) |
 | `fig_channel` | Alice<->Bob channel lifecycle lemmas (multihop.spthy) |
-| `fig_timing`  | staggered CLTV timing (cltv_blocks, gaps, t2b_attack) |
+| `fig_timing`  | staggered CLTV timing (cltv_blocks, Clock, timeout) |
+
+The five theories are `multihop.spthy` (43), `multihop_nhop.spthy` (25),
+`Clock.spthy` (9), `cltv_blocks.spthy` (3), and `timeout.spthy` (1).

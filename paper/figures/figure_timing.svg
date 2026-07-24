@@ -7,7 +7,7 @@
 
   <rect x="0" y="0" width="1260" height="620" fill="#ffffff"/>
   <text x="40" y="42" font-size="18" font-weight="700" fill="#222">Staggered CLTV timelocks — timing safety  (block height &#8594;)</text>
-  <text x="40" y="62" font-size="12.5" fill="#777">covers cltv_blocks.spthy · gaps.spthy · t2b_attack.spthy — see rail →</text>
+  <text x="40" y="62" font-size="12.5" fill="#777">covers cltv_blocks.spthy · Clock.spthy · timeout.spthy — see rail →</text>
 
   <!-- Δ shading between deadlines -->
   <rect x="350" y="130" width="200" height="210" fill="#2e7d32" opacity="0.06"/>
@@ -69,14 +69,14 @@
   <!-- RACE strip (red) -->
   <line x1="40" y1="430" x2="895" y2="430" stroke="#eee"/>
   <circle cx="60" cy="462" r="11" fill="#c62828"/><text x="60" y="466" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">3</text>
-  <text x="82" y="458" font-size="13" font-weight="700" fill="#c62828">WITHOUT the liveness assumption T2b  (t2b_attack.spthy)</text>
+  <text x="82" y="458" font-size="13" font-weight="700" fill="#c62828">WITHOUT the liveness assumption T2b  (timeout.spthy)</text>
   <text x="82" y="476" font-size="11.5" fill="#c62828">adversary fires the A→B inbound timeout early → Bob's outbound is redeemed but his inbound refunds → Bob loses.</text>
   <rect x="130" y="492" width="360" height="20" rx="3" fill="#2e7d32" opacity="0.25"/>
   <text x="310" y="506" font-size="10.5" fill="#1b5e20" text-anchor="middle">Bob's outbound redeemed (paid out)</text>
   <rect x="130" y="516" width="230" height="20" fill="url(#hatch)" opacity="0.6"/>
   <line x1="360" y1="486" x2="360" y2="542" stroke="#c62828" stroke-width="1.4" stroke-dasharray="4,3"/>
   <text x="365" y="530" font-size="10.5" fill="#c62828">inbound timed out EARLY → Bob refunds inbound = net loss</text>
-  <text x="130" y="558" font-size="11" fill="#555">Two-sided certificate: race reachable here (T2b removed) ↔ blocked in multihop.spthy (T2b_Counterexample_Blocked). So T2b is load-bearing.</text>
+  <text x="130" y="558" font-size="11" fill="#555">Two-sided certificate: race reachable here (T2b removed) ↔ blocked in multihop.spthy (Timeout_Race_Blocked). So T2b is load-bearing.</text>
 
   <!-- ============ RAIL ============ -->
   <line x1="915" y1="110" x2="915" y2="580" stroke="#ddd"/>
@@ -89,15 +89,15 @@
     <text x="962" y="173" fill="#444">Staggered_Path_Safe ✓  (derives d_out &lt; d_in from block nums)</text>
 
     <circle cx="944" cy="205" r="9" fill="#2e7d32"/><text x="944" y="208.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">2</text>
-    <text x="962" y="202" font-weight="700" fill="#2e7d32">gaps.spthy — claim-in-time + lifecycle</text>
+    <text x="962" y="202" font-weight="700" fill="#2e7d32">Clock.spthy — claim-in-time + lifecycle</text>
     <text x="962" y="216" fill="#444">Claim_Window_Exists ✓ · Outcome_Exclusive ✓</text>
     <text x="962" y="228" fill="#444">Transitive_Preimage_Before_Upstream_Deadline ✓</text>
     <text x="962" y="240" fill="#444">No_HTLC_After_Close ✓ · Redeem_Reachable / Refund_Reachable ✓</text>
 
     <circle cx="944" cy="272" r="9" fill="#c62828"/><text x="944" y="275.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">3</text>
-    <text x="962" y="269" font-weight="700" fill="#c62828">t2b_attack.spthy — the race (T2b removed)</text>
+    <text x="962" y="269" font-weight="700" fill="#c62828">timeout.spthy — the race (T2b removed)</text>
     <text x="962" y="283" fill="#444">Early_Timeout_Race ✓  (reachable without T2b)</text>
-    <text x="962" y="295" fill="#666">pairs with multihop's T2b_Counterexample_Blocked ✓</text>
+    <text x="962" y="295" fill="#666">pairs with multihop's Timeout_Race_Blocked ✓</text>
     <text x="962" y="307" fill="#666">→ together: proof that T2b is necessary, not assumed away</text>
   </g>
 

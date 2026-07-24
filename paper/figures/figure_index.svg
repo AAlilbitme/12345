@@ -3,7 +3,7 @@
     <marker id="agrey" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#90a4ae"/></marker>
   </defs>
   <rect x="0" y="0" width="1120" height="580" fill="#ffffff"/>
-  <text x="40" y="44" font-size="19" font-weight="700" fill="#222">Verification map — 5 theories · 3 figures · 58 lemmas</text>
+  <text x="40" y="44" font-size="19" font-weight="700" fill="#222">Verification map — 5 theories · 4 figures · 81 lemmas</text>
   <text x="40" y="66" font-size="12.5" fill="#777">where each file's lemmas live, and how the figures fit together</text>
 
   <!-- column headers -->
@@ -13,10 +13,10 @@
   <!-- file chips -->
   <g font-size="13">
     <rect x="60" y="130" width="240" height="42" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="150" font-weight="700" fill="#1b5e20">multihop.spthy</text><text x="74" y="166" font-size="11" fill="#33691e">routing + value + atomicity + channel · 43</text>
-    <rect x="60" y="186" width="240" height="38" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="204" font-weight="700" fill="#1b5e20">gaps.spthy</text><text x="74" y="219" font-size="11" fill="#33691e">block-clock lifecycle &amp; timing · 9</text>
+    <rect x="60" y="186" width="240" height="38" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="204" font-weight="700" fill="#1b5e20">multihop_nhop.spthy</text><text x="74" y="219" font-size="11" fill="#33691e">N-hop generic linear-fact forward · 25</text>
     <rect x="60" y="238" width="240" height="38" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="256" font-weight="700" fill="#1b5e20">cltv_blocks.spthy</text><text x="74" y="271" font-size="11" fill="#33691e">CLTV block arithmetic · 3</text>
-    <rect x="60" y="290" width="240" height="38" rx="6" fill="#ffebee" stroke="#c62828"/><text x="74" y="308" font-weight="700" fill="#b71c1c">t2b_attack.spthy</text><text x="74" y="323" font-size="11" fill="#7f1d1d">early-timeout race (T2b removed) · 1</text>
-    <rect x="60" y="342" width="240" height="38" rx="6" fill="#fff8e1" stroke="#ed6c02"/><text x="74" y="360" font-weight="700" fill="#8d4e00">witnesses.spthy</text><text x="74" y="375" font-size="11" fill="#8d4e00">finite-clock reachability · 2</text>
+    <rect x="60" y="290" width="240" height="38" rx="6" fill="#e8f5e9" stroke="#2e7d32"/><text x="74" y="308" font-weight="700" fill="#1b5e20">Clock.spthy</text><text x="74" y="323" font-size="11" fill="#33691e">block-clock lifecycle &amp; claim windows · 9</text>
+    <rect x="60" y="342" width="240" height="38" rx="6" fill="#ffebee" stroke="#c62828"/><text x="74" y="360" font-weight="700" fill="#b71c1c">timeout.spthy</text><text x="74" y="375" font-size="11" fill="#7f1d1d">early-timeout race (T2b removed) · 1</text>
   </g>
 
   <!-- figure boxes -->
@@ -41,10 +41,10 @@
   <g stroke="#90a4ae" stroke-width="1.6" fill="none" marker-end="url(#agrey)">
     <path d="M300,151 C 380,151 400,165 468,165"/>          <!-- multihop -> Fig1 -->
     <path d="M300,158 C 380,220 400,255 468,255"/>          <!-- multihop -> Fig2 -->
-    <path d="M300,205 C 380,260 400,330 468,338"/>          <!-- gaps -> Fig3 -->
+    <path d="M300,205 C 380,260 400,330 468,338"/>          <!-- Clock -> Fig3 -->
     <path d="M300,257 C 390,300 405,342 468,348"/>          <!-- cltv -> Fig3 -->
-    <path d="M300,309 C 385,330 410,352 468,356"/>          <!-- t2b -> Fig3 -->
-    <path d="M300,361 C 380,362 405,362 468,364"/>          <!-- witnesses -> Fig3 -->
+    <path d="M300,309 C 385,330 410,352 468,356"/>          <!-- cltv -> Fig3 -->
+    <path d="M300,361 C 380,362 405,362 468,364"/>          <!-- timeout -> Fig3 -->
   </g>
 
   <!-- right: legend + totals -->
@@ -55,16 +55,16 @@
   <rect x="845" y="196" width="14" height="14" fill="#c62828"/><text x="866" y="208" font-size="12" fill="#333">malicious / attack (reachable)</text>
 
   <text x="845" y="250" font-size="13" font-weight="700" fill="#222">TOTALS</text>
-  <text x="845" y="272" font-size="12" fill="#333">multihop 43 · gaps 9 · cltv 3 · t2b 1 · wit 2</text>
-  <text x="845" y="296" font-size="15" font-weight="700" fill="#1b5e20">58 / 58 machine-checked ✓</text>
+  <text x="845" y="272" font-size="12" fill="#333">multihop 43 · nhop 25 · Clock 9 · cltv 3 · timeout 1</text>
+  <text x="845" y="296" font-size="15" font-weight="700" fill="#1b5e20">81 / 81 machine-checked ✓</text>
   <text x="845" y="320" font-size="11" fill="#777">(Tamarin 1.8, per-lemma to avoid OOM)</text>
 
   <text x="845" y="356" font-size="11.5" fill="#777" font-style="italic">Read order: Fig 2 (one channel) →</text>
   <text x="845" y="371" font-size="11.5" fill="#777" font-style="italic">Fig 1 (route over channels) →</text>
   <text x="845" y="386" font-size="11.5" fill="#777" font-style="italic">Fig 3 (why the timing is safe).</text>
 
-  <text x="560" y="440" font-size="12" fill="#555" text-anchor="middle">multihop.spthy also carries the N-hop generalization (separate: multihop_nhop_fees.spthy, 30/30) and the</text>
-  <text x="560" y="457" font-size="12" fill="#555" text-anchor="middle">reusable-channel boundary spike (experiments/), documented in REPORT2.md.</text>
+  <text x="560" y="440" font-size="12" fill="#555" text-anchor="middle">multihop_nhop.spthy is the N-hop generalisation (25 lemmas, ~103.5s); the reusable-channel boundary spike</text>
+  <text x="560" y="457" font-size="12" fill="#555" text-anchor="middle">is documented separately. See nhop_soundness for the refinement theorem transferring safety to all N.</text>
 
   <text x="560" y="558" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — master index. Open here, then drill into Fig 1 / 2 / 3.</text>
 </svg>

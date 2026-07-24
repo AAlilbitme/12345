@@ -116,5 +116,5 @@
   <text x="835" y="440" font-size="10.5" fill="#777">Routing / value / attack lemmas are on the</text>
   <text x="835" y="455" font-size="10.5" fill="#777">4-party figure (anchors ①–⑧ there).</text>
 
-  <text x="440" y="900" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — channel-layer lemmas mapped. Next: timing theories (gaps / cltv_blocks / t2b_attack).</text>
+  <text x="440" y="900" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — channel-layer lemmas mapped. Next: timing theories (cltv_blocks / Clock / timeout).</text>
 </svg>

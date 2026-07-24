@@ -45,9 +45,10 @@
 We formalise Lightning-Network multi-hop HTLC (Hash Time-Locked Contract)
 routing in the Tamarin symbolic prover (v1.8) under a full Dolev--Yao
 adversary. The protocol is captured as a \emph{modular package of five
-theories} totalling \textbf{58 machine-checked lemmas}, covering the two-party
-channel lifecycle, multi-hop routing with fees, staggered-CLTV timing safety,
-and the necessity of the underlying liveness assumption. Beyond re-establishing
+theories} totalling \textbf{81 machine-checked lemmas}, covering the two-party
+channel lifecycle, multi-hop routing with fees, an $N$-hop generalisation,
+staggered-CLTV timing safety, and the necessity of the underlying liveness
+assumption. Beyond re-establishing
 the standard safety properties (payment atomicity, intermediary safety, value
 conservation), we (i) harden the model against a forwarding-replay flaw by
 replacing a global axiom with a structural linear-resource guard;
@@ -70,7 +71,7 @@ Every positive and negative result was executed, not assumed.
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/fig_index.pdf}
-\caption{Verification map: five theory files, three figures, 58 lemmas.
+\caption{Verification map: five theory files, four figures, 81 lemmas.
 Green = honest success / safety proved; amber = benign failure (timeout /
 refund); red = malicious / attack shown reachable.}
 \label{fig:index}
@@ -90,7 +91,7 @@ two-round ``lock then release'' commit.
 
 \paragraph{Contributions.} In brief: (1)~a modular, fully machine-checked model
 of the two-party channel lifecycle and multi-hop HTLC routing with fees
-(58~lemmas); (2)~a forwarding-replay hardening that replaces a global axiom with
+(81~lemmas); (2)~a forwarding-replay hardening that replaces a global axiom with
 a structural linear-resource guard; (3)~a machine-checked treatment of the
 wormhole attack, both reachable and quantified to the exact stolen fees, plus a
 griefing DoS and economic-soundness theorems; (4)~an empirical assumption-%
@@ -125,18 +126,21 @@ carries all three (Table~\ref{tab:files}).
 \toprule
 \textbf{File} & \textbf{Aspect} & \textbf{Lemmas} & \textbf{Builtins} \\
 \midrule
-\texttt{multihop.spthy}    & lifecycle + routing + value/fees + atomicity & 43 & hashing, signing, nat \\
-\texttt{gaps.spthy}        & block-clock lifecycle \& CLTV timing safety          & 9  & natural-numbers \\
-\texttt{cltv_blocks.spthy} & pure CLTV block arithmetic                           & 3  & natural-numbers \\
-\texttt{t2b_attack.spthy}  & early-timeout race (liveness assumption removed)     & 1  & --- \\
-\texttt{witnesses.spthy}   & finite-clock reachability witnesses                  & 2  & natural-numbers \\
+\texttt{multihop.spthy}      & lifecycle + routing + value/fees + atomicity + wormhole & 43 & hashing, signing, nat \\
+\texttt{multihop_nhop.spthy} & $N$-hop generalisation (generic linear-fact forward)    & 25 & hashing, signing, nat \\
+\texttt{Clock.spthy}         & block-clock lifecycle \& staggered-CLTV claim windows   & 9  & natural-numbers \\
+\texttt{cltv_blocks.spthy}   & pure CLTV block arithmetic (delta positivity)           & 3  & natural-numbers \\
+\texttt{timeout.spthy}       & early-timeout race (liveness assumption removed)        & 1  & --- \\
 \midrule
-\textbf{Total} & & \textbf{58} & \\
+\textbf{Total} & & \textbf{81} & \\
 \bottomrule
 \end{tabular}
 \caption{The five theories. \texttt{multihop.spthy} combines signing $+$ nat
 once the unbounded clock is dropped and timing is kept relational---which is why
-value/fee conservation could be merged into it.}
+value/fee conservation could be merged into it. \texttt{multihop_nhop.spthy}
+reuses the same signing $+$ nat combination for a generic, any-length forward;
+the three small timing theories isolate the unbounded block clock away from
+signing.}
 \label{tab:files}
 \end{table}
 
@@ -205,9 +209,9 @@ Lock causality          & \gc & \texttt{Forward1_Requires_Offer}, \texttt{Forwar
 Release causality       & \gc & \texttt{Fulfill_Requires_Forward2}, \texttt{Claim_Requires_Release}, \texttt{Settle_Requires_Receiver_Release} \\
 Atomicity / non-vacuity & \gc & \texttt{Payment_Atomicity_Under_Liveness}, \texttt{Multihop_Payment_Possible} \\
 Value \& fees           & \gc & \texttt{EndToEnd_Value_Conservation}, \texttt{Fee_Conservation_Hop1/2}, \texttt{Fee_Strictly_Positive_Hop1/2}, \texttt{Receiver_Paid_Invoice_Amount} \\
-Refund / griefing       & \ac & \texttt{Refund_Requires_Timeout}, \texttt{Loss_Requires_Inaction}, \texttt{Griefing_Capital_Lock_Reachable} \\
+Refund / griefing       & \ac & \texttt{Refund_Requires_Timeout}, \texttt{Loss_Requires_Inaction}, \texttt{Honest_Intermediary_Refunds} \\
 Wormhole                & \rc & \texttt{Wormhole_Fee_Theft_Reachable}, \texttt{Wormhole_Steals_Exactly_The_Fees} \\
-Intermediary safety     & \gc & \texttt{Intermediary_Never_Loses_Under_Liveness}, \texttt{T2b_Counterexample_Blocked} \\
+Intermediary safety     & \gc & \texttt{Intermediary_Never_Loses_Under_Liveness}, \texttt{Timeout_Race_Blocked} \\
 Channel lifecycle       & \gc & \texttt{state_update}, \texttt{Protocol_execution}, \texttt{Cooperative_Close_Execution}, \texttt{No_Punishment_Without_Cheating}, \texttt{Funds_Locked_Before_Update} \\
 \bottomrule
 \end{tabular}
@@ -216,14 +220,21 @@ Channel lifecycle       & \gc & \texttt{state_update}, \texttt{Protocol_executio
 \label{tab:multihop}
 \end{table}
 
-\subsection{Timing safety (\texttt{cltv_blocks}, \texttt{gaps}, \texttt{t2b_attack})}
+\subsection{Timing safety (\texttt{cltv_blocks}, \texttt{Clock}, \texttt{timeout})}
 
-Figure~\ref{fig:timing} shows the staggered-timelock story. \texttt{cltv_blocks}
-\emph{derives} the CLTV-delta invariant $d_\text{out}<d_\text{in}$ from concrete
-block numbers---i.e.\ the claim windows provably exist; \texttt{gaps} adds
-block-clock lifecycle safety (no HTLC after close, outcome exclusivity,
-redeem/refund reachability); and \texttt{t2b_attack} exhibits the early-timeout
-race that reappears once the liveness assumption T2b is removed.
+Figure~\ref{fig:timing} shows the staggered-timelock story, split across three
+small natural-number theories. \texttt{cltv_blocks} \emph{derives} the CLTV-delta
+invariant $d_\text{out}<d_\text{in}$ from concrete block numbers---i.e.\ the claim
+windows provably exist (\texttt{CLTV_Gap_Is_Positive},
+\texttt{Claim_Window_Nonempty}, \texttt{Staggered_Path_Safe}). \texttt{Clock}
+runs a live block clock through the full forwarding lifecycle: it derives the
+claim window between adjacent hops (\texttt{Claim_Window_Exists},
+\texttt{Transitive_Preimage_Before_Upstream_Deadline}), shows loss is exactly a
+skipped claim (\texttt{Loss_Implies_Skipped_Claim}), and adds lifecycle safety
+(\texttt{No_HTLC_After_Close}, \texttt{Outcome_Exclusive}) plus redeem/refund/
+honest-flow reachability. \texttt{timeout} exhibits the early-timeout race that
+reappears once the liveness assumption T2b is removed
+(\texttt{Early_Timeout_Race}).
 
 \begin{figure}[h]
 \centering
@@ -232,8 +243,8 @@ race that reappears once the liveness assumption T2b is removed.
 $\Delta$ margin at each hop because every inbound deadline is later than its
 outbound one. Bottom (red): with the liveness assumption T2b removed, the
 adversary fires the inbound timeout early and the honest intermediary suffers a
-net loss---\texttt{Early_Timeout_Race}. This pairs with
-\texttt{T2b_Counterexample_Blocked} in \texttt{multihop.spthy}, forming a
+net loss---\texttt{Early_Timeout_Race} in \texttt{timeout.spthy}. This pairs with
+\texttt{Timeout_Race_Blocked} in \texttt{multihop.spthy}, forming a
 two-sided certificate that T2b is necessary.}
 \label{fig:timing}
 \end{figure}
@@ -304,7 +315,7 @@ Three all-traces theorems, none of which is assumed anywhere:
 plus a strictly positive total fee; no value created or destroyed);
 \texttt{Fee_Strictly_Positive_Hop1/2} (every hop's fee is $>0$---structural,
 because the natural-number sort has no $\%0$, so a ``free forward'' is
-unreachable); and, as a reachability, \texttt{Griefing_Capital_Lock_Reachable}
+unreachable); and, as a reachability, \texttt{Honest_Intermediary_Refunds}
 (an honest intermediary induced to lock capital then refund on timeout, with no
 payment completing---the standard PCN griefing DoS).
 
@@ -343,12 +354,20 @@ origin-analysis recursion on self-referential signed messages, not path length.}
 \label{tab:nhop}
 \end{table}
 
-The linear-fact route yields \texttt{multihop_nhop.spthy} (28/29 lemmas; the one
-open lemma, \texttt{Settle_Requires_Receiver_Release}, keys on the terminal
-settle and does not terminate) and, with amounts/fees added,
-\texttt{multihop_nhop_fees.spthy} (30/30). The framing is a sound proof layering:
-concrete model with full crypto adversary at three hops; abstraction with
-idealised channels for routing safety at arbitrary $N$.
+The linear-fact route yields \texttt{multihop_nhop.spthy}, which carries amounts
+and fees ($\texttt{Eq}(\%v_\text{in},\%v_\text{out}\,\%{+}\,\%\text{fee})$) and
+verifies \textbf{25 active lemmas in $\approx$103.5\,s} (Tamarin 1.8,
+natural-numbers). A handful of \texttt{[use\_induction]} causality lemmas
+(\texttt{Settle_Requires_Receiver_Release}, \texttt{Forward_Requires_Incoming},
+\texttt{Claim_Requires_Release}, \texttt{Redeem_Requires_Receiver_Release}) are
+left commented as deliberate tractability boundaries: they key on the terminal
+settle and, combined with signing $+$ natural-numbers, do not terminate on the
+generic chain, though they verify in the fixed-hop \texttt{multihop.spthy}. The
+framing is a sound proof layering: a concrete model with the full crypto
+adversary at three hops, and an abstraction with idealised linear-fact channels
+for routing safety at arbitrary $N$. The accompanying refinement theorem
+(\texttt{nhop_soundness}) shows the local per-hop authentication proved in the
+concrete model transfers abstract safety to the concrete protocol for every~$N$.
 
 % ===========================================================================
 \section{What failed, and the tractability boundaries}
@@ -402,9 +421,9 @@ contribution as much as the positive ones.
 
 \begin{lstlisting}
 export LANG=C.utf8 LC_ALL=C.utf8
-python3 run.py                 # full core suite (5 theories)
-python3 run.py multihop.spthy  # one theory
-make nhop                      # the N-hop extension (30/30)
+python3 run.py                      # full suite (5 theories)
+python3 run.py multihop.spthy       # one theory
+python3 run.py multihop_nhop.spthy  # the N-hop generalisation (25 lemmas)
 \end{lstlisting}
 Requires Tamarin 1.8 and Maude 3.1. The Makefile delegates to \texttt{run.py},
 the single source of truth for per-file flags.
@@ -413,7 +432,7 @@ the single source of truth for per-file flags.
 \section{Conclusion}
 
 We delivered a modular, fully machine-checked model of Lightning multi-hop HTLC
-routing (58 lemmas over five theories), hardened it against a forwarding-replay
+routing (81 lemmas over five theories), hardened it against a forwarding-replay
 flaw by turning a global axiom into a structural invariant, machine-checked the
 wormhole attack (reachable and quantified) and a griefing DoS, proved
 economic-soundness theorems, and established the minimality of the timing
@@ -453,7 +472,8 @@ than asserted.
 \section{Figure index}
 Figure~\ref{fig:index} is the master map. Figures~\ref{fig:4party}
 and~\ref{fig:channel} carry \texttt{multihop.spthy}; Figure~\ref{fig:timing}
-carries the three timing theories. All four are provided as PDF (embedded) and
+carries the three timing theories (\texttt{cltv_blocks}, \texttt{Clock},
+\texttt{timeout}). All four are provided as PDF (embedded) and
 SVG (source) under \texttt{paper/figures/}. Colour key throughout:
 \gc\,honest/safety-proved, \ac\,benign failure, \rc\,attack reachable.
 
