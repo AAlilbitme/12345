@@ -49,9 +49,11 @@ payments. Prior symbolic analyses have targeted either two-party HTLC settings
 or generic message-forwarding abstractions; the interaction between the channel
 revocation lifecycle, multi-hop routing, and block-height timing has not been
 mechanized as a single symbolic model. We present such a model in the Tamarin
-prover, structured as a modular package of five theories totalling \textbf{81
-machine-checked lemmas}, covering the two-party channel lifecycle, multi-hop
-HTLC routing with fees, staggered-CLTV timing, and an $N$-hop generalisation.
+prover, structured as a modular package of five theories establishing
+\textbf{56 distinct machine-checked properties} (81 lemma checks in total, since
+25 properties are additionally re-proved in the $N$-hop abstraction), covering
+the two-party channel lifecycle, multi-hop HTLC routing with fees,
+staggered-CLTV timing, and an $N$-hop abstraction.
 
 Our central finding is a consequence of that integration. We identify a
 \emph{linear single-spend discipline}: two independent soundness gaps---HTLC
@@ -61,8 +63,7 @@ rather than \emph{linear} ones, and both are repaired by the same
 linear-token remedy. The second instance is visible only when revocation and
 routing are modeled together, which narrower prior models structurally could
 not observe; we propose the resulting invariant as a reusable modeling
-discipline for symbolic payment-channel analyses. We further prove
-economic-soundness theorems (end-to-end conservation, strictly positive fees)
+discipline for symbolic payment-channel analyses. We further prove an end-to-end value-conservation theorem
 and expose a griefing DoS; establish \emph{assumption minimality} empirically,
 showing that removing the intermediary-claim restriction yields a concrete
 59-step counterexample; and reproduce the known wormhole (agent-skipping)
@@ -114,7 +115,7 @@ To conduct this analysis we use the Tamarin prover~\cite{meier2013tamarin} under
 In this paper, we present a comprehensive, modular formal verification of Lightning Network multi-hop HTLC routing. Our contributions are as follows:
 \begin{enumerate}
     \item A \textbf{linear single-spend discipline}: a category error in which one-shot on-chain outputs are modeled as persistent facts, identified in two independent instances (HTLC output duplication and revoked-commitment replay) and repaired uniformly by structural linear-resource guards, replacing global axioms. We propose the resulting invariant---\emph{every one-shot on-chain output is a linear fact}---as a reusable modeling discipline for symbolic payment-channel analyses.
-    \item A modular, fully machine-checked model integrating the two-party channel lifecycle (including revocation and punishment) with multi-hop HTLC routing and fees, verified across \textbf{81 lemmas} in five theories. This integration is the precondition for the finding above.
+    \item A modular, fully machine-checked model integrating the two-party channel lifecycle (including revocation and punishment) with multi-hop HTLC routing and fees, establishing \textbf{56 distinct properties} across five theories (81 lemma checks, as 25 properties are re-proved in the $N$-hop abstraction). This integration is the precondition for the finding above. We report the composition of this count explicitly in Table~\ref{tab:theories} rather than quoting a single aggregate.
     \item An empirical assumption-minimality result proving that removing the intermediary-claim restriction yields a concrete 59-step counterexample, together with a two-sided certificate that the corresponding liveness assumption is load-bearing.
     \item Economic-soundness theorems (end-to-end value conservation, strictly positive per-hop fees) and a reachable griefing DoS, plus a reproduction of the known wormhole (agent-skipping) attack~\cite{malavolta2019anonymous, smith2022agentskipping} as a fidelity check on the model.
     \item A map of the prover's tractability boundaries, identifying the precise bounding factors (the signing/nat/clock OOM triple, signed-message $N$-hop routing, and reusable channels), and a proof-layering technique---machine-checked local authentication plus a pen-and-paper refinement theorem---for $N$-hop invariants.
@@ -135,7 +136,7 @@ Smith et al.~\cite{smith2022agentskipping} develop a general symbolic framework,
 \subsection{Model Checking and Computational Treatments}
 Grundmann and Hartenstein~\cite{grundmann2025modelchecking} formalize Lightning in TLA+ and model-check balance security, using stepwise refinement and a time abstraction to make single channels and multi-hop payments checkable separately, scaling to payments over up to four hops with two concurrent payments. Their approach is complementary to ours along two axes. Methodologically, model checking explores a bounded state space with an explicit adversary encoding, whereas symbolic verification in Tamarin reasons over unbounded sessions under an equational Dolev--Yao model; consequently their analysis handles concurrency that we do not, while ours handles unbounded message-derivation capabilities and, via the abstraction of Section~\ref{sec:nhop}, unbounded path length. Substantively, their refinement establishes that the current Lightning specification satisfies balance security; our contribution is orthogonal, concerning a modeling pitfall in the symbolic encoding of one-shot on-chain outputs.
 
-Kiayias and Litos~\cite{kiayias2020composable} provide a composable, game-based (UC) security treatment of the LN at the two-party channel layer; it does not machine-check multi-hop HTLC routing. Our symbolic approach achieves a high degree of automation---proving 81 lemmas---while explicitly covering multi-hop routing under a full Dolev--Yao adversary. Prior work frequently treats the liveness requirement of intermediaries as an implicit assumption. The Tamarin analysis of HTLC swaps by Boyd et al.~\cite{boyd2020blockchain} surfaced a timing-related hidden assumption (stable relative chain growth), which parallels our finding that liveness assumptions are strictly load-bearing; we provide a mechanized, two-sided certificate for this assumption in a model that includes the full channel lifecycle.
+Kiayias and Litos~\cite{kiayias2020composable} provide a composable, game-based (UC) security treatment of the LN at the two-party channel layer; it does not machine-check multi-hop HTLC routing. Our symbolic approach achieves a high degree of automation---establishing 56 distinct machine-checked properties---while explicitly covering multi-hop routing under a full Dolev--Yao adversary. Prior work frequently treats the liveness requirement of intermediaries as an implicit assumption. The Tamarin analysis of HTLC swaps by Boyd et al.~\cite{boyd2020blockchain} surfaced a timing-related hidden assumption (stable relative chain growth), which parallels our finding that liveness assumptions are strictly load-bearing; we provide a mechanized, two-sided certificate for this assumption in a model that includes the full channel lifecycle.
 
 \subsection{Tamarin in Blockchain Protocols}
 The Tamarin prover~\cite{meier2013tamarin} is a standard tool for verifying cryptographic protocols, successfully applied to industrial standards such as TLS 1.3~\cite{cremers2017comprehensive}. In the blockchain domain, Tamarin has been applied to HTLC swaps and contingent payments~\cite{boyd2020blockchain, bursuc2019contingent}. Existing Tamarin applications typically verify fixed-round protocols. Applying Tamarin to stateful, long-running protocols with unbounded loops introduces unique challenges. We do not merely restrict the model to avoid OOM; we rigorously diagnose the root causes, pinpointing Tamarin's origin-analysis recursion on self-referential signed terms as the fundamental barrier to verifying generic $N$-hop routing.
@@ -164,7 +165,15 @@ We adopt the standard Dolev-Yao adversary model~\cite{dolev1983security}, repres
 \item \textbf{T2b} (\texttt{HonestPartiesActBefore\-IncomingTimeout});
 \item \textbf{T3} (\texttt{IntermediaryMustClaim}).
 \end{itemize}
-As we demonstrate in Section~\ref{sec:verification}, T3 is strictly load-bearing. This mirrors the real-world necessity of LN watchtowers~\cite{mccorry2019pisa}. Our core security goals translate directly to verified lemmas: Payment Atomicity, Intermediary Safety, Routing Causality \& Authentication, Timing Safety, and Value Conservation.
+These are not on an equal footing. T1 and T2a/T2b are \emph{passive temporal
+orderings}: they constrain when events may occur relative to one another, and
+correspond to the CLTV structure that Section~6 derives independently from a
+concrete block clock. T3 is different in kind---it obliges an intermediary to
+\emph{act}, sweeping its incoming HTLC once the outgoing one is redeemed. It is
+therefore the assumption most at risk of being an unnoticed strengthening, and
+the one we subject to minimality testing in Section~\ref{sec:verification}. We
+rely on all four for our main theorems and do not claim minimality for the
+passive orderings. This mirrors the real-world necessity of LN watchtowers~\cite{mccorry2019pisa}. Our core security goals translate directly to verified lemmas: Payment Atomicity, Intermediary Safety, Routing Causality \& Authentication, Timing Safety, and Value Conservation.
 
 % ==============================================================
 \section{Formal Preliminaries}
@@ -221,17 +230,24 @@ The model is therefore split so that no single theory carries all three. The arc
 \begin{table*}[t]
 \centering
 \small
-\caption{The five-theory modular architecture (81 lemmas total).}
+\caption{The five-theory modular architecture. ``Safety'' counts all-traces
+properties and ``Witness'' counts exists-trace lemmas (reachability results,
+attack witnesses, and non-vacuity checks). The $N$-hop theory re-proves
+properties already counted in \texttt{multihop.spthy} rather than adding new
+ones, so the distinct total is 56 and the total number of lemma checks is 81.}
 \label{tab:theories}
-\begin{tabular}{@{}llcl@{}}
+\begin{tabular}{@{}llccl@{}}
 \toprule
-\textbf{Theory File} & \textbf{Aspect Modeled} & \textbf{Lemmas} & \textbf{Builtins} \\
+\textbf{Theory File} & \textbf{Aspect Modeled} & \textbf{Safety} & \textbf{Witness} & \textbf{Builtins} \\
 \midrule
-\texttt{multihop.spthy} & Lifecycle, 3-hop routing, value/fees, wormhole & 43 & Hashing, Signing, Nat \\
-\texttt{multihop\_nhop.spthy} & N-hop generalisation (generic linear-fact forward) & 25 (+4 comm.) & Hashing, Signing, Nat \\
-\texttt{Clock.spthy} & Block-clock lifecycle \& staggered-CLTV claim windows & 9 & Natural-numbers \\
-\texttt{cltv\_blocks.spthy} & Pure CLTV block arithmetic (delta positivity) & 3 & Natural-numbers \\
-\texttt{timeout.spthy} & Early-timeout race (T2b removed) & 1 & --- \\
+\texttt{multihop.spthy} & Lifecycle, 3-hop routing, value/fees, wormhole & 33 & 10 & Hashing, Signing, Nat \\
+\texttt{Clock.spthy} & Block-clock lifecycle \& staggered-CLTV claim windows & 6 & 3 & Natural-numbers \\
+\texttt{cltv\_blocks.spthy} & Pure CLTV block arithmetic (delta positivity) & 3 & 0 & Natural-numbers \\
+\texttt{timeout.spthy} & Early-timeout race (T2b removed) & 0 & 1 & --- \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Distinct properties}} & \textbf{42} & \textbf{14} & \\
+\midrule
+\texttt{multihop\_nhop.spthy} & \emph{Re-proof} of the above in the $N$-hop abstraction & 19 & 6 & Hashing, Signing, Nat \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -244,7 +260,15 @@ All results were produced under a strict test-first discipline: a property is cl
 \label{sec:verification}
 % ==============================================================
 
-Across the five theories detailed in Table~\ref{tab:theories}, we successfully prove 81 lemmas. Table~\ref{tab:lemmas} maps the lemma groups in our primary concrete theory.
+Across the theories of Table~\ref{tab:theories} we establish 56 distinct
+properties (81 lemma checks in total). We stress that the $N$-hop theory
+contributes no new properties: every one of its 25 lemmas restates a property
+already proved in \texttt{multihop.spthy}, re-established over the abstract
+routing layer. Of the 43 lemmas of the concrete theory, 10 are exists-trace
+witnesses (including non-vacuity checks and the attack traces of
+Sections~\ref{sec:discipline} and 6.2) and 5 are \texttt{[reuse]} helper lemmas
+that support other proofs rather than stating protocol goals; the complete
+lemma index is given in the artifact. Table~\ref{tab:lemmas} maps the lemma groups in our primary concrete theory.
 
 \begin{table*}[t]
 \centering
@@ -283,6 +307,13 @@ On-chain outputs---a funding output, an HTLC output, the output of a revoked
 commitment---are one-shot resources.
 \end{definition}
 
+The following observation is immediate from the transition relation---a
+persistent premise is checked but not removed---and we state it only to fix the
+shape of the defect precisely. The contribution is \emph{not} this fact about
+Tamarin, which is standard, but the identification of which Lightning constructs
+fall under Definition~\ref{def:oneshot} and what the concrete exploit is when
+they do not.
+
 \begin{proposition}[Persistent gating admits unbounded exercise]
 \label{prop:bug}
 Let $ri = \bigl(P \uplus \{!\mathsf{Res}(\bar t)\}\bigr) \overset{a}{\longrightarrow} r$
@@ -294,12 +325,26 @@ same instantiation $\bar t$.
 \end{proposition}
 
 \begin{proof}
-By the transition rule, firing $ri$ removes only $\mathrm{lin}(l)$ from the
-state. Since $!\mathsf{Res}(\bar t) \in \Sigma_{\mathrm{per}}$ it is checked but
-not removed, and by hypothesis $P$ is re-derivable; hence the enabling condition
-$\mathrm{lin}(l) \subseteq^{\#} S \wedge \mathrm{per}(l) \subseteq S$ holds again
-in the successor state. Firing $ri$ $n$ times yields the required trace.
+Immediate: firing $ri$ removes only $\mathrm{lin}(l)$, and
+$!\mathsf{Res}(\bar t) \in \Sigma_{\mathrm{per}}$ is checked but not removed, so
+with $P$ re-derivable the enabling condition holds again in the successor state.
 \end{proof}
+
+\begin{remark}[Where the difficulty actually lies]
+\label{rem:notmath}
+That linear facts model consumable resources is elementary, and experienced
+Tamarin users apply it routinely to nonces, session keys, and state-machine
+transitions. The difficulty is not the mechanism but the \emph{mapping}: deciding
+which constructs of a payment-channel protocol denote one-shot on-chain outputs.
+This is not syntactically evident. A revoked commitment presents itself in the
+protocol description as \emph{knowledge}---``the counterparty learns the
+revocation secret''---and knowledge is exactly what persistent facts are for; the
+natural encoding is therefore the wrong one. What is easy to miss is that the
+same revocation event confers two distinct things: durable knowledge of the
+secret, and a single opportunity to spend the revoked output. Our contribution
+is the identification of this split, and the demonstration below that getting it
+wrong yields not a modeling infelicity but an exploitable trace.
+\end{remark}
 
 Proposition~\ref{prop:bug} is exactly the defect we found twice. In Instance~1
 the resource is the channel output hosting an HTLC and $a$ is an HTLC-add; in
@@ -365,7 +410,22 @@ appealing to monotonicity; all 43 lemmas re-verify (262\,s, Tamarin 1.8).
 \noindent\textbf{Instance 1: HTLC output duplication.} The forwarding rules were gated only by a public HTLC-offer message. A Dolev--Yao replay of that offer could re-fire an honest forward, locking a second HTLC on the same channel output with an adversary-chosen amount. We replaced a global \texttt{OneHTLCPerPtr} axiom with the structural guard of Definition~\ref{def:token}: each channel open emits one linear $\mathsf{Free}(\mathit{ptr})$ token, consumed by every HTLC-add.
 
 \medskip
-\noindent\textbf{Instance 2: revoked commitment replay.} The punishment rules were gated only by the persistent $!\mathsf{RevokedSecret}$ fact, and are thus an instance of Proposition~\ref{prop:bug}: the punishment rule could fire arbitrarily many times for the same revoked state.
+\noindent\textbf{Instance 2: revoked commitment replay.} The punishment rules
+were gated only by the persistent $!\mathsf{RevokedSecret}$ fact, and are thus an
+instance of Proposition~\ref{prop:bug}. The consequence is concrete rather than
+cosmetic. A revoked commitment corresponds to one on-chain transaction spending
+one funding output; the counterparty's penalty claim spends the resulting output
+once. Under persistent gating, however, a single instance of cheating licenses
+$\mathsf{PublishRevoked}$---and hence $\mathsf{Punish}$---arbitrarily many times
+for the same revoked state $n$, so the model admits an execution in which the
+honest party confiscates the channel balance repeatedly from one cheat. A model
+in which punishment is unbounded does not merely overstate the honest party's
+position: any downstream analysis of balance security, of griefing economics, or
+of watchtower incentives inherits an adversary-favourable or victim-favourable
+distortion depending on which party is compromised. The defect is silent because
+every individual lemma about punishment soundness
+(\texttt{No\_Punishment\_Without\_Cheating}) continues to hold---punishment still
+requires a prior cheat; it is only the \emph{multiplicity} that is wrong.
 
 We stress that Instance~2 is a consequence of integration rather than of scale.
 It resides at the junction of the revocation lifecycle and the routing
@@ -381,24 +441,80 @@ exercised?} Persistent facts may encode durable knowledge (keys, revealed
 secrets, channel identity), but never a spend opportunity.
 
 \subsection{Wormhole Attack: A Fidelity Check}
-The wormhole attack~\cite{malavolta2019anonymous} occurs when two colluding path members relay the preimage out-of-band, skipping an honest intermediary who forwards value but earns no fee. It is an instance of the agent-skipping class formalized symbolically by Smith et al.~\cite{smith2022agentskipping}, and we claim no novelty for exhibiting it. We include it as a fidelity check: a model of multi-hop routing that did \emph{not} admit the wormhole would be suspect. In the symbolic model, the Dolev--Yao network is the colluders' side channel. We machine-check it twice: \texttt{Wormhole\_Fee\_Theft\_Reachable} (51 steps) exhibits a trace where the payment settles yet the middle hop is never redeemed and no intermediary earns a fee, with no key compromise; and \texttt{Wormhole\_Steals\_Exactly\_The\_Fees} (81 steps) quantifies the theft to precisely the path fees \texttt{\%f1 + \%f2}, tying the attack to the value layer of a model that simultaneously carries channel revocation and settlement. Known mitigations (AMHL, PTLCs) are out of scope.
+The wormhole attack~\cite{malavolta2019anonymous} occurs when two colluding path members relay the preimage out-of-band, skipping an honest intermediary who forwards value but earns no fee. It is an instance of the agent-skipping class formalized symbolically by Smith
+et al.~\cite{smith2022agentskipping}, and we claim no novelty for exhibiting it.
+Its role here is to discharge a specific obligation created by
+Section~\ref{sec:discipline}. Having constrained the model with two linear
+single-spend tokens, we must show that the repair is \emph{sound} rather than
+merely restrictive: a guard that eliminates the double-punishment trace by
+over-constraining the protocol would also eliminate legitimate executions, and
+the resulting model would verify safety vacuously. Reproducing the wormhole
+demonstrates the opposite---the hardened model still admits the known economic
+pathologies of HTLC routing, so the linear tokens remove exactly the spurious
+multiplicity and nothing else. It is, in this sense, a non-vacuity argument for
+the central contribution rather than an attack result in its own right. In the symbolic model, the Dolev--Yao network is the colluders' side channel. We machine-check it twice: \texttt{Wormhole\_Fee\_Theft\_Reachable} (51 steps) exhibits a trace where the payment settles yet the middle hop is never redeemed and no intermediary earns a fee, with no key compromise; and \texttt{Wormhole\_Steals\_Exactly\_The\_Fees} (81 steps) quantifies the theft to precisely the path fees \texttt{\%f1 + \%f2}, tying the attack to the value layer of a model that simultaneously carries channel revocation and settlement. Known mitigations (AMHL, PTLCs) are out of scope.
 
 \subsection{Economic Soundness and Griefing}
-Three all-traces theorems: \texttt{EndToEnd\_Value\_Conservation} (the sender locks the receiver's amount plus a strictly positive total fee; no value created); \texttt{Fee\_Strictly\_Positive\_Hop1/2} (every hop's fee is $> 0$—structural, because the natural-number sort has no \texttt{\%0}); and, as a reachability result, \texttt{Honest\_Intermediary\_Refunds} (an honest intermediary induced to lock capital then refund on timeout—the standard PCN griefing DoS).
+\texttt{EndToEnd\_Value\_Conservation} establishes that the sender locks the
+receiver's amount plus the accumulated fees, so the routing mechanism neither
+creates nor destroys value. As a reachability result,
+\texttt{Honest\_Intermediary\_Refunds} exhibits an honest intermediary induced
+to lock capital and then refund on timeout---the standard PCN griefing DoS.
+
+\begin{remark}[Zero-fee forwarding is out of scope]
+\label{rem:zerofee}
+The lemmas \texttt{Fee\_Strictly\_}\texttt{Positive\_Hop1/2} hold in our model
+for a reason that is an artifact of the encoding rather than a property of Lightning:
+Tamarin's \texttt{natural-numbers} sort provides no $\%0$ term, so a zero-fee
+forward is not expressible. We therefore do \emph{not} present these as economic
+theorems. Deployed Lightning explicitly permits zero base fees, which nodes use
+for rebalancing and probing; our model consequently verifies a \emph{restricted
+subset} of the protocol in which every hop charges a positive fee, and cannot
+evaluate routing strategies that depend on zero-fee forwards. Admitting zero
+fees requires either a different arithmetic encoding or an explicit zero
+constant with the associated case analysis, which we leave to future work. We
+note that the value-conservation and atomicity results do not depend on fee
+positivity; only the fee-specific lemmas do.
+\end{remark}
 
 \subsection{Timing Safety and Assumption Minimality}
 \texttt{cltv\_blocks} derives the CLTV-delta invariant from concrete block numbers; \texttt{Clock} adds block-clock lifecycle safety; and \texttt{timeout} exhibits the early-timeout race that reappears once T2b is removed.
 
-A natural question is whether the intermediary-claim restriction T3 is redundant given T1 and T2b. We tested it by removing T3 and re-running the suite: \texttt{Intermediary\_Never\_Loses\_Under\_Liveness} is falsified, with Tamarin finding a concrete 59-step counterexample. T2b orders the two timeouts but does not force the node to sweep the incoming HTLC once its outgoing one is redeemed; that action is exactly what T3 encodes. We have empirically demonstrated that T3 is \textbf{load-bearing} for intermediary safety. We tested the removal of T3 only, and accordingly make no claim regarding the individual minimality of T1, T2a, or T2b.
+Among our four restrictions, T3 is the one that encodes an obligation to act
+rather than a temporal ordering, and is accordingly the one whose necessity is
+least self-evident: it is natural to suspect it is implied by the orderings T1
+and T2b. We tested it by removing T3 and re-running the suite: \texttt{Intermediary\_Never\_Loses\_Under\_Liveness} is falsified, with Tamarin finding a concrete 59-step counterexample. T2b orders the two timeouts but does not force the node to sweep the incoming HTLC once its outgoing one is redeemed; that action is exactly what T3 encodes. T3 is therefore \textbf{load-bearing} for intermediary safety: it is not
+redundant given the temporal orderings, because no ordering constraint can
+compel an action. We tested the removal of T3 specifically because it is the
+only one of the four that is an obligation rather than an ordering; we make no
+claim regarding the individual minimality of T1, T2a, or T2b, whose content is
+independently corroborated by the block-clock derivation of Section~6.
 
 % ==============================================================
-\section{\texorpdfstring{Generalizing to Arbitrary Path Length ($N$-Hops)}{Generalizing to Arbitrary Path Length (N-Hops)}}
+\section{\texorpdfstring{An Abstraction for Unbounded Path Length ($N$-Hops)}{An Abstraction for Unbounded Path Length (N-Hops)}}
 \label{sec:nhop}
 % ==============================================================
 
 Replacing the hardcoded forward rules with one generic rule was attempted in several encodings. A generic signed-message forward causes Tamarin to OOM even for a 1-hop witness due to self-referential origin-analysis recursion.
 
-To bypass this, we abstract the network layer into an internal Tamarin linear fact—\texttt{Route(prev, me, ptr, y)}—handed directly from one hop to the next. Because the HTLC is no longer a self-referential signed term, Tamarin's origin analysis no longer recurses. This yields \texttt{multihop\_nhop.spthy} (25 active lemmas; 4 \texttt{[use\_induction]} lemmas are commented out as deliberate tractability boundaries because backward chaining through unbounded \texttt{Route} facts causes divergence).
+To bypass this, we abstract the network layer into an internal Tamarin linear
+fact---\texttt{Route(prev, me, ptr, y)}---handed directly from one hop to the
+next. Because the HTLC is no longer a self-referential signed term, Tamarin's
+origin analysis no longer recurses.
+
+We are deliberate about what this buys and what it costs. Internalising the
+network \emph{removes the Dolev--Yao adversary from the routing layer}: in the
+abstract model the attacker can no longer inject, replay, or forge a forwarded
+HTLC. What the abstract model therefore establishes at unbounded $N$ is that the
+\emph{internal state machine} of routing---the discipline of linear HTLC slots,
+the pairing of redeem and refund outcomes, and the timing restrictions---remains
+consistent along a chain of any length. It does \emph{not} establish
+network-level adversarial security at $N$ hops; that content resides entirely in
+the concrete model and reaches arbitrary $N$ only through the pen-and-paper
+argument of Theorem~\ref{thm:refine}, whose status we delimit in
+Remark~\ref{rem:scope}. Readers should regard this section as a tractability
+workaround with a precisely stated transfer condition, not as a machine-checked
+security result for unbounded path length. This yields \texttt{multihop\_nhop.spthy} (25 active lemmas; 4 \texttt{[use\_induction]} lemmas are commented out as deliberate tractability boundaries because backward chaining through unbounded \texttt{Route} facts causes divergence).
 
 Fees are enforced structurally in the N-hop model as a firing guard (\texttt{Eq(\%vIn, \%vOut + \%fee)}), meaning end-to-end conservation over $N$ hops is a sum of $N$ fees—not finitely statable in one Tamarin lemma. We note also that the abstraction internalises the network, and therefore deliberately does \emph{not} exhibit the wormhole: the side channel the attack exploits is absent by construction, which is why that result is established in the concrete model.
 
@@ -508,7 +624,7 @@ We record negative results explicitly—they are a core methodological contribut
 \section{Conclusion and Future Work}
 % ==============================================================
 
-We delivered a modular, machine-checked model that integrates the Lightning two-party channel lifecycle with multi-hop HTLC routing and fees (81 lemmas over five theories). That integration surfaced a \emph{linear single-spend discipline}: two independent soundness gaps arising from encoding one-shot on-chain outputs as persistent facts, repaired uniformly by linear tokens, and generalizable into an auditable modeling invariant. We further established the minimality of the T3 timing assumption empirically, proved economic-soundness theorems, exposed a griefing DoS, reproduced the known wormhole attack as a fidelity check, and mapped where the prover stops scaling.
+We delivered a modular, machine-checked model that integrates the Lightning two-party channel lifecycle with multi-hop HTLC routing and fees (56 distinct properties over five theories). That integration surfaced a \emph{linear single-spend discipline}: two independent soundness gaps arising from encoding one-shot on-chain outputs as persistent facts, repaired uniformly by linear tokens, and generalizable into an auditable modeling invariant. We further established the minimality of the T3 timing assumption empirically, proved end-to-end value conservation, exposed a griefing DoS, reproduced the known wormhole attack as a fidelity check, and mapped where the prover stops scaling.
 
 The protocol-level safety results confirm expectations—consistent with the composable cryptographic treatment of Lightning~\cite{kiayias2020composable} and the model-checking results of Grundmann and Hartenstein~\cite{grundmann2025modelchecking}, which our symbolic model complements at the routing layer. The durable contribution here is methodological—a modeling discipline that catches a class of silent encoding errors, together with an account of what it takes to keep Tamarin tractable on a stateful, time-locked, arithmetic protocol, in a regime where every claim (positive or negative) was executed rather than asserted.
 
