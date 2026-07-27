@@ -1,11 +1,14 @@
 \documentclass[sigconf,review]{acmart}
 
 \usepackage{amsmath}
+\let\Bbbk\relax
 \usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{url}
+\theoremstyle{acmdefinition}
+\newtheorem{remark}{Remark}
 
 \copyrightyear{2027}
 \acmYear{2027}
@@ -164,6 +167,49 @@ We adopt the standard Dolev-Yao adversary model~\cite{dolev1983security}, repres
 As we demonstrate in Section~\ref{sec:verification}, T3 is strictly load-bearing. This mirrors the real-world necessity of LN watchtowers~\cite{mccorry2019pisa}. Our core security goals translate directly to verified lemmas: Payment Atomicity, Intermediary Safety, Routing Causality \& Authentication, Timing Safety, and Value Conservation.
 
 % ==============================================================
+\section{Formal Preliminaries}
+\label{sec:prelim}
+% ==============================================================
+
+We fix notation for Tamarin's multiset-rewriting semantics~\cite{meier2013tamarin}, which
+the remainder of the paper uses to state both the modeling discipline of
+Section~\ref{sec:discipline} and the refinement theorem of Section~\ref{sec:nhop}.
+
+\paragraph{Terms and facts.}
+Let $\mathcal{T}$ be the set of terms over a signature with an equational theory
+$E$ (here: hashing, signing, and natural numbers). A \emph{fact} is
+$F(t_1,\dots,t_k)$ with $t_i \in \mathcal{T}$. The set of fact symbols is
+partitioned as $\Sigma_{\mathrm{fact}} = \Sigma_{\mathrm{lin}} \uplus
+\Sigma_{\mathrm{per}}$ into \emph{linear} and \emph{persistent} symbols; we write
+persistent facts with a leading bang, e.g.\ $!\mathsf{RevokedSecret}(\cdot)$.
+A \emph{state} $S$ is a finite multiset of ground facts.
+
+\paragraph{Rules and transitions.}
+A rule is $ri = l \overset{a}{\longrightarrow} r$ with $l,a,r$ multisets of facts
+($a$ the \emph{action} facts). Writing $\mathrm{lin}(l)$ and $\mathrm{per}(l)$ for
+the linear and persistent premises, the transition relation is
+\[
+S \xrightarrow{\;a\;} \bigl(S \setminus^{\#} \mathrm{lin}(l)\bigr) \cup^{\#} r
+\qquad\text{provided}\quad
+\mathrm{lin}(l) \subseteq^{\#} S \ \wedge\ \mathrm{per}(l) \subseteq S ,
+\]
+where $\setminus^{\#},\cup^{\#},\subseteq^{\#}$ are multiset operations. The
+asymmetry is the point: linear premises are \emph{removed} from the state, while
+persistent premises are merely \emph{checked} and remain available. A
+\emph{trace} is the sequence $\mathit{tr} = [a_1,\dots,a_n]$ of action multisets
+of an execution from the empty state; $\mathrm{traces}(R)$ denotes the traces of
+a rule set $R$. Properties are first-order formulas over
+$\mathit{F}(\bar t)@i$ with timepoint ordering $i \lessdot j$, interpreted over
+traces in the standard way; $R \models_{\forall} \varphi$ means all traces
+satisfy $\varphi$ and $R \models_{\exists} \varphi$ that some trace does.
+
+\paragraph{Restrictions.}
+A restriction $\rho$ filters the trace set: verification is carried out over
+$\mathrm{traces}_{\rho}(R) = \{\mathit{tr} \in \mathrm{traces}(R) \mid \mathit{tr} \models \rho\}$.
+Restrictions are therefore \emph{assumptions}, not theorems, which is why
+Section~\ref{sec:verification} tests whether one of them is load-bearing.
+
+% ==============================================================
 \section{Formal Modeling Methodology}
 % ==============================================================
 
@@ -223,17 +269,116 @@ Channel lifecycle & Safety & \texttt{No\_Punishment\_Without\_Cheating} \\
 \end{table*}
 
 \subsection{The Linear Single-Spend Discipline (Axiom to Structure)}
-We identified a category error causing two independent soundness gaps: modeling one-shot on-chain resources (HTLC outputs and revoked commitment outputs) as Tamarin \textbf{persistent facts} rather than \textbf{linear facts}. A persistent fact is never consumed, so a rule gated only by such a fact may fire arbitrarily often; when that fact stands for an output that can be spent exactly once, the encoding silently permits multiple spends.
+\label{sec:discipline}
 
-\textbf{Instance 1: HTLC Output Duplication.} The forwarding rules were gated only by a public HTLC-offer message. A Dolev--Yao replay of that offer could re-fire an honest forward, locking a second HTLC on the same channel output with an adversary-chosen amount. We replaced a global \texttt{OneHTLCPerPtr} axiom with a structural guard: each channel open emits one linear \texttt{Free(ptr)} token, and every HTLC-add consumes it.
+We now state formally the pitfall informally described above, using the notation
+of Section~\ref{sec:prelim}.
 
-\textbf{Instance 2: Revoked Commitment Replay.} The punishment rules were gated only by a persistent \texttt{!RevokedSecret} fact. Because persistent facts are never consumed, the punishment rule could fire arbitrarily many times for the same revoked state, allowing repeated fund extraction from a single cheat. We fixed this by emitting a linear \texttt{RevokedCommitmentUnspent} token in the revocation rule, which is consumed upon punishment. Persistent \emph{knowledge} of the revocation secret is retained via \texttt{!RevokedSecret}; only the one-shot \emph{spend} is made linear.
+\begin{definition}[One-shot resource]
+\label{def:oneshot}
+A fact symbol $\mathsf{Res}$ \emph{denotes a one-shot resource} if, in the
+intended protocol semantics, for every ground instantiation $\bar t$ the
+privilege represented by $\mathsf{Res}(\bar t)$ may be exercised at most once.
+On-chain outputs---a funding output, an HTLC output, the output of a revoked
+commitment---are one-shot resources.
+\end{definition}
 
-We stress that Instance~2 is a consequence of integration rather than of scale. It resides at the junction of the revocation lifecycle and the routing execution: the offending rule is gated by revocation state yet re-fired along a routing trace. A model containing only the two-party channel layer, or only an abstracted forwarding layer, does not exhibit the trace that exposes it. This is the sense in which the breadth of the model is a precondition for the finding rather than an end in itself.
+\begin{proposition}[Persistent gating admits unbounded exercise]
+\label{prop:bug}
+Let $ri = \bigl(P \uplus \{!\mathsf{Res}(\bar t)\}\bigr) \overset{a}{\longrightarrow} r$
+be a rule in which the only premise representing the resource is the persistent
+fact $!\mathsf{Res}(\bar t)$, and suppose the remaining premises $P$ are
+persistent or otherwise re-derivable. Then for every $n \in \mathbb{N}$ there is
+a trace of $R$ containing at least $n$ occurrences of the action $a$ under the
+same instantiation $\bar t$.
+\end{proposition}
 
-After these changes, ``at most one spend per output'' is a consequence of linear-fact consumption—one fewer assumption. Adding an input fact restricts a rule's firings and therefore preserves all-traces safety properties automatically; it can, however, invalidate an exists-trace witness, so the theory was fully re-run rather than argued by monotonicity. All 43 lemmas re-verify after the change (reported: 262 s, Tamarin 1.8).
+\begin{proof}
+By the transition rule, firing $ri$ removes only $\mathrm{lin}(l)$ from the
+state. Since $!\mathsf{Res}(\bar t) \in \Sigma_{\mathrm{per}}$ it is checked but
+not removed, and by hypothesis $P$ is re-derivable; hence the enabling condition
+$\mathrm{lin}(l) \subseteq^{\#} S \wedge \mathrm{per}(l) \subseteq S$ holds again
+in the successor state. Firing $ri$ $n$ times yields the required trace.
+\end{proof}
 
-\textbf{The reusable invariant.} Both instances share one root cause and one remedy, which we state as a modeling discipline: \emph{every one-shot on-chain output must be modeled as a linear fact}. Persistent facts may encode durable \emph{knowledge} (keys, revealed secrets, channel identity), but a \emph{spend opportunity} must be tracked by a linear token consumed on use. This yields a mechanical audit question for symbolic payment-channel models: for each on-chain output that ought to be single-spend, is there a linear fact consumed when it is spent?
+Proposition~\ref{prop:bug} is exactly the defect we found twice. In Instance~1
+the resource is the channel output hosting an HTLC and $a$ is an HTLC-add; in
+Instance~2 the resource is a revoked commitment, $!\mathsf{Res} =
+{!\mathsf{RevokedSecret}}$, and $a = \mathsf{PublishRevoked}$, so the protocol
+admits arbitrarily many punishments for a single cheat.
+
+\begin{definition}[Linear single-spend token]
+\label{def:token}
+A \emph{single-spend token} for a one-shot resource is a linear fact symbol
+$\mathsf{Tok} \in \Sigma_{\mathrm{lin}}$ together with a discipline requiring
+(i) every rule exercising the resource to take $\mathsf{Tok}(\bar t)$ as a linear
+premise, and (ii) $\mathsf{Tok}(\bar t)$ to be produced at most once per $\bar t$
+across all rules.
+\end{definition}
+
+\begin{proposition}[Structural single spend]
+\label{prop:fix}
+Under Definition~\ref{def:token}, for every trace and every $\bar t$ the action
+$a$ occurs at most once with instantiation $\bar t$.
+\end{proposition}
+
+\begin{proof}
+Let $p$ be the number of productions and $c$ the number of consumptions of
+$\mathsf{Tok}(\bar t)$ in a trace. As $\mathsf{Tok}$ is linear, each firing of a
+rule exercising the resource removes one copy from the state, so $c \le p$;
+by (ii) $p \le 1$, hence $c \le 1$. By (i) each occurrence of $a$ under $\bar t$
+is such a firing, so $a$ occurs at most once.
+\end{proof}
+
+Concretely, $\mathsf{Free}(\mathit{ptr})$ is produced once by
+$\mathsf{Lock\_Funds\_And\_Open}$ (one per channel open) and consumed by every
+HTLC-add, and
+$\mathsf{RevokedCommitmentUnspent}(\mathit{ptr},A,B,n,\mathit{commit})$ is
+produced once by $\mathsf{Revoke\_Old\_Secret}$ and consumed by
+$\mathsf{Publish\_Revoked}$:
+\[
+\footnotesize
+\begin{array}{l}
+\mathsf{Publish\_Revoked_A}:\\[2pt]
+\bigl[\ !\mathsf{ChannelRecord}(\mathit{ptr},A,B),\ \ !\mathsf{ValidOnChain}(\mathit{ptr}),\\
+\ \ \ !\mathsf{RevokedSecret}(A,n,s,c),\\
+\ \ \ \mathsf{RevokedCommitmentUnspent}(\mathit{ptr},A,B,n,c)\ \bigr]\\[2pt]
+\quad\overset{\ \mathsf{PublishRevoked}(A,n,c),\ \mathsf{Cheat}(A,n)\ }{\longrightarrow}\\[2pt]
+\bigl[\ \mathsf{OnChainCheat}(A,B,n,c),\ \ \mathsf{RevealedSecret}(A,n,s,c)\ \bigr]
+\end{array}
+\]
+Persistent \emph{knowledge} of the revocation secret is retained via
+$!\mathsf{RevokedSecret}$; only the one-shot \emph{spend} is linear. This
+separation is the content of the discipline.
+
+\begin{remark}[Why re-verification is required]
+\label{rem:mono}
+Adding a premise shrinks the enabling condition, so
+$\mathrm{traces}(R') \subseteq \mathrm{traces}(R)$. Hence every
+$\forall$-property is preserved: $R \models_{\forall} \varphi \Rightarrow R'
+\models_{\forall} \varphi$. The converse fails for $\exists$-properties, since a
+witness may be removed. We therefore re-ran the full theory rather than
+appealing to monotonicity; all 43 lemmas re-verify (262\,s, Tamarin 1.8).
+\end{remark}
+
+\medskip
+\noindent\textbf{Instance 1: HTLC output duplication.} The forwarding rules were gated only by a public HTLC-offer message. A Dolev--Yao replay of that offer could re-fire an honest forward, locking a second HTLC on the same channel output with an adversary-chosen amount. We replaced a global \texttt{OneHTLCPerPtr} axiom with the structural guard of Definition~\ref{def:token}: each channel open emits one linear $\mathsf{Free}(\mathit{ptr})$ token, consumed by every HTLC-add.
+
+\medskip
+\noindent\textbf{Instance 2: revoked commitment replay.} The punishment rules were gated only by the persistent $!\mathsf{RevokedSecret}$ fact, and are thus an instance of Proposition~\ref{prop:bug}: the punishment rule could fire arbitrarily many times for the same revoked state.
+
+We stress that Instance~2 is a consequence of integration rather than of scale.
+It resides at the junction of the revocation lifecycle and the routing
+execution: the offending rule is gated by revocation state yet re-fired along a
+routing trace. A model containing only the two-party channel layer, or only an
+abstracted forwarding layer, does not exhibit the trace that exposes it.
+
+\textbf{The reusable invariant.} Definitions~\ref{def:oneshot}--\ref{def:token}
+and Propositions~\ref{prop:bug}--\ref{prop:fix} yield a mechanical audit
+question for symbolic payment-channel models: \emph{for each fact denoting a
+one-shot on-chain output, is there a linear token consumed when it is
+exercised?} Persistent facts may encode durable knowledge (keys, revealed
+secrets, channel identity), but never a spend opportunity.
 
 \subsection{Wormhole Attack: A Fidelity Check}
 The wormhole attack~\cite{malavolta2019anonymous} occurs when two colluding path members relay the preimage out-of-band, skipping an honest intermediary who forwards value but earns no fee. It is an instance of the agent-skipping class formalized symbolically by Smith et al.~\cite{smith2022agentskipping}, and we claim no novelty for exhibiting it. We include it as a fidelity check: a model of multi-hop routing that did \emph{not} admit the wormhole would be suspect. In the symbolic model, the Dolev--Yao network is the colluders' side channel. We machine-check it twice: \texttt{Wormhole\_Fee\_Theft\_Reachable} (51 steps) exhibits a trace where the payment settles yet the middle hop is never redeemed and no intermediary earns a fee, with no key compromise; and \texttt{Wormhole\_Steals\_Exactly\_The\_Fees} (81 steps) quantifies the theft to precisely the path fees \texttt{\%f1 + \%f2}, tying the attack to the value layer of a model that simultaneously carries channel revocation and settlement. Known mitigations (AMHL, PTLCs) are out of scope.
@@ -257,7 +402,94 @@ To bypass this, we abstract the network layer into an internal Tamarin linear fa
 
 Fees are enforced structurally in the N-hop model as a firing guard (\texttt{Eq(\%vIn, \%vOut + \%fee)}), meaning end-to-end conservation over $N$ hops is a sum of $N$ fees—not finitely statable in one Tamarin lemma. We note also that the abstraction internalises the network, and therefore deliberately does \emph{not} exhibit the wormhole: the side channel the attack exploits is absent by construction, which is why that result is established in the concrete model.
 
-\textbf{Refinement Theorem (Pen-and-Paper).} Internalising the network removes Dolev--Yao power, so the abstract model $A$ has strictly fewer behaviours than the concrete model $C$; abstract safety therefore does not by itself imply concrete safety. The gap is exactly the adversary's ability to forge or replay a forward, and is closed by a \emph{local} per-hop authentication lemma AUTH, machine-checked in $C$ (\texttt{Forward1\_Requires\_Offer}, 266 steps; \texttt{Forward2\_Requires\_Forward1}, 274 steps), which quantifies over a single adjacent pair and never over the path or $N$. Under AUTH, any safety property $\varphi$ holding in $A$ for all $N$ holds in $C$ for all $N$, by projection and induction over forwarding steps. The refinement argument itself is \textbf{pen-and-paper}; Tamarin cannot quantify over $N$ or relate two theories. This is the honest boundary of our verification: both hypotheses are machine-checked, the composition is not.
+\subsection{Refinement Theorem}
+
+Internalising the network removes Dolev--Yao power, so the abstract model $A$
+has strictly fewer behaviours than the concrete model $C$; abstract safety
+therefore does not by itself imply concrete safety. We make the transfer precise.
+
+\begin{definition}[Shared alphabet and projection]
+\label{def:proj}
+Let
+\[
+\small
+\Sigma = \{\,\mathsf{ForwardHTLC},\ \mathsf{Redeemed},\
+\mathsf{Refunded},\ \mathsf{LtkCompromised}\,\}
+\]
+be the safety-relevant action symbols, emitted with identical arities by both
+theories. The projection
+$\pi : \mathrm{traces}(C) \to (2^{\Sigma})^{*}$ retains every $\Sigma$-action
+verbatim, deletes all network and cryptographic events
+($\mathsf{Out}, \mathsf{In}, \mathsf{KU}$, signature checks), and relabels the
+position-indexed $\mathsf{HTLCForwarded}_i$ to the generic
+$\mathsf{HTLCForwarded}$.
+\end{definition}
+
+\begin{definition}[\textsc{Auth}]
+\label{def:auth}
+$C$ satisfies \textsc{Auth} if every forwarding step is preceded by a genuine
+offer or forward from the \emph{adjacent} previous hop, unless that hop's key is
+compromised; for the first position,
+\[
+\small
+\begin{array}{l}
+\forall F_1,F_2,S,p,y,v_{\mathrm{in}},v_{\mathrm{out}},i.\
+ \mathsf{HTLCForwarded}_1(F_1,F_2,S,p,y,v_{\mathrm{in}},v_{\mathrm{out}})@i \Rightarrow\\
+\quad (\exists p',j.\ \mathsf{HTLCOffered}(S,F_1,p',y,v_{\mathrm{in}})@j \wedge j \lessdot i)\\
+\quad \vee\ (\exists k.\ \mathsf{LtkCompromised}(S)@k \wedge k \lessdot i),
+\end{array}
+\]
+and symmetrically for the second position.
+\end{definition}
+
+\textsc{Auth} is machine-checked in $C$ as \texttt{Forward1\_Requires\_Offer}
+(266 steps) and \texttt{Forward2\_Requires\_Forward1} (274 steps). Crucially it
+quantifies over a \emph{single adjacent pair} and never over the path or $N$;
+this locality is what makes it provable, and its failure for a generic signed
+rule is the boundary reported in Section~\ref{sec:nhop}.
+
+\begin{lemma}[Per-hop simulation]
+\label{lem:sim}
+Assume $C \models_{\forall} \textsc{Auth}$. If $S \xrightarrow{a} S'$ is a
+forwarding step of $C$, then $\pi$ of that step is a legal step of $A$.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+An honestly authenticated incoming HTLC is precisely what licenses the abstract
+$\mathsf{Route}(\mathit{prev},\mathit{me},\mathit{ptr},y)$ hand-off, so the
+premises of the abstract $\mathsf{Forward\_HTLC}$ are met. The remaining case, a
+forged or replayed forward, is excluded by \textsc{Auth} except under key
+compromise, which both models expose identically via $\mathsf{LtkCompromised}
+\in \Sigma$ and which $\pi$ preserves.
+\end{proof}
+
+\begin{theorem}[Soundness of the abstraction]
+\label{thm:refine}
+Let $\varphi$ be a safety property over $\Sigma$ with $A \models_{\forall}
+\varphi$ for all path lengths $N$, and assume $C \models_{\forall} \textsc{Auth}$.
+Then $C \models_{\forall} \varphi$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+By induction on the number of forwarding steps of $\mathit{tr} \in
+\mathrm{traces}(C)$. The base case is immediate. For the step, Lemma~\ref{lem:sim}
+extends $\pi(\mathit{tr})$ by one legal abstract step, so $\pi(\mathit{tr}) \in
+\mathrm{traces}(A)$. Since $\pi$ preserves $\Sigma$-actions verbatim and
+$\varphi$ is over $\Sigma$, any violation of $\varphi$ in $\mathit{tr}$ appears
+in $\pi(\mathit{tr})$, contradicting $A \models_{\forall} \varphi$.
+\end{proof}
+
+\begin{remark}[Scope of mechanization]
+\label{rem:scope}
+Both hypotheses of Theorem~\ref{thm:refine} are machine-checked---\textsc{Auth}
+in $C$, and $\varphi$ in $A$ for unbounded $N$---but the composition is
+\textbf{pen-and-paper}: Tamarin can neither quantify over $N$ nor relate two
+theories, for the same reason that key-management meta-theorems are argued
+externally. Soundness rests on the locality of \textsc{Auth}
+(Definition~\ref{def:auth}), which we confirmed by inspecting every forward
+rule: each references only its adjacent pair. This is the honest boundary of our
+verification.
+\end{remark}
 
 % ==============================================================
 \section{Discussion: What Failed and Tractability Boundaries}
