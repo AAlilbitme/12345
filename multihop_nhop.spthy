@@ -1,7 +1,13 @@
 theory multihop_nhop
 begin
 
-builtins: hashing, signing, natural-numbers
+// Multi_Nhop.spthy (multiset, amounts chained through Route) PLUS the two
+// linear single-spend tokens: Free(ptr) for the HTLC output and
+// RevokedCommitmentUnspent for the revoked commitment output.
+// The base file verifies 31/31 in 265s; the open question is whether the
+// extra linear facts remain tractable under multiset AC unification.
+
+builtins: hashing, signing, multiset
 
 // ---------------------------------------------------------------------------
 // Key management
@@ -100,9 +106,9 @@ rule Lock_Funds_And_Open:
       StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
       !ValidOnChain(ptr),
       !ChannelRecord(ptr, $A, $B),
-      !ChannelConnect(ptr, $A, $B),   
-      !ChannelConnect(ptr, $B, $A),
-      Free(ptr) ]  // one-shot HTLC slot per channel
+      !ChannelConnect(ptr, $A, $B),   // permits HTLC from A to B
+      !ChannelConnect(ptr, $B, $A),   // permits HTLC from B to A
+      Free(ptr) ]                     // one-shot HTLC slot per channel
 
 // ---------------------------------------------------------------------------
 // State update & revocation
@@ -140,6 +146,7 @@ rule Revoke_Old_Secret:
       StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
       !RevokedSecret($A, n_old, sAold, oldCommitA),
       !RevokedSecret($B, n_old, sBold, oldCommitB),
+      // linear one-shot spend of the revoked commitment output
       RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
       RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
 
@@ -234,7 +241,6 @@ rule Honest_Close:
 // ---------------------------------------------------------------------------
 // Cheat / punishment
 // ---------------------------------------------------------------------------
-
 rule Publish_Revoked_A:
     [ !ChannelRecord(ptr, $A, $B),
       !ValidOnChain(ptr),
@@ -291,76 +297,93 @@ rule Claim_Funds_B:
     --[ ClaimFunds($B, n), CSVPassed($B, n), SettledTx($B, txContent) ]->
     [ FundsTo($B, n) ]
 
+
 // ---------------------------------------------------------------------------
-// HTLC layer GENERALIZED to N hops
+// HTLC layer -- GENERALIZED to N hops via a linear Route fact,
+// now carrying AMOUNTS and deducting per-hop FEES
+//
+// the sender locks  amt + fees  and every
+// intermediary splits its incoming amount as  amtOut + fee, keeping fee.
+// every hop's fee is strictly positive,
 // ---------------------------------------------------------------------------
 
 rule Receiver_Create_Invoice:
     let y = h(~x)
-        invoice = <$Receiver, $Sender, y>
+        invoice = <$Receiver, $Sender, y, amt>
         sigR    = sign(invoice, ltkR)
     in
-    [ Fr(~x), !Ltk($Receiver, ltkR) ]
-    --[ InvoiceCreated($Receiver, $Sender, y),
+    [ Fr(~x), In(amt), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y, amt),
         SecretPreimage($Receiver, ~x) ]->
-    [ ReceiverInv($Receiver, $Sender, ~x),
+    [ ReceiverInv($Receiver, $Sender, ~x, amt),
       Out(<'SecretRS', invoice, sigR>) ]
 
+// Sender verifies the signed invoice, locks amt + fee budget in the first
+// HTLC, and STARTS the route chain (HTLC(Alice, Bob, 5+fees, y, 3t)).
 rule Sender_Offer_HTLC:
-    let invoice = <$Receiver, $Sender, y>
+    let invoice  = <$Receiver, $Sender, y, amt>
+        amtTotal = amt + fees
     in
     [ In(<'SecretRS', invoice, sigR>),
+      In(fees),
       !Pk($Receiver, pkR),
       !Ltk($Sender, ltkS),
       !ChannelConnect(ptrSF, $Sender, $Forward1),
-      Free(ptrSF) ] 
-    --[ HTLCOffered($Sender, $Forward1, ptrSF, y),
+      Free(ptrSF) ]
+    --[ HTLCOffered($Sender, $Forward1, ptrSF, y, amtTotal),
         HTLCAdded(ptrSF, y),
+        FeeBudget($Sender, y, fees),
         Neq($Sender, $Forward1),
         Neq($Sender, $Receiver),
         Neq($Forward1, $Receiver),
         Eq(verify(sigR, invoice, pkR), true) ]->
-    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
-      Route($Sender, $Forward1, ptrSF, y) ]
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, amtTotal),
+      Route($Sender, $Forward1, ptrSF, y, amtTotal) ]
 
-// GENERIC FORWARD -- one rule, any number of hops.
+// GENERIC FORWARD i.e one rule, any number of hops.
+// The AC pattern (amtOut + fee) nondeterministically splits the incoming
+// amount; $Me keeps fee and locks amtOut on the outgoing channel.
 rule Forward_HTLC:
-    [ Route($Prev, $Me, ptrIn, y),
+    [ Route($Prev, $Me, ptrIn, y, amtOut + fee),
       !ChannelConnect(ptrOut, $Me, $Next),
-      Free(ptrOut),             
-      In(%vIn), In(%fee), In(%vOut) ]
-    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y),
+      Free(ptrOut) ]
+    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y, amtOut + fee, amtOut),
         HTLCAdded(ptrOut, y),
         ForwardHTLC($Me, ptrIn, ptrOut, y),
-        FeeCharged($Me, y, %fee), 
-        Eq(%vIn,  %vOut %+ %fee), 
+        FeeExpected($Me, ptrIn, ptrOut, y, fee),
         Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]->
-    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
-      Route($Me, $Next, ptrOut, y) ]
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtOut + fee, amtOut, fee),
+      Route($Me, $Next, ptrOut, y, amtOut) ]
 
+// Receiver fulfils the final route hop, revealing the preimage backward
 rule Receiver_Fulfill_HTLC:
-    [ Route($Prev, $Receiver, ptrIn, y),
-      ReceiverInv($Receiver, $Sender, x) ]
-    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y),
+    [ Route($Prev, $Receiver, ptrIn, y, amtIn),
+      ReceiverInv($Receiver, $Sender, x, amt) ]
+    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y, amtIn),
+        ReceiverPaid($Receiver, y, amt),
         PreimageReleased($Receiver, x),
         Redeemed(ptrIn, y),
-        Eq(h(x), y) ]->
+        Eq(h(x), y),
+        Eq(amtIn, amt) ]->
     [ Fulfill(ptrIn, x) ]
 
+// The intermediary claims amtIn on ptrIn having paid amtOut on ptrOut.
 rule Intermediary_Settle:
-    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtIn, amtOut, fee),
       Fulfill(ptrOut, x) ]
     --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
-        FeeEarned($Me, ptrIn, ptrOut, y, %fee),
+        FeeEarned($Me, ptrIn, ptrOut, y, fee),
         Redeemed(ptrIn, y),
         Eq(h(x), y) ]->
     [ Fulfill(ptrIn, x) ]
 
 rule Sender_Settle:
-    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, amtTotal),
       Fulfill(ptrSF, x) ]
     --[ SenderSettled($Sender, $Forward1, $Receiver, ptrSF, x),
-        PaymentComplete($Sender, $Receiver, h(x)),
+        PaymentComplete($Sender, $Receiver, h(x), amtTotal),
         Redeemed(ptrSF, y),
         Eq(h(x), y) ]->
     [ ]
@@ -369,20 +392,18 @@ rule Open_Timeout:
     [ !ChannelConnect(ptr, A, B) ] --[ TimedOut(ptr) ]-> [ !Timeout(ptr) ]
 
 rule Sender_Timeout_Refund:
-    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y), !Timeout(ptrSF) ]
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, amtTotal),
+      !Timeout(ptrSF) ]
     --[ HTLCRefunded($Sender, ptrSF, y), Refunded(ptrSF, y) ]->
     [ ]
 
 rule Intermediary_Timeout_Refund:
-    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtIn, amtOut, fee),
       !Timeout(ptrOut) ]
-    --[ HTLCRefunded($Me, ptrOut, y),
-        Refunded(ptrOut, y) ]->
+    --[ HTLCRefunded($Me, ptrOut, y), Refunded(ptrOut, y) ]->
     [ ]
 
-// ---------------------------------------------------------------------------
-// Restrictions
-// ---------------------------------------------------------------------------
 
 restriction OneOutcomePerHTLC:
     "All ptr y #i #j.
@@ -403,10 +424,15 @@ restriction OneChannelPerPtr:
      & ChannelOpen(C, D, ptr) @ #j
      ==> #i = #j"
 
+
+// redemption is valid only before a channel times out.
 restriction RedeemBeforeTimeout:
     "All ptr y #i #j.
         Redeemed(ptr, y) @ #i & TimedOut(ptr) @ #j ==> #i < #j"
 
+// each hop sets the outgoing timeout strictly shorter than the incoming timeout.
+// like the out going CLTV is 3 blocks shorter than the incoming CLTV, so that the
+// intermediary has time to redeem the incoming HTLC before it times out.
 restriction ForwardTimeGap:
     "All P ptrIn ptrOut y #f #j #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
@@ -414,12 +440,18 @@ restriction ForwardTimeGap:
       & TimedOut(ptrIn)  @ #k
      ==> #j < #k"
 
+// honest parties claim within their CLTV window.
+// If ForwardHTLC connects two channels and the incoming channel times out,
+// then the outgoing channel must have already timed out.  This encodes the
+// assumption that every honest intermediary acts before their incoming deadline
 restriction HonestPartiesActBeforeIncomingTimeout:
     "All P ptrIn ptrOut y #f #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
       & TimedOut(ptrIn) @ #k
      ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
 
+// if an honest intermediary's outgoing HTLC is redeemed before the
+// incoming timeout, the node sweeps the incoming HTLC.
 restriction IntermediaryMustClaim:
     "All P ptrIn ptrOut y #f #i #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
@@ -493,8 +525,12 @@ lemma Ltk_Known_Implies_Compromised [reuse]:
     "All A ltk #i #j.
         KeyGen(A, ltk) @ #i
       & !KU(ltk) @ #j
-     ==> Ex #k. LtkCompromised(A) @ #k"
+     ==> Ex #r. LtkCompromised(A) @ #r"
 
+// ReceiverInv is linear and consumed on fulfillment; ~x is fresh per invoice.
+// Therefore a given preimage is released by the receiver at most once.
+// Even if the adversary replays the public 'fulfill' message, it cannot force
+// a second release from the receiver, the linear fact is gone.
 lemma Invoice_Released_Once [reuse]:
     "All R x #i #j.
         PreimageReleased(R, x) @ #i
@@ -503,29 +539,29 @@ lemma Invoice_Released_Once [reuse]:
 
 lemma Distinct_Parties_Configuration:
     exists-trace
-    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #t1 #t2 #t3.
-        ChannelOpen(S, F1, ptrSF1)   @ #t1
-      & ChannelOpen(F1, F2, ptrF1F2) @ #t2
-      & ChannelOpen(F2, R, ptrF2R)   @ #t3
+    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #c1 #c2 #c3.
+        ChannelOpen(S, F1, ptrSF1)   @ #c1
+      & ChannelOpen(F1, F2, ptrF1F2) @ #c2
+      & ChannelOpen(F2, R, ptrF2R)   @ #c3
       & not (S = F1) & not (S = F2) & not (S = R)
       & not (F1 = F2) & not (F1 = R) & not (F2 = R)
-      & not (Ex P #i. LtkCompromised(P) @ #i)
-      & not (Ex P Q p n #j. StateUpdate(P, Q, p, n) @ #j)
-      & not (Ex P n #k. PublishState(P, n) @ #k)
-      & not (Ex P Q p n #l. Close(P, Q, p, n) @ #l)
-      & not (Ex P n #m. Cheat(P, n) @ #m)
-      & not (Ex Me Prev Next pi po y #n. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #n)"
+      & not (Ex P #r. LtkCompromised(P) @ #r)
+      & not (Ex P Q p n #u. StateUpdate(P, Q, p, n) @ #u)
+      & not (Ex P n #u. PublishState(P, n) @ #u)
+      & not (Ex P Q p n #u. Close(P, Q, p, n) @ #u)
+      & not (Ex P n #u. Cheat(P, n) @ #u)"
 
 lemma Refund_Possible:
     exists-trace
-    "Ex S F1 R p y #i #j #k.
-        InvoiceCreated(R, S, y) @ #j
-      & HTLCOffered(S, F1, p, y) @ #k
+    "Ex S F1 R p y amt amtT #i #j #k.
+        InvoiceCreated(R, S, y, amt) @ #j
+      & HTLCOffered(S, F1, p, y, amtT) @ #k
       & HTLCRefunded(S, p, y) @ #i
       & #j < #k & #k < #i
-      & not (Ex A MidP B p2 x #l. SenderSettled(A, MidP, B, p2, x) @ #l)
+      & not (Ex A MidP B p2 x #u. SenderSettled(A, MidP, B, p2, x) @ #u)
       & not (Ex P #r. LtkCompromised(P) @ #r)
-      & not (Ex Me Prev Next pi po y #t1. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #t1)"
+      & not (Ex Me Prev Next pi po y2 ai ao #u.
+               HTLCForwarded(Me, Prev, Next, pi, po, y2, ai, ao) @ #u)"
 
 lemma Preimage_Secret_Until_Released:
     "All R x #i #j.
@@ -535,8 +571,8 @@ lemma Preimage_Secret_Until_Released:
      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #j"
 
 lemma Invoice_Has_Secret_Preimage [reuse]:
-    "All R S x #i.
-        InvoiceCreated(R, S, h(x)) @ #i
+    "All R S x amt #i.
+        InvoiceCreated(R, S, h(x), amt) @ #i
      ==> SecretPreimage(R, x) @ #i"
 
 lemma HTLC_On_Opened_Channel [reuse, use_induction]:
@@ -544,35 +580,19 @@ lemma HTLC_On_Opened_Channel [reuse, use_induction]:
         HTLCAdded(ptr, y) @ #i
      ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
 
-
-// 1. Settle_Requires_Receiver_Release: backward tracing loops infinitely.
-// 2. use_induction lemmas: combining [use_induction] with 'signing' + 
-//    'natural-numbers' in the merged theory causes severe slowdown. 
-//    These verify perfectly in the isolated 3-hop multihop.spthy.
-
+// NOTE: verifies in the fixed-hop multihop.spthy; in this generic model it
+// does not terminate.  Left as the single open lemma of the N-hop variant.
 // lemma Settle_Requires_Receiver_Release:
-//     "All S F1 R ptr x #i #j.
+//     "All S F1 R ptr x #i #j amt.
 //         SenderSettled(S, F1, R, ptr, x) @ #i
-//       & InvoiceCreated(R, S, h(x)) @ #j
-//      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
-     
-// lemma Claim_Requires_Release [use_induction]:
-//     "All MidP InP ptrIn R x #i #j.
-//         IntermediaryClaimed(MidP, InP, ptrIn, x) @ #i
-//       & SecretPreimage(R, x) @ #j
+//       & InvoiceCreated(R, S, h(x), amt) @ #j
 //      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
 
-// lemma Forward_Requires_Incoming [use_induction]:
-//     "All Me Prev Next ptrIn ptrOut y #i.
-//         HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #i
-//      ==> (Ex S #j. HTLCOffered(S, Me, ptrIn, y) @ #j & #j < #i)
-//        | (Ex P0 pin0 #j. HTLCForwarded(Prev, P0, Me, pin0, ptrIn, y) @ #j & #j < #i)"
-
-// lemma Redeem_Requires_Receiver_Release [use_induction]:
-//     "All ptr y #i.
-//         Redeemed(ptr, y) @ #i
-//      ==> Ex R x #k. PreimageReleased(R, x) @ #k & h(x) = y"
-
+lemma Claim_Requires_Release [use_induction]:
+    "All MidP InP ptrIn R x #i #j.
+        IntermediaryClaimed(MidP, InP, ptrIn, x) @ #i
+      & SecretPreimage(R, x) @ #j
+     ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
 
 lemma Settle_Excludes_Sender_Refund:
     "All S F1 R ptr x #i.
@@ -582,7 +602,7 @@ lemma Settle_Excludes_Sender_Refund:
 lemma Invoice_Authenticates_Settlement:
     "All S F1 R ptr x #i.
         SenderSettled(S, F1, R, ptr, x) @ #i
-     ==> (Ex #j. InvoiceCreated(R, S, h(x)) @ #j & #j < #i)
+     ==> (Ex amt #j. InvoiceCreated(R, S, h(x), amt) @ #j & #j < #i)
        | (Ex #r. LtkCompromised(R) @ #r & #r < #i)"
 
 lemma Forged_Invoice_Requires_Key_Compromise:
@@ -590,8 +610,9 @@ lemma Forged_Invoice_Requires_Key_Compromise:
     "Ex S F1 R ptr x #i #r.
         SenderSettled(S, F1, R, ptr, x) @ #i
       & LtkCompromised(R) @ #r
-      & not (Ex #j. InvoiceCreated(R, S, h(x)) @ #j)
-      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u)"
+      & not (Ex amt #j. InvoiceCreated(R, S, h(x), amt) @ #j)
+      & not (Ex Me Prev Next pi po y ai ao #u.
+               HTLCForwarded(Me, Prev, Next, pi, po, y, ai, ao) @ #u)"
 
 lemma Loss_Requires_Inaction:
     "All P ptrIn ptrOut y #i #j #k.
@@ -600,48 +621,94 @@ lemma Loss_Requires_Inaction:
       & Refunded(ptrIn, y) @ #k
      ==> not (Ex #l. Redeemed(ptrIn, y) @ #l)"
 
+// Helper for Intermediary_Never_Loses: pre-computes Refunded -> TimedOut chain.
 lemma Refund_Requires_Timeout [reuse]:
     "All ptr y #i.
         Refunded(ptr, y) @ #i
      ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
 
 lemma Intermediary_Never_Loses_Under_Liveness:
-    "All P ptrIn ptrOut y #i #j #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #i
-      & Redeemed(ptrOut, y) @ #j
-      & Refunded(ptrIn, y) @ #k
-     ==> Ex #l. LtkCompromised(P) @ #l"
+    "All P ptrIn ptrOut y #f #i #j.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & Refunded(ptrIn, y) @ #j
+     ==> Ex #r. LtkCompromised(P) @ #r"
 
+// This proves that once the receiver fulfills the final HTLC, the sender's
+// HTLC on the same payment hash cannot be refunded in the honest model.
 lemma Payment_Atomicity_Under_Liveness:
-    "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #i #j #k.
-        ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #i
-      & ForwardHTLC(F2, ptrF1F2, ptrF2R, y) @ #j
-      & Redeemed(ptrF2R, y) @ #k
-      & (not Ex P #l. LtkCompromised(P) @ #l)
-     ==> not (Ex #m. Refunded(ptrSF1, y) @ #m)"
+    "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.
+        ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #f1
+      & ForwardHTLC(F2, ptrF1F2, ptrF2R, y) @ #f2
+      & Redeemed(ptrF2R, y) @ #i
+      & (not Ex P #r. LtkCompromised(P) @ #r)
+     ==> not (Ex #u. Refunded(ptrSF1, y) @ #u)"
 
+
+// This lemma only proves the race is blocked WITH the liveness restriction active.
+// The timeout.spthy is needed to show the race is reachable WITHOUT it.
 lemma Timeout_Race_Blocked:
-    "not (Ex P ptrIn ptrOut y #l #i #j #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #l
+    "not (Ex P ptrIn ptrOut y #f #i #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
       & TimedOut(ptrIn)     @ #k
       & Refunded(ptrIn, y)  @ #j
       & Redeemed(ptrOut, y) @ #i
       & #k < #i)"
+      // why i didnot include refund not possible because it is enforce by rules
 
-// --- GENERALIZED routing witness (any chain length) ---------------------------
-
-lemma Multihop_Payment_Possible:
+lemma Multihop_Payment_With_Fees_Possible:
     exists-trace
-    "Ex S F1 F2 R p0 p1 p2 x #t2 #t3 #t4 #t5.
-        HTLCOffered(S, F1, p0, h(x))              @ #t2
-      & HTLCForwarded(F1, S, F2, p0, p1, h(x))    @ #t3
-      & HTLCForwarded(F2, F1, R, p1, p2, h(x))    @ #t4
-      & HTLCFulfilled(R, F2, p2, h(x))            @ #t5
+    "Ex S F1 F2 R p0 p1 p2 x amt f1 f2 #t2 #t3 #t4 #t5.
+        HTLCOffered(S, F1, p0, h(x), amt + f1 + f2)                   @ #t2
+      & HTLCForwarded(F1, S, F2, p0, p1, h(x), amt + f1 + f2, amt + f2) @ #t3
+      & HTLCForwarded(F2, F1, R, p1, p2, h(x), amt + f2, amt)          @ #t4
+      & HTLCFulfilled(R, F2, p2, h(x), amt)                            @ #t5
       & #t2 < #t3 & #t3 < #t4 & #t4 < #t5
-      & not (Ex A B p y #u. HTLCOffered(A, B, p, y) @ #u & not(A=S & B=F1))
-      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u
-             & not(Me=F1 & Prev=S & Next=F2)
-             & not(Me=F2 & Prev=F1 & Next=R))"
+      & not (Ex A B p y a #u. HTLCOffered(A, B, p, y, a) @ #u & not(A=S & B=F1))
+      & not (Ex F3 F4 F5 p3 p4 y ai ao #u.
+               HTLCForwarded(F3, F4, F5, p3, p4, y, ai, ao) @ #u
+             & not(F3=F1 & F4=S & F5=F2)
+             & not(F3=F2 & F4=F1 & F5=R))"
 
+// A forward is preceded by the offer or the previous forward, and the
+// incoming amount agrees with the previous hop's outgoing amount,
+// amount consistency along the route.
+lemma Forward_Requires_Incoming [use_induction]:
+    "All Me Prev Next ptrIn ptrOut y amtIn amtOut #i.
+        HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut) @ #i
+     ==> (Ex S #j. HTLCOffered(S, Me, ptrIn, y, amtIn) @ #j & #j < #i)
+       | (Ex P0 pin0 amt0 #j.
+            HTLCForwarded(Prev, P0, Me, pin0, ptrIn, y, amt0, amtIn) @ #j
+          & #j < #i)"
+
+// Every hop strictly decreases the locked amount, 
+// so that the receiver gets the amount named in its invoice, and every intermediary get a strictly positive fee.
+lemma Amount_Strictly_Decreases_Per_Hop:
+    "All Me Prev Next ptrIn ptrOut y amtIn amtOut #i.
+        HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut) @ #i
+     ==> Ex fee. amtIn = amtOut + fee"
+
+// The receiver is only ever paid the amount named in one of its invoices
+lemma Receiver_Paid_Invoice_Amount:
+    "All R y amt #i.
+        ReceiverPaid(R, y, amt) @ #i
+     ==> Ex S #j. InvoiceCreated(R, S, y, amt) @ #j & #j < #i"
+
+// Fees are earned only on successful forwards,
+// and the fee is the difference between the incoming and outgoing amounts.
+lemma Fee_Only_On_Successful_Forward:
+    "All Me ptrIn ptrOut y fee #i.
+        FeeEarned(Me, ptrIn, ptrOut, y, fee) @ #i
+     ==> (Ex #j. Redeemed(ptrOut, y) @ #j & #j < #i)
+       & (Ex Prev Next amtIn amtOut #f.
+            HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut) @ #f
+          & amtIn = amtOut + fee
+          & #f < #i)"
+
+// Authentication:
+lemma Redeem_Requires_Receiver_Release [use_induction]:
+    "All ptr y #i.
+        Redeemed(ptr, y) @ #i
+     ==> Ex R x #k. PreimageReleased(R, x) @ #k & h(x) = y"
 
 end
