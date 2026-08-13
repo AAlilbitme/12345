@@ -1,0 +1,4788 @@
+maude tool: 'maude'
+ checking version: 3.5.1. OK.
+ checking installation: OK.
+[Theory multihop_nhop_hardened] Theory loaded
+[Theory multihop_nhop_hardened] Theory translated
+[Theory multihop_nhop_hardened] Derivation checks started
+[Theory multihop_nhop_hardened] Derivation checks ended
+[Theory multihop_nhop_hardened] Theory closed
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
+theory multihop_nhop_hardened
+
+begin
+
+// Function signature and definition of the equational theory E
+
+builtins: multiset
+functions: fst/1, h/1, pair/2, pk/1, sign/2, snd/1, true/0, verify/3
+equations:
+    fst(<x.1, x.2>) = x.1,
+    snd(<x.1, x.2>) = x.2,
+    verify(sign(x.1, x.2), x.1, pk(x.2)) = true
+
+rule (modulo E) Register_key:
+   [ Fr( ~ltk ) ]
+  --[ KeyGen( $A, ~ltk ) ]->
+   [ !Ltk( $A, ~ltk ), !Pk( $A, pk(~ltk) ), Out( pk(~ltk) ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Compromise_Ltk:
+   [ !Ltk( $A, ltk ) ] --[ LtkCompromised( $A ) ]-> [ Out( ltk ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Acquire_funds:
+   [ Fr( ~f ) ] --[ FundsAcquired( $A, ~f ) ]-> [ Wallet( $A, ~f ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) A_Send_Proposal:
+   [ Fr( ~ptr ), !Ltk( $A, ltkA ) ]
+  --[ A_ProposalSent( $A, $B, ~ptr ) ]->
+   [
+   A_WaitAck( $A, $B, ~ptr ),
+   Out( <'proposal', $A, $B, ~ptr, sign(<'proposal', $A, $B, ~ptr>, ltkA)> )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) B_Recv_Proposal:
+   [ !Ltk( $B, ltkB ), !Pk( $A, pkA ), In( <'proposal', $A, $B, ptr, sigA> )
+   ]
+  --[
+  ProposalExchange( $A, $B, ptr ),
+  Eq( verify(sigA, <'proposal', $A, $B, ptr>, pkA), true )
+  ]->
+   [
+   !ProposalCommitted( $A, $B, ptr ),
+   Out( <'proposal_ack', $A, $B, ptr, sign(<'proposal', $A, $B, ptr>, ltkB)>
+   )
+   ]
+
+  /*
+  rule (modulo AC) B_Recv_Proposal:
+     [ !Ltk( $B, ltkB ), !Pk( $A, pkA ), In( <'proposal', $A, $B, ptr, sigA> )
+     ]
+    --[ ProposalExchange( $A, $B, ptr ), Eq( z, true ) ]->
+     [
+     !ProposalCommitted( $A, $B, ptr ),
+     Out( <'proposal_ack', $A, $B, ptr, sign(<'proposal', $A, $B, ptr>, ltkB)>
+     )
+     ]
+    variants (modulo AC)
+    1. $A    = $A.16
+       $B    = $B.17
+       pkA   = pkA.19
+       ptr   = ptr.20
+       sigA  = sigA.21
+       z     = verify(sigA.21, <'proposal', $A.16, $B.17, ptr.20>, pkA.19)
+    
+    2. $A    = $A.23
+       $B    = $B.24
+       pkA   = pk(x.44)
+       ptr   = ptr.27
+       sigA  = sign(<'proposal', $A.23, $B.24, ptr.27>, x.44)
+       z     = true
+  */
+
+rule (modulo E) A_Recv_From_B:
+   [
+   A_WaitAck( $A, $B, ptr ), !Pk( $B, pkB ),
+   In( <'proposal_ack', $A, $B, ptr, sigB> )
+   ]
+  --[
+  A_Received( $A, $B, ptr ),
+  Eq( verify(sigB, <'proposal', $A, $B, ptr>, pkB), true )
+  ]->
+   [ !A_HandshakeDone( $A, $B, ptr ) ]
+
+  /*
+  rule (modulo AC) A_Recv_From_B:
+     [
+     A_WaitAck( $A, $B, ptr ), !Pk( $B, pkB ),
+     In( <'proposal_ack', $A, $B, ptr, sigB> )
+     ]
+    --[ A_Received( $A, $B, ptr ), Eq( z, true ) ]->
+     [ !A_HandshakeDone( $A, $B, ptr ) ]
+    variants (modulo AC)
+    1. $A    = $A.9
+       $B    = $B.10
+       pkB   = pkB.11
+       ptr   = ptr.12
+       sigB  = sigB.13
+       z     = verify(sigB.13, <'proposal', $A.9, $B.10, ptr.12>, pkB.11)
+    
+    2. $A    = $A.12
+       $B    = $B.13
+       pkB   = pk(x.21)
+       ptr   = ptr.15
+       sigB  = sign(<'proposal', $A.12, $B.13, ptr.15>, x.21)
+       z     = true
+  */
+
+rule (modulo E) Create_State_A:
+   [ Fr( ~sA0 ), !Ltk( $A, ltkA ), !A_HandshakeDone( $A, $B, ptr ) ]
+  --[ StateCreated( $A, '0', <'commit', ptr, $A, $B, '0', h(~sA0)> ) ]->
+   [
+   CommittedStateA( $A, $B, ptr, '0', ~sA0,
+                    <'commit', ptr, $A, $B, '0', h(~sA0)>,
+                    sign(<'commit', ptr, $A, $B, '0', h(~sA0)>, ltkA)
+   )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Create_State_B:
+   [ Fr( ~sB0 ), !Ltk( $B, ltkB ), !ProposalCommitted( $A, $B, ptr ) ]
+  --[ StateCreated( $B, '0', <'commit', ptr, $B, $A, '0', h(~sB0)> ) ]->
+   [
+   CommittedStateB( $A, $B, ptr, '0', ~sB0,
+                    <'commit', ptr, $B, $A, '0', h(~sB0)>,
+                    sign(<'commit', ptr, $B, $A, '0', h(~sB0)>, ltkB)
+   )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Both_States_Committed:
+   [
+   CommittedStateA( $A, $B, ptr, '0', sA0, commitA0, sigA0 ),
+   CommittedStateB( $A, $B, ptr, '0', sB0, commitB0, sigB0 ),
+   !Pk( $A, pkA ), !Pk( $B, pkB )
+   ]
+  --[
+  Stage1Complete( $A, $B, ptr ), Eq( verify(sigA0, commitA0, pkA), true ),
+  Eq( verify(sigB0, commitB0, pkB), true )
+  ]->
+   [ ReadyToLock( $A, $B, ptr, sA0, sB0, commitA0, commitB0 ) ]
+
+  /*
+  rule (modulo AC) Both_States_Committed:
+     [
+     CommittedStateA( $A, $B, ptr, '0', sA0, commitA0, sigA0 ),
+     CommittedStateB( $A, $B, ptr, '0', sB0, commitB0, sigB0 ),
+     !Pk( $A, pkA ), !Pk( $B, pkB )
+     ]
+    --[ Stage1Complete( $A, $B, ptr ), Eq( z, true ), Eq( z.1, true ) ]->
+     [ ReadyToLock( $A, $B, ptr, sA0, sB0, commitA0, commitB0 ) ]
+    variants (modulo AC)
+    1. commitA0
+             = commitA0.16
+       commitB0
+             = commitB0.17
+       pkA   = pkA.18
+       pkB   = pkB.19
+       sigA0 = sigA0.23
+       sigB0 = sigB0.24
+       z     = verify(sigA0.23, commitA0.16, pkA.18)
+       z.1   = verify(sigB0.24, commitB0.17, pkB.19)
+    
+    2. commitA0
+             = commitA0.19
+       commitB0
+             = commitB0.20
+       pkA   = pkA.21
+       pkB   = pk(x.33)
+       sigA0 = sigA0.26
+       sigB0 = sign(commitB0.20, x.33)
+       z     = verify(sigA0.26, commitA0.19, pkA.21)
+       z.1   = true
+    
+    3. commitA0
+             = commitA0.19
+       commitB0
+             = commitB0.20
+       pkA   = pk(x.33)
+       pkB   = pkB.22
+       sigA0 = sign(commitA0.19, x.33)
+       sigB0 = sigB0.27
+       z     = true
+       z.1   = verify(sigB0.27, commitB0.20, pkB.22)
+    
+    4. commitA0
+             = commitA0.19
+       commitB0
+             = commitB0.20
+       pkA   = pk(x.33)
+       pkB   = pk(x.34)
+       sigA0 = sign(commitA0.19, x.33)
+       sigB0 = sign(commitB0.20, x.34)
+       z     = true
+       z.1   = true
+  */
+
+rule (modulo E) Lock_Funds_And_Open:
+   [
+   ReadyToLock( $A, $B, ptr, sA0, sB0, commitA0, commitB0 ),
+   Wallet( $A, ~fA ), Wallet( $B, ~fB )
+   ]
+  --[
+  ChannelOpen( $A, $B, ptr ), FundsLocked( $A, $B, ptr ),
+  NewStateBuilt( $A, $B, ptr, '0', ~fA, ~fB )
+  ]->
+   [
+   StateA( $A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB ),
+   StateB( $A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB ),
+   !ValidOnChain( ptr ), !ChannelRecord( ptr, $A, $B ),
+   !ChannelConnect( ptr, $A, $B ), !ChannelConnect( ptr, $B, $A ),
+   Free( ptr )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Update_State:
+   [
+   Fr( ~n_new ), Fr( ~sAnew ), Fr( ~sBnew ), !Ltk( $A, ltkA ),
+   !Ltk( $B, ltkB ),
+   StateA( $A, $B, ptr, n_old, sAold, oldCommitA, fA, fB ),
+   StateB( $A, $B, ptr, n_old, sBold, oldCommitB, fA, fB ),
+   In( <fA_new, fB_new> )
+   ]
+  --[ NewStateBuilt( $A, $B, ptr, ~n_new, fA_new, fB_new ) ]->
+   [
+   PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, ~n_new, ~sAnew,
+             <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>,
+             sign(<'commit', ptr, $A, $B, ~n_new, h(~sAnew)>, ltkA), fA_new, fB_new
+   ),
+   PendingB( $A, $B, ptr, n_old, sBold, oldCommitB, ~n_new, ~sBnew,
+             <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>,
+             sign(<'commit', ptr, $B, $A, ~n_new, h(~sBnew)>, ltkB), fA_new, fB_new
+   )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Revoke_Old_Secret:
+   [
+   PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n_new, sAnew,
+             newCommitA, sigAnew, fA_new, fB_new
+   ),
+   PendingB( $A, $B, ptr, n_old, sBold, oldCommitB, n_new, sBnew,
+             newCommitB, sigBnew, fA_new, fB_new
+   ),
+   !Pk( $A, pkA ), !Pk( $B, pkB )
+   ]
+  --[
+  StateUpdate( $A, $B, ptr, n_new ), Revoke( $A, n_old, sAold ),
+  Revoke( $B, n_old, sBold ), Eq( verify(sigAnew, newCommitA, pkA), true ),
+  Eq( verify(sigBnew, newCommitB, pkB), true )
+  ]->
+   [
+   StateA( $A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new ),
+   StateB( $A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new ),
+   !RevokedSecret( $A, n_old, sAold, oldCommitA ),
+   !RevokedSecret( $B, n_old, sBold, oldCommitB ),
+   RevokedCommitmentUnspent( ptr, $A, $B, n_old, oldCommitA ),
+   RevokedCommitmentUnspent( ptr, $B, $A, n_old, oldCommitB )
+   ]
+
+  // loop breakers: [0,1]
+  /*
+  rule (modulo AC) Revoke_Old_Secret:
+     [
+     PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n_new, sAnew,
+               newCommitA, sigAnew, fA_new, fB_new
+     ),
+     PendingB( $A, $B, ptr, n_old, sBold, oldCommitB, n_new, sBnew,
+               newCommitB, sigBnew, fA_new, fB_new
+     ),
+     !Pk( $A, pkA ), !Pk( $B, pkB )
+     ]
+    --[
+    StateUpdate( $A, $B, ptr, n_new ), Revoke( $A, n_old, sAold ),
+    Revoke( $B, n_old, sBold ), Eq( z, true ), Eq( z.1, true )
+    ]->
+     [
+     StateA( $A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new ),
+     StateB( $A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new ),
+     !RevokedSecret( $A, n_old, sAold, oldCommitA ),
+     !RevokedSecret( $B, n_old, sBold, oldCommitB ),
+     RevokedCommitmentUnspent( ptr, $A, $B, n_old, oldCommitA ),
+     RevokedCommitmentUnspent( ptr, $B, $A, n_old, oldCommitB )
+     ]
+    variants (modulo AC)
+    1. newCommitA
+             = newCommitA.22
+       newCommitB
+             = newCommitB.22
+       pkA   = pkA.22
+       pkB   = pkB.22
+       sigAnew
+             = sigAnew.22
+       sigBnew
+             = sigBnew.22
+       z     = verify(sigAnew.22, newCommitA.22, pkA.22)
+       z.1   = verify(sigBnew.22, newCommitB.22, pkB.22)
+    
+    2. newCommitA
+             = x.22
+       newCommitB
+             = x.23
+       pkA   = pk(x.26)
+       pkB   = pk(x.27)
+       sigAnew
+             = sign(x.22, x.26)
+       sigBnew
+             = sign(x.23, x.27)
+       z     = true
+       z.1   = true
+    
+    3. newCommitA
+             = x.22
+       newCommitB
+             = newCommitB.27
+       pkA   = pk(x.26)
+       pkB   = pkB.27
+       sigAnew
+             = sign(x.22, x.26)
+       sigBnew
+             = sigBnew.27
+       z     = true
+       z.1   = verify(sigBnew.27, newCommitB.27, pkB.27)
+    
+    4. newCommitA
+             = newCommitA.27
+       newCommitB
+             = x.22
+       pkA   = pkA.27
+       pkB   = pk(x.26)
+       sigAnew
+             = sigAnew.27
+       sigBnew
+             = sign(x.22, x.26)
+       z     = verify(sigAnew.27, newCommitA.27, pkA.27)
+       z.1   = true
+    // loop breakers: [0,1]
+  */
+
+rule (modulo E) Publish_Old_Grace_Period_A:
+   [
+   PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n_new, sAnew,
+             newCommitA, sigAnew, fA_new, fB_new
+   ),
+   !ValidOnChain( ptr )
+   ]
+  --[
+  PublishOldBeforeRevocation( $A, n_old ), PublishState( $A, n_old ),
+  OnChainDelayedProduce( $A, n_old ), OnChainInstantProduce( $B, n_old )
+  ]->
+   [
+   OnChainDelayed( $A, n_old, oldCommitA ),
+   OnChainInstant( $B, n_old, oldCommitA )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Publish_Old_Grace_Period_B:
+   [
+   PendingB( $A, $B, ptr, n_old, sBold, oldCommitB, n_new, sBnew,
+             newCommitB, sigBnew, fA_new, fB_new
+   ),
+   !ValidOnChain( ptr )
+   ]
+  --[
+  PublishOldBeforeRevocation( $B, n_old ), PublishState( $B, n_old ),
+  OnChainDelayedProduce( $B, n_old ), OnChainInstantProduce( $A, n_old )
+  ]->
+   [
+   OnChainDelayed( $B, n_old, oldCommitB ),
+   OnChainInstant( $A, n_old, oldCommitB )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Publish_Current_A:
+   [ StateA( $A, $B, ptr, n, sA, commitA, fA, fB ), !ValidOnChain( ptr ) ]
+  --[
+  Publish( $A, n, commitA ), PublishState( $A, n ),
+  OnChainDelayedProduce( $A, n ), OnChainInstantProduce( $B, n )
+  ]->
+   [ OnChainDelayed( $A, n, commitA ), OnChainInstant( $B, n, commitA ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Publish_Current_B:
+   [ StateB( $A, $B, ptr, n, sB, commitB, fA, fB ), !ValidOnChain( ptr ) ]
+  --[
+  Publish( $B, n, commitB ), PublishState( $B, n ),
+  OnChainDelayedProduce( $B, n ), OnChainInstantProduce( $A, n )
+  ]->
+   [ OnChainDelayed( $B, n, commitB ), OnChainInstant( $A, n, commitB ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Publish_Pending_A:
+   [
+   PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n_new, sAnew,
+             newCommitA, sigAnew, fA_new, fB_new
+   ),
+   !ValidOnChain( ptr )
+   ]
+  --[
+  Publish( $A, n_new, newCommitA ), PublishFromPending( $A, n_old, n_new ),
+  OnChainDelayedProduce( $A, n_new ), OnChainInstantProduce( $B, n_new )
+  ]->
+   [
+   OnChainDelayed( $A, n_new, newCommitA ),
+   OnChainInstant( $B, n_new, newCommitA )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Publish_Pending_B:
+   [
+   PendingB( $A, $B, ptr, n_old, sBold, oldCommitB, n_new, sBnew,
+             newCommitB, sigBnew, fA_new, fB_new
+   ),
+   !ValidOnChain( ptr )
+   ]
+  --[
+  Publish( $B, n_new, newCommitB ), PublishFromPending( $B, n_old, n_new ),
+  OnChainDelayedProduce( $B, n_new ), OnChainInstantProduce( $A, n_new )
+  ]->
+   [
+   OnChainDelayed( $B, n_new, newCommitB ),
+   OnChainInstant( $A, n_new, newCommitB )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Honest_Close:
+   [
+   StateA( $A, $B, ptr, n, sA, commitA, fA, fB ),
+   StateB( $A, $B, ptr, n, sB, commitB, fA, fB ), !ValidOnChain( ptr ),
+   !Ltk( $A, ltkA ), !Ltk( $B, ltkB ), !Pk( $A, pkA ), !Pk( $B, pkB )
+   ]
+  --[
+  Close( $A, $B, ptr, n ), OnChainInstantProduce( $A, n ),
+  OnChainInstantProduce( $B, n ),
+  Eq( verify(sign(<'commit', ptr, $A, $B, n, fA, fB>, ltkA),
+             <'commit', ptr, $A, $B, n, fA, fB>, pkA),
+      true
+  ),
+  Eq( verify(sign(<'commit', ptr, $A, $B, n, fA, fB>, ltkB),
+             <'commit', ptr, $A, $B, n, fA, fB>, pkB),
+      true
+  )
+  ]->
+   [
+   OnChainInstant( $A, n, <'commit', ptr, $A, $B, n, fA, fB> ),
+   OnChainInstant( $B, n, <'commit', ptr, $A, $B, n, fA, fB> )
+   ]
+
+  /*
+  rule (modulo AC) Honest_Close:
+     [
+     StateA( $A, $B, ptr, n, sA, commitA, fA, fB ),
+     StateB( $A, $B, ptr, n, sB, commitB, fA, fB ), !ValidOnChain( ptr ),
+     !Ltk( $A, ltkA ), !Ltk( $B, ltkB ), !Pk( $A, pkA ), !Pk( $B, pkB )
+     ]
+    --[
+    Close( $A, $B, ptr, n ), OnChainInstantProduce( $A, n ),
+    OnChainInstantProduce( $B, n ), Eq( z, true ), Eq( z.1, true )
+    ]->
+     [
+     OnChainInstant( $A, n, <'commit', ptr, $A, $B, n, fA, fB> ),
+     OnChainInstant( $B, n, <'commit', ptr, $A, $B, n, fA, fB> )
+     ]
+    variants (modulo AC)
+    1. $A    = $A.19
+       $B    = $B.20
+       fA    = fA.23
+       fB    = fB.24
+       ltkA  = ltkA.25
+       ltkB  = ltkB.26
+       n     = n.27
+       pkA   = pkA.28
+       pkB   = pkB.29
+       ptr   = ptr.30
+       z     = verify(sign(<'commit', ptr.30, $A.19, $B.20, n.27, fA.23, fB.24>,
+                           ltkA.25),
+                      <'commit', ptr.30, $A.19, $B.20, n.27, fA.23, fB.24>, pkA.28)
+       z.1   = verify(sign(<'commit', ptr.30, $A.19, $B.20, n.27, fA.23, fB.24>,
+                           ltkB.26),
+                      <'commit', ptr.30, $A.19, $B.20, n.27, fA.23, fB.24>, pkB.29)
+    
+    2. $A    = $A.20
+       $B    = $B.21
+       fA    = fA.24
+       fB    = fB.25
+       ltkA  = ltkA.26
+       ltkB  = ltkB.27
+       n     = n.28
+       pkA   = pkA.29
+       pkB   = pk(ltkB.27)
+       ptr   = ptr.31
+       z     = verify(sign(<'commit', ptr.31, $A.20, $B.21, n.28, fA.24, fB.25>,
+                           ltkA.26),
+                      <'commit', ptr.31, $A.20, $B.21, n.28, fA.24, fB.25>, pkA.29)
+       z.1   = true
+    
+    3. $A    = $A.20
+       $B    = $B.21
+       fA    = fA.24
+       fB    = fB.25
+       ltkA  = ltkA.26
+       ltkB  = ltkB.27
+       n     = n.28
+       pkA   = pk(ltkA.26)
+       pkB   = pkB.30
+       ptr   = ptr.31
+       z     = true
+       z.1   = verify(sign(<'commit', ptr.31, $A.20, $B.21, n.28, fA.24, fB.25>,
+                           ltkB.27),
+                      <'commit', ptr.31, $A.20, $B.21, n.28, fA.24, fB.25>, pkB.30)
+    
+    4. ltkA  = ltkA.20
+       ltkB  = ltkB.21
+       pkA   = pk(ltkA.20)
+       pkB   = pk(ltkB.21)
+       z     = true
+       z.1   = true
+  */
+
+rule (modulo E) Publish_Revoked_A:
+   [
+   !ChannelRecord( ptr, $A, $B ), !ValidOnChain( ptr ),
+   !RevokedSecret( $A, n_old, sAold, oldCommitA ),
+   RevokedCommitmentUnspent( ptr, $A, $B, n_old, oldCommitA )
+   ]
+  --[ PublishRevoked( $A, n_old, oldCommitA ), Cheat( $A, n_old ) ]->
+   [
+   OnChainCheat( $A, $B, n_old, oldCommitA ),
+   RevealedSecret( $A, n_old, sAold, oldCommitA )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Publish_Revoked_B:
+   [
+   !ChannelRecord( ptr, $A, $B ), !ValidOnChain( ptr ),
+   !RevokedSecret( $B, n_old, sBold, oldCommitB ),
+   RevokedCommitmentUnspent( ptr, $B, $A, n_old, oldCommitB )
+   ]
+  --[ PublishRevoked( $B, n_old, oldCommitB ), Cheat( $B, n_old ) ]->
+   [
+   OnChainCheat( $B, $A, n_old, oldCommitB ),
+   RevealedSecret( $B, n_old, sBold, oldCommitB )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Punish_A:
+   [
+   OnChainCheat( $A, $B, n_old, oldCommitA ),
+   RevealedSecret( $A, n_old, sAold, oldCommitA )
+   ]
+  --[ Punish( $B, $A, n_old ) ]->
+   [ AllFundsTo( $B ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Punish_B:
+   [
+   OnChainCheat( $B, $A, n_old, oldCommitB ),
+   RevealedSecret( $B, n_old, sBold, oldCommitB )
+   ]
+  --[ Punish( $A, $B, n_old ) ]->
+   [ AllFundsTo( $A ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Instant_Funds_A:
+   [ OnChainInstant( $A, n, txContent ) ]
+  --[ FundsSettled( $A, n ), SettledTx( $A, txContent ) ]->
+   [ ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Instant_Funds_B:
+   [ OnChainInstant( $B, n, txContent ) ]
+  --[ FundsSettled( $B, n ), SettledTx( $B, txContent ) ]->
+   [ ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Claim_Funds_A:
+   [ OnChainDelayed( $A, n, txContent ) ]
+  --[ ClaimFunds( $A, n ), CSVPassed( $A, n ), SettledTx( $A, txContent )
+  ]->
+   [ FundsTo( $A, n ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Claim_Funds_B:
+   [ OnChainDelayed( $B, n, txContent ) ]
+  --[ ClaimFunds( $B, n ), CSVPassed( $B, n ), SettledTx( $B, txContent )
+  ]->
+   [ FundsTo( $B, n ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Receiver_Create_Invoice:
+   [ Fr( ~x ), In( amt ), !Ltk( $Receiver, ltkR ) ]
+  --[
+  InvoiceCreated( $Receiver, $Sender, h(~x), amt ),
+  SecretPreimage( $Receiver, ~x )
+  ]->
+   [
+   ReceiverInv( $Receiver, $Sender, ~x, amt ),
+   Out( <'SecretRS', <$Receiver, $Sender, h(~x), amt>, 
+         sign(<$Receiver, $Sender, h(~x), amt>, ltkR)>
+   )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Sender_Offer_HTLC:
+   [
+   In( <'SecretRS', <$Receiver, $Sender, y, amt>, sigR> ), In( fees ),
+   !Pk( $Receiver, pkR ), !Ltk( $Sender, ltkS ),
+   !ChannelConnect( ptrSF, $Sender, $Forward1 ), Free( ptrSF )
+   ]
+  --[
+  HTLCOffered( $Sender, $Forward1, ptrSF, y, (amt++fees) ),
+  HTLCAdded( ptrSF, y ), FeeBudget( $Sender, y, fees ),
+  Neq( $Sender, $Forward1 ), Neq( $Sender, $Receiver ),
+  Neq( $Forward1, $Receiver ),
+  Eq( verify(sigR, <$Receiver, $Sender, y, amt>, pkR), true )
+  ]->
+   [
+   SenderPending( $Sender, $Forward1, $Receiver, ptrSF, y, (amt++fees) ),
+   Route( $Sender, $Forward1, ptrSF, y, (amt++fees) )
+   ]
+
+  /*
+  rule (modulo AC) Sender_Offer_HTLC:
+     [
+     In( <'SecretRS', <$Receiver, $Sender, y, amt>, sigR> ), In( fees ),
+     !Pk( $Receiver, pkR ), !Ltk( $Sender, ltkS ),
+     !ChannelConnect( ptrSF, $Sender, $Forward1 ), Free( ptrSF )
+     ]
+    --[
+    HTLCOffered( $Sender, $Forward1, ptrSF, y, (amt++fees) ),
+    HTLCAdded( ptrSF, y ), FeeBudget( $Sender, y, fees ),
+    Neq( $Sender, $Forward1 ), Neq( $Sender, $Receiver ),
+    Neq( $Forward1, $Receiver ), Eq( z, true )
+    ]->
+     [
+     SenderPending( $Sender, $Forward1, $Receiver, ptrSF, y, (amt++fees) ),
+     Route( $Sender, $Forward1, ptrSF, y, (amt++fees) )
+     ]
+    variants (modulo AC)
+    1. $Receiver
+             = $Receiver.14
+       $Sender
+             = $Sender.15
+       amt   = amt.16
+       pkR   = pkR.19
+       sigR  = sigR.21
+       y     = y.22
+       z     = verify(sigR.21, <$Receiver.14, $Sender.15, y.22, amt.16>, pkR.19)
+    
+    2. $Receiver
+             = $Receiver.21
+       $Sender
+             = $Sender.22
+       amt   = amt.23
+       pkR   = pk(x.37)
+       sigR  = sign(<$Receiver.21, $Sender.22, y.29, amt.23>, x.37)
+       y     = y.29
+       z     = true
+  */
+
+rule (modulo E) Forward_HTLC:
+   [
+   Route( $Prev, $Me, ptrIn, y, (amtOut++fee) ),
+   !ChannelConnect( ptrOut, $Me, $Next ), Free( ptrOut )
+   ]
+  --[
+  HTLCForwarded( $Me, $Prev, $Next, ptrIn, ptrOut, y, (amtOut++fee), amtOut
+  ),
+  HTLCAdded( ptrOut, y ), ForwardHTLC( $Me, ptrIn, ptrOut, y ),
+  FeeExpected( $Me, ptrIn, ptrOut, y, fee ), Neq( ptrIn, ptrOut ),
+  Neq( $Prev, $Me ), Neq( $Me, $Next )
+  ]->
+   [
+   IntermediaryPending( $Me, $Prev, $Next, ptrIn, ptrOut, y, (amtOut++fee),
+                        amtOut, fee
+   ),
+   Route( $Me, $Next, ptrOut, y, amtOut )
+   ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Receiver_Fulfill_HTLC:
+   [
+   Route( $Prev, $Receiver, ptrIn, y, amtIn ),
+   ReceiverInv( $Receiver, $Sender, x, amt )
+   ]
+  --[
+  HTLCFulfilled( $Receiver, $Prev, ptrIn, y, amtIn ),
+  ReceiverPaid( $Receiver, y, amt ), PreimageReleased( $Receiver, x ),
+  Redeemed( ptrIn, y ), Eq( h(x), y ), Eq( amtIn, amt )
+  ]->
+   [ Fulfill( ptrIn, x ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Intermediary_Settle:
+   [
+   IntermediaryPending( $Me, $Prev, $Next, ptrIn, ptrOut, y, amtIn, amtOut,
+                        fee
+   ),
+   Fulfill( ptrOut, x )
+   ]
+  --[
+  IntermediaryClaimed( $Me, $Prev, ptrIn, x ),
+  FeeEarned( $Me, ptrIn, ptrOut, y, fee ), Redeemed( ptrIn, y ),
+  Eq( h(x), y )
+  ]->
+   [ Fulfill( ptrIn, x ) ]
+
+  // loop breaker: [1]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Sender_Settle:
+   [
+   SenderPending( $Sender, $Forward1, $Receiver, ptrSF, y, amtTotal ),
+   Fulfill( ptrSF, x )
+   ]
+  --[
+  SenderSettled( $Sender, $Forward1, $Receiver, ptrSF, x ),
+  PaymentComplete( $Sender, $Receiver, h(x), amtTotal ),
+  Redeemed( ptrSF, y ), Eq( h(x), y )
+  ]->
+   [ ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Open_Timeout:
+   [ !ChannelConnect( ptr, A, B ) ]
+  --[ TimedOut( ptr ) ]->
+   [ !Timeout( ptr ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Sender_Timeout_Refund:
+   [
+   SenderPending( $Sender, $Forward1, $Receiver, ptrSF, y, amtTotal ),
+   !Timeout( ptrSF )
+   ]
+  --[ HTLCRefunded( $Sender, ptrSF, y ), Refunded( ptrSF, y ) ]->
+   [ ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Intermediary_Timeout_Refund:
+   [
+   IntermediaryPending( $Me, $Prev, $Next, ptrIn, ptrOut, y, amtIn, amtOut,
+                        fee
+   ),
+   !Timeout( ptrOut )
+   ]
+  --[ HTLCRefunded( $Me, ptrOut, y ), Refunded( ptrOut, y ) ]->
+   [ ]
+
+  /* has exactly the trivial AC variant */
+
+restriction OneOutcomePerHTLC:
+  "∀ ptr y #i #j.
+    ((Redeemed( ptr, y ) @ #i) ∧ (Refunded( ptr, y ) @ #j)) ⇒ (⊥)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ ptr y #i #j.
+    ((Redeemed( ptr, y ) @ #i) ∧ (Refunded( ptr, y ) @ #j)) ⇒ (⊥)"
+  */
+
+restriction Inequality:
+  "∀ x y #i. (Neq( x, y ) @ #i) ⇒ (¬(x = y))"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x y #i. (Neq( x, y ) @ #i) ⇒ (¬(x = y))"
+  */
+
+restriction Equality:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  */
+
+restriction OneTimeoutPerPtr:
+  "∀ ptr #i #j.
+    ((TimedOut( ptr ) @ #i) ∧ (TimedOut( ptr ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ ptr #i #j.
+    ((TimedOut( ptr ) @ #i) ∧ (TimedOut( ptr ) @ #j)) ⇒ (#i = #j)"
+  */
+
+restriction OneChannelPerPtr:
+  "∀ A B C D ptr #i #j.
+    ((ChannelOpen( A, B, ptr ) @ #i) ∧ (ChannelOpen( C, D, ptr ) @ #j)) ⇒
+    (#i = #j)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ A B C D ptr #i #j.
+    ((ChannelOpen( A, B, ptr ) @ #i) ∧ (ChannelOpen( C, D, ptr ) @ #j)) ⇒
+    (#i = #j)"
+  */
+
+restriction RedeemBeforeTimeout:
+  "∀ ptr y #i #j.
+    ((Redeemed( ptr, y ) @ #i) ∧ (TimedOut( ptr ) @ #j)) ⇒ (#i < #j)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ ptr y #i #j.
+    ((Redeemed( ptr, y ) @ #i) ∧ (TimedOut( ptr ) @ #j)) ⇒ (#i < #j)"
+  */
+
+restriction ForwardTimeGap:
+  "∀ P ptrIn ptrOut y #f #j #k.
+    (((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+      (TimedOut( ptrOut ) @ #j)) ∧
+     (TimedOut( ptrIn ) @ #k)) ⇒
+    (#j < #k)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ P ptrIn ptrOut y #f #j #k.
+    (((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+      (TimedOut( ptrOut ) @ #j)) ∧
+     (TimedOut( ptrIn ) @ #k)) ⇒
+    (#j < #k)"
+  */
+
+restriction HonestPartiesActBeforeIncomingTimeout:
+  "∀ P ptrIn ptrOut y #f #k.
+    ((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)) ⇒
+    (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ (#m < #k))"
+
+  /*
+  expanded formula:
+  "∀ P ptrIn ptrOut y #f #k.
+    ((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)) ⇒
+    (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ (#m < #k))"
+  */
+
+restriction IntermediaryMustClaim:
+  "∀ P ptrIn ptrOut y #f #i #k.
+    ((((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+       (Redeemed( ptrOut, y ) @ #i)) ∧
+      (TimedOut( ptrIn ) @ #k)) ∧
+     (#i < #k)) ⇒
+    (∃ #l. Redeemed( ptrIn, y ) @ #l)"
+
+  /*
+  expanded formula:
+  "∀ P ptrIn ptrOut y #f #i #k.
+    ((((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+       (Redeemed( ptrOut, y ) @ #i)) ∧
+      (TimedOut( ptrIn ) @ #k)) ∧
+     (#i < #k)) ⇒
+    (∃ #l. Redeemed( ptrIn, y ) @ #l)"
+  */
+
+lemma state_update [use_induction]:
+  all-traces
+  "∀ A B ptr n #i.
+    (StateUpdate( A, B, ptr, n ) @ #i) ⇒
+    (∃ #j. (ChannelOpen( A, B, ptr ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B ptr n #i.
+  (StateUpdate( A, B, ptr, n ) @ #i)
+ ∧
+  ∀ #j. (ChannelOpen( A, B, ptr ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (∀ A B ptr n #i.
+           (StateUpdate( A, B, ptr, n ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ #j. (ChannelOpen( A, B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ #j. (ChannelOpen( $A, $B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( !Pk( $A, pk(x) ) ▶₂ #i )
+        case Register_key
+        solve( !Pk( $B, pk(x) ) ▶₃ #i )
+          case Register_key
+          solve( PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n, sAnew,
+                           newCommitA, sign(newCommitA, ~ltk), fA_new, fB_new
+                 ) ▶₀ #i )
+            case Update_State_case_1
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_2
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_3
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_4
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* cyclic */
+  qed
+qed
+
+lemma delayed_funds:
+  all-traces
+  "∀ A n #i.
+    (ClaimFunds( A, n ) @ #i) ⇒
+    (∃ #j. (OnChainDelayedProduce( A, n ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A n #i.
+  (ClaimFunds( A, n ) @ #i)
+ ∧
+  ∀ #j. (OnChainDelayedProduce( A, n ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( ClaimFunds( A, n ) @ #i )
+  case Claim_Funds_A
+  solve( OnChainDelayed( $A, n, txContent ) ▶₀ #i )
+    case Publish_Current_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_4
+    by contradiction /* from formulas */
+  qed
+next
+  case Claim_Funds_B
+  solve( OnChainDelayed( $B, n, txContent ) ▶₀ #i )
+    case Publish_Current_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_4
+    by contradiction /* from formulas */
+  qed
+qed
+
+lemma instant_funds:
+  all-traces
+  "∀ A n #i.
+    (FundsSettled( A, n ) @ #i) ⇒
+    (∃ #j. (OnChainInstantProduce( A, n ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A n #i.
+  (FundsSettled( A, n ) @ #i)
+ ∧
+  ∀ #j. (OnChainInstantProduce( A, n ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( FundsSettled( A, n ) @ #i )
+  case Instant_Funds_A
+  solve( OnChainInstant( $A, n, txContent ) ▶₀ #i )
+    case Honest_Close_case_1
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_2
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_3
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_4
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_5
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_6
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_7
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_8
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_4
+    by contradiction /* from formulas */
+  qed
+next
+  case Instant_Funds_B
+  solve( OnChainInstant( $B, n, txContent ) ▶₀ #i )
+    case Honest_Close_case_1
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_2
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_3
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_4
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_5
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_6
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_7
+    by contradiction /* from formulas */
+  next
+    case Honest_Close_case_8
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Current_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Old_Grace_Period_B_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Pending_B_case_4
+    by contradiction /* from formulas */
+  qed
+qed
+
+lemma settlement_is_traceable:
+  all-traces
+  "∀ A n #i.
+    (FundsSettled( A, n ) @ #i) ⇒
+    (∃ tx #j. (SettledTx( A, tx ) @ #j) ∧ (#j = #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A n #i.
+  (FundsSettled( A, n ) @ #i)
+ ∧
+  ∀ tx #j. (SettledTx( A, tx ) @ #j) ∧ (#j = #i) ⇒ ⊥"
+*/
+simplify
+solve( FundsSettled( A, n ) @ #i )
+  case Instant_Funds_A
+  by contradiction /* from formulas */
+next
+  case Instant_Funds_B
+  by contradiction /* from formulas */
+qed
+
+lemma Protocol_execution:
+  exists-trace
+  "∃ A B ptr n fA fB #i #j #k #l.
+    ((((((ChannelOpen( A, B, ptr ) @ #i) ∧
+         (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j)) ∧
+        (StateUpdate( A, B, ptr, n ) @ #k)) ∧
+       (Close( A, B, ptr, n ) @ #l)) ∧
+      (#i < #j)) ∧
+     (#j < #k)) ∧
+    (#k < #l)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ A B ptr n fA fB #i #j #k #l.
+  (ChannelOpen( A, B, ptr ) @ #i) ∧
+  (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j) ∧
+  (StateUpdate( A, B, ptr, n ) @ #k) ∧
+  (Close( A, B, ptr, n ) @ #l)
+ ∧
+  (#i < #j) ∧ (#j < #k) ∧ (#k < #l)"
+*/
+simplify
+solve( ReadyToLock( $A, $B, ptr, sA0, sB0, commitA0, commitB0 ) ▶₀ #i )
+  case Both_States_Committed
+  solve( Wallet( $A, ~fA ) ▶₁ #i )
+    case Acquire_funds
+    solve( Wallet( $B, ~fB ) ▶₂ #i )
+      case Acquire_funds
+      solve( !Pk( $A, pk(x) ) ▶₂ #k )
+        case Register_key
+        solve( !Pk( $B, pk(x) ) ▶₃ #k )
+          case Register_key
+          solve( StateA( $A, $B, ~ptr, n, sA, commitA, fA.1, fB.1 ) ▶₀ #l )
+            case Revoke_Old_Secret
+            solve( StateB( $A, $B, ~ptr, n, sB, commitB, fA.1, fB.1 ) ▶₁ #l )
+              case Revoke_Old_Secret
+              solve( !ValidOnChain( ~ptr ) ▶₂ #l )
+                case Lock_Funds_And_Open
+                solve( !Ltk( $A, ltkA ) ▶₃ #l )
+                  case Register_key
+                  solve( !Ltk( $B, ltkB ) ▶₄ #l )
+                    case Register_key
+                    solve( !Pk( $A, pk(~ltk.2) ) ▶₅ #l )
+                      case Register_key
+                      solve( !Pk( $B, pk(~ltk.3) ) ▶₆ #l )
+                        case Register_key
+                        solve( NewStateBuilt( $A, $B, ~ptr, n, fA.2, fB.2 ) @ #j )
+                          case Update_State
+                          solve( !Ltk( $A, ltkA ) ▶₃ #j )
+                            case Register_key
+                            solve( !Ltk( $B, ltkB ) ▶₄ #j )
+                              case Register_key
+                              solve( StateA( $A, $B, ~ptr, n_old, sAold, oldCommitA, fA.1, fB.1
+                                     ) ▶₅ #j )
+                                case Lock_Funds_And_Open
+                                solve( StateB( $A, $B, ~ptr, '0', sBold, oldCommitB, ~fA, ~fB ) ▶₆ #j )
+                                  case Lock_Funds_And_Open
+                                  solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.12 )
+                                    case A_Send_Proposal
+                                    solve( !KU( sign(<'proposal', $A, $A, ~ptr>, ~ltk.9) ) @ #vk.13 )
+                                      case A_Send_Proposal
+                                      solve( PendingA( $A, $A, ~ptr, n_old, sAold, oldCommitA, ~n_new,
+                                                       sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new,
+                                                       fB_new
+                                             ) ▶₀ #k )
+                                        case Update_State
+                                        solve( PendingB( $A, $A, ~ptr, '0', sBold, oldCommitB, ~n_new,
+                                                         sBnew.1, newCommitB, sign(newCommitB, ~ltk.2),
+                                                         fA_new, fB_new
+                                               ) ▶₁ #k )
+                                          case Update_State
+                                          solve( PendingA( $A, $A, ~ptr, n_old, sAold, oldCommitA, ~n_new, sA,
+                                                           commitA, sign(commitA, ~ltk.8), fA.1, fB.1
+                                                 ) ▶₀ #vr.14 )
+                                            case Update_State
+                                            solve( PendingA( $A, $A, ~ptr, n_old, sAold, oldCommitA, ~n_new,
+                                                             sAnew.1, newCommitA, sign(newCommitA, ~ltk.8),
+                                                             fA_new, fB_new
+                                                   ) ▶₀ #vr.14 )
+                                              case Update_State
+                                              solve( !KU( ~ptr ) @ #vk.8 )
+                                                case A_Send_Proposal
+                                                SOLVED // trace found
+                                              qed
+                                            qed
+                                          qed
+                                        qed
+                                      qed
+                                    qed
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma No_Punishment_Without_Cheating:
+  all-traces
+  "∀ A B n #i.
+    (Punish( B, A, n ) @ #i) ⇒
+    ((∃ #k. (Cheat( A, n ) @ #k) ∧ (#k < #i)) ∨
+     (∃ #j. (LtkCompromised( A ) @ #j) ∧ (#j < #i)))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B n #i.
+  (Punish( B, A, n ) @ #i)
+ ∧
+  (∀ #k. (Cheat( A, n ) @ #k) ⇒ ¬(#k < #i)) ∧
+  (∀ #j. (LtkCompromised( A ) @ #j) ⇒ ¬(#j < #i))"
+*/
+simplify
+solve( Punish( B, A, n ) @ #i )
+  case Punish_A
+  solve( OnChainCheat( $A, $B, n, oldCommitA ) ▶₀ #i )
+    case Publish_Revoked_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_4
+    by contradiction /* from formulas */
+  qed
+next
+  case Punish_B
+  solve( OnChainCheat( $B, $A, n, oldCommitB ) ▶₀ #i )
+    case Publish_Revoked_A_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_A_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_A_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_A_case_4
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_1
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_2
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_3
+    by contradiction /* from formulas */
+  next
+    case Publish_Revoked_B_case_4
+    by contradiction /* from formulas */
+  qed
+qed
+
+lemma Cooperative_Close_Execution:
+  exists-trace
+  "∃ A B ptr n #k #i.
+    (((ChannelOpen( A, B, ptr ) @ #k) ∧ (Close( A, B, ptr, n ) @ #i)) ∧
+     (#k < #i)) ∧
+    (¬(∃ A2 B2 ptr2 n2 #j. StateUpdate( A2, B2, ptr2, n2 ) @ #j))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ A B ptr n #k #i.
+  (ChannelOpen( A, B, ptr ) @ #k) ∧ (Close( A, B, ptr, n ) @ #i)
+ ∧
+  (#k < #i) ∧
+  (∀ A2 B2 ptr2 n2 #j. (StateUpdate( A2, B2, ptr2, n2 ) @ #j) ⇒ ⊥)"
+*/
+simplify
+solve( ReadyToLock( $A, $B, ptr, sA0, sB0, commitA0, commitB0 ) ▶₀ #k )
+  case Both_States_Committed
+  solve( Wallet( $A, ~fA.1 ) ▶₁ #k )
+    case Acquire_funds
+    solve( Wallet( $B, ~fB.1 ) ▶₂ #k )
+      case Acquire_funds
+      solve( StateA( $A, $B, ~ptr, n, sA, commitA, fA, fB ) ▶₀ #i )
+        case Lock_Funds_And_Open
+        solve( StateB( $A, $B, ~ptr, '0', sB, commitB, ~fA, ~fB ) ▶₁ #i )
+          case Lock_Funds_And_Open
+          solve( !ValidOnChain( ~ptr ) ▶₂ #i )
+            case Lock_Funds_And_Open
+            solve( !Ltk( $A, ltkA ) ▶₃ #i )
+              case Register_key
+              solve( !Ltk( $B, ltkB ) ▶₄ #i )
+                case Register_key
+                solve( !Pk( $A, pk(~ltk) ) ▶₅ #i )
+                  case Register_key
+                  solve( !Pk( $B, pk(~ltk.1) ) ▶₆ #i )
+                    case Register_key
+                    solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.12 )
+                      case A_Send_Proposal
+                      solve( !KU( sign(<'proposal', $A, $A, ~ptr>, ~ltk.5) ) @ #vk.13 )
+                        case A_Send_Proposal
+                        solve( !KU( ~ptr ) @ #vk.8 )
+                          case A_Send_Proposal
+                          SOLVED // trace found
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Funds_Locked_Before_Update [use_induction]:
+  all-traces
+  "∀ A B ptr n #i.
+    (StateUpdate( A, B, ptr, n ) @ #i) ⇒
+    (∃ #j. (FundsLocked( A, B, ptr ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B ptr n #i.
+  (StateUpdate( A, B, ptr, n ) @ #i)
+ ∧
+  ∀ #j. (FundsLocked( A, B, ptr ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (∀ A B ptr n #i.
+           (StateUpdate( A, B, ptr, n ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ #j. (FundsLocked( A, B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ #j. (FundsLocked( $A, $B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( !Pk( $A, pk(x) ) ▶₂ #i )
+        case Register_key
+        solve( !Pk( $B, pk(x) ) ▶₃ #i )
+          case Register_key
+          solve( PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n, sAnew,
+                           newCommitA, sign(newCommitA, ~ltk), fA_new, fB_new
+                 ) ▶₀ #i )
+            case Update_State_case_1
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_2
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_3
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_4
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* cyclic */
+  qed
+qed
+
+lemma Update_Requires_Negotiation [use_induction]:
+  all-traces
+  "∀ A B ptr n #i.
+    (StateUpdate( A, B, ptr, n ) @ #i) ⇒
+    (∃ fA fB #j. (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B ptr n #i.
+  (StateUpdate( A, B, ptr, n ) @ #i)
+ ∧
+  ∀ fA fB #j. (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (∀ A B ptr n #i.
+           (StateUpdate( A, B, ptr, n ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ fA fB #j.
+              (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j)
+             ∧
+              (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ fA fB #j.
+             (NewStateBuilt( $A, $B, ptr, n, fA, fB ) @ #j)
+            ∧
+             (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( !Pk( $A, pk(x) ) ▶₂ #i )
+        case Register_key
+        solve( !Pk( $B, pk(x) ) ▶₃ #i )
+          case Register_key
+          solve( PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n, sAnew,
+                           newCommitA, sign(newCommitA, ~ltk), fA_new, fB_new
+                 ) ▶₀ #i )
+            case Update_State_case_1
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_2
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_3
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_4
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* cyclic */
+  qed
+qed
+
+lemma Ltk_Known_Implies_Compromised [reuse]:
+  all-traces
+  "∀ A ltk #i #j.
+    ((KeyGen( A, ltk ) @ #i) ∧ (!KU( ltk ) @ #j)) ⇒
+    (∃ #r. LtkCompromised( A ) @ #r)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A ltk #i #j.
+  (KeyGen( A, ltk ) @ #i) ∧ (!KU( ltk ) @ #j)
+ ∧
+  ∀ #r. (LtkCompromised( A ) @ #r) ⇒ ⊥"
+*/
+simplify
+solve( !KU( ~ltk ) @ #j )
+  case Compromise_Ltk
+  by contradiction /* from formulas */
+qed
+
+lemma Invoice_Released_Once [reuse]:
+  all-traces
+  "∀ R x #i #j.
+    ((PreimageReleased( R, x ) @ #i) ∧ (PreimageReleased( R, x ) @ #j)) ⇒
+    (#i = #j)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ R x #i #j.
+  (PreimageReleased( R, x ) @ #i) ∧ (PreimageReleased( R, x ) @ #j)
+ ∧
+  ¬(#i = #j)"
+*/
+simplify
+solve( (#i < #j)  ∥ (#j < #i) )
+  case case_1
+  solve( Route( $Prev, $Receiver, ptrIn, h(x), amt ) ▶₀ #i )
+    case Forward_HTLC_case_1
+    solve( ReceiverInv( $Receiver, $Sender, x, amt ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      next
+        case Forward_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      qed
+    qed
+  next
+    case Forward_HTLC_case_2
+    solve( ReceiverInv( $Receiver, $Sender, x, amt ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Forward_HTLC_case_2
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      next
+        case Sender_Offer_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      qed
+    qed
+  next
+    case Sender_Offer_HTLC_case_1
+    solve( ReceiverInv( $Receiver, $Sender, x, (amt++fees) ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Forward_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_1
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1) ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      next
+        case Sender_Offer_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1)
+                  ) ▶₁ #j )
+      qed
+    qed
+  next
+    case Sender_Offer_HTLC_case_2
+    solve( ReceiverInv( $Receiver, $Sender, x, (amt++fees) ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Forward_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1)
+                  ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_2
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1) ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      qed
+    qed
+  qed
+next
+  case case_2
+  solve( Route( $Prev, $Receiver, ptrIn, h(x), amt ) ▶₀ #i )
+    case Forward_HTLC_case_1
+    solve( ReceiverInv( $Receiver, $Sender, x, amt ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      next
+        case Forward_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      qed
+    qed
+  next
+    case Forward_HTLC_case_2
+    solve( ReceiverInv( $Receiver, $Sender, x, amt ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Forward_HTLC_case_2
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      next
+        case Sender_Offer_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (fees++amt.1) ) ▶₁ #j )
+      qed
+    qed
+  next
+    case Sender_Offer_HTLC_case_1
+    solve( ReceiverInv( $Receiver, $Sender, x, (amt++fees) ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Forward_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_1
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1) ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      next
+        case Sender_Offer_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1)
+                  ) ▶₁ #j )
+      qed
+    qed
+  next
+    case Sender_Offer_HTLC_case_2
+    solve( ReceiverInv( $Receiver, $Sender, x, (amt++fees) ) ▶₁ #i )
+      case Receiver_Create_Invoice
+      solve( Route( $Prev.1, $Receiver, ptrIn, h(~x), amt.1 ) ▶₀ #j )
+        case Forward_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Forward_HTLC_case_2
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, amt.1 ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_1
+        by solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1)
+                  ) ▶₁ #j )
+      next
+        case Sender_Offer_HTLC_case_2
+        solve( ReceiverInv( $Receiver, $Sender.1, ~x, (amt.1++fees.1) ) ▶₁ #j )
+          case Receiver_Create_Invoice
+          by contradiction /* cyclic */
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Distinct_Parties_Configuration:
+  exists-trace
+  "∃ S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #c1 #c2 #c3.
+    (((((((((((((ChannelOpen( S, F1, ptrSF1 ) @ #c1) ∧
+                (ChannelOpen( F1, F2, ptrF1F2 ) @ #c2)) ∧
+               (ChannelOpen( F2, R, ptrF2R ) @ #c3)) ∧
+              (¬(S = F1))) ∧
+             (¬(S = F2))) ∧
+            (¬(S = R))) ∧
+           (¬(F1 = F2))) ∧
+          (¬(F1 = R))) ∧
+         (¬(F2 = R))) ∧
+        (¬(∃ P #r. LtkCompromised( P ) @ #r))) ∧
+       (¬(∃ P Q p n #u. StateUpdate( P, Q, p, n ) @ #u))) ∧
+      (¬(∃ P n #u. PublishState( P, n ) @ #u))) ∧
+     (¬(∃ P Q p n #u. Close( P, Q, p, n ) @ #u))) ∧
+    (¬(∃ P n #u. Cheat( P, n ) @ #u))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #c1 #c2 #c3.
+  (ChannelOpen( S, F1, ptrSF1 ) @ #c1) ∧
+  (ChannelOpen( F1, F2, ptrF1F2 ) @ #c2) ∧
+  (ChannelOpen( F2, R, ptrF2R ) @ #c3)
+ ∧
+  (¬(S = F1)) ∧
+  (¬(S = F2)) ∧
+  (¬(S = R)) ∧
+  (¬(F1 = F2)) ∧
+  (¬(F1 = R)) ∧
+  (¬(F2 = R)) ∧
+  (∀ P #r. (LtkCompromised( P ) @ #r) ⇒ ⊥) ∧
+  (∀ P Q p n #u. (StateUpdate( P, Q, p, n ) @ #u) ⇒ ⊥) ∧
+  (∀ P n #u. (PublishState( P, n ) @ #u) ⇒ ⊥) ∧
+  (∀ P Q p n #u. (Close( P, Q, p, n ) @ #u) ⇒ ⊥) ∧
+  (∀ P n #u. (Cheat( P, n ) @ #u) ⇒ ⊥)"
+*/
+simplify
+solve( ReadyToLock( $A, $B, ptrSF1, sA0, sB0, commitA0, commitB0
+       ) ▶₀ #c1 )
+  case Both_States_Committed
+  solve( Wallet( $A, ~fA ) ▶₁ #c1 )
+    case Acquire_funds
+    solve( Wallet( $B, ~fB ) ▶₂ #c1 )
+      case Acquire_funds
+      solve( ReadyToLock( $B, $B.1, ptrF1F2, sA0.1, sB0.1, commitA0, commitB0
+             ) ▶₀ #c2 )
+        case Both_States_Committed
+        solve( Wallet( $B, ~fA.1 ) ▶₁ #c2 )
+          case Acquire_funds
+          solve( Wallet( $B.1, ~fB.1 ) ▶₂ #c2 )
+            case Acquire_funds
+            solve( ReadyToLock( $B.1, $B.2, ptrF2R, sA0.2, sB0.2, commitA0, commitB0
+                   ) ▶₀ #c3 )
+              case Both_States_Committed
+              solve( Wallet( $B.1, ~fA.2 ) ▶₁ #c3 )
+                case Acquire_funds
+                solve( Wallet( $B.2, ~fB.2 ) ▶₂ #c3 )
+                  case Acquire_funds
+                  solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.2) ) @ #vk.17 )
+                    case B_Recv_Proposal
+                    solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.3) ) @ #vk.24 )
+                      case A_Send_Proposal
+                      solve( !KU( sign(<'proposal', $B, $B.1, ~ptr.1>, ~ltk.7) ) @ #vk.33 )
+                        case B_Recv_Proposal
+                        solve( !KU( sign(<'proposal', $B, $B.1, ~ptr.1>, ~ltk.8) ) @ #vk.38 )
+                          case A_Send_Proposal
+                          solve( !KU( sign(<'proposal', $B.1, $B.2, ~ptr.2>, ~ltk.12) ) @ #vk.45 )
+                            case B_Recv_Proposal
+                            solve( !KU( sign(<'proposal', $B.1, $B.2, ~ptr.2>, ~ltk.13) ) @ #vk.50 )
+                              case A_Send_Proposal
+                              solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.15) ) @ #vk.51 )
+                                case A_Send_Proposal
+                                solve( !KU( sign(<'proposal', $B, $B.1, ~ptr.1>, ~ltk.15) ) @ #vk.47 )
+                                  case A_Send_Proposal
+                                  solve( !KU( sign(<'proposal', $B.1, $B.2, ~ptr.2>, ~ltk.15) ) @ #vk.43 )
+                                    case A_Send_Proposal
+                                    solve( !KU( ~ptr ) @ #vk.33 )
+                                      case A_Send_Proposal
+                                      solve( !KU( ~ptr.1 ) @ #vk.36 )
+                                        case A_Send_Proposal
+                                        solve( !KU( ~ptr.2 ) @ #vk.38 )
+                                          case A_Send_Proposal
+                                          SOLVED // trace found
+                                        qed
+                                      qed
+                                    qed
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Refund_Possible:
+  exists-trace
+  "∃ S F1 R p y amt amtT #i #j #k.
+    (((((((InvoiceCreated( R, S, y, amt ) @ #j) ∧
+          (HTLCOffered( S, F1, p, y, amtT ) @ #k)) ∧
+         (HTLCRefunded( S, p, y ) @ #i)) ∧
+        (#j < #k)) ∧
+       (#k < #i)) ∧
+      (¬(∃ A MidP B p2 x #u. SenderSettled( A, MidP, B, p2, x ) @ #u))) ∧
+     (¬(∃ P #r. LtkCompromised( P ) @ #r))) ∧
+    (¬(∃ Me Prev Next pi po y2 ai ao #u.
+        HTLCForwarded( Me, Prev, Next, pi, po, y2, ai, ao ) @ #u))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ S F1 R p y amt amtT #i #j #k.
+  (InvoiceCreated( R, S, y, amt ) @ #j) ∧
+  (HTLCOffered( S, F1, p, y, amtT ) @ #k) ∧
+  (HTLCRefunded( S, p, y ) @ #i)
+ ∧
+  (#j < #k) ∧
+  (#k < #i) ∧
+  (∀ A MidP B p2 x #u. (SenderSettled( A, MidP, B, p2, x ) @ #u) ⇒ ⊥) ∧
+  (∀ P #r. (LtkCompromised( P ) @ #r) ⇒ ⊥) ∧
+  (∀ Me Prev Next pi po y2 ai ao #u.
+    (HTLCForwarded( Me, Prev, Next, pi, po, y2, ai, ao ) @ #u) ⇒ ⊥)"
+*/
+simplify
+solve( !Ltk( $Receiver, ltkR ) ▶₂ #j )
+  case Register_key
+  solve( !Pk( $Receiver.1, pk(x.1) ) ▶₂ #k )
+    case Register_key
+    solve( !Ltk( $Sender, ltkS ) ▶₃ #k )
+      case Register_key
+      solve( !ChannelConnect( p, $Sender, $Forward1 ) ▶₄ #k )
+        case Lock_Funds_And_Open_case_1
+        solve( Free( ~ptr ) ▶₅ #k )
+          case Lock_Funds_And_Open
+          solve( HTLCRefunded( $Sender, ~ptr, h(~x) ) @ #i )
+            case Sender_Timeout_Refund
+            solve( SenderPending( $Sender, $Forward1, $Receiver, ~ptr, h(~x),
+                                  amtTotal
+                   ) ▶₀ #i )
+              case Sender_Offer_HTLC
+              solve( !Timeout( ~ptr ) ▶₁ #i )
+                case Open_Timeout_case_1
+                solve( !KU( sign(<$Receiver, $Sender, h(~x), amt>, ~ltk.1) ) @ #vk.15 )
+                  case Receiver_Create_Invoice
+                  solve( !KU( sign(<'proposal', $Sender, $Forward1, ~ptr>, ~ltk.4)
+                         ) @ #vk.23 )
+                    case B_Recv_Proposal
+                    solve( !KU( sign(<'proposal', $Sender, $Forward1, ~ptr>, ~ltk.6)
+                           ) @ #vk.29 )
+                      case A_Send_Proposal
+                      solve( !KU( sign(<'proposal', $Sender, $Forward1, ~ptr>, ~ltk.7)
+                             ) @ #vk.30 )
+                        case A_Send_Proposal
+                        solve( !KU( ~ptr ) @ #vk.24 )
+                          case A_Send_Proposal
+                          solve( !KU( h(~x) ) @ #vk.21 )
+                            case Receiver_Create_Invoice
+                            SOLVED // trace found
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Preimage_Secret_Until_Released:
+  all-traces
+  "∀ R x #i #j.
+    (((SecretPreimage( R, x ) @ #i) ∧ (K( x ) @ #j)) ∧ (#i < #j)) ⇒
+    (∃ #k. (PreimageReleased( R, x ) @ #k) ∧ (#k < #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ R x #i #j.
+  (SecretPreimage( R, x ) @ #i) ∧ (K( x ) @ #j)
+ ∧
+  (#i < #j) ∧ (∀ #k. (PreimageReleased( R, x ) @ #k) ⇒ ¬(#k < #j))"
+*/
+simplify
+solve( !Ltk( $Receiver, ltkR ) ▶₂ #i )
+  case Register_key
+  by solve( !KU( ~x ) @ #vk.1 )
+qed
+
+lemma Invoice_Has_Secret_Preimage [reuse]:
+  all-traces
+  "∀ R S x amt #i.
+    (InvoiceCreated( R, S, h(x), amt ) @ #i) ⇒ (SecretPreimage( R, x ) @ #i)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ R S x amt #i.
+  (InvoiceCreated( R, S, h(x), amt ) @ #i)
+ ∧
+  ¬(SecretPreimage( R, x ) @ #i)"
+*/
+simplify
+by contradiction /* from formulas */
+
+lemma HTLC_On_Opened_Channel [reuse, use_induction]:
+  all-traces
+  "∀ ptr y #i.
+    (HTLCAdded( ptr, y ) @ #i) ⇒
+    (∃ X Y #j. (ChannelOpen( X, Y, ptr ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ ptr y #i.
+  (HTLCAdded( ptr, y ) @ #i)
+ ∧
+  ∀ X Y #j. (ChannelOpen( X, Y, ptr ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (∀ ptr y #i.
+           (HTLCAdded( ptr, y ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ X Y #j.
+              (ChannelOpen( X, Y, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ X Y #j. (ChannelOpen( X, Y, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( HTLCAdded( ptr, y ) @ #i )
+        case Forward_HTLC
+        solve( !ChannelConnect( ptr, $Me, $Next ) ▶₁ #i )
+          case Lock_Funds_And_Open_case_1
+          by contradiction /* from formulas */
+        next
+          case Lock_Funds_And_Open_case_2
+          by contradiction /* from formulas */
+        qed
+      next
+        case Sender_Offer_HTLC
+        solve( !Pk( $Receiver, pk(x) ) ▶₂ #i )
+          case Register_key
+          solve( !Ltk( $Sender, ltkS ) ▶₃ #i )
+            case Register_key
+            solve( !ChannelConnect( ptr, $Sender, $Forward1 ) ▶₄ #i )
+              case Lock_Funds_And_Open_case_1
+              by contradiction /* from formulas */
+            next
+              case Lock_Funds_And_Open_case_2
+              by contradiction /* from formulas */
+            qed
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* cyclic */
+  qed
+qed
+
+lemma Claim_Requires_Release [use_induction]:
+  all-traces
+  "∀ MidP InP ptrIn R x #i #j.
+    ((IntermediaryClaimed( MidP, InP, ptrIn, x ) @ #i) ∧
+     (SecretPreimage( R, x ) @ #j)) ⇒
+    (∃ #k. (PreimageReleased( R, x ) @ #k) ∧ (#k < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ MidP InP ptrIn R x #i #j.
+  (IntermediaryClaimed( MidP, InP, ptrIn, x ) @ #i) ∧
+  (SecretPreimage( R, x ) @ #j)
+ ∧
+  ∀ #k. (PreimageReleased( R, x ) @ #k) ⇒ ¬(#k < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (∀ MidP InP ptrIn R x #i #j.
+           (IntermediaryClaimed( MidP, InP, ptrIn, x ) @ #i) ∧
+           (SecretPreimage( R, x ) @ #j)
+          ⇒
+           ((last(#j)) ∨
+            (last(#i)) ∨
+            (∃ #k. (PreimageReleased( R, x ) @ #k) ∧ (¬(last(#k))) ∧ (#k < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ #k.
+             (PreimageReleased( $Receiver, ~x ) @ #k) ∧ (¬(last(#k))) ∧ (#k < #i)) )
+      case case_1
+      solve( IntermediaryPending( $Me, $Prev, $Next, ptrIn, ptrOut, h(~x),
+                                  amtIn, amtOut, fee
+             ) ▶₀ #i )
+        case Forward_HTLC_case_1
+        solve( !Ltk( $Receiver, ltkR ) ▶₂ #j )
+          case Register_key
+          solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.3) ) @ #vk.13 )
+            case A_Send_Proposal
+            by contradiction /* from formulas */
+          next
+            case B_Recv_Proposal
+            solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.4) ) @ #vk.19 )
+              case A_Send_Proposal
+              solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.6) ) @ #vk.20 )
+                case A_Send_Proposal
+                solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !Ltk( $Me, ltk.7 ) ▶₀ #r )
+                  case Register_key
+                  solve( !KU( ~ltk.4 ) @ #vk.24 )
+                    case Compromise_Ltk
+                    solve( !Ltk( $Me, ltk.8 ) ▶₀ #r.1 )
+                      case Register_key
+                      solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $Me, ltk.8 ) ▶₀ #r )
+                case Register_key
+                solve( !KU( ~ltk.3 ) @ #vk.24 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Me, ltk.9 ) ▶₀ #r.1 )
+                    case Register_key
+                    solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.9) ) @ #vk.24 )
+                      case A_Send_Proposal
+                      solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    next
+                      case B_Recv_Proposal
+                      by contradiction /* from formulas */
+                    next
+                      case c_sign
+                      solve( !KU( ~ltk.9 ) @ #vk.25 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Me, ltk.10 ) ▶₀ #r.2 )
+                          case Register_key
+                          solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          next
+            case c_sign
+            solve( !Ltk( $Next, ltk.7 ) ▶₀ #r )
+              case Register_key
+              solve( !KU( ~ltk.2 ) @ #vk.19 )
+                case Compromise_Ltk
+                solve( !Ltk( $Next, ltk.8 ) ▶₀ #r.1 )
+                  case Register_key
+                  solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.6) ) @ #vk.19 )
+                    case A_Send_Proposal
+                    solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  next
+                    case B_Recv_Proposal
+                    by contradiction /* from formulas */
+                  next
+                    case c_sign
+                    solve( !Ltk( $Me, ltk.9 ) ▶₀ #r.2 )
+                      case Register_key
+                      solve( !KU( ~ltk.5 ) @ #vk.20 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Me, ltk.10 ) ▶₀ #r.3 )
+                          case Register_key
+                          solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      next
+        case Forward_HTLC_case_2
+        solve( !Ltk( $Receiver, ltkR ) ▶₂ #j )
+          case Register_key
+          solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.3) ) @ #vk.13 )
+            case A_Send_Proposal
+            by contradiction /* from formulas */
+          next
+            case B_Recv_Proposal
+            solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.4) ) @ #vk.19 )
+              case A_Send_Proposal
+              solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.6) ) @ #vk.20 )
+                case A_Send_Proposal
+                solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !Ltk( $Next, ltk.7 ) ▶₀ #r )
+                  case Register_key
+                  solve( !KU( ~ltk.4 ) @ #vk.24 )
+                    case Compromise_Ltk
+                    solve( !Ltk( $Next, ltk.8 ) ▶₀ #r.1 )
+                      case Register_key
+                      solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $Next, ltk.8 ) ▶₀ #r )
+                case Register_key
+                solve( !KU( ~ltk.3 ) @ #vk.24 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Next, ltk.9 ) ▶₀ #r.1 )
+                    case Register_key
+                    solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.9) ) @ #vk.24 )
+                      case A_Send_Proposal
+                      solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    next
+                      case B_Recv_Proposal
+                      by contradiction /* from formulas */
+                    next
+                      case c_sign
+                      solve( !KU( ~ltk.9 ) @ #vk.25 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Next, ltk.10 ) ▶₀ #r.2 )
+                          case Register_key
+                          solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          next
+            case c_sign
+            solve( !Ltk( $Me, ltk.7 ) ▶₀ #r )
+              case Register_key
+              solve( !KU( ~ltk.2 ) @ #vk.19 )
+                case Compromise_Ltk
+                solve( !Ltk( $Me, ltk.8 ) ▶₀ #r.1 )
+                  case Register_key
+                  solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.6) ) @ #vk.19 )
+                    case A_Send_Proposal
+                    solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  next
+                    case B_Recv_Proposal
+                    by contradiction /* from formulas */
+                  next
+                    case c_sign
+                    solve( !Ltk( $Next, ltk.9 ) ▶₀ #r.2 )
+                      case Register_key
+                      solve( !KU( ~ltk.5 ) @ #vk.20 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Next, ltk.10 ) ▶₀ #r.3 )
+                          case Register_key
+                          solve( Fulfill( ~ptr, ~x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* cyclic */
+  qed
+qed
+
+lemma Settle_Excludes_Sender_Refund:
+  all-traces
+  "∀ S F1 R ptr x #i.
+    (SenderSettled( S, F1, R, ptr, x ) @ #i) ⇒
+    (¬(∃ #j. HTLCRefunded( S, ptr, h(x) ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ S F1 R ptr x #i.
+  (SenderSettled( S, F1, R, ptr, x ) @ #i)
+ ∧
+  ∃ #j. (HTLCRefunded( S, ptr, h(x) ) @ #j)"
+*/
+simplify
+solve( SenderPending( $Sender, $Forward1, $Receiver, ptr, h(x), amtTotal
+       ) ▶₀ #i )
+  case Sender_Offer_HTLC_case_1
+  solve( Fulfill( ~ptr, x ) ▶₁ #i )
+    case Intermediary_Settle_case_1
+    solve( HTLCRefunded( $Sender, ~ptr, h(x) ) @ #j.1 )
+      case Intermediary_Timeout_Refund
+      by contradiction /* from formulas */
+    next
+      case Sender_Timeout_Refund
+      by contradiction /* from formulas */
+    qed
+  next
+    case Intermediary_Settle_case_2
+    solve( HTLCRefunded( $Sender, ~ptr, h(x) ) @ #j.1 )
+      case Intermediary_Timeout_Refund
+      by contradiction /* from formulas */
+    next
+      case Sender_Timeout_Refund
+      by contradiction /* from formulas */
+    qed
+  next
+    case Receiver_Fulfill_HTLC
+    solve( HTLCRefunded( $Sender, ~ptr, h(~x) ) @ #j.1 )
+      case Intermediary_Timeout_Refund
+      by contradiction /* from formulas */
+    next
+      case Sender_Timeout_Refund
+      by contradiction /* from formulas */
+    qed
+  qed
+next
+  case Sender_Offer_HTLC_case_2
+  solve( Fulfill( ~ptr, x ) ▶₁ #i )
+    case Intermediary_Settle_case_1
+    solve( HTLCRefunded( $Sender, ~ptr, h(x) ) @ #j.1 )
+      case Intermediary_Timeout_Refund
+      by contradiction /* from formulas */
+    next
+      case Sender_Timeout_Refund
+      by contradiction /* from formulas */
+    qed
+  next
+    case Intermediary_Settle_case_2
+    solve( HTLCRefunded( $Sender, ~ptr, h(x) ) @ #j.1 )
+      case Intermediary_Timeout_Refund
+      by contradiction /* from formulas */
+    next
+      case Sender_Timeout_Refund
+      by contradiction /* from formulas */
+    qed
+  next
+    case Receiver_Fulfill_HTLC
+    solve( HTLCRefunded( $Sender, ~ptr, h(~x) ) @ #j.1 )
+      case Intermediary_Timeout_Refund
+      by contradiction /* from formulas */
+    next
+      case Sender_Timeout_Refund
+      by contradiction /* from formulas */
+    qed
+  qed
+qed
+
+lemma Invoice_Authenticates_Settlement:
+  all-traces
+  "∀ S F1 R ptr x #i.
+    (SenderSettled( S, F1, R, ptr, x ) @ #i) ⇒
+    ((∃ amt #j. (InvoiceCreated( R, S, h(x), amt ) @ #j) ∧ (#j < #i)) ∨
+     (∃ #r. (LtkCompromised( R ) @ #r) ∧ (#r < #i)))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ S F1 R ptr x #i.
+  (SenderSettled( S, F1, R, ptr, x ) @ #i)
+ ∧
+  (∀ amt #j. (InvoiceCreated( R, S, h(x), amt ) @ #j) ⇒ ¬(#j < #i)) ∧
+  (∀ #r. (LtkCompromised( R ) @ #r) ⇒ ¬(#r < #i))"
+*/
+simplify
+solve( SenderPending( $Sender, $Forward1, $Receiver, ptr, h(x), amtTotal
+       ) ▶₀ #i )
+  case Sender_Offer_HTLC_case_1
+  solve( Fulfill( ~ptr, x ) ▶₁ #i )
+    case Intermediary_Settle_case_1
+    solve( !KU( sign(<$Receiver, $Sender, h(x), amt>, ~ltk) ) @ #vk.14 )
+      case Receiver_Create_Invoice
+      by contradiction /* from formulas */
+    next
+      case c_sign
+      solve( !Ltk( $Receiver, ltk.14 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.39 )
+          case Compromise_Ltk
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  next
+    case Intermediary_Settle_case_2
+    solve( !KU( sign(<$Receiver, $Sender, h(x), amt>, ~ltk) ) @ #vk.14 )
+      case Receiver_Create_Invoice
+      by contradiction /* from formulas */
+    next
+      case c_sign
+      solve( !Ltk( $Receiver, ltk.14 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.39 )
+          case Compromise_Ltk
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  next
+    case Receiver_Fulfill_HTLC
+    solve( !KU( sign(<$Receiver, $Sender, h(~x), amt>, ~ltk) ) @ #vk.15 )
+      case c_sign
+      solve( !Ltk( $Receiver, ltk.9 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.27 )
+          case Compromise_Ltk
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  qed
+next
+  case Sender_Offer_HTLC_case_2
+  solve( Fulfill( ~ptr, x ) ▶₁ #i )
+    case Intermediary_Settle_case_1
+    solve( !KU( sign(<$Receiver, $Sender, h(x), amt>, ~ltk) ) @ #vk.16 )
+      case Receiver_Create_Invoice
+      by contradiction /* from formulas */
+    next
+      case c_sign
+      solve( !Ltk( $Receiver, ltk.14 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.39 )
+          case Compromise_Ltk
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  next
+    case Intermediary_Settle_case_2
+    solve( !KU( sign(<$Receiver, $Sender, h(x), amt>, ~ltk) ) @ #vk.16 )
+      case Receiver_Create_Invoice
+      by contradiction /* from formulas */
+    next
+      case c_sign
+      solve( !Ltk( $Receiver, ltk.14 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.39 )
+          case Compromise_Ltk
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  next
+    case Receiver_Fulfill_HTLC
+    solve( !KU( sign(<$Receiver, $Sender, h(~x), amt>, ~ltk) ) @ #vk.17 )
+      case c_sign
+      solve( !Ltk( $Receiver, ltk.9 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.27 )
+          case Compromise_Ltk
+          by contradiction /* from formulas */
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Forged_Invoice_Requires_Key_Compromise:
+  exists-trace
+  "∃ S F1 R ptr x #i #r.
+    (((SenderSettled( S, F1, R, ptr, x ) @ #i) ∧
+      (LtkCompromised( R ) @ #r)) ∧
+     (¬(∃ amt #j. InvoiceCreated( R, S, h(x), amt ) @ #j))) ∧
+    (¬(∃ Me Prev Next pi po y ai ao #u.
+        HTLCForwarded( Me, Prev, Next, pi, po, y, ai, ao ) @ #u))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ S F1 R ptr x #i #r.
+  (SenderSettled( S, F1, R, ptr, x ) @ #i) ∧ (LtkCompromised( R ) @ #r)
+ ∧
+  (∀ amt #j. (InvoiceCreated( R, S, h(x), amt ) @ #j) ⇒ ⊥) ∧
+  (∀ Me Prev Next pi po y ai ao #u.
+    (HTLCForwarded( Me, Prev, Next, pi, po, y, ai, ao ) @ #u) ⇒ ⊥)"
+*/
+simplify
+solve( SenderPending( $Sender, $Forward1, $Receiver, ptr, h(x), amtTotal
+       ) ▶₀ #i )
+  case Sender_Offer_HTLC_case_1
+  solve( Fulfill( ~ptr, x ) ▶₁ #i )
+    case Receiver_Fulfill_HTLC
+    solve( !Ltk( $Receiver, ltk ) ▶₀ #r )
+      case Register_key
+      solve( !KU( sign(<$Receiver, $Sender, h(~x), amt>, ~ltk.1) ) @ #vk.15 )
+        case c_sign
+        solve( !Ltk( $Receiver, ltk.10 ) ▶₀ #r.1 )
+          case Register_key
+          solve( !KU( ~ltk.1 ) @ #vk.27 )
+            case Compromise_Ltk
+            solve( !Ltk( $Receiver, ltk.11 ) ▶₀ #r.2 )
+              case Register_key
+              solve( !KU( sign(<'proposal', $Sender, $Forward1, ~ptr>, ~ltk.7)
+                     ) @ #vk.25 )
+                case B_Recv_Proposal
+                solve( !KU( sign(<'proposal', $Sender, $Forward1, ~ptr>, ~ltk.8)
+                       ) @ #vk.31 )
+                  case A_Send_Proposal
+                  solve( !KU( sign(<'proposal', $Sender, $Forward1, ~ptr>, ~ltk.11)
+                         ) @ #vk.32 )
+                    case A_Send_Proposal
+                    solve( !KU( ~ptr ) @ #vk.26 )
+                      case A_Send_Proposal
+                      solve( !KU( h(~x) ) @ #vk.21 )
+                        case Receiver_Create_Invoice
+                        SOLVED // trace found
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Loss_Requires_Inaction:
+  all-traces
+  "∀ P ptrIn ptrOut y #i #j #k.
+    (((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #i) ∧
+      (Redeemed( ptrOut, y ) @ #j)) ∧
+     (Refunded( ptrIn, y ) @ #k)) ⇒
+    (¬(∃ #l. Redeemed( ptrIn, y ) @ #l))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ P ptrIn ptrOut y #i #j #k.
+  (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #i) ∧
+  (Redeemed( ptrOut, y ) @ #j) ∧
+  (Refunded( ptrIn, y ) @ #k)
+ ∧
+  ∃ #l. (Redeemed( ptrIn, y ) @ #l)"
+*/
+simplify
+by contradiction /* from formulas */
+
+lemma Refund_Requires_Timeout [reuse]:
+  all-traces
+  "∀ ptr y #i.
+    (Refunded( ptr, y ) @ #i) ⇒ (∃ #j. (TimedOut( ptr ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ ptr y #i.
+  (Refunded( ptr, y ) @ #i) ∧ ∀ #j. (TimedOut( ptr ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( Refunded( ptr, y ) @ #i )
+  case Intermediary_Timeout_Refund
+  solve( IntermediaryPending( $Me, $Prev, $Next, ptrIn, ptr, y, amtIn,
+                              amtOut, fee
+         ) ▶₀ #i )
+    case Forward_HTLC_case_1
+    solve( !Timeout( ~ptr ) ▶₁ #i )
+      case Open_Timeout_case_1
+      by contradiction /* from formulas */
+    next
+      case Open_Timeout_case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case Forward_HTLC_case_2
+    solve( !Timeout( ~ptr ) ▶₁ #i )
+      case Open_Timeout_case_1
+      by contradiction /* from formulas */
+    next
+      case Open_Timeout_case_2
+      by contradiction /* from formulas */
+    qed
+  qed
+next
+  case Sender_Timeout_Refund
+  solve( SenderPending( $Sender, $Forward1, $Receiver, ptr, y, amtTotal
+         ) ▶₀ #i )
+    case Sender_Offer_HTLC_case_1
+    solve( !Timeout( ~ptr ) ▶₁ #i )
+      case Open_Timeout_case_1
+      by contradiction /* from formulas */
+    next
+      case Open_Timeout_case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case Sender_Offer_HTLC_case_2
+    solve( !Timeout( ~ptr ) ▶₁ #i )
+      case Open_Timeout_case_1
+      by contradiction /* from formulas */
+    next
+      case Open_Timeout_case_2
+      by contradiction /* from formulas */
+    qed
+  qed
+qed
+
+lemma Intermediary_Never_Loses_Under_Liveness:
+  all-traces
+  "∀ P ptrIn ptrOut y #f #i #j.
+    (((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+      (Redeemed( ptrOut, y ) @ #i)) ∧
+     (Refunded( ptrIn, y ) @ #j)) ⇒
+    (∃ #r. LtkCompromised( P ) @ #r)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ P ptrIn ptrOut y #f #i #j.
+  (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+  (Redeemed( ptrOut, y ) @ #i) ∧
+  (Refunded( ptrIn, y ) @ #j)
+ ∧
+  ∀ #r. (LtkCompromised( P ) @ #r) ⇒ ⊥"
+*/
+simplify
+by contradiction /* from formulas */
+
+lemma Payment_Atomicity_Under_Liveness:
+  all-traces
+  "∀ F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.
+    ((((ForwardHTLC( F1, ptrSF1, ptrF1F2, y ) @ #f1) ∧
+       (ForwardHTLC( F2, ptrF1F2, ptrF2R, y ) @ #f2)) ∧
+      (Redeemed( ptrF2R, y ) @ #i)) ∧
+     (¬(∃ P #r. LtkCompromised( P ) @ #r))) ⇒
+    (¬(∃ #u. Refunded( ptrSF1, y ) @ #u))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.
+  (ForwardHTLC( F1, ptrSF1, ptrF1F2, y ) @ #f1) ∧
+  (ForwardHTLC( F2, ptrF1F2, ptrF2R, y ) @ #f2) ∧
+  (Redeemed( ptrF2R, y ) @ #i)
+ ∧
+  (∀ P #r. (LtkCompromised( P ) @ #r) ⇒ ⊥) ∧
+  (∃ #u. (Refunded( ptrSF1, y ) @ #u))"
+*/
+simplify
+by contradiction /* from formulas */
+
+lemma Timeout_Race_Blocked:
+  all-traces
+  "¬(∃ P ptrIn ptrOut y #f #i #j #k.
+      ((((ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+         (TimedOut( ptrIn ) @ #k)) ∧
+        (Refunded( ptrIn, y ) @ #j)) ∧
+       (Redeemed( ptrOut, y ) @ #i)) ∧
+      (#k < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ P ptrIn ptrOut y #f #i #j #k.
+  (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+  (TimedOut( ptrIn ) @ #k) ∧
+  (Refunded( ptrIn, y ) @ #j) ∧
+  (Redeemed( ptrOut, y ) @ #i)
+ ∧
+  #k < #i"
+*/
+simplify
+by contradiction /* cyclic */
+
+lemma Multihop_Payment_With_Fees_Possible:
+  exists-trace
+  "∃ S F1 F2 R p0 p1 p2 x amt f1 f2 #t2 #t3 #t4 #t5.
+    ((((((((HTLCOffered( S, F1, p0, h(x), (amt++f1++f2) ) @ #t2) ∧
+           (HTLCForwarded( F1, S, F2, p0, p1, h(x), (amt++f1++f2), (amt++f2)
+            ) @ #t3)) ∧
+          (HTLCForwarded( F2, F1, R, p1, p2, h(x), (amt++f2), amt ) @ #t4)) ∧
+         (HTLCFulfilled( R, F2, p2, h(x), amt ) @ #t5)) ∧
+        (#t2 < #t3)) ∧
+       (#t3 < #t4)) ∧
+      (#t4 < #t5)) ∧
+     (¬(∃ A B p y a #u.
+         (HTLCOffered( A, B, p, y, a ) @ #u) ∧ (¬((A = S) ∧ (B = F1)))))) ∧
+    (¬(∃ F3 F4 F5 p3 p4 y ai ao #u.
+        ((HTLCForwarded( F3, F4, F5, p3, p4, y, ai, ao ) @ #u) ∧
+         (¬(((F3 = F1) ∧ (F4 = S)) ∧ (F5 = F2)))) ∧
+        (¬(((F3 = F2) ∧ (F4 = F1)) ∧ (F5 = R)))))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ S F1 F2 R p0 p1 p2 x amt f1 f2 #t2 #t3 #t4 #t5.
+  (HTLCOffered( S, F1, p0, h(x), (amt++f1++f2) ) @ #t2) ∧
+  (HTLCForwarded( F1, S, F2, p0, p1, h(x), (amt++f1++f2), (amt++f2)
+   ) @ #t3) ∧
+  (HTLCForwarded( F2, F1, R, p1, p2, h(x), (amt++f2), amt ) @ #t4) ∧
+  (HTLCFulfilled( R, F2, p2, h(x), amt ) @ #t5)
+ ∧
+  (#t2 < #t3) ∧
+  (#t3 < #t4) ∧
+  (#t4 < #t5) ∧
+  (∀ A B p y a #u.
+    (HTLCOffered( A, B, p, y, a ) @ #u) ⇒ (A = S) ∧ (B = F1)) ∧
+  (∀ F3 F4 F5 p3 p4 y ai ao #u.
+    (HTLCForwarded( F3, F4, F5, p3, p4, y, ai, ao ) @ #u)
+   ⇒
+    (((F3 = F1) ∧ (F4 = S) ∧ (F5 = F2)) ∨
+     ((F3 = F2) ∧ (F4 = F1) ∧ (F5 = R))))"
+*/
+simplify
+solve( Route( $Prev, $Receiver, p2, h(x), amt ) ▶₀ #t5 )
+  case Forward_HTLC_case_1
+  solve( (($Prev = F1) ∧ ($Prev.1 = S) ∧ ($Receiver = $Prev))  ∥
+         ($Prev.1 = F1) )
+    case case_2
+    solve( ReceiverInv( $Receiver, $Sender, x, amt ) ▶₁ #t5 )
+      case Receiver_Create_Invoice
+      solve( HTLCOffered( S, $Prev.1, p0, h(~x), (amt++f1++f2) ) @ #t2 )
+        case Sender_Offer_HTLC_case_01
+        solve( !Pk( $Receiver, pk(x.1) ) ▶₂ #t2 )
+          case Register_key
+          solve( !Ltk( $Sender, ltkS ) ▶₃ #t2 )
+            case Register_key
+            solve( !ChannelConnect( p0, $Sender, $Prev ) ▶₄ #t2 )
+              case Lock_Funds_And_Open_case_1
+              solve( Free( ~ptr ) ▶₅ #t2 )
+                case Lock_Funds_And_Open
+                solve( HTLCForwarded( $B, $A, $Prev, ~ptr, p1, h(~x), (amt++f1++f2),
+                                      (amt++f2)
+                       ) @ #t3 )
+                  case Forward_HTLC
+                  solve( !ChannelConnect( p1, $B, $Prev ) ▶₁ #t3 )
+                    case Lock_Funds_And_Open_case_1
+                    solve( Free( ~ptr.1 ) ▶₂ #t3 )
+                      case Lock_Funds_And_Open
+                      solve( HTLCForwarded( $Prev, $B, $Receiver.1, ~ptr.1, ~ptr.2, h(~x),
+                                            (amt++f2), amt
+                             ) @ #t4 )
+                        case Forward_HTLC
+                        solve( !ChannelConnect( ~ptr.2, $Prev, $Receiver.1 ) ▶₁ #t4 )
+                          case Lock_Funds_And_Open_case_1
+                          solve( Free( ~ptr.2 ) ▶₂ #t4 )
+                            case Lock_Funds_And_Open
+                            solve( !KU( sign(<'proposal', $Prev, $Receiver.1, ~ptr.2>, ~ltk.4)
+                                   ) @ #vk.19 )
+                              case B_Recv_Proposal
+                              solve( !KU( sign(<'proposal', $Prev, $Receiver.1, ~ptr.2>, ~ltk.5)
+                                     ) @ #vk.26 )
+                                case A_Send_Proposal
+                                solve( !KU( sign(<$Receiver, $A, h(~x), amt>, ~ltk) ) @ #vk.39 )
+                                  case Receiver_Create_Invoice
+                                  solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.9) ) @ #vk.48 )
+                                    case B_Recv_Proposal
+                                    solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.10) ) @ #vk.53 )
+                                      case A_Send_Proposal
+                                      solve( !KU( sign(<'proposal', $B, $Prev, ~ptr.1>, ~ltk.14) ) @ #vk.57 )
+                                        case B_Recv_Proposal
+                                        solve( !KU( sign(<'proposal', $B, $Prev, ~ptr.1>, ~ltk.15)
+                                               ) @ #vk.62 )
+                                          case A_Send_Proposal
+                                          solve( !KU( sign(<'proposal', $Prev, $Receiver, ~ptr.2>, ~ltk.17)
+                                                 ) @ #vk.63 )
+                                            case A_Send_Proposal
+                                            solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.17) ) @ #vk.59 )
+                                              case A_Send_Proposal
+                                              solve( !KU( sign(<'proposal', $B, $Prev, ~ptr.1>, ~ltk.17)
+                                                     ) @ #vk.55 )
+                                                case A_Send_Proposal
+                                                solve( Route( $B, $Prev, ~ptr.1, h(~x), (amt++f2) ) ▶₀ #t4 )
+                                                  case Forward_HTLC
+                                                  solve( Route( $A, $B, ~ptr, h(~x), (amt++f1++f2) ) ▶₀ #t3 )
+                                                    case Sender_Offer_HTLC_case_01
+                                                    solve( !KU( ~ptr.2 ) @ #vk.37 )
+                                                      case A_Send_Proposal
+                                                      solve( !KU( ~ptr ) @ #vk.48 )
+                                                        case A_Send_Proposal
+                                                        solve( !KU( ~ptr.1 ) @ #vk.49 )
+                                                          case A_Send_Proposal
+                                                          solve( !KU( h(~x) ) @ #vk.46 )
+                                                            case Receiver_Create_Invoice
+                                                            SOLVED // trace found
+                                                          qed
+                                                        qed
+                                                      qed
+                                                    qed
+                                                  qed
+                                                qed
+                                              qed
+                                            qed
+                                          qed
+                                        qed
+                                      qed
+                                    qed
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Forward_Requires_Incoming [use_induction]:
+  all-traces
+  "∀ Me Prev Next ptrIn ptrOut y amtIn amtOut #i.
+    (HTLCForwarded( Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut ) @ #i) ⇒
+    ((∃ S #j. (HTLCOffered( S, Me, ptrIn, y, amtIn ) @ #j) ∧ (#j < #i)) ∨
+     (∃ P0 pin0 amt0 #j.
+       (HTLCForwarded( Prev, P0, Me, pin0, ptrIn, y, amt0, amtIn ) @ #j) ∧
+       (#j < #i)))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Me Prev Next ptrIn ptrOut y amtIn amtOut #i.
+  (HTLCForwarded( Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut ) @ #i)
+ ∧
+  (∀ S #j. (HTLCOffered( S, Me, ptrIn, y, amtIn ) @ #j) ⇒ ¬(#j < #i)) ∧
+  (∀ P0 pin0 amt0 #j.
+    (HTLCForwarded( Prev, P0, Me, pin0, ptrIn, y, amt0, amtIn ) @ #j)
+   ⇒
+    ¬(#j < #i))"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (∀ Me Prev Next ptrIn ptrOut y amtIn amtOut #i.
+           (HTLCForwarded( Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ S #j.
+              (HTLCOffered( S, Me, ptrIn, y, amtIn ) @ #j)
+             ∧
+              (¬(last(#j))) ∧ (#j < #i)) ∨
+            (∃ P0 pin0 amt0 #j.
+              (HTLCForwarded( Prev, P0, Me, pin0, ptrIn, y, amt0, amtIn ) @ #j)
+             ∧
+              (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ S #j.
+             (HTLCOffered( S, $Me, ptrIn, y, (amtOut++fee) ) @ #j)
+            ∧
+             (¬(last(#j))) ∧ (#j < #i))  ∥
+           (∃ P0 pin0 amt0 #j.
+             (HTLCForwarded( $Prev, P0, $Me, pin0, ptrIn, y, amt0, (amtOut++fee)
+              ) @ #j)
+            ∧
+             (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( !ChannelConnect( ptrOut, $Me, $Next ) ▶₁ #i )
+        case Lock_Funds_And_Open_case_1
+        solve( Free( ~ptr ) ▶₂ #i )
+          case Lock_Funds_And_Open
+          solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.2) ) @ #vk.12 )
+            case A_Send_Proposal
+            by contradiction /* from formulas */
+          next
+            case B_Recv_Proposal
+            solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.3) ) @ #vk.18 )
+              case A_Send_Proposal
+              solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.5) ) @ #vk.19 )
+                case A_Send_Proposal
+                solve( Route( $Prev, $A, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                  case Forward_HTLC_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Forward_HTLC_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_01
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_02
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_03
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_04
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_05
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_06
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_07
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_08
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_09
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_10
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_11
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_12
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_13
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_14
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !Ltk( $A, ltk.6 ) ▶₀ #r )
+                  case Register_key
+                  solve( !KU( ~ltk.5 ) @ #vk.23 )
+                    case Compromise_Ltk
+                    solve( !Ltk( $A, ltk.7 ) ▶₀ #r.1 )
+                      case Register_key
+                      solve( Route( $Prev, $A, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                        case Forward_HTLC_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Forward_HTLC_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_01
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_02
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_03
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_04
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_05
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_06
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_07
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_08
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_09
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_10
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_11
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_12
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_13
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_14
+                        by contradiction /* from formulas */
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $A, ltk.7 ) ▶₀ #r )
+                case Register_key
+                solve( !KU( ~ltk.4 ) @ #vk.23 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $A, ltk.8 ) ▶₀ #r.1 )
+                    case Register_key
+                    solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.23 )
+                      case A_Send_Proposal
+                      solve( Route( $Prev, $A, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                        case Forward_HTLC_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Forward_HTLC_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_01
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_02
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_03
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_04
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_05
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_06
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_07
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_08
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_09
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_10
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_11
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_12
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_13
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_14
+                        by contradiction /* from formulas */
+                      qed
+                    next
+                      case B_Recv_Proposal
+                      by contradiction /* from formulas */
+                    next
+                      case c_sign
+                      solve( !KU( ~ltk.8 ) @ #vk.24 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $A, ltk.9 ) ▶₀ #r.2 )
+                          case Register_key
+                          solve( Route( $Prev, $A, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                            case Forward_HTLC_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Forward_HTLC_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_01
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_02
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_03
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_04
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_05
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_06
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_07
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_08
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_09
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_10
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_11
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_12
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_13
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_14
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          next
+            case c_sign
+            solve( !Ltk( $B, ltk.6 ) ▶₀ #r )
+              case Register_key
+              solve( !KU( ~ltk.1 ) @ #vk.18 )
+                case Compromise_Ltk
+                solve( !Ltk( $B, ltk.7 ) ▶₀ #r.1 )
+                  case Register_key
+                  solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.5) ) @ #vk.18 )
+                    case A_Send_Proposal
+                    solve( Route( $Prev, $A, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                      case Forward_HTLC_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Forward_HTLC_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_01
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_02
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_03
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_04
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_05
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_06
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_07
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_08
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_09
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_10
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_11
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_12
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_13
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_14
+                      by contradiction /* from formulas */
+                    qed
+                  next
+                    case B_Recv_Proposal
+                    by contradiction /* from formulas */
+                  next
+                    case c_sign
+                    solve( !Ltk( $A, ltk.8 ) ▶₀ #r.2 )
+                      case Register_key
+                      solve( !KU( ~ltk.6 ) @ #vk.19 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $A, ltk.9 ) ▶₀ #r.3 )
+                          case Register_key
+                          solve( Route( $Prev, $A, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                            case Forward_HTLC_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Forward_HTLC_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_01
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_02
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_03
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_04
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_05
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_06
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_07
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_08
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_09
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_10
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_11
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_12
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_13
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_14
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      next
+        case Lock_Funds_And_Open_case_2
+        solve( Free( ~ptr ) ▶₂ #i )
+          case Lock_Funds_And_Open
+          solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.2) ) @ #vk.12 )
+            case A_Send_Proposal
+            by contradiction /* from formulas */
+          next
+            case B_Recv_Proposal
+            solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.3) ) @ #vk.18 )
+              case A_Send_Proposal
+              solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.5) ) @ #vk.19 )
+                case A_Send_Proposal
+                solve( Route( $Prev, $B, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                  case Forward_HTLC_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Forward_HTLC_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_01
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_02
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_03
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_04
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_05
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_06
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_07
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_08
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_09
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_10
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_11
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_12
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_13
+                  by contradiction /* from formulas */
+                next
+                  case Sender_Offer_HTLC_case_14
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !Ltk( $A, ltk.6 ) ▶₀ #r )
+                  case Register_key
+                  solve( !KU( ~ltk.5 ) @ #vk.23 )
+                    case Compromise_Ltk
+                    solve( !Ltk( $A, ltk.7 ) ▶₀ #r.1 )
+                      case Register_key
+                      solve( Route( $Prev, $B, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                        case Forward_HTLC_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Forward_HTLC_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_01
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_02
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_03
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_04
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_05
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_06
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_07
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_08
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_09
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_10
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_11
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_12
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_13
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_14
+                        by contradiction /* from formulas */
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $A, ltk.7 ) ▶₀ #r )
+                case Register_key
+                solve( !KU( ~ltk.4 ) @ #vk.23 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $A, ltk.8 ) ▶₀ #r.1 )
+                    case Register_key
+                    solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.23 )
+                      case A_Send_Proposal
+                      solve( Route( $Prev, $B, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                        case Forward_HTLC_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Forward_HTLC_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_01
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_02
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_03
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_04
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_05
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_06
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_07
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_08
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_09
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_10
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_11
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_12
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_13
+                        by contradiction /* from formulas */
+                      next
+                        case Sender_Offer_HTLC_case_14
+                        by contradiction /* from formulas */
+                      qed
+                    next
+                      case B_Recv_Proposal
+                      by contradiction /* from formulas */
+                    next
+                      case c_sign
+                      solve( !KU( ~ltk.8 ) @ #vk.24 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $A, ltk.9 ) ▶₀ #r.2 )
+                          case Register_key
+                          solve( Route( $Prev, $B, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                            case Forward_HTLC_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Forward_HTLC_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_01
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_02
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_03
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_04
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_05
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_06
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_07
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_08
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_09
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_10
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_11
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_12
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_13
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_14
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          next
+            case c_sign
+            solve( !Ltk( $B, ltk.6 ) ▶₀ #r )
+              case Register_key
+              solve( !KU( ~ltk.1 ) @ #vk.18 )
+                case Compromise_Ltk
+                solve( !Ltk( $B, ltk.7 ) ▶₀ #r.1 )
+                  case Register_key
+                  solve( !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.5) ) @ #vk.18 )
+                    case A_Send_Proposal
+                    solve( Route( $Prev, $B, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                      case Forward_HTLC_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Forward_HTLC_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_01
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_02
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_03
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_04
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_05
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_06
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_07
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_08
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_09
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_10
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_11
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_12
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_13
+                      by contradiction /* from formulas */
+                    next
+                      case Sender_Offer_HTLC_case_14
+                      by contradiction /* from formulas */
+                    qed
+                  next
+                    case B_Recv_Proposal
+                    by contradiction /* from formulas */
+                  next
+                    case c_sign
+                    solve( !Ltk( $A, ltk.8 ) ▶₀ #r.2 )
+                      case Register_key
+                      solve( !KU( ~ltk.6 ) @ #vk.19 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $A, ltk.9 ) ▶₀ #r.3 )
+                          case Register_key
+                          solve( Route( $Prev, $B, ptrIn, y, (amtOut++fee) ) ▶₀ #i )
+                            case Forward_HTLC_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Forward_HTLC_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_01
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_02
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_03
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_04
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_05
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_06
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_07
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_08
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_09
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_10
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_11
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_12
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_13
+                            by contradiction /* from formulas */
+                          next
+                            case Sender_Offer_HTLC_case_14
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    next
+      case case_3
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* cyclic */
+  qed
+qed
+
+lemma Amount_Strictly_Decreases_Per_Hop:
+  all-traces
+  "∀ Me Prev Next ptrIn ptrOut y amtIn amtOut #i.
+    (HTLCForwarded( Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut ) @ #i) ⇒
+    (∃ fee. amtIn = (amtOut++fee))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Me Prev Next ptrIn ptrOut y amtIn amtOut #i.
+  (HTLCForwarded( Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut ) @ #i)
+ ∧
+  ∀ fee. (amtIn = (amtOut++fee)) ⇒ ⊥"
+*/
+simplify
+by contradiction /* from formulas */
+
+lemma Receiver_Paid_Invoice_Amount:
+  all-traces
+  "∀ R y amt #i.
+    (ReceiverPaid( R, y, amt ) @ #i) ⇒
+    (∃ S #j. (InvoiceCreated( R, S, y, amt ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ R y amt #i.
+  (ReceiverPaid( R, y, amt ) @ #i)
+ ∧
+  ∀ S #j. (InvoiceCreated( R, S, y, amt ) @ #j) ⇒ ¬(#j < #i)"
+*/
+simplify
+solve( Route( $Prev, $Receiver, ptrIn, h(x), amt ) ▶₀ #i )
+  case Forward_HTLC_case_1
+  solve( ReceiverInv( $Receiver, $Sender, x, amt ) ▶₁ #i )
+    case Receiver_Create_Invoice
+    by contradiction /* from formulas */
+  qed
+next
+  case Forward_HTLC_case_2
+  solve( ReceiverInv( $Receiver, $Sender, x, amt ) ▶₁ #i )
+    case Receiver_Create_Invoice
+    by contradiction /* from formulas */
+  qed
+next
+  case Sender_Offer_HTLC_case_1
+  solve( ReceiverInv( $Receiver, $Sender, x, (amt++fees) ) ▶₁ #i )
+    case Receiver_Create_Invoice
+    by contradiction /* from formulas */
+  qed
+next
+  case Sender_Offer_HTLC_case_2
+  solve( ReceiverInv( $Receiver, $Sender, x, (amt++fees) ) ▶₁ #i )
+    case Receiver_Create_Invoice
+    by contradiction /* from formulas */
+  qed
+qed
+
+lemma Fee_Only_On_Successful_Forward:
+  all-traces
+  "∀ Me ptrIn ptrOut y fee #i.
+    (FeeEarned( Me, ptrIn, ptrOut, y, fee ) @ #i) ⇒
+    ((∃ #j. (Redeemed( ptrOut, y ) @ #j) ∧ (#j < #i)) ∧
+     (∃ Prev Next amtIn amtOut #f.
+       ((HTLCForwarded( Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut
+         ) @ #f) ∧
+        (amtIn = (amtOut++fee))) ∧
+       (#f < #i)))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Me ptrIn ptrOut y fee #i.
+  (FeeEarned( Me, ptrIn, ptrOut, y, fee ) @ #i)
+ ∧
+  ((∀ #j. (Redeemed( ptrOut, y ) @ #j) ⇒ ¬(#j < #i)) ∨
+   (∀ Prev Next amtIn amtOut #f.
+     (HTLCForwarded( Me, Prev, Next, ptrIn, ptrOut, y, amtIn, amtOut ) @ #f) ∧
+     (amtIn = (amtOut++fee))
+    ⇒
+     ¬(#f < #i)))"
+*/
+simplify
+solve( (∀ #j. (Redeemed( ptrOut, h(x) ) @ #j) ⇒ ¬(#j < #i))  ∥
+       (∀ Prev Next amtIn amtOut #f.
+         (HTLCForwarded( $Me, Prev, Next, ptrIn, ptrOut, h(x), amtIn, amtOut
+          ) @ #f) ∧
+         (amtIn = (amtOut++fee))
+        ⇒
+         ¬(#f < #i)) )
+  case case_1
+  solve( IntermediaryPending( $Me, $Prev, $Next, ptrIn, ptrOut, h(x),
+                              amtIn, amtOut, fee
+         ) ▶₀ #i )
+    case Forward_HTLC_case_1
+    solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.2) ) @ #vk.12 )
+      case A_Send_Proposal
+      by contradiction /* from formulas */
+    next
+      case B_Recv_Proposal
+      solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.3) ) @ #vk.18 )
+        case A_Send_Proposal
+        solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.5) ) @ #vk.19 )
+          case A_Send_Proposal
+          solve( Fulfill( ~ptr, x ) ▶₁ #i )
+            case Intermediary_Settle_case_1
+            by contradiction /* from formulas */
+          next
+            case Intermediary_Settle_case_2
+            by contradiction /* from formulas */
+          next
+            case Receiver_Fulfill_HTLC
+            by contradiction /* from formulas */
+          qed
+        next
+          case B_Recv_Proposal
+          by contradiction /* from formulas */
+        next
+          case c_sign
+          solve( !Ltk( $Me, ltk.6 ) ▶₀ #r )
+            case Register_key
+            solve( !KU( ~ltk.3 ) @ #vk.23 )
+              case Compromise_Ltk
+              solve( !Ltk( $Me, ltk.7 ) ▶₀ #r.1 )
+                case Register_key
+                solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              qed
+            qed
+          qed
+        qed
+      next
+        case B_Recv_Proposal
+        by contradiction /* from formulas */
+      next
+        case c_sign
+        solve( !Ltk( $Me, ltk.7 ) ▶₀ #r )
+          case Register_key
+          solve( !KU( ~ltk.2 ) @ #vk.23 )
+            case Compromise_Ltk
+            solve( !Ltk( $Me, ltk.8 ) ▶₀ #r.1 )
+              case Register_key
+              solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.8) ) @ #vk.23 )
+                case A_Send_Proposal
+                solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !KU( ~ltk.8 ) @ #vk.24 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Me, ltk.9 ) ▶₀ #r.2 )
+                    case Register_key
+                    solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    next
+      case c_sign
+      solve( !Ltk( $Next, ltk.6 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.18 )
+          case Compromise_Ltk
+          solve( !Ltk( $Next, ltk.7 ) ▶₀ #r.1 )
+            case Register_key
+            solve( !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.5) ) @ #vk.18 )
+              case A_Send_Proposal
+              solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                case Intermediary_Settle_case_1
+                by contradiction /* from formulas */
+              next
+                case Intermediary_Settle_case_2
+                by contradiction /* from formulas */
+              next
+                case Receiver_Fulfill_HTLC
+                by contradiction /* from formulas */
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $Me, ltk.8 ) ▶₀ #r.2 )
+                case Register_key
+                solve( !KU( ~ltk.4 ) @ #vk.19 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Me, ltk.9 ) ▶₀ #r.3 )
+                    case Register_key
+                    solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  next
+    case Forward_HTLC_case_2
+    solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.2) ) @ #vk.12 )
+      case A_Send_Proposal
+      by contradiction /* from formulas */
+    next
+      case B_Recv_Proposal
+      solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.3) ) @ #vk.18 )
+        case A_Send_Proposal
+        solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.5) ) @ #vk.19 )
+          case A_Send_Proposal
+          solve( Fulfill( ~ptr, x ) ▶₁ #i )
+            case Intermediary_Settle_case_1
+            by contradiction /* from formulas */
+          next
+            case Intermediary_Settle_case_2
+            by contradiction /* from formulas */
+          next
+            case Receiver_Fulfill_HTLC
+            by contradiction /* from formulas */
+          qed
+        next
+          case B_Recv_Proposal
+          by contradiction /* from formulas */
+        next
+          case c_sign
+          solve( !Ltk( $Next, ltk.6 ) ▶₀ #r )
+            case Register_key
+            solve( !KU( ~ltk.3 ) @ #vk.23 )
+              case Compromise_Ltk
+              solve( !Ltk( $Next, ltk.7 ) ▶₀ #r.1 )
+                case Register_key
+                solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              qed
+            qed
+          qed
+        qed
+      next
+        case B_Recv_Proposal
+        by contradiction /* from formulas */
+      next
+        case c_sign
+        solve( !Ltk( $Next, ltk.7 ) ▶₀ #r )
+          case Register_key
+          solve( !KU( ~ltk.2 ) @ #vk.23 )
+            case Compromise_Ltk
+            solve( !Ltk( $Next, ltk.8 ) ▶₀ #r.1 )
+              case Register_key
+              solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.8) ) @ #vk.23 )
+                case A_Send_Proposal
+                solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !KU( ~ltk.8 ) @ #vk.24 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Next, ltk.9 ) ▶₀ #r.2 )
+                    case Register_key
+                    solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    next
+      case c_sign
+      solve( !Ltk( $Me, ltk.6 ) ▶₀ #r )
+        case Register_key
+        solve( !KU( ~ltk.1 ) @ #vk.18 )
+          case Compromise_Ltk
+          solve( !Ltk( $Me, ltk.7 ) ▶₀ #r.1 )
+            case Register_key
+            solve( !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.5) ) @ #vk.18 )
+              case A_Send_Proposal
+              solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                case Intermediary_Settle_case_1
+                by contradiction /* from formulas */
+              next
+                case Intermediary_Settle_case_2
+                by contradiction /* from formulas */
+              next
+                case Receiver_Fulfill_HTLC
+                by contradiction /* from formulas */
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $Next, ltk.8 ) ▶₀ #r.2 )
+                case Register_key
+                solve( !KU( ~ltk.4 ) @ #vk.19 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Next, ltk.9 ) ▶₀ #r.3 )
+                    case Register_key
+                    solve( Fulfill( ~ptr, x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+next
+  case case_2
+  solve( IntermediaryPending( $Me, $Prev, $Next, ptrIn, ptrOut, h(x),
+                              amtIn, amtOut, fee
+         ) ▶₀ #i )
+    case Forward_HTLC_case_1
+    by contradiction /* from formulas */
+  next
+    case Forward_HTLC_case_2
+    by contradiction /* from formulas */
+  qed
+qed
+
+lemma Redeem_Requires_Receiver_Release [use_induction]:
+  all-traces
+  "∀ ptr y #i.
+    (Redeemed( ptr, y ) @ #i) ⇒
+    (∃ R x #k. (PreimageReleased( R, x ) @ #k) ∧ (h(x) = y))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ ptr y #i.
+  (Redeemed( ptr, y ) @ #i)
+ ∧
+  ∀ R x #k. (PreimageReleased( R, x ) @ #k) ∧ (h(x) = y) ⇒ ⊥"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  solve( (∀ ptr y #i.
+           (Redeemed( ptr, y ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ R x #k.
+              (PreimageReleased( R, x ) @ #k) ∧ (h(x) = y) ∧ ¬(last(#k)))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ R x #k. (PreimageReleased( R, x ) @ #k) ∧ (h(x) = y) ∧ ¬(last(#k))) )
+      case case_1
+      solve( Redeemed( ptr, y ) @ #i )
+        case Intermediary_Settle
+        solve( IntermediaryPending( $Me, $Prev, $Next, ptr, ptrOut, h(x), amtIn,
+                                    amtOut, fee
+               ) ▶₀ #i )
+          case Forward_HTLC_case_1
+          solve( !KU( sign(<'proposal', $Me, $Next, ~ptr.1>, ~ltk.2) ) @ #vk.12 )
+            case A_Send_Proposal
+            by contradiction /* from formulas */
+          next
+            case B_Recv_Proposal
+            solve( !KU( sign(<'proposal', $Me, $Next, ~ptr.1>, ~ltk.3) ) @ #vk.18 )
+              case A_Send_Proposal
+              solve( !KU( sign(<'proposal', $Me, $Next, ~ptr.1>, ~ltk.5) ) @ #vk.19 )
+                case A_Send_Proposal
+                solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !Ltk( $Me, ltk.6 ) ▶₀ #r )
+                  case Register_key
+                  solve( !KU( ~ltk.3 ) @ #vk.23 )
+                    case Compromise_Ltk
+                    solve( !Ltk( $Me, ltk.7 ) ▶₀ #r.1 )
+                      case Register_key
+                      solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $Me, ltk.7 ) ▶₀ #r )
+                case Register_key
+                solve( !KU( ~ltk.2 ) @ #vk.23 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Me, ltk.8 ) ▶₀ #r.1 )
+                    case Register_key
+                    solve( !KU( sign(<'proposal', $Me, $Next, ~ptr.1>, ~ltk.8) ) @ #vk.23 )
+                      case A_Send_Proposal
+                      solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    next
+                      case B_Recv_Proposal
+                      by contradiction /* from formulas */
+                    next
+                      case c_sign
+                      solve( !KU( ~ltk.8 ) @ #vk.24 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Me, ltk.9 ) ▶₀ #r.2 )
+                          case Register_key
+                          solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          next
+            case c_sign
+            solve( !Ltk( $Next, ltk.6 ) ▶₀ #r )
+              case Register_key
+              solve( !KU( ~ltk.1 ) @ #vk.18 )
+                case Compromise_Ltk
+                solve( !Ltk( $Next, ltk.7 ) ▶₀ #r.1 )
+                  case Register_key
+                  solve( !KU( sign(<'proposal', $Me, $Next, ~ptr.1>, ~ltk.5) ) @ #vk.18 )
+                    case A_Send_Proposal
+                    solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  next
+                    case B_Recv_Proposal
+                    by contradiction /* from formulas */
+                  next
+                    case c_sign
+                    solve( !Ltk( $Me, ltk.8 ) ▶₀ #r.2 )
+                      case Register_key
+                      solve( !KU( ~ltk.4 ) @ #vk.19 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Me, ltk.9 ) ▶₀ #r.3 )
+                          case Register_key
+                          solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        next
+          case Forward_HTLC_case_2
+          solve( !KU( sign(<'proposal', $Next, $Me, ~ptr.1>, ~ltk.2) ) @ #vk.12 )
+            case A_Send_Proposal
+            by contradiction /* from formulas */
+          next
+            case B_Recv_Proposal
+            solve( !KU( sign(<'proposal', $Next, $Me, ~ptr.1>, ~ltk.3) ) @ #vk.18 )
+              case A_Send_Proposal
+              solve( !KU( sign(<'proposal', $Next, $Me, ~ptr.1>, ~ltk.5) ) @ #vk.19 )
+                case A_Send_Proposal
+                solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                  case Intermediary_Settle_case_1
+                  by contradiction /* from formulas */
+                next
+                  case Intermediary_Settle_case_2
+                  by contradiction /* from formulas */
+                next
+                  case Receiver_Fulfill_HTLC
+                  by contradiction /* from formulas */
+                qed
+              next
+                case B_Recv_Proposal
+                by contradiction /* from formulas */
+              next
+                case c_sign
+                solve( !Ltk( $Next, ltk.6 ) ▶₀ #r )
+                  case Register_key
+                  solve( !KU( ~ltk.3 ) @ #vk.23 )
+                    case Compromise_Ltk
+                    solve( !Ltk( $Next, ltk.7 ) ▶₀ #r.1 )
+                      case Register_key
+                      solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            next
+              case B_Recv_Proposal
+              by contradiction /* from formulas */
+            next
+              case c_sign
+              solve( !Ltk( $Next, ltk.7 ) ▶₀ #r )
+                case Register_key
+                solve( !KU( ~ltk.2 ) @ #vk.23 )
+                  case Compromise_Ltk
+                  solve( !Ltk( $Next, ltk.8 ) ▶₀ #r.1 )
+                    case Register_key
+                    solve( !KU( sign(<'proposal', $Next, $Me, ~ptr.1>, ~ltk.8) ) @ #vk.23 )
+                      case A_Send_Proposal
+                      solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                        case Intermediary_Settle_case_1
+                        by contradiction /* from formulas */
+                      next
+                        case Intermediary_Settle_case_2
+                        by contradiction /* from formulas */
+                      next
+                        case Receiver_Fulfill_HTLC
+                        by contradiction /* from formulas */
+                      qed
+                    next
+                      case B_Recv_Proposal
+                      by contradiction /* from formulas */
+                    next
+                      case c_sign
+                      solve( !KU( ~ltk.8 ) @ #vk.24 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Next, ltk.9 ) ▶₀ #r.2 )
+                          case Register_key
+                          solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          next
+            case c_sign
+            solve( !Ltk( $Me, ltk.6 ) ▶₀ #r )
+              case Register_key
+              solve( !KU( ~ltk.1 ) @ #vk.18 )
+                case Compromise_Ltk
+                solve( !Ltk( $Me, ltk.7 ) ▶₀ #r.1 )
+                  case Register_key
+                  solve( !KU( sign(<'proposal', $Next, $Me, ~ptr.1>, ~ltk.5) ) @ #vk.18 )
+                    case A_Send_Proposal
+                    solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                      case Intermediary_Settle_case_1
+                      by contradiction /* from formulas */
+                    next
+                      case Intermediary_Settle_case_2
+                      by contradiction /* from formulas */
+                    next
+                      case Receiver_Fulfill_HTLC
+                      by contradiction /* from formulas */
+                    qed
+                  next
+                    case B_Recv_Proposal
+                    by contradiction /* from formulas */
+                  next
+                    case c_sign
+                    solve( !Ltk( $Next, ltk.8 ) ▶₀ #r.2 )
+                      case Register_key
+                      solve( !KU( ~ltk.4 ) @ #vk.19 )
+                        case Compromise_Ltk
+                        solve( !Ltk( $Next, ltk.9 ) ▶₀ #r.3 )
+                          case Register_key
+                          solve( Fulfill( ~ptr.1, x ) ▶₁ #i )
+                            case Intermediary_Settle_case_1
+                            by contradiction /* from formulas */
+                          next
+                            case Intermediary_Settle_case_2
+                            by contradiction /* from formulas */
+                          next
+                            case Receiver_Fulfill_HTLC
+                            by contradiction /* from formulas */
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      next
+        case Receiver_Fulfill_HTLC
+        by contradiction /* from formulas */
+      next
+        case Sender_Settle
+        solve( SenderPending( $Sender, $Forward1, $Receiver, ptr, h(x), amtTotal
+               ) ▶₀ #i )
+          case Sender_Offer_HTLC_case_1
+          solve( Fulfill( ~ptr, x ) ▶₁ #i )
+            case Intermediary_Settle_case_1
+            by contradiction /* from formulas */
+          next
+            case Intermediary_Settle_case_2
+            by contradiction /* from formulas */
+          next
+            case Receiver_Fulfill_HTLC
+            by contradiction /* from formulas */
+          qed
+        next
+          case Sender_Offer_HTLC_case_2
+          solve( Fulfill( ~ptr, x ) ▶₁ #i )
+            case Intermediary_Settle_case_1
+            by contradiction /* from formulas */
+          next
+            case Intermediary_Settle_case_2
+            by contradiction /* from formulas */
+          next
+            case Receiver_Fulfill_HTLC
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* cyclic */
+  qed
+qed
+
+/*
+WARNING: the following wellformedness checks failed!
+
+Derivation Checks
+=================
+
+  Derivation checks timed out.
+  Use --derivcheck-timeout=INT to configure timeout.
+  Set to 0 to deactivate for no timeout.
+*/
+
+/*
+Generated from:
+Tamarin version 1.12.0
+Maude version 3.5.1
+Git revision: 82780bbaf3328a45f624ddb41e51bf75425f851c (with uncommited changes), branch: master
+Compiled at: 2026-03-07 14:22:39.174278293 UTC
+*/
+
+end
+
+==============================================================================
+summary of summaries:
+
+analyzed: multihop_nhop_hardened.spthy
+
+  processing time: 473.07s
+  
+  WARNING: 1 wellformedness check failed!
+           The analysis results might be wrong!
+  
+  state_update (all-traces): verified (14 steps)
+  delayed_funds (all-traces): verified (44 steps)
+  instant_funds (all-traces): verified (60 steps)
+  settlement_is_traceable (all-traces): verified (4 steps)
+  Protocol_execution (exists-trace): verified (26 steps)
+  No_Punishment_Without_Cheating (all-traces): verified (20 steps)
+  Cooperative_Close_Execution (exists-trace): verified (15 steps)
+  Funds_Locked_Before_Update (all-traces): verified (14 steps)
+  Update_Requires_Negotiation (all-traces): verified (14 steps)
+  Ltk_Known_Implies_Compromised (all-traces): verified (3 steps)
+  Invoice_Released_Once (all-traces): verified (60 steps)
+  Distinct_Parties_Configuration (exists-trace): verified (23 steps)
+  Refund_Possible (exists-trace): verified (16 steps)
+  Preimage_Secret_Until_Released (all-traces): verified (3 steps)
+  Invoice_Has_Secret_Preimage (all-traces): verified (2 steps)
+  HTLC_On_Opened_Channel (all-traces): verified (16 steps)
+  Claim_Requires_Release (all-traces): verified (106 steps)
+  Settle_Excludes_Sender_Refund (all-traces): verified (22 steps)
+  Invoice_Authenticates_Settlement (all-traces): verified (32 steps)
+  Forged_Invoice_Requires_Key_Compromise (exists-trace): verified (14 steps)
+  Loss_Requires_Inaction (all-traces): verified (2 steps)
+  Refund_Requires_Timeout (all-traces): verified (16 steps)
+  Intermediary_Never_Loses_Under_Liveness (all-traces): verified (2 steps)
+  Payment_Atomicity_Under_Liveness (all-traces): verified (2 steps)
+  Timeout_Race_Blocked (all-traces): verified (2 steps)
+  Multihop_Payment_With_Fees_Possible (exists-trace): verified (32 steps)
+  Forward_Requires_Incoming (all-traces): verified (263 steps)
+  Amount_Strictly_Decreases_Per_Hop (all-traces): verified (2 steps)
+  Receiver_Paid_Invoice_Amount (all-traces): verified (10 steps)
+  Fee_Only_On_Successful_Forward (all-traces): verified (102 steps)
+  Redeem_Requires_Receiver_Release (all-traces): verified (115 steps)
+
+==============================================================================
