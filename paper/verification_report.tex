@@ -211,7 +211,7 @@ Atomicity / non-vacuity & \gc & \texttt{Payment_Atomicity_Under_Liveness}, \text
 Value \& fees           & \gc & \texttt{EndToEnd_Value_Conservation}, \texttt{Fee_Conservation_Hop1/2}, \texttt{Fee_Strictly_Positive_Hop1/2}, \texttt{Receiver_Paid_Invoice_Amount} \\
 Refund / griefing       & \ac & \texttt{Refund_Requires_Timeout}, \texttt{Loss_Requires_Inaction}, \texttt{Honest_Intermediary_Refunds} \\
 Wormhole                & \rc & \texttt{Wormhole_Fee_Theft_Reachable}, \texttt{Wormhole_Steals_Exactly_The_Fees} \\
-Intermediary safety     & \gc & \texttt{Intermediary_Never_Loses_Under_Liveness}, \texttt{Timeout_race_Blocked} \\
+Intermediary safety     & \gc & \texttt{Intermediary_Never_Loses_Under_Liveness}, \texttt{Timeout_Race_Blocked} \\
 Channel lifecycle       & \gc & \texttt{state_update}, \texttt{Protocol_execution}, \texttt{Cooperative_Close_Execution}, \texttt{No_Punishment_Without_Cheating}, \texttt{Funds_Locked_Before_Update} \\
 \bottomrule
 \end{tabular}
@@ -244,7 +244,7 @@ $\Delta$ margin at each hop because every inbound deadline is later than its
 outbound one. Bottom (red): with the liveness assumption T2b removed, the
 adversary fires the inbound timeout early and the honest intermediary suffers a
 net loss---\texttt{Early_Timeout_Race} in \texttt{timeout.spthy}. This pairs with
-\texttt{Timeout_race_Blocked} in \texttt{multihop.spthy}, forming a
+\texttt{Timeout_Race_Blocked} in \texttt{multihop.spthy}, forming a
 two-sided certificate that T2b is necessary.}
 \label{fig:timing}
 \end{figure}

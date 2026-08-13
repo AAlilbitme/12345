@@ -737,7 +737,7 @@ lemma Payment_Atomicity_Under_Liveness:
 
 // This lemma only proves the race is blocked WITH 
 // the HonestPartiesActBeforeIncomingTimeout restriction active.
-lemma Timeout_race_Blocked:
+lemma Timeout_Race_Blocked:
     "not (Ex P ptrIn ptrOut y #l #i #j #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #l
       & TimedOut(ptrIn)     @ #k

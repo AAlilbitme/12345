@@ -139,7 +139,7 @@
     <circle cx="994" cy="496" r="9" fill="#2e7d32"/><text x="994" y="499.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">8</text>
     <text x="1012" y="493" font-weight="700" fill="#2e7d32">Intermediary safety (under liveness T2b)</text>
     <text x="1012" y="507" fill="#444">Intermediary_Never_Loses_Under_Liveness ✓</text>
-    <text x="1012" y="519" fill="#444">Timeout_race_Blocked ✓ (race blocked with T2b)</text>
+    <text x="1012" y="519" fill="#444">Timeout_Race_Blocked ✓ (race blocked with T2b)</text>
   </g>
 
   <line x1="985" y1="540" x2="1320" y2="540" stroke="#eee"/>

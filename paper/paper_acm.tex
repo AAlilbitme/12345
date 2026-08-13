@@ -241,12 +241,12 @@ Persistent knowledge of the revocation secret is retained via \texttt{!RevokedSe
 
 We stress that Instance 2 is a consequence of integration rather than of scale. It resides at the junction of the revocation lifecycle and the routing execution. A model containing only the two-party channel layer does not exhibit the trace that exposes it.
 
-\textbf{Re-verification.} Adding a linear premise shrinks the enabling condition, so $\mathrm{traces}(R') \subseteq \mathrm{traces}(R)$ and every all-traces ($\forall$) property is preserved automatically. The converse fails for existence ($\exists$) witnesses, which may be removed. We therefore re-ran the full 43-lemma theory rather than appealing to monotonicity; all 43 re-verify (262 s, Tamarin 1.8).
+\textbf{Re-verification.} Adding a linear premise shrinks the enabling condition, so $\mathrm{traces}(R') \subseteq \mathrm{traces}(R)$ and every all-traces ($\forall$) property is preserved automatically. The converse fails for existence ($\exists$) witnesses, which may be removed. We therefore re-ran the full 43-lemma theory rather than appealing to monotonicity; all 43 re-verify (353\,s, Tamarin 1.8).
 
 \subsection{Wormhole Attack: A Fidelity Check}
 The wormhole attack~\cite{malavolta2019anonymous} is an instance of the agent-skipping class formalized symbolically by Smith et al.~\cite{smith2022modelling}. We claim no novelty for exhibiting it. Its role here is to discharge an obligation created by Section~\ref{sec:discipline}: having constrained the model with two linear single-spend tokens, we must show the repair is \emph{sound} rather than merely restrictive, since a guard that eliminated the unbounded-punishment trace by over-constraining the protocol would also eliminate legitimate executions and render subsequent safety results vacuous.
 
-In the symbolic model, the Dolev--Yao network is the colluders' side channel. We machine-check it twice: \texttt{Wormhole\_Fee\_Theft\_Reachable} (51 steps) exhibits a trace where the payment settles yet the middle hop is never redeemed, with no key compromise; and \texttt{Wormhole\_Steals\_Exactly\_The\_Fees} (81 steps) quantifies the theft to precisely the path fees \texttt{\%f1 + \%f2}. The hardened model therefore still admits the known economic pathologies of HTLC routing: the linear tokens remove exactly the spurious multiplicity and nothing else.
+In the symbolic model, the Dolev--Yao network is the colluders' side channel. We machine-check it twice: \texttt{Wormhole\_Fee\_Theft\_Reachable} (54 steps) exhibits a trace where the payment settles yet the middle hop is never redeemed, with no key compromise; and \texttt{Wormhole\_Steals\_Exactly\_The\_Fees} (86 steps) quantifies the theft to precisely the path fees \texttt{\%f1 + \%f2}. The hardened model therefore still admits the known economic pathologies of HTLC routing: the linear tokens remove exactly the spurious multiplicity and nothing else.
 
 \subsection{Economic Soundness and Limitations}
 We prove \texttt{EndToEnd\_Value\_Conservation}: the sender locks the receiver's amount plus the accumulated fees, so the routing mechanism neither creates nor destroys value. As a reachability result, \texttt{Honest\_Intermediary\_Refunds} exhibits an honest intermediary induced to lock capital and then refund on timeout, with no settlement and no key compromise---the standard PCN griefing denial of service. This is not a violation of safety, since principal is recovered, but it is an availability concern: an adversary can immobilize routing capital at will.
@@ -302,7 +302,7 @@ $C$ satisfies \textsc{Auth} if every forwarding step is preceded by a genuine of
 and symmetrically for the second position.
 \end{definition}
 
-\textsc{Auth} is machine-checked in $C$ as \texttt{Forward1\_Requires\_Offer} (266 steps) and \texttt{Forward2\_Requires\_Forward1} (274 steps). It quantifies over a \emph{single adjacent pair} and never over the path or $N$; this locality is what makes it provable, and its failure for a generic signed rule is precisely the boundary reported above.
+\textsc{Auth} is machine-checked in $C$ as \texttt{Forward1\_Requires\_Offer} (270 steps) and \texttt{Forward2\_Requires\_Forward1} (278 steps). It quantifies over a \emph{single adjacent pair} and never over the path or $N$; this locality is what makes it provable, and its failure for a generic signed rule is precisely the boundary reported above.
 
 \begin{theorem}[Soundness of the abstraction]
 \label{thm:refine}

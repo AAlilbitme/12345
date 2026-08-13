@@ -620,7 +620,7 @@ lemma Payment_Atomicity_Under_Liveness:
       & (not Ex P #l. LtkCompromised(P) @ #l)
      ==> not (Ex #m. Refunded(ptrSF1, y) @ #m)"
 
-lemma Timeout_race_Blocked:
+lemma Timeout_Race_Blocked:
     "not (Ex P ptrIn ptrOut y #l #i #j #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #l
       & TimedOut(ptrIn)     @ #k
