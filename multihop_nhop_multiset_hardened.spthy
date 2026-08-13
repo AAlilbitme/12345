@@ -647,7 +647,7 @@ lemma Payment_Atomicity_Under_Liveness:
 
 // This lemma only proves the race is blocked WITH the liveness restriction active.
 // The timeout.spthy is needed to show the race is reachable WITHOUT it.
-lemma Timeout_redeem_refund:
+lemma Timeout_Race_Blocked:
     "not (Ex P ptrIn ptrOut y #f #i #j #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
       & TimedOut(ptrIn)     @ #k
