@@ -214,7 +214,7 @@ All results were produced under a strict test-first discipline: a property is cl
 \label{sec:verification}
 % ==============================================================
 
-Across the theories of Table~\ref{tab:theories} we establish 61 distinct properties, corresponding to 87 lemma checks. We stress that the $N$-hop theory contributes no new properties. Of the 43 lemmas of the concrete theory, 10 are exists-trace witnesses (including non-vacuity checks and the attack traces below) and 5 are \texttt{[reuse]} helper lemmas supporting other proofs rather than stating protocol goals; the complete lemma index accompanies the artifact. We focus here on the concrete theory \texttt{multihop.spthy}.
+Across the theories of Table~\ref{tab:theories} we establish 61 distinct properties, corresponding to 87 lemma checks. Of the $N$-hop theory's 31 lemmas, 26 restate properties already proved in the concrete theory over the abstract routing layer and 5 are new to it (Section~\ref{sec:nhop}). Of the 43 lemmas of the concrete theory, 10 are exists-trace witnesses (including non-vacuity checks and the attack traces below) and 5 are \texttt{[reuse]} helper lemmas supporting other proofs rather than stating protocol goals; the complete lemma index accompanies the artifact. We focus here on the concrete theory \texttt{multihop.spthy}.
 
 \subsection{The Linear Single-Spend Discipline}
 \label{sec:discipline}
@@ -263,7 +263,7 @@ The Tamarin \texttt{natural-numbers} sort lacks a zero term (\texttt{\%0}). Cons
 \end{remark}
 
 \subsection{Timing Safety and Assumption Minimality}
-\texttt{cltv\_blocks} derives the CLTV-delta invariant from concrete block numbers; \texttt{Clock} adds block-clock lifecycle safety; and \texttt{timeout} exhibits the early-timeout race that reappears once T2b is removed. Together with \texttt{Timeout\_race\_Blocked} in the concrete theory, the last of these forms a two-sided certificate: the race is reachable without the assumption and unreachable with it.
+\texttt{cltv\_blocks} derives the CLTV-delta invariant from concrete block numbers; \texttt{Clock} adds block-clock lifecycle safety; and \texttt{timeout} exhibits the early-timeout race that reappears once T2b is removed. Together with \texttt{Timeout\_Race\_Blocked} in the concrete theory, the last of these forms a two-sided certificate: the race is reachable without the assumption and unreachable with it.
 
 We tested whether the active sweeping restriction T3 is redundant given the passive orderings T1/T2b. We removed T3 and re-ran the suite: \texttt{Intermediary\_Never\_Loses\_Under\_Liveness} is falsified, with Tamarin finding a concrete 59-step counterexample. T2b orders the two timeouts but does not force the node to sweep the incoming HTLC; that action is exactly what T3 encodes, and no ordering constraint can compel an action. We have empirically demonstrated that T3 is load-bearing for intermediary safety. We tested the removal of T3 specifically because it is the only one of the four that is an obligation rather than an ordering, and accordingly make no claim regarding the individual minimality of T1, T2a, or T2b, whose content is independently corroborated by the block-clock derivation above.
 
