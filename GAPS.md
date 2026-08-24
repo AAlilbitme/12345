@@ -77,7 +77,7 @@ unlinkability. That is a separate work item; we do **not** claim any privacy
 guarantee here. The models prove nothing about confidentiality of route or
 amounts, and should not be read as if they do.
 
-## Gap 4 — Timing / liveness fairness  (`cltv_blocks.spthy`)
+## Gap 4 — Timing / liveness fairness  (`Cltv.spthy`)
 
 **Problem.** `Intermediary_Never_Loses` falsifies without a time model, and the
 earlier T1–T3 (and the rejected T4) tried to rescue it by **asserting** an
@@ -169,13 +169,13 @@ theories are deliberately small so each proof terminates in under 2 minutes.
 |------|--------|
 | `multihop.spthy` | Full channel model + HTLC routing + Gap 2 (replay) + Gap 6 (value/fees, merged) |
 | `gaps.spthy` | Gaps 1, 4, 5 (lifecycle + timing + dispute) |
-| `cltv_blocks.spthy` | Gap 4 arithmetic (CLTV-delta windows exist) |
+| `Cltv.spthy` | Gap 4 arithmetic (CLTV-delta windows exist) |
 | `t2b_attack.spthy` | T2b necessity (early-timeout race without the liveness assumption) |
 | `witnesses.spthy` | Finite-clock reachability witnesses |
 | `GAPS.md` | This document |
 
-`value_conservation.spthy`, `PaymentChannels.spthy`, and the old
+`value_conservation.spthy`, `payment_channels.spthy`, and the old
 `multihop_no_fees.spthy` are retired to `archive/` (all subsumed by
 `multihop.spthy`). `channel_lifecycle.spthy` was consolidated into `gaps.spthy`;
-`cltv_blocks.spthy` remains a separate file. The verified suite is driven by
+`Cltv.spthy` remains a separate file. The verified suite is driven by
 `run.py` (or `make`).

@@ -11,7 +11,7 @@ shared.
 
 IMPORTANT -- per-file search strategy:
   --stop-on-trace=seqdfs RESCUES multihop's heavy exists-traces (without it
-  Multihop_Payment_Possible OOM-kills), but it HANGS cltv_blocks.spthy's nat
+  Multihop_Payment_Possible OOM-kills), but it HANGS Cltv.spthy's nat
   arithmetic and gaps.spthy's linear-token lemmas.
   So seqdfs is applied to every file EXCEPT the ones in NO_SEQDFS below.
 
@@ -32,21 +32,22 @@ import time
 import threading
 
 # --- the project's theory files, in reading order -------------------------
-# PaymentChannels.spthy and value_conservation.spthy were retired: both are
-# fully subsumed by multihop.spthy (channel layer + amounts/fees merged in,
-# tested end to end -- see multihop.spthy's header). Kept in archive/ as the
-# tested precedent for the signing+nat combination.
+# payment_channels.spthy is not in this list: its channel layer is fully
+# subsumed by multihop.spthy (channel layer + amounts/fees merged in, tested
+# end to end -- see multihop.spthy's header).  It verifies 8/8 in 18.83s on
+# its own, via `make channels`.  value_conservation.spthy was retired the same
+# way and kept in archive/ as the tested precedent for signing+nat.
 FILES = [
-    "cltv_blocks.spthy",
+    "Cltv.spthy",
     "timeout.spthy",
     "Clock.spthy",
     "multihop.spthy",
-    "multihop_nhop.spthy",
+    "Modif.spthy",
 ]
 
 # Files that must NOT use --stop-on-trace=seqdfs.  Both are natural-numbers
 # theories, where seqdfs hangs on the arithmetic rather than terminating.
-NO_SEQDFS = {"cltv_blocks.spthy", "Clock.spthy"}
+NO_SEQDFS = {"Cltv.spthy", "Clock.spthy"}
 
 # Files proved one lemma at a time to avoid OOM.  Each entry maps a file to
 # a list of (lemma_name, use_seqdfs, timeout_override_or_None, solo) tuples.

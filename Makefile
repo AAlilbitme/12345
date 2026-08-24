@@ -2,10 +2,10 @@
 # theories and lemmas are proved and with which per-file flags (seqdfs, etc.).
 # Maintaining a parallel per-lemma list here caused drift, so this now delegates.
 #
-#   make            prove the whole suite (cltv_blocks, timeout, Clock,
-#                   multihop, multihop_nhop) -- see run.py's FILES list
+#   make            prove the whole suite (Cltv, timeout, Clock,
+#                   multihop, Modif) -- see run.py's FILES list
 #   make FILE=multihop.spthy    prove a single theory
-#   make channels   prove the archived standalone channel-lifecycle demo
+#   make channels   prove the standalone channel-lifecycle demo
 #
 # Requires: tamarin-prover on PATH, python3.
 
@@ -20,10 +20,12 @@ all: suite
 suite:
 	$(LANG) $(PY) run.py $(FILE)
 
-# The standalone channel layer is fully subsumed by multihop.spthy's channel
-# rules; kept only as a fast isolated demo, so it is proved on request.
+# payment_channels.spthy's channel layer is fully subsumed by multihop.spthy's;
+# kept as a fast isolated demo (and as the pre-fix exhibit for the revoked-
+# commitment single-spend finding), so it is proved on request rather than
+# in the default suite.
 channels:
-	$(LANG) $(PY) run.py archive/PaymentChannels.spthy
+	$(LANG) $(PY) run.py payment_channels.spthy
 
 clean:
 	@echo "Nothing to clean (Tamarin produces no build artifacts)"

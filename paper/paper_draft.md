@@ -48,7 +48,7 @@ We make five contributions:
 
 5. **A tractability map.** We identify the exact combinations of Tamarin ingredients that cause the prover to exhaust memory or fail to terminate: the triple of signing + natural-number induction + unbounded block clock; self-referential signed-message terms in generic N-hop routing; and reusable channel slots with automatic source generation. This map explains our modular decomposition and provides guidance for future verification efforts on stateful, time-locked protocols.
 
-As a generalisation, we develop an N-hop abstraction (`multihop_nhop.spthy`) with a **pen-and-paper refinement theorem** that transfers safety from the abstract model to the concrete one for arbitrary path lengths. The bridge is a local per-hop authentication lemma (AUTH), which we machine-check in the concrete model and which is provable *because* it quantifies over one adjacent pair rather than the entire path. We state honestly where the verification ends and the meta-theoretic argument begins.
+As a generalisation, we develop an N-hop abstraction (`Modif.spthy`) with a **pen-and-paper refinement theorem** that transfers safety from the abstract model to the concrete one for arbitrary path lengths. The bridge is a local per-hop authentication lemma (AUTH), which we machine-check in the concrete model and which is provable *because* it quantifies over one adjacent pair rather than the entire path. We state honestly where the verification ends and the meta-theoretic argument begins.
 
 ### 1.4 Scope and Non-Goals
 
@@ -145,9 +145,9 @@ This is not a limitation of our model but a fundamental tractability boundary of
 | File | Aspect | Lemmas | Builtins |
 |------|--------|:------:|----------|
 | `multihop.spthy` | Channel lifecycle + 3-hop routing + value/fees + atomicity + wormhole | 43 | hashing, signing, nat |
-| `multihop_nhop.spthy` | N-hop generalisation (generic linear-fact forward) | 25 | hashing, signing, nat |
+| `Modif.spthy` | N-hop generalisation (generic linear-fact forward) | 25 | hashing, signing, nat |
 | `Clock.spthy` | Block-clock lifecycle & staggered-CLTV claim windows | 9 | natural-numbers |
-| `cltv_blocks.spthy` | Pure CLTV block arithmetic (delta positivity) | 3 | natural-numbers |
+| `Cltv.spthy` | Pure CLTV block arithmetic (delta positivity) | 3 | natural-numbers |
 | `timeout.spthy` | Early-timeout race (liveness assumption removed) | 1 | — |
 | **Total** | | **81** | |
 
@@ -157,19 +157,19 @@ This is not a limitation of our model but a fundamental tractability boundary of
 - Value conservation and fee accounting as machine-checked lemmas.
 - Wormhole attack reachability and quantification.
 
-**`multihop_nhop.spthy` (abstract model).** Generalises routing to arbitrary $N$ hops by replacing the three specific forwarding rules with a single generic `Forward_HTLC` rule. Uses linear `Route(prev, me, ptr, y)` facts to abstract away the network, enabling verification of safety properties for unbounded path lengths.
+**`Modif.spthy` (abstract model).** Generalises routing to arbitrary $N$ hops by replacing the three specific forwarding rules with a single generic `Forward_HTLC` rule. Uses linear `Route(prev, me, ptr, y)` facts to abstract away the network, enabling verification of safety properties for unbounded path lengths.
 
 **`Clock.spthy`.** Introduces a concrete block clock that ticks through natural numbers. Models the full HTLC lifecycle (offer, forward, fulfill, claim, timeout) with explicit block heights, proving that honest parties have positive claim windows.
 
-**`cltv_blocks.spthy`.** A minimal theory proving purely arithmetic properties of CLTV deadlines: that the delta is strictly positive ($d_{\mathit{out}} < d_{\mathit{in}}$) and that claim windows are non-empty.
+**`Cltv.spthy`.** A minimal theory proving purely arithmetic properties of CLTV deadlines: that the delta is strictly positive ($d_{\mathit{out}} < d_{\mathit{in}}$) and that claim windows are non-empty.
 
-**`timeout.spthy`.** A minimal counterexample theory demonstrating that the early-timeout race is reachable when the `HonestPartiesActBeforeIncomingTimeout` restriction is removed. Serves as a two-sided certificate with `Timeout_race_Blocked` in `multihop_nhop.spthy`.
+**`timeout.spthy`.** A minimal counterexample theory demonstrating that the early-timeout race is reachable when the `HonestPartiesActBeforeIncomingTimeout` restriction is removed. Serves as a two-sided certificate with `Timeout_race_Blocked` in `Modif.spthy`.
 
 ### 3.3 Relational vs. Concrete Time
 
-The main routing theories (`multihop.spthy`, `multihop_nhop.spthy`) treat time **relationally**: they reason about event orderings (e.g., "`Redeemed` occurs before `TimedOut`") without assigning concrete block heights. This is sufficient for proving safety properties that depend only on ordering.
+The main routing theories (`multihop.spthy`, `Modif.spthy`) treat time **relationally**: they reason about event orderings (e.g., "`Redeemed` occurs before `TimedOut`") without assigning concrete block heights. This is sufficient for proving safety properties that depend only on ordering.
 
-The three small theories (`Clock.spthy`, `cltv_blocks.spthy`, `timeout.spthy`) add a **concrete block clock**, enabling us to *derive* the CLTV windows that the relational model assumes. This separation is the payoff of isolating the clock from signing: the concrete-clock theories carry natural-numbers but not signing, so they remain tractable.
+The three small theories (`Clock.spthy`, `Cltv.spthy`, `timeout.spthy`) add a **concrete block clock**, enabling us to *derive* the CLTV windows that the relational model assumes. This separation is the payoff of isolating the clock from signing: the concrete-clock theories carry natural-numbers but not signing, so they remain tractable.
 
 ---
 
@@ -386,13 +386,13 @@ Our model includes four timing restrictions:
 
 ### 6.1 Why a Separate Layer?
 
-The main routing theories (`multihop.spthy`, `multihop_nhop.spthy`) treat time relationally: they reason about event orderings without assigning concrete block heights. The timing restrictions (T1, T2a, T2b, T3) encode the intended CLTV behaviour as constraints on trace validity.
+The main routing theories (`multihop.spthy`, `Modif.spthy`) treat time relationally: they reason about event orderings without assigning concrete block heights. The timing restrictions (T1, T2a, T2b, T3) encode the intended CLTV behaviour as constraints on trace validity.
 
 This is sufficient for proving safety properties that depend only on ordering. However, it **assumes** the CLTV structure rather than **deriving** it. A more satisfying result would show that the CLTV deadline structure actually guarantees the required ordering.
 
-The three small theories (`cltv_blocks.spthy`, `Clock.spthy`, `timeout.spthy`) add a **concrete block clock** and prove that the CLTV windows are non-empty. This is the payoff of isolating the clock from signing: these theories carry natural-numbers but not signing, so they remain tractable.
+The three small theories (`Cltv.spthy`, `Clock.spthy`, `timeout.spthy`) add a **concrete block clock** and prove that the CLTV windows are non-empty. This is the payoff of isolating the clock from signing: these theories carry natural-numbers but not signing, so they remain tractable.
 
-### 6.2 Pure CLTV Arithmetic (`cltv_blocks.spthy`)
+### 6.2 Pure CLTV Arithmetic (`Cltv.spthy`)
 
 This minimal theory (3 lemmas) proves purely arithmetic properties of CLTV deadlines:
 
@@ -430,7 +430,7 @@ This minimal counterexample theory (1 lemma) demonstrates what happens when the 
 
 This is the **early timeout race**: the incoming channel times out before the intermediary has a chance to claim, even though the outgoing HTLC is eventually redeemed.
 
-**Two-sided certificate.** Combined with `Timeout_race_Blocked` in `multihop_nhop.spthy` (which proves the race is unreachable when the restriction is present), this establishes:
+**Two-sided certificate.** Combined with `Timeout_race_Blocked` in `Modif.spthy` (which proves the race is unreachable when the restriction is present), this establishes:
 - Without `HonestPartiesActBeforeIncomingTimeout`: the race is reachable.
 - With `HonestPartiesActBeforeIncomingTimeout`: the race is blocked.
 
@@ -445,7 +445,7 @@ Therefore, the restriction is **necessary**, not decorative.
 We have two models of multi-hop routing:
 
 - **Concrete model $C$** (`multihop.spthy`): Fixed 3-hop routing with signed messages over the Dolev–Yao network. Each hop has a specific forwarding rule (`Forward1_HTLC`, `Forward2_HTLC`) with explicit signature verification.
-- **Abstract model $A$** (`multihop_nhop.spthy`): Generic N-hop routing with a single `Forward_HTLC` rule. The network is abstracted away using linear `Route(prev, me, ptr, y)` facts that represent authenticated routing state.
+- **Abstract model $A$** (`Modif.spthy`): Generic N-hop routing with a single `Forward_HTLC` rule. The network is abstracted away using linear `Route(prev, me, ptr, y)` facts that represent authenticated routing state.
 
 Both models share the same channel lifecycle and the same safety lemma statements. They differ only in the routing layer.
 
@@ -512,14 +512,14 @@ We state the soundness theorem connecting $A$ and $C$:
 **Honest caveats:**
 
 - AUTH is **machine-checked** in $C$ (the per-hop lemmas).
-- Safety properties for all $N$ are **machine-checked** in $A$ (the 25 lemmas of `multihop_nhop.spthy`).
+- Safety properties for all $N$ are **machine-checked** in $A$ (the 25 lemmas of `Modif.spthy`).
 - The refinement argument (projection + induction) is **pen-and-paper**. Tamarin cannot quantify over $N$ or relate two theories. This is the honest boundary of our verification.
 
 ### 7.6 N-Hop Caveats (Explicit)
 
 We state honestly the limitations of the N-hop generalisation:
 
-1. **25 active lemmas** in `multihop_nhop.spthy` verify in approximately 103.5 s (natural-numbers builtin).
+1. **25 active lemmas** in `Modif.spthy` verify in approximately 103.5 s (natural-numbers builtin).
 
 2. **Four `[use_induction]` causality lemmas are commented out** as deliberate tractability boundaries:
    - `Settle_Requires_Receiver_Release`
@@ -691,7 +691,7 @@ Lightning is the validating case study; the method is the contribution. Every po
 **Auth/Attack (1)**
 43. `Forged_Invoice_Requires_Key_Compromise` [exists-trace]
 
-### A.2 `multihop_nhop.spthy` (25 active + 4 commented)
+### A.2 `Modif.spthy` (25 active + 4 commented)
 
 **Channel Lifecycle (8)**
 1. `state_update` [use_induction]
@@ -744,7 +744,7 @@ Lightning is the validating case study; the method is the contribution. Every po
 8. `Refund_Reachable` [exists-trace]
 9. `Honest_Flow_Possible` [exists-trace]
 
-### A.4 `cltv_blocks.spthy` (3 lemmas)
+### A.4 `Cltv.spthy` (3 lemmas)
 
 1. `CLTV_Gap_Is_Positive`
 2. `Claim_Window_Nonempty`
@@ -771,13 +771,13 @@ Lightning is the validating case study; the method is the contribution. Every po
 tamarin-prover multihop.spthy --prove --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0
 
 # N-hop abstraction (25 lemmas)
-tamarin-prover multihop_nhop.spthy --prove --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0
+tamarin-prover Modif.spthy --prove --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0
 
 # Block-clock lifecycle (9 lemmas)
 tamarin-prover Clock.spthy --prove --heuristic=c
 
 # Pure CLTV arithmetic (3 lemmas)
-tamarin-prover cltv_blocks.spthy --prove --heuristic=c
+tamarin-prover Cltv.spthy --prove --heuristic=c
 
 # Early-timeout race (1 lemma)
 tamarin-prover timeout.spthy --prove --heuristic=c --stop-on-trace=seqdfs
@@ -798,9 +798,9 @@ This script runs all theories and lemmas, collecting timing and result informati
 | Theory | Total Time | Notes |
 |--------|-----------|-------|
 | `multihop.spthy` | ~262 s | After linear-token fixes |
-| `multihop_nhop.spthy` | ~103.5 s | Natural-numbers builtin |
+| `Modif.spthy` | ~103.5 s | Natural-numbers builtin |
 | `Clock.spthy` | ~45 s | Per-lemma with --auto-sources |
-| `cltv_blocks.spthy` | ~15 s | Minimal theory |
+| `Cltv.spthy` | ~15 s | Minimal theory |
 | `timeout.spthy` | ~5 s | Single exists-trace |
 
 **Disclaimer:** Timings are reported from local runs on a machine with 16 GB RAM and an 8-core processor. Re-measure before submission.

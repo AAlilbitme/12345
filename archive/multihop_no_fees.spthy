@@ -29,7 +29,7 @@
 //       Separated because combining signing equational theory with nat
 //       induction OOM-kills Tamarin.
 //
-//   cltv_blocks.spthy
+//   Cltv.spthy
 //       Pure block-arithmetic derivation of CLTV staggering (the windows
 //       EXIST); does not prove parties act within them (that is T2b below).
 //
@@ -38,7 +38,7 @@
 // are conditional on HonestPartiesActBeforeIncomingTimeout (T2b).
 // T2b encodes the assumption that every honest party claims/publishes within
 // their CLTV window (i.e. TimedOut(ptrOut) fires before TimedOut(ptrIn)).
-// This is a LIVENESS assumption, not a derived fact.  cltv_blocks.spthy
+// This is a LIVENESS assumption, not a derived fact.  Cltv.spthy
 // proves that the claim windows are arithmetically non-empty; it does not
 // prove that parties act within them.  T2b is where the unproven "they act
 // in time" premise enters the model.  Without T2b, the early-timeout race
@@ -490,7 +490,7 @@ restriction OneChannelPerPtr:
 
 // ---------------------------------------------------------------------------
 // Timing model (T1-T3): the CLTV-delta invariant for Intermediary_Never_Loses.
-// See cltv_blocks.spthy for the assumption-free block-number derivation of
+// See Cltv.spthy for the assumption-free block-number derivation of
 // why this is the right set of restrictions (and what their limits are).
 // ---------------------------------------------------------------------------
 
@@ -513,7 +513,7 @@ restriction ForwardTimeGap:
 // then the outgoing channel must have already timed out.  This encodes the
 // assumption that every honest intermediary acts before their incoming
 // deadline — it is NOT derived from the protocol rules.  The arithmetic that
-// makes the window non-empty is proved in cltv_blocks.spthy, but whether
+// makes the window non-empty is proved in Cltv.spthy, but whether
 // the node actually sweeps in time is assumed here.  Without this restriction
 // the early-timeout race (TimedOut(ptrIn) before Redeemed(ptrOut)) leaves T3
 // inapplicable and Intermediary_Never_Loses is genuinely falsifiable.
@@ -780,7 +780,7 @@ lemma Intermediary_Never_Loses_Under_Liveness:
 // The proof is 2 steps because HonestPartiesActBeforeIncomingTimeout (T2b)
 // asserts the liveness ordering that makes T3 applicable; the content of the
 // property is mostly in the restriction, not the lemma.  This does NOT prove
-// unconditional atomicity — cltv_blocks.spthy shows the claim windows exist
+// unconditional atomicity — Cltv.spthy shows the claim windows exist
 // arithmetically, and T2b assumes honest parties use them.
 lemma Payment_Atomicity_Under_Liveness:
     "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.

@@ -2,7 +2,7 @@
 
 > **Historical note (Report 1.0).** This document reflects the *pre-merge* layout.
 > Some filenames below have since changed and some theories were consolidated:
-> `Clock.spthy` → `gaps.spthy`, `Cltv.spthy` → `cltv_blocks.spthy`,
+> `Clock.spthy` → `gaps.spthy`, `Cltv.spthy` → `Cltv.spthy`,
 > `timeout.spthy` → `t2b_attack.spthy`, and `value_cons.spthy` was **merged into**
 > `multihop.spthy` (value/fee conservation now lives there). For the current
 > 5-theory structure, lemma counts, and the later results (replay hardening,
@@ -26,7 +26,8 @@ establishes over that model).
 | `Clock.spthy` | `Clock` | Block-clock lifecycle & CLTV timing safety | natural-numbers |
 | `Cltv.spthy` | `cltv_blocks` | Pure CLTV block arithmetic | natural-numbers |
 | `timeout.spthy` | `timeout` | Early-timeout race counterexample | — |
-| `value_cons.spthy` | `value_conservation` | Value & fee conservation | hashing, signing, natural-numbers |
+| `Modif.spthy` | `multihop_nhop` | Arbitrary-length routing with chained amounts/fees | hashing, signing, multiset |
+| `payment_channels.spthy` | `paymentchannel` | Standalone two-party channel lifecycle | hashing, signing |
 
 ---
 

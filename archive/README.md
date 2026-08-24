@@ -1,6 +1,6 @@
 # Archive
 
-These two files are **superseded**, kept only as the tested precedent and
+These files are **superseded**, kept only as the tested precedent and
 for historical reference. Nothing they prove is missing from the current
 suite.
 
@@ -18,10 +18,13 @@ suite.
   (`Fee_Conservation_Hop1/Hop2`, `Receiver_Paid_Invoice_Amount`,
   `Fees_Charged_On_Path_Possible`).
 
-- **`PaymentChannels.spthy`** — the standalone channel-lifecycle layer,
-  rule-for-rule and lemma-for-lemma contained in `multihop.spthy`'s channel
-  layer. Kept as a fast-verifying, isolated demo of the handshake →
-  state-update → close → punishment flow.
+`payment_channels.spthy` was previously archived here and has been promoted
+back to the top level: it verifies 8/8 in 18.83s as a fast, isolated demo of
+the handshake → state-update → close → punishment flow, and its
+`Publish_Revoked_A` (gated only by the persistent `!RevokedSecret`) is the
+pre-fix exhibit for the revoked-commitment single-spend finding. Its channel
+layer is still rule-for-rule contained in `multihop.spthy`, so it is not
+counted in the suite's 87 lemma checks.
 
 See `multihop.spthy`'s header for the full merge history and the exact
 step counts of every lemma when re-verified against the merged file.

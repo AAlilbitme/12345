@@ -21,7 +21,7 @@ be merged into it rather than kept apart.)
 |------|--------|----------|--------|
 | `multihop.spthy` | Channel lifecycle + HTLC routing + atomicity + value/fees (fixed 3-hop) | hashing, signing, natural-numbers | 43 |
 | `gaps.spthy` | Block-clock lifecycle & CLTV timing safety | natural-numbers | 9 |
-| `cltv_blocks.spthy` | Pure CLTV block arithmetic | natural-numbers | 3 |
+| `Cltv.spthy` | Pure CLTV block arithmetic | natural-numbers | 3 |
 | `t2b_attack.spthy` | Early-timeout race counterexample (T2b removed) | none | 1 |
 | `witnesses.spthy` | Finite-clock reachability witnesses | natural-numbers | 2 |
 
@@ -105,7 +105,7 @@ logic alone prevents intermediary loss, independent of hop count.
   depend on signatures and remain proved only in the concrete model.
 - Exists-trace **witnesses** need bounding (see §4).
 
-## 4. The merged N-hop model — `multihop_nhop.spthy`
+## 4. The merged N-hop model — `Modif.spthy`
 
 A single self-contained file: the **full channel lifecycle** from `multihop.spthy`
 (handshake, state update, revocation/punishment, on-chain settlement, signed
@@ -165,8 +165,8 @@ export LANG=C.utf8 && export LC_ALL=C.utf8
 tamarin-prover experiments/generic_linearfact_safety.spthy --heuristic=c --derivcheck-timeout=0 --prove=Intermediary_Never_Loses
 
 # merged N-hop model (28/29) -- prove per lemma
-tamarin-prover multihop_nhop.spthy --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=Intermediary_Never_Loses_Under_Liveness
-tamarin-prover multihop_nhop.spthy --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=Multihop_Payment_Possible
+tamarin-prover Modif.spthy --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=Intermediary_Never_Loses_Under_Liveness
+tamarin-prover Modif.spthy --heuristic=c --stop-on-trace=seqdfs --derivcheck-timeout=0 --prove=Multihop_Payment_Possible
 # ... (Settle_Requires_Receiver_Release is the one lemma that does not terminate here)
 ```
 
@@ -193,7 +193,7 @@ exists-trace probes, not assertions):
   `OneRedeemPerPtr` restriction was tested and *rejected* because it falsified
   the honest witness — documented here so it is not re-attempted.
 
-- **Linear-fact variants** (`multihop_nhop*.spthy`, `experiments/`) were already
+- **Linear-fact variants** (`Modif.spthy` and its variants, `experiments/`) were already
   immune to both, since forwarding there consumes a linear routing fact.
 
 Reproduce:

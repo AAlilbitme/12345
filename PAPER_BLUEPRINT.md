@@ -82,13 +82,13 @@ and negative result was executed, not assumed.
   | File | Aspect | Lemmas | Builtins |
   |------|--------|:-----:|----------|
   | `multihop.spthy` | lifecycle + routing + value/fees + atomicity + wormhole | 43 | hashing, signing, nat |
-  | `multihop_nhop.spthy` | N-hop generalisation (generic linear-fact forward) | 25 | hashing, signing, nat |
+  | `Modif.spthy` | N-hop generalisation (generic linear-fact forward) | 25 | hashing, signing, nat |
   | `Clock.spthy` | block-clock lifecycle & staggered-CLTV claim windows | 9 | natural-numbers |
-  | `cltv_blocks.spthy` | pure CLTV block arithmetic (delta positivity) | 3 | natural-numbers |
+  | `Cltv.spthy` | pure CLTV block arithmetic (delta positivity) | 3 | natural-numbers |
   | `timeout.spthy` | early-timeout race (liveness assumption removed) | 1 | — |
   | **Total** | | **81** | |
 
-- **Relational vs concrete time.** `multihop`/`multihop_nhop` treat time
+- **Relational vs concrete time.** `multihop`/`Modif` treat time
   relationally (event orderings). The three small theories add a *concrete block
   clock* so the CLTV windows are **derived, not assumed** — this is the payoff of
   isolating the clock from signing.
@@ -174,7 +174,7 @@ three timing restrictions are minimal — none implied by the others.
 *(Figure: `fig_timing`.)* Why a separate layer: to *derive* the CLTV windows the
 relational model assumes.
 
-- `cltv_blocks` — proves the delta is positive (`d_out << d_in`) and claim
+- `Cltv` — proves the delta is positive (`d_out << d_in`) and claim
   windows non-empty (`CLTV_Gap_Is_Positive`, `Claim_Window_Nonempty`,
   `Staggered_Path_Safe`).
 - `Clock` — a live clock through the full forward lifecycle:
@@ -189,10 +189,10 @@ relational model assumes.
 
 ## 7. Generalisation to N Hops + Soundness Theorem
 
-Source: `multihop_nhop.spthy` + `nhop_soundness.tex`.
+Source: `Modif.spthy` + `nhop_soundness.tex`.
 
 - **The two models.** Concrete `C` = `multihop.spthy` (signed HTLC over
-  Dolev–Yao, fixed 3 hops). Abstract `A` = `multihop_nhop.spthy` (one generic
+  Dolev–Yao, fixed 3 hops). Abstract `A` = `Modif.spthy` (one generic
   `Forward_HTLC` over a linear `Route(prev,me,ptr,y)` *idealised channel*, any N).
   Same channel lifecycle, same safety lemmas; only the routing layer differs.
 - **The trap (state it honestly).** Internalising the network as a trusted

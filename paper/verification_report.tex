@@ -127,9 +127,9 @@ carries all three (Table~\ref{tab:files}).
 \textbf{File} & \textbf{Aspect} & \textbf{Lemmas} & \textbf{Builtins} \\
 \midrule
 \texttt{multihop.spthy}      & lifecycle + routing + value/fees + atomicity + wormhole & 43 & hashing, signing, nat \\
-\texttt{multihop_nhop.spthy} & $N$-hop generalisation (generic linear-fact forward)    & 25 & hashing, signing, nat \\
+\texttt{Modif.spthy} & $N$-hop generalisation (generic linear-fact forward)    & 25 & hashing, signing, nat \\
 \texttt{Clock.spthy}         & block-clock lifecycle \& staggered-CLTV claim windows   & 9  & natural-numbers \\
-\texttt{cltv_blocks.spthy}   & pure CLTV block arithmetic (delta positivity)           & 3  & natural-numbers \\
+\texttt{Cltv.spthy}   & pure CLTV block arithmetic (delta positivity)           & 3  & natural-numbers \\
 \texttt{timeout.spthy}       & early-timeout race (liveness assumption removed)        & 1  & --- \\
 \midrule
 \textbf{Total} & & \textbf{81} & \\
@@ -137,7 +137,7 @@ carries all three (Table~\ref{tab:files}).
 \end{tabular}
 \caption{The five theories. \texttt{multihop.spthy} combines signing $+$ nat
 once the unbounded clock is dropped and timing is kept relational---which is why
-value/fee conservation could be merged into it. \texttt{multihop_nhop.spthy}
+value/fee conservation could be merged into it. \texttt{Modif.spthy}
 reuses the same signing $+$ nat combination for a generic, any-length forward;
 the three small timing theories isolate the unbounded block clock away from
 signing.}
@@ -220,10 +220,10 @@ Channel lifecycle       & \gc & \texttt{state_update}, \texttt{Protocol_executio
 \label{tab:multihop}
 \end{table}
 
-\subsection{Timing safety (\texttt{cltv_blocks}, \texttt{Clock}, \texttt{timeout})}
+\subsection{Timing safety (\texttt{Cltv}, \texttt{Clock}, \texttt{timeout})}
 
 Figure~\ref{fig:timing} shows the staggered-timelock story, split across three
-small natural-number theories. \texttt{cltv_blocks} \emph{derives} the CLTV-delta
+small natural-number theories. \texttt{Cltv} \emph{derives} the CLTV-delta
 invariant $d_\text{out}<d_\text{in}$ from concrete block numbers---i.e.\ the claim
 windows provably exist (\texttt{CLTV_Gap_Is_Positive},
 \texttt{Claim_Window_Nonempty}, \texttt{Staggered_Path_Safe}). \texttt{Clock}
@@ -354,7 +354,7 @@ origin-analysis recursion on self-referential signed messages, not path length.}
 \label{tab:nhop}
 \end{table}
 
-The linear-fact route yields \texttt{multihop_nhop.spthy}, which carries amounts
+The linear-fact route yields \texttt{Modif.spthy}, which carries amounts
 and fees ($\texttt{Eq}(\%v_\text{in},\%v_\text{out}\,\%{+}\,\%\text{fee})$) and
 verifies \textbf{25 active lemmas in $\approx$103.5\,s} (Tamarin 1.8,
 natural-numbers). A handful of \texttt{[use\_induction]} causality lemmas
@@ -423,7 +423,7 @@ contribution as much as the positive ones.
 export LANG=C.utf8 LC_ALL=C.utf8
 python3 run.py                      # full suite (5 theories)
 python3 run.py multihop.spthy       # one theory
-python3 run.py multihop_nhop.spthy  # the N-hop generalisation (25 lemmas)
+python3 run.py Modif.spthy  # the N-hop generalisation (25 lemmas)
 \end{lstlisting}
 Requires Tamarin 1.8 and Maude 3.1. The Makefile delegates to \texttt{run.py},
 the single source of truth for per-file flags.
@@ -472,7 +472,7 @@ than asserted.
 \section{Figure index}
 Figure~\ref{fig:index} is the master map. Figures~\ref{fig:4party}
 and~\ref{fig:channel} carry \texttt{multihop.spthy}; Figure~\ref{fig:timing}
-carries the three timing theories (\texttt{cltv_blocks}, \texttt{Clock},
+carries the three timing theories (\texttt{Cltv}, \texttt{Clock},
 \texttt{timeout}). All four are provided as PDF (embedded) and
 SVG (source) under \texttt{paper/figures/}. Colour key throughout:
 \gc\,honest/safety-proved, \ac\,benign failure, \rc\,attack reachable.

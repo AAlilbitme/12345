@@ -1,6 +1,6 @@
-# What the timing theories add (beyond multihop / multihop_nhop)
+# What the timing theories add (beyond multihop / Modif)
 
-`multihop.spthy` and `multihop_nhop.spthy` treat time **relationally** — event
+`multihop.spthy` and `Modif.spthy` treat time **relationally** — event
 orderings only (`TimedOut`, `Redeemed`, `RedeemBeforeTimeout`), no block
 numbers. The three small theories below add a **concrete block clock** so the
 CLTV timelocks are *derived*, not assumed. They are kept separate because
@@ -8,11 +8,11 @@ signing + natural-numbers + an unbounded clock together exhaust the prover.
 
 | File | What it adds that multihop/nhop do not have |
 |------|----------------------------------------------|
-| `cltv_blocks.spthy` | Pure CLTV block arithmetic: registers hops with numeric deadlines and **proves the delta is positive** (`d_out << d_in`) and that the claim window is non-empty across a staggered path. No protocol, just the timelock inequality the others assume. |
+| `Cltv.spthy` | Pure CLTV block arithmetic: registers hops with numeric deadlines and **proves the delta is positive** (`d_out << d_in`) and that the claim window is non-empty across a staggered path. No protocol, just the timelock inequality the others assume. |
 | `Clock.spthy` | A live block clock (`Clock_Tick`) run through the **full forward lifecycle**: derives the actual claim window between hops (`Claim_Window_Exists`, `Transitive_Preimage_Before_Upstream_Deadline`), shows a loss is exactly a *skipped claim*, and adds lifecycle safety (no HTLC after close, outcome-exclusive) + redeem/refund/honest-flow reachability — all at concrete block heights. |
 | `timeout.spthy` | The **counterexample**: with the liveness assumption T2b removed, the early-timeout race is reachable (`Early_Timeout_Race`). Pairs with `Timeout_Race_Blocked` in `multihop.spthy` to prove T2b is load-bearing. |
 
-## multihop.spthy vs multihop_nhop.spthy
+## multihop.spthy vs Modif.spthy
 
 Both share the **same channel lifecycle** (handshake, state-update,
 revocation/punishment with the linear `RevokedCommitmentUnspent` single-spend,
@@ -20,7 +20,7 @@ on-chain settlement) and the **same safety lemmas** (atomicity,
 intermediary-never-loses, value conservation). They differ only in the HTLC
 routing layer:
 
-| | `multihop.spthy` | `multihop_nhop.spthy` |
+| | `multihop.spthy` | `Modif.spthy` |
 |--|------------------|------------------------|
 | Path | Fixed **3 hops** (S → F1 → F2 → R) | **Any length** N |
 | HTLC forward | **Signed message** over `Out`/`In`, full Dolev–Yao adversary | **Generic linear-fact** `Route(prev,me,ptr,y)` (idealised channel) |
@@ -34,7 +34,7 @@ for safety at arbitrary N. The bridge is `paper/nhop_soundness.tex`.
 
 Everything else — fees, value conservation, wormhole, atomicity — is in
 `multihop.spthy` and (except the wormhole) carried to arbitrary length in
-`multihop_nhop.spthy`.
+`Modif.spthy`.
 
 ## Files documented in the paper
 
@@ -45,9 +45,9 @@ of them now verifies with no un-re-run lemmas. Final campaign, Tamarin
 | Theory | Lemmas | Time | Result |
 |--------|-------:|-----:|--------|
 | `multihop.spthy` | 43 | 353.31 s | 43/43 |
-| `multihop_nhop.spthy` | 31 | 134.39 s | 31/31 |
+| `Modif.spthy` | 31 | 134.39 s | 31/31 |
 | `Clock.spthy` | 9 | 54.37 s | 9/9 |
-| `cltv_blocks.spthy` | 3 | 0.23 s | 3/3 |
+| `Cltv.spthy` | 3 | 0.23 s | 3/3 |
 | `timeout.spthy` | 1 | 0.06 s | 1/1 |
 | **total** | **87** | **542.36 s** | **87/87** |
 
@@ -59,7 +59,7 @@ plus 5). The 5 genuinely new at that layer are `Forward_Requires_Incoming`
 `Fee_Only_On_Successful_Forward`, `Multihop_Payment_With_Fees_Possible`,
 and `Redeem_Requires_Receiver_Release`.
 
-`archive/PaymentChannels.spthy` (8 lemmas, 18.83 s, 8/8) is *not* counted:
+`payment_channels.spthy` (8 lemmas, 18.83 s, 8/8) is *not* counted:
 it is rule-for-rule contained in `multihop.spthy`'s channel layer. It is
 worth keeping as an exhibit for the single-spend finding, though — its
 `Publish_Revoked_A` is gated only by the persistent `!RevokedSecret`, i.e.
@@ -69,7 +69,7 @@ exactly the delta between the two files.
 
 ### Why `Clock.spthy` needed fixing
 
-It previously did not terminate. Three causes, all resolved:
+It previously did not terminate. Two causes, both resolved:
 
 1. `Clock_Start` had **empty premises**, so it could fire unboundedly often,
    spawning independent block chains. Fixed with `Fr(~init)` plus a
