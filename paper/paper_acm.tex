@@ -190,24 +190,24 @@ The model is therefore split so that no single theory carries all three. The arc
 \caption{The five-theory modular architecture. The first four theories establish 56 distinct properties, and the $N$-hop theory adds a further 5, for 61 in total. Of the $N$-hop theory's 31 lemmas, 26 restate properties already proved in \texttt{multihop.spthy} over the abstract routing layer and 5 are new to it (generic forwarding causality and the unbounded-path value lemmas), giving 87 lemma checks in total.}
 \label{tab:theories}
 \setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}llccl@{}}
+\begin{tabular}{@{}llccrl@{}}
 \toprule
-\textbf{Theory File} & \textbf{Aspect Modeled} & \textbf{Safety} & \textbf{Witness} & \textbf{Builtins} \\
+\textbf{Theory File} & \textbf{Aspect Modeled} & \textbf{Safety} & \textbf{Witness} & \textbf{Time} & \textbf{Builtins} \\
 \midrule
-\texttt{multihop.spthy} & Lifecycle, 3-hop routing, value/fees, wormhole & 33 & 10 & Hashing, Signing, Nat \\
-\texttt{Clock.spthy} & Block-clock lifecycle \& staggered-CLTV claim windows & 6 & 3 & Natural-numbers \\
-\texttt{cltv\_blocks.spthy} & Pure CLTV block arithmetic (delta positivity) & 3 & 0 & Natural-numbers \\
-\texttt{timeout.spthy} & Early-timeout race (T2b removed) & 0 & 1 & --- \\
+\texttt{multihop.spthy} & Lifecycle, 3-hop routing, value/fees, wormhole & 33 & 10 & 353.31\,s & Hashing, Signing, Nat \\
+\texttt{Clock.spthy} & Block-clock lifecycle \& staggered-CLTV claim windows & 6 & 3 & 54.37\,s & Natural-numbers \\
+\texttt{cltv\_blocks.spthy} & Pure CLTV block arithmetic (delta positivity) & 3 & 0 & 0.23\,s & Natural-numbers \\
+\texttt{timeout.spthy} & Early-timeout race (T2b removed) & 0 & 1 & 0.06\,s & --- \\
 \midrule
-\multicolumn{2}{@{}l}{\emph{Distinct properties}} & \textbf{42} & \textbf{14} & \\
+\multicolumn{2}{@{}l}{\emph{Distinct properties}} & \textbf{42} & \textbf{14} & & \\
 \midrule
-\texttt{multihop\_nhop.spthy} & \emph{Re-proof} of the above over the $N$-hop abstraction & 19 & 6 & Hashing, Signing, Nat \\
+\texttt{multihop\_nhop.spthy} & \emph{Re-proof} of the above over the $N$-hop abstraction & 19 & 6 & 134.39\,s & Hashing, Signing, Multiset \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \subsection{Tactic Engineering and Reproduction}
-All results were produced under a strict test-first discipline: a property is claimed only after Tamarin reports it. Per-lemma invocation is used on the large theory to avoid OOM. The flag \texttt{-{}-stop-on-trace=seqdfs} rescues the heavy existence witnesses but hangs the natural-number arithmetic theories, so it is applied selectively.
+All results were reproduced in a single sitting on one machine under Tamarin 1.10.0 with Maude 3.1; every theory passes Tamarin's well-formedness checks, and the whole package verifies in 542.36\,s of wall-clock time. Results were produced under a strict test-first discipline: a property is claimed only after Tamarin reports it. Per-lemma invocation is used on the large theory to avoid OOM. The flag \texttt{-{}-stop-on-trace=seqdfs} rescues the heavy existence witnesses but hangs the natural-number arithmetic theories, so it is applied selectively.
 
 % ==============================================================
 \section{Verification of the Core Model}
@@ -247,7 +247,7 @@ Persistent knowledge of the revocation secret is retained via \texttt{!RevokedSe
 
 We stress that Instance 2 is a consequence of integration rather than of scale. It resides at the junction of the revocation lifecycle and the routing execution. A model containing only the two-party channel layer does not exhibit the trace that exposes it.
 
-\textbf{Re-verification.} Adding a linear premise shrinks the enabling condition, so $\mathrm{traces}(R') \subseteq \mathrm{traces}(R)$ and every all-traces ($\forall$) property is preserved automatically. The converse fails for existence ($\exists$) witnesses, which may be removed. We therefore re-ran the full 43-lemma theory rather than appealing to monotonicity; all 43 re-verify (353\,s, Tamarin 1.8).
+\textbf{Re-verification.} Adding a linear premise shrinks the enabling condition, so $\mathrm{traces}(R') \subseteq \mathrm{traces}(R)$ and every all-traces ($\forall$) property is preserved automatically. The converse fails for existence ($\exists$) witnesses, which may be removed. We therefore re-ran the full 43-lemma theory rather than appealing to monotonicity; all 43 re-verify (353.31\,s).
 
 \subsection{Wormhole Attack: A Fidelity Check}
 The wormhole attack~\cite{malavolta2019anonymous} is an instance of the agent-skipping class formalized symbolically by Smith et al.~\cite{smith2022modelling}, and we claim no novelty for exhibiting it. We do, however, quantify it: their formalism carries no numeric sort, so the magnitude of the loss is not expressible there, whereas our value layer pins it to exactly the bypassed fees. Beyond that increment, its role here is to discharge an obligation created by Section~\ref{sec:discipline}: having constrained the model with two linear single-spend tokens, we must show the repair is \emph{sound} rather than merely restrictive, since a guard that eliminated the unbounded-punishment trace by over-constraining the protocol would also eliminate legitimate executions and render subsequent safety results vacuous.
@@ -274,9 +274,9 @@ We tested whether the active sweeping restriction T3 is redundant given the pass
 
 Replacing the hardcoded forward rules with one generic rule was attempted in several encodings. A generic signed-message forward causes Tamarin to OOM even for a 1-hop witness due to self-referential origin-analysis recursion.
 
-To bypass this, we abstract the network layer into an internal Tamarin linear fact---\texttt{Route(prev, me, ptr, y)}---handed directly from one hop to the next. Because the HTLC is no longer a self-referential signed term, Tamarin's origin analysis no longer recurses. This yields \texttt{multihop\_nhop.spthy}, which verifies 31 lemmas in 165\,s. Carrying the routed amount inside the \texttt{Route} fact---so that hop $i$'s outgoing amount \emph{is} hop $i{+}1$'s incoming amount---makes the fee arithmetic chain along a path of any length, and the receiver's rule closes the chain by checking the arriving amount against its invoice. Consequently \texttt{Amount\_Strictly\_Decreases\_Per\_Hop}, \texttt{Receiver\_Paid\_Invoice\_Amount} and \texttt{Fee\_Only\_On\_Successful\_Forward} hold at unbounded $N$, as does \texttt{Forward\_Requires\_Incoming} (279 steps), which states that every forward is preceded by the offer or by the predecessor's forward \emph{with agreeing amounts}. A single lemma, \texttt{Settle\_Requires\_Receiver\_Release}, remains commented out: resolving \texttt{SenderSettled} backwards walks the whole generic settle chain and does not terminate. It is the one genuine tractability boundary of this layer.
+To bypass this, we abstract the network layer into an internal Tamarin linear fact---\texttt{Route(prev, me, ptr, y)}---handed directly from one hop to the next. Because the HTLC is no longer a self-referential signed term, Tamarin's origin analysis no longer recurses. This yields \texttt{multihop\_nhop.spthy}, which verifies 31 lemmas in 134\,s. Carrying the routed amount inside the \texttt{Route} fact---so that hop $i$'s outgoing amount \emph{is} hop $i{+}1$'s incoming amount---makes the fee arithmetic chain along a path of any length, and the receiver's rule closes the chain by checking the arriving amount against its invoice. Consequently \texttt{Amount\_Strictly\_Decreases\_Per\_Hop}, \texttt{Receiver\_Paid\_Invoice\_Amount} and \texttt{Fee\_Only\_On\_Successful\_Forward} hold at unbounded $N$, as does \texttt{Forward\_Requires\_Incoming} (279 steps), which states that every forward is preceded by the offer or by the predecessor's forward \emph{with agreeing amounts}. A single lemma, \texttt{Settle\_Requires\_Receiver\_Release}, remains commented out: resolving \texttt{SenderSettled} backwards walks the whole generic settle chain and does not terminate. It is the one genuine tractability boundary of this layer.
 
-We note that adding the two linear single-spend tokens to this model \emph{reduced} its verification time from 265\,s to 165\,s. This is the expected direction---a linear premise shrinks the enabling condition and therefore the search space---but it is worth recording, because the intuition that extra facts make a theory harder is what had previously discouraged us from combining the two.
+We note that adding the two linear single-spend tokens to this model \emph{reduced} its verification time from 265\,s to 134\,s. This is the expected direction---a linear premise shrinks the enabling condition and therefore the search space---but it is worth recording, because the intuition that extra facts make a theory harder is what had previously discouraged us from combining the two.
 
 \textbf{Honest Scope of the Abstraction.} By internalizing the network into a \texttt{Route} fact, we explicitly remove the Dolev--Yao network adversary from the $N$-hop model. The adversary can no longer inject, replay, or forge messages. Therefore, this abstraction does \emph{not} prove that unbounded-length paths are secure against network-level attacks such as the wormhole, which is structurally unreachable here by design. Instead, it verifies that the \emph{internal state machine} of $N$-hop routing---the cascading timeouts, the preimage propagation logic, and the local state transitions---remains sound for arbitrary $N$.
 

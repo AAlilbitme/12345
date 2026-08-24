@@ -27,7 +27,7 @@ routing layer:
 | Forward rules | Two hard-coded (`Forward1_HTLC`, `Forward2_HTLC`) | One generic `Forward_HTLC` that fires at every hop |
 | Wormhole attack | **Yes** — reachable + fee-quantified (needs the signed network) | **No** — the idealised route removes the collusion side channel |
 | Per-hop auth | Machine-checked (`Forward1_Requires_Offer`, `Forward2_Requires_Forward1`) | Abstracted (transferred by the refinement theorem) |
-| Boundaries | none (43/43) | 4 `[use_induction]` causality lemmas commented out (don't terminate on the generic chain) |
+| Boundaries | none (43/43) | one `[use_induction]` lemma commented out, `Settle_Requires_Receiver_Release` (does not terminate on the generic chain) — 31/31 otherwise |
 
 The two form a **proof layering**: concrete crypto at 3 hops, idealised route
 for safety at arbitrary N. The bridge is `paper/nhop_soundness.tex`.
@@ -38,12 +38,50 @@ Everything else — fees, value conservation, wormhole, atomicity — is in
 
 ## Files documented in the paper
 
-All five theories are covered in `paper/verification_report.tex` (81 lemmas):
+All five theories are covered in `paper/verification_report.tex`. Every one
+of them now verifies with no un-re-run lemmas. Final campaign, Tamarin
+1.10.0 / Maude 3.1, one machine, one sitting:
 
-1. `multihop.spthy` — 43
-2. `multihop_nhop.spthy` — 25
-3. `Clock.spthy` — 9
-4. `cltv_blocks.spthy` — 3
-5. `timeout.spthy` — 1
+| Theory | Lemmas | Time | Result |
+|--------|-------:|-----:|--------|
+| `multihop.spthy` | 43 | 353.31 s | 43/43 |
+| `multihop_nhop.spthy` | 31 | 134.39 s | 31/31 |
+| `Clock.spthy` | 9 | 54.37 s | 9/9 |
+| `cltv_blocks.spthy` | 3 | 0.23 s | 3/3 |
+| `timeout.spthy` | 1 | 0.06 s | 1/1 |
+| **total** | **87** | **542.36 s** | **87/87** |
+
+87 lemma checks over **61 distinct properties**: 26 of the N-hop theory's 31
+lemmas are name-for-name re-proofs of `multihop.spthy` lemmas against the
+generic routing layer, not new properties (43 + 9 + 3 + 1 = 56 distinct,
+plus 5). The 5 genuinely new at that layer are `Forward_Requires_Incoming`
+(279 steps), `Amount_Strictly_Decreases_Per_Hop`,
+`Fee_Only_On_Successful_Forward`, `Multihop_Payment_With_Fees_Possible`,
+and `Redeem_Requires_Receiver_Release`.
+
+`archive/PaymentChannels.spthy` (8 lemmas, 18.83 s, 8/8) is *not* counted:
+it is rule-for-rule contained in `multihop.spthy`'s channel layer. It is
+worth keeping as an exhibit for the single-spend finding, though — its
+`Publish_Revoked_A` is gated only by the persistent `!RevokedSecret`, i.e.
+it is the *pre-fix* state of Instance 2 of the pathology, and the fix that
+`multihop.spthy` applies (the linear `RevokedCommitmentUnspent` token) is
+exactly the delta between the two files.
+
+### Why `Clock.spthy` needed fixing
+
+It previously did not terminate. Three causes, all resolved:
+
+1. `Clock_Start` had **empty premises**, so it could fire unboundedly often,
+   spawning independent block chains. Fixed with `Fr(~init)` plus a
+   `restriction OneClock` forcing a single `ClockStart()` timepoint.
+2. `Sender_Offer` and the forward rules re-produced `Channel(...)` without
+   consuming anything one-shot, so HTLCs could be re-offered on the same
+   output forever. Fixed by adding the linear `Free(~ptr)` token to
+   `Open_Channel` and consuming it in `Sender_Offer`, `Forward_HTLC`,
+   `Forward_Hop1`, `Forward_Hop2` — the same single-spend discipline the
+   paper's main finding is about, applied here for termination rather than
+   for soundness.
+
+Result: hangs indefinitely → 9/9 in 54.37 s.
 
 The N-hop refinement theorem is in `paper/nhop_soundness.tex`.

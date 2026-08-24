@@ -2,17 +2,17 @@
 # theories and lemmas are proved and with which per-file flags (seqdfs, etc.).
 # Maintaining a parallel per-lemma list here caused drift, so this now delegates.
 #
-#   make            prove the whole suite (cltv_blocks, gaps, witnesses,
-#                   t2b_attack, multihop) -- see run.py's FILES list
+#   make            prove the whole suite (cltv_blocks, timeout, Clock,
+#                   multihop, multihop_nhop) -- see run.py's FILES list
 #   make FILE=multihop.spthy    prove a single theory
-#   make nhop       prove the N-hop extension (not in run.py's default list)
+#   make channels   prove the archived standalone channel-lifecycle demo
 #
 # Requires: tamarin-prover on PATH, python3.
 
 PY   := python3
 LANG := LANG=C.utf8 LC_ALL=C.utf8
 
-.PHONY: all suite nhop clean
+.PHONY: all suite channels clean
 
 all: suite
 
@@ -20,9 +20,10 @@ all: suite
 suite:
 	$(LANG) $(PY) run.py $(FILE)
 
-# The arbitrary-length extension is proved separately (not part of the core list).
-nhop:
-	$(LANG) $(PY) run.py multihop_nhop_fees.spthy
+# The standalone channel layer is fully subsumed by multihop.spthy's channel
+# rules; kept only as a fast isolated demo, so it is proved on request.
+channels:
+	$(LANG) $(PY) run.py archive/PaymentChannels.spthy
 
 clean:
 	@echo "Nothing to clean (Tamarin produces no build artifacts)"

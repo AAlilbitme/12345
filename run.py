@@ -38,14 +38,15 @@ import threading
 # tested precedent for the signing+nat combination.
 FILES = [
     "cltv_blocks.spthy",
-    "gaps.spthy",
-    "witnesses.spthy",
-    "t2b_attack.spthy",
+    "timeout.spthy",
+    "Clock.spthy",
     "multihop.spthy",
+    "multihop_nhop.spthy",
 ]
 
-# Files that must NOT use --stop-on-trace=seqdfs.
-NO_SEQDFS = {"cltv_blocks.spthy", "gaps.spthy", "witnesses.spthy"}
+# Files that must NOT use --stop-on-trace=seqdfs.  Both are natural-numbers
+# theories, where seqdfs hangs on the arithmetic rather than terminating.
+NO_SEQDFS = {"cltv_blocks.spthy", "Clock.spthy"}
 
 # Files proved one lemma at a time to avoid OOM.  Each entry maps a file to
 # a list of (lemma_name, use_seqdfs, timeout_override_or_None, solo) tuples.
