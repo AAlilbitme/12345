@@ -1,0 +1,194 @@
+% figures.tex -- all tikz figures for paper_acm.tex, kept out of the main
+% file so the figure code doesn't clutter the prose. Requires tikz,
+% the positioning/calc/arrows.meta libraries, and the color palette
+% (honestgreen, timeoutamber, attackred, persistentgray, linearblue,
+% corefill, timingfill, extfill) all defined in paper_acm.tex's preamble.
+%
+% \input this file at the point in paper_acm.tex where the figures should
+% appear -- LaTeX floats them to the nearest [t]/[b] slot regardless, so
+% placement in the source only affects the label/citation order.
+
+% ---------------------------------------------------------------------------
+% Figure: multi-hop HTLC routing over a path of payment channels
+% ---------------------------------------------------------------------------
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  party/.style={circle, draw, thick, fill=blue!8,
+                minimum size=1.05cm, font=\small\bfseries, inner sep=1pt},
+  ch/.style={draw, thick, fill=gray!12, minimum height=0.38cm, minimum width=1.55cm,
+             font=\scriptsize, align=center, inner sep=2pt},
+  arrL/.style={-{Latex}, thick, blue!60!black},
+  arrR/.style={-{Latex}, thick, orange!80!black, dashed},
+  lab/.style={font=\scriptsize}
+]
+
+\node[party] (A) at (0,0)    {Alice};
+\node[party] (B) at (3.2,0)  {Bob};
+\node[party] (C) at (6.4,0)  {Carol};
+\node[party] (D) at (9.6,0)  {Diana};
+\node[party] (E) at (12.8,0) {Eric};
+
+\node[ch] at ($(A)!0.5!(B)$) {Payment\\channel};
+\node[ch] at ($(B)!0.5!(C)$) {Payment\\channel};
+\node[ch] at ($(C)!0.5!(D)$) {Payment\\channel};
+\node[ch] at ($(D)!0.5!(E)$) {Payment\\channel};
+
+% Lock (HTLC) above
+\draw[arrL] (A.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_0,d_0)$} (B.north west);
+\draw[arrL] (B.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_1,d_1)$} (C.north west);
+\draw[arrL] (C.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_2,d_2)$} (D.north west);
+\draw[arrL] (D.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_3,d_3)$} (E.north west);
+
+% Release (preimage) below
+\draw[arrR] (E.south west) to[bend left=18] node[lab, below, sloped] {$x$} (D.south east);
+\draw[arrR] (D.south west) to[bend left=18] node[lab, below, sloped] {$x$} (C.south east);
+\draw[arrR] (C.south west) to[bend left=18] node[lab, below, sloped] {$x$} (B.south east);
+\draw[arrR] (B.south west) to[bend left=18] node[lab, below, sloped] {$x$} (A.south east);
+
+% Invoice hint
+\draw[arrL, densely dotted] (E.north) to[bend right=20]
+  node[lab, above, pos=0.5] {invoice $y{=}H(x)$} (A.north);
+
+\node[lab] at ($(A)!0.5!(E) + (0,-1.5)$) {$v_0>v_1>v_2>v_3{=}v$,\quad $d_0>d_1>d_2>d_3$};
+
+\end{tikzpicture}
+\caption{A multi-hop HTLC payment routed over a path of payment channels. Solid blue arrows: the lock round, each hop offering an HTLC with hash-lock $y$, value $v_i$, and deadline $d_i$. Dashed orange arrows: the release round, the preimage $x$ propagating backward once revealed.}
+\label{fig:multihop}
+\end{figure*}
+
+% ---------------------------------------------------------------------------
+% Figure: the full payment-channel lifecycle
+% ---------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=0.55cm and 0.55cm,
+  stepbox/.style={draw, thick, rounded corners=2pt, align=center,
+               minimum width=2.6cm, minimum height=0.85cm, font=\scriptsize},
+  open/.style={stepbox, fill=honestgreen!12, draw=honestgreen},
+  upd/.style={stepbox, fill=linearblue!12, draw=linearblue},
+  pers/.style={stepbox, dash pattern=on 2pt off 1.5pt, draw=persistentgray, text=persistentgray},
+  close/.style={stepbox, fill=honestgreen!12, draw=honestgreen},
+  delayed/.style={stepbox, fill=timeoutamber!15, draw=timeoutamber},
+  atk/.style={stepbox, fill=attackred!10, draw=attackred, text=attackred, thick},
+  arr/.style={-{Latex}, thick},
+  lab/.style={font=\scriptsize\itshape}
+]
+
+  \node[open] (open) {\texttt{Lock\_Funds\_And\_Open}\\2-of-2 multisig funded};
+
+  \node[upd, below=of open] (update) {\texttt{Update\_State}\\new commitment $n{+}1$ signed};
+  \node[pers, below=of update] (revoke) {\texttt{Revoke\_Old\_Secret}\\old secret $\to$ \texttt{!RevokedSecret}};
+
+  \draw[arr, honestgreen] (open) -- (update);
+  \draw[arr, linearblue] (update) -- (revoke);
+  \draw[arr, linearblue] (revoke.east) .. controls +(1.4,0) and +(1.4,-0.9) .. (update.east)
+        node[lab, midway, right, xshift=0.15cm] {next payment};
+
+  \node[close, below left=0.9cm and 1.3cm of revoke] (coop) {\texttt{Honest\_Close}\\co-signed settlement};
+  \draw[arr, honestgreen] (revoke) -| (coop);
+
+  \node[delayed, below right=0.9cm and 0.4cm of revoke] (pubcur) {\texttt{Publish\_Current}\\latest state, CSV delay};
+  \draw[arr, timeoutamber] (revoke) -| (pubcur);
+  \node[stepbox, below=of pubcur, fill=timeoutamber!8, draw=timeoutamber] (claim)
+        {\texttt{Claim\_Funds}\\after CSV passes};
+  \draw[arr, timeoutamber] (pubcur) -- (claim);
+
+  \node[atk, below right=0.9cm and 2.6cm of revoke] (pubrev) {\texttt{Publish\_Revoked}\\stale state broadcast};
+  \node[atk, below=of pubrev] (punish) {\texttt{Punish}\\all funds to victim};
+  \draw[arr, dashed, persistentgray] (revoke.south) .. controls +(0,-1.6) and +(-1.8,0.8) .. (pubrev.west)
+        node[lab, pos=0.25, above, sloped] {\texttt{!RevokedSecret} still known};
+  \draw[arr, attackred] (pubrev) -- (punish);
+
+  \node[stepbox, below=1.6cm of pubcur, xshift=0.9cm, fill=gray!10, draw=gray!60]
+        (settle) {\texttt{Instant\_Funds} / \texttt{FundsTo}\\channel closed};
+  \draw[arr, honestgreen] (coop) |- (settle);
+  \draw[arr, timeoutamber] (claim) -- (settle);
+  \draw[arr, attackred] (punish) -| (settle);
+
+\end{tikzpicture}
+\caption{The full channel lifecycle. \textcolor{honestgreen}{\textbf{Green}}: open and cooperative close. \textcolor{linearblue}{\textbf{Blue}}: state update. \textcolor{persistentgray}{\textbf{Gray dashed}}: the revoked secret, persistent and re-checkable on every cheat attempt. \textcolor{timeoutamber}{\textbf{Amber}}: honest unilateral close with its CSV delay. \textcolor{attackred}{\textbf{Red}}: publishing a revoked state and the resulting punishment. All four paths converge on settlement.}
+\label{fig:channel-lifecycle}
+\end{figure}
+
+% ---------------------------------------------------------------------------
+% Figure: persistent vs. linear facts in the revocation single-spend finding
+% ---------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  fact/.style={draw, thick, align=center, minimum width=2.8cm,
+               minimum height=0.85cm, font=\scriptsize},
+  pers/.style={fact, dash pattern=on 2pt off 1.5pt, draw=persistentgray, text=persistentgray},
+  lin/.style={fact, fill=linearblue, text=white},
+  atk/.style={fact, draw=attackred, text=attackred, thick},
+  arr/.style={-{Latex}, thick}
+]
+  \node[pers] (rev) {\texttt{!RevokedSecret}\\(persistent knowledge)};
+  \node[lin, below=0.7cm of rev] (tok) {\texttt{RevokedCommitmentUnspent}\\(linear, one-shot)};
+  \node[atk, right=1.4cm of tok] (pub) {\texttt{Publish\_Revoked}};
+  \node[atk, right=1.0cm of pub] (pun) {\texttt{Punish}};
+
+  \draw[arr, dashed, persistentgray] (rev.east) -| ++(0.6,0) |- (pub.west);
+  \draw[arr, linearblue] (tok) -- (pub);
+  \draw[arr, attackred] (pub) -- (pun);
+
+  \node[font=\scriptsize, align=left, below=0.35cm of tok.south west, anchor=north west]
+    {\textcolor{persistentgray}{persistent: checked, not consumed}\\
+     \textcolor{linearblue}{linear: consumed once $\Rightarrow$ single spend}};
+\end{tikzpicture}
+\caption{Revocation secret stays \textcolor{persistentgray}{\textbf{persistent}} (gray); the on-chain spend is \textcolor{linearblue}{\textbf{linear}} (blue), consumed en route to \textcolor{attackred}{\textbf{Punish}} (red).}
+\label{fig:linear}
+\end{figure}
+
+% ---------------------------------------------------------------------------
+% Figure: modular architecture (five theories, no single one carries all
+% three OOM-inducing ingredients)
+% ---------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw, thick, rounded corners=2pt, align=center,
+              minimum width=2.55cm, minimum height=1.15cm, font=\scriptsize},
+  lab/.style={font=\scriptsize\itshape, attackred}
+]
+  \node[box, fill=corefill] (mh) {\texttt{multihop}\\lifecycle + 3-hop\\value / wormhole};
+  \node[box, fill=timingfill, right=0.45cm of mh] (clk) {\texttt{Clock}\\block clock\\claim windows};
+  \node[box, fill=timingfill, right=0.45cm of clk] (cltv) {\texttt{Cltv}\\CLTV arithmetic};
+  \node[box, fill=timingfill, below=0.55cm of mh] (to) {\texttt{timeout}\\early-timeout\\race (no T2b)};
+  \node[box, fill=extfill, below=0.55cm of clk] (nh) {\texttt{Modif}\\$N$-hop abstraction\\Route fact};
+
+  \node[lab, above=0.2cm of $(mh)!0.5!(cltv)$] {no theory carries all three OOM ingredients};
+  \draw[thick, dashed, attackred] (mh) -- (clk);
+  \draw[thick, dashed, attackred] (clk) -- (cltv);
+  \draw[thick, dashed, attackred] (mh) -- (to);
+  \draw[thick, dashed, attackred] (clk) -- (nh);
+\end{tikzpicture}
+\caption{Modular architecture: blue = concrete crypto core, purple = natural-number timing theories, green = the $N$-hop extension. Red dashed edges mark pairs that, combined, would OOM the prover.}
+\label{fig:theories}
+\end{figure}
+
+% ---------------------------------------------------------------------------
+% Figure: staggered CLTV deadlines along the path
+% ---------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize},
+]
+  \draw[thick, -{Latex}] (0,0) -- (8.2,0) node[right] {time / blocks};
+  \foreach \x/\lab in {1.2/$d_2$, 3.2/$d_1$, 5.2/$d_0$} {
+    \draw[thick] (\x,0.12) -- (\x,-0.12) node[below] {\lab};
+  }
+  \draw[{Latex}-{Latex}, thick, honestgreen] (1.2,0.55) -- node[above, honestgreen] {CLTV $\Delta$} (3.2,0.55);
+  \draw[{Latex}-{Latex}, thick, timeoutamber] (3.2,0.95) -- node[above, timeoutamber] {CLTV $\Delta$} (5.2,0.95);
+  \node[honestgreen] at (1.2,1.35) {$F_2{\to}R$};
+  \node[timeoutamber] at (3.2,1.75) {$F_1{\to}F_2$};
+  \node[linearblue] at (5.2,1.35) {$S{\to}F_1$};
+  \node[align=center] at (4,-0.85) {$d_0 > d_1 > d_2$: claim window $(d_i,d_{i-1})$ for $F_i$};
+\end{tikzpicture}
+\caption{Staggered CLTV deadlines along the path, colored to match Figure~\ref{fig:multihop}'s hops.}
+\label{fig:cltv}
+\end{figure}

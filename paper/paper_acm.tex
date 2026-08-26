@@ -7,6 +7,18 @@
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc,arrows.meta}
+
+% Palette shared by all tikz figures (see paper/figures.tex)
+\definecolor{honestgreen}{RGB}{46,125,50}
+\definecolor{timeoutamber}{RGB}{239,108,0}
+\definecolor{attackred}{RGB}{198,40,40}
+\definecolor{persistentgray}{RGB}{97,97,97}
+\definecolor{linearblue}{RGB}{21,101,192}
+\definecolor{corefill}{RGB}{227,242,253}   % pale blue
+\definecolor{timingfill}{RGB}{243,229,245} % pale purple
+\definecolor{extfill}{RGB}{232,245,233}    % pale green
 \theoremstyle{acmdefinition}
 \newtheorem{remark}{Remark}
 
@@ -213,6 +225,8 @@ All results were reproduced in a single sitting on one machine under Tamarin 1.1
 \section{Verification of the Core Model}
 \label{sec:verification}
 % ==============================================================
+
+\input{figures}
 
 Across the theories of Table~\ref{tab:theories} we establish 61 distinct properties, corresponding to 87 lemma checks. Of the $N$-hop theory's 31 lemmas, 26 restate properties already proved in the concrete theory over the abstract routing layer and 5 are new to it (Section~\ref{sec:nhop}). Of the 43 lemmas of the concrete theory, 10 are exists-trace witnesses (including non-vacuity checks and the attack traces below) and 5 are \texttt{[reuse]} helper lemmas supporting other proofs rather than stating protocol goals; the complete lemma index accompanies the artifact. We focus here on the concrete theory \texttt{multihop.spthy}.
 
