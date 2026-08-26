@@ -1,208 +1,197 @@
-\documentclass[tikz,border=8pt]{standalone}
-\usepackage{tikz}
-\usetikzlibrary{positioning,calc,arrows.meta}
-\usepackage{amsmath}
+% Multi-hop payment sequence diagram (Alice -> Bob -> Carol -> Dave)
+% annotated with multihop.spthy lemmas
+% Compile with: pdflatex fig_multihop_sequence.tex
+\documentclass[border=8pt,tikz]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage{amssymb}
+\usetikzlibrary{arrows.meta,calc,positioning,backgrounds,fit}
 
-\definecolor{titledark}{RGB}{26,35,50}
-\definecolor{lifeline}{RGB}{60,60,70}
-\definecolor{honestgreen}{RGB}{27,94,32}
-\definecolor{timeoutamber}{RGB}{230,126,20}
-\definecolor{attackred}{RGB}{192,57,43}
-\definecolor{bandgreen}{RGB}{223,237,222}
-\definecolor{railgray}{RGB}{120,120,120}
+%------------------------------------------------- palette
+\definecolor{dgreen}{HTML}{14532D}   % actor boxes / headings
+\definecolor{mgreen}{HTML}{1E7A46}   % honest messages
+\definecolor{lgreen}{HTML}{DCEBE0}   % round bands / timeline bars
+\definecolor{cOrange}{HTML}{E58A15}  % timeout / refund
+\definecolor{cRed}{HTML}{A81616}     % attack (reachable)
+\definecolor{cGray}{HTML}{7A7A7A}    % footnotes
+\definecolor{cRule}{HTML}{CFCFCF}    % separators
+
+%------------------------------------------------- shorthands
+\newcommand{\ck}{\checkmark}
+\newcommand{\md}{\,\textperiodcentered\,}
 
 \begin{document}
 \begin{tikzpicture}[
-  x=1cm, y=1cm,
-  lifeline/.style={draw=lifeline, densely dotted, thick},
-  headbox/.style={draw=none, fill=titledark, rounded corners=2pt,
-                   minimum width=1.9cm, minimum height=0.75cm,
-                   font=\bfseries\small, text=white},
-  badge/.style={circle, draw=none, fill=#1, minimum size=0.55cm,
-                font=\bfseries\scriptsize, text=white, inner sep=0pt},
-  msg/.style={-{Latex[length=2.2mm]}, thick},
-  msglab/.style={font=\scriptsize, align=center},
-  legtitle/.style={font=\bfseries\scriptsize},
-  legbody/.style={font=\scriptsize, align=left},
-  roundband/.style={fill=bandgreen, draw=none}
+  font=\sffamily,
+  x=1cm,y=1cm,
+  actor/.style   ={rounded corners=2pt,fill=dgreen,text=white,
+                   font=\small\bfseries,inner xsep=8pt,inner ysep=4pt},
+  life/.style    ={draw=cRule,densely dashed,line width=.4pt},
+  msg/.style     ={draw=mgreen,line width=.9pt,-{Stealth[length=5pt,width=4pt]}},
+  msgd/.style    ={draw=mgreen,line width=.9pt,densely dashed,
+                   -{Stealth[length=5pt,width=4pt]}},
+  omsg/.style    ={draw=cOrange,line width=.9pt,densely dashed,
+                   -{Stealth[length=5pt,width=4pt]}},
+  rmsg/.style    ={draw=cRed,line width=.9pt,densely dashed,
+                   -{Stealth[length=5pt,width=4pt]}},
+  lbl/.style     ={font=\scriptsize,text=black,inner sep=2pt},
+  bdg/.style     ={circle,minimum size=4.4mm,inner sep=0pt,
+                   text=white,font=\tiny\bfseries},
+  band/.style    ={fill=lgreen,rounded corners=2pt},
+  rule/.style    ={draw=cRule,line width=.4pt},
 ]
 
-% Fixed lifeline x-coordinates -- every message uses these directly, at a
-% shared y per row, so arrows are always horizontal.
-\def\xA{1.0}  % Alice
-\def\xB{5.0}  % Bob
-\def\xC{9.0}  % Carol
-\def\xD{13.0} % Dave
+%================================================= geometry
+\def\xA{1.6}  \def\xB{5.8}  \def\xC{10.0} \def\xD{14.2}
+\def\xL{0.0}  \def\xR{16.2} \def\xRail{17.3}
+\def\yTop{0}  \def\yBot{-12.6}
 
-% -------------------------------------------------------------------------
-% Title (own row) + color key (row below, so they never collide)
-% -------------------------------------------------------------------------
-\node[anchor=west, font=\bfseries\large, titledark] at (0,14.4)
-  {Multi-hop payment: Alice $\to$ Bob $\to$ Carol $\to$ Dave};
+%================================================= title + legend
+\node[anchor=north west,font=\large\bfseries,text=dgreen]
+      at (\xL,0) {Multi-hop payment: Alice $\to$ Bob $\to$ Carol $\to$ Dave};
+\node[anchor=north west,font=\scriptsize,text=cGray]
+      at (\xL,-0.55) {annotated with multihop.spthy lemmas --- see rail $\to$};
 
-\node[badge=honestgreen] at (0.3,13.75) {};
-\node[anchor=west, font=\scriptsize] at (0.6,13.75) {honest success / safety proved};
-\node[badge=timeoutamber] at (5.6,13.75) {};
-\node[anchor=west, font=\scriptsize] at (5.9,13.75) {timeout / refund};
-\node[badge=attackred] at (8.6,13.75) {};
-\node[anchor=west, font=\scriptsize] at (8.9,13.75) {attack (reachable)};
+\foreach \lx/\lc/\lt in {%
+   6.4/mgreen/{honest success / safety proved},
+   10.4/cOrange/{timeout / refund},
+   13.0/cRed/{attack (reachable)}}{%
+  \fill[\lc] (\lx,-0.10) rectangle ++(0.26,0.26);
+  \node[anchor=west,font=\scriptsize] at (\lx+0.36,0.03) {\lt};}
 
-\node[anchor=west, font=\scriptsize, black!55] at (0,13.2)
-  {annotated with \texttt{multihop.spthy} lemmas --- see rail $\to$};
+%================================================= lifelines
+\foreach \x/\n in {\xA/Alice,\xB/Bob,\xC/Carol,\xD/Dave}{%
+  \node[actor] (h\n) at (\x,-1.25) {\n};
+  \draw[life] (\x,-1.55) -- (\x,-11.0);}
 
-% -------------------------------------------------------------------------
-% Lifeline headers
-% -------------------------------------------------------------------------
-\node[headbox] (Alice) at (\xA,12.2) {Alice};
-\node[headbox] (Bob)   at (\xB,12.2) {Bob};
-\node[headbox] (Carol) at (\xC,12.2) {Carol};
-\node[headbox] (Dave)  at (\xD,12.2) {Dave};
+%================================================= round bands
+\node[band,minimum width=.5cm,minimum height=3.3cm,
+      anchor=north west] (r1) at (\xL,-1.8) {};
+\node[rotate=90,font=\tiny\bfseries,text=dgreen] at (r1.center)
+      {ROUND 1 $\cdot$ LOCK};
+\node[band,minimum width=.5cm,minimum height=2.6cm,
+      anchor=north west] (r2) at (\xL,-5.3) {};
+\node[rotate=90,font=\tiny\bfseries,text=dgreen] at (r2.center)
+      {ROUND 2 $\cdot$ RELEASE};
 
-\draw[lifeline] (\xA,11.85) -- (\xA,-1.4);
-\draw[lifeline] (\xB,11.85) -- (\xB,-1.4);
-\draw[lifeline] (\xC,11.85) -- (\xC,-1.4);
-\draw[lifeline] (\xD,11.85) -- (\xD,-1.4);
+%================================================= round 1 : lock
+\draw[msgd] (\xD,-2.15) -- node[lbl,above]
+      {0. Dave samples $x$, sends invoice $y = H(x)$ to Alice} (\xA,-2.15);
+\node[bdg,fill=mgreen] at (\xA-0.55,-2.15) {1};
 
-% -------------------------------------------------------------------------
-% Invoice message (spans the whole width, drawn above round 1)
-% -------------------------------------------------------------------------
-\node[badge=honestgreen] at (-2.3,11.3) {0};
-\draw[msg, honestgreen, densely dashed] (\xD,11.3) -- (\xA,11.3)
-  node[msglab, midway, above] {Dave samples $x$, sends invoice $y=H(x)$ to Alice};
+\draw[msg] (\xA,-3.10) -- node[lbl,above] {HTLC($A\!\to\!B$, 5, $y$, $3t$)} (\xB,-3.10);
+\node[bdg,fill=mgreen] at (\xL+0.95,-3.10) {2};
+\draw[msg] (\xB,-3.85) -- node[lbl,above] {HTLC($B\!\to\!C$, 4, $y$, $2t$)} (\xC,-3.85);
+\draw[msg] (\xC,-4.60) -- node[lbl,above] {HTLC($C\!\to\!D$, 3, $y$, $t$)}  (\xD,-4.60);
+\node[bdg,fill=mgreen] at (\xD+0.55,-3.85) {5};
 
-% -------------------------------------------------------------------------
-% Round 1: LOCK
-% -------------------------------------------------------------------------
-\fill[roundband] (-3.1,7.55) rectangle (-2.6,10.75);
-\node[rotate=90, font=\bfseries\scriptsize, titledark] at (-2.85,9.15) {ROUND 1 $\cdot$ LOCK};
+\draw[rule] (\xL+0.9,-5.15) -- (\xR,-5.15);
 
-\node[badge=honestgreen] at (-3.6,10.4) {1};
-\draw[msg, honestgreen] (\xA,10.0) -- (\xB,10.0)
-  node[msglab, midway, above] {HTLC(A$\to$B, 5, $y$, 3$t$)};
+%================================================= round 2 : release
+\draw[msg] (\xD,-5.65) -- node[lbl,above] {redeem($x$) --- Dave reveals $x$} (\xC,-5.65);
+\node[bdg,fill=mgreen] at (\xL+0.95,-5.65) {3};
+\draw[msg] (\xC,-6.45) -- node[lbl,above] {redeem($x$)} (\xB,-6.45);
+\draw[msg] (\xB,-7.25) -- node[lbl,above] {redeem($x$)} (\xA,-7.25);
 
-\node[badge=honestgreen] at (-3.6,9.15) {2};
-\draw[msg, honestgreen] (\xB,9.0) -- (\xC,9.0)
-  node[msglab, midway, above] {HTLC(B$\to$C, 5, $y$, 2$t$)};
+\node[anchor=west,font=\scriptsize\bfseries,text=dgreen] at (\xA+1.0,-7.85)
+      {$\to$ payment successful (each party paid; fee to each intermediary)};
+\node[bdg,fill=mgreen] at (\xA-0.55,-7.85) {4};
 
-\draw[msg, honestgreen] (\xC,8.0) -- (\xD,8.0)
-  node[msglab, midway, above] {HTLC(C$\to$D, 5, $y$, $t$)};
-\node[badge=honestgreen] at (14.4,8.0) {3};
+%================================================= what can go wrong
+\node[anchor=west,font=\scriptsize\bfseries] at (\xL+0.9,-8.45) {WHAT CAN GO WRONG};
+\draw[rule] (\xL+3.9,-8.45) -- (\xR,-8.45);
 
-% -------------------------------------------------------------------------
-% Round 2: RELEASE
-% -------------------------------------------------------------------------
-\fill[roundband] (-3.1,4.55) rectangle (-2.6,7.35);
-\node[rotate=90, font=\bfseries\scriptsize, titledark] at (-2.85,5.95) {ROUND 2 $\cdot$ RELEASE};
+\draw[omsg] (\xD,-9.20) -- (\xA-0.1,-9.20);
+\node[lbl,anchor=south west,text=cOrange,align=left] at (\xA+0.05,-9.12)
+      {if $x$ never arrives: each HTLC refunds after its timeout.\\
+       Staggering $t < 2t < 3t \Rightarrow$ each intermediary redeems
+       inbound before its outbound expires.};
+\node[bdg,fill=cOrange] at (\xA-0.7,-9.20) {6};
 
-\node[badge=honestgreen] at (-3.6,7.0) {4};
-\draw[msg, honestgreen] (\xD,7.0) -- (\xC,7.0)
-  node[msglab, midway, above] {redeem($x$) --- Dave reveals $x$};
+\draw[rmsg] (\xC+1.1,-9.85) -- (\xA-0.1,-9.85);
+\node[lbl,anchor=west,text=cRed] at (\xA+0.55,-9.65)
+      {wormhole: Alice \& Carol collude, relay $x$ off-path
+       $\to$ Bob skipped, forwards value but earns no fee};
+\node[bdg,fill=cRed] at (\xA-0.7,-9.85) {7};
 
-\draw[msg, honestgreen] (\xC,6.0) -- (\xB,6.0)
-  node[msglab, midway, above] {redeem($x$)};
+%================================================= staggered timelocks
+\node[bdg,fill=dgreen] at (\xL+0.3,-10.75) {8};
+\node[anchor=west,font=\scriptsize\bfseries] at (\xL+0.65,-10.75)
+      {STAGGERED TIMELOCKS (block height $\to$)};
 
-\draw[msg, honestgreen] (\xB,5.0) -- (\xA,5.0)
-  node[msglab, midway, above] {redeem($x$)};
+\def\yT{-11.45}
+\fill[lgreen] (\xA,\yT+0.30) rectangle (\xA+2.9,\yT+0.46);
+\fill[lgreen] (\xA,\yT+0.12) rectangle (\xA+5.9,\yT+0.28);
+\fill[lgreen] (\xA,\yT-0.06) rectangle (\xA+8.9,\yT+0.10);
+\draw[msg] (\xA,\yT-0.22) -- node[lbl,right,pos=1] {\ redeem windows (nested)}
+           (\xD-0.6,\yT-0.22);
 
-\node[badge=honestgreen] at (-3.6,4.85) {5};
-\node[font=\bfseries\scriptsize, honestgreen, anchor=west] at (\xA,4.85)
-  {$\to$ payment successful: each party paid, fee to each intermediary};
+\foreach \dx/\tk in {2.9/{$t$ (C$\to$D)},5.9/{$2t$ (B$\to$C)},8.9/{$3t$ (A$\to$B)}}{%
+  \draw[cRed,line width=.8pt] (\xA+\dx,\yT+0.50) -- (\xA+\dx,\yT-0.40);
+  \node[font=\scriptsize,anchor=north] at (\xA+\dx,\yT-0.48) {\tk};}
 
-% -------------------------------------------------------------------------
-% What can go wrong
-% -------------------------------------------------------------------------
-\node[anchor=west, font=\bfseries\scriptsize, black!70] at (-3.1,4.05) {WHAT CAN GO WRONG};
-\draw[black!25] (-3.1,3.85) -- (14.4,3.85);
+%================================================= footer
+\node[font=\scriptsize\itshape,text=cGray,anchor=north] at (\xR/2,-12.45)
+      {Rough draft --- multihop.spthy lemmas mapped to the 4-party flow.
+       Next: cltv\_blocks / Clock / timeout.};
 
-\node[badge=timeoutamber] at (-3.6,2.7) {6};
-\draw[msg, timeoutamber, densely dashed] (\xB,2.7) -- (\xA,2.7)
-  node[msglab, midway, above, timeoutamber, text width=7.5cm]
-  {if $x$ never arrives: each HTLC refunds after its timeout. Staggering $t<2t<3t$ guarantees every intermediary redeems inbound before its outbound expires.};
+%================================================= lemma rail
+\draw[rule] (\xRail-0.55,-0.9) -- (\xRail-0.55,\yBot+0.4);
+\node[anchor=north west,font=\small\bfseries] at (\xRail,-1.05)
+      {LEMMAS $\cdot$ multihop.spthy};
 
-\node[badge=attackred] at (-3.6,1.05) {7};
-\draw[msg, attackred, densely dashed] (\xC,1.05) -- (\xA,1.05)
-  node[msglab, midway, above, attackred, text width=7.5cm]
-  {wormhole: Alice \& Carol collude, relay $x$ off-path $\to$ Bob is skipped, forwards value but earns no fee};
+% \lemma{y}{colour}{number}{title}{body}
+\newcommand{\lemma}[5]{%
+  \node[bdg,fill=#2] at (\xRail+0.15,#1) {#3};
+  \node[anchor=north west,font=\scriptsize\bfseries,text=#2,inner sep=0pt]
+       at (\xRail+0.45,#1+0.12) {#4};
+  \node[anchor=north west,font=\tiny,inner sep=0pt,text width=5.9cm,
+        align=left,inner ysep=1pt] at (\xRail+0.45,#1-0.10) {#5};}
 
-% -------------------------------------------------------------------------
-% Staggered timelocks rail
-% -------------------------------------------------------------------------
-\node[badge=honestgreen] at (-3.6,0.2) {8};
-\node[anchor=west, font=\bfseries\scriptsize, black!70] at (-3.1,0.2) {STAGGERED TIMELOCKS (block height $\to$)};
+\lemma{-1.85}{mgreen}{1}{Invoice \& preimage authentication}
+  {Invoice\_Authenticates\_Settlement \md Preimage\_Secret\_Until\_Released\\
+   Forged\_Invoice\_Requires\_Key\_Compromise \md Invoice\_Released\_Once \ck}
 
-\fill[bandgreen] (\xA,-0.9) rectangle (\xD,-0.65);
-\fill[bandgreen] (\xA,-1.15) rectangle (\xC,-0.9);
-\fill[bandgreen] (\xA,-1.4) rectangle (\xB,-1.15);
+\lemma{-2.85}{mgreen}{2}{Lock causality (forward needs previous)}
+  {Forward1\_Requires\_Offer \md Forward2\_Requires\_Forward1\\
+   HTLC\_On\_Opened\_Channel \ck}
 
-\draw[railgray, thick, -{Latex}] (\xA,-1.65) -- (14.8,-1.65)
-  node[right, font=\scriptsize, yshift=1pt] {redeem windows\\(nested)};
-\foreach \x/\lab in {\xB/t (C$\to$D), \xC/2t (B$\to$C), \xD/3t (A$\to$B)} {
-  \draw[attackred, thick] (\x,-0.6) -- (\x,-1.95);
-  \node[font=\scriptsize, below] at (\x,-2.0) {\lab};
-}
+\lemma{-3.85}{mgreen}{3}{Release causality (redeem needs preimage)}
+  {Fulfill\_Requires\_Forward2 \md Claim\_Requires\_Release\\
+   Settle\_Requires\_Receiver\_Release \ck}
 
-% -------------------------------------------------------------------------
-% Footer
-% -------------------------------------------------------------------------
-\node[anchor=west, font=\scriptsize, black!45] at (0,-3.0)
-  {Rough draft --- \texttt{multihop.spthy} lemmas mapped to the 4-party flow. Next: \texttt{cltv\_blocks} / \texttt{Clock} / \texttt{timeout}.};
+\lemma{-4.85}{mgreen}{4}{Atomicity + non-vacuity}
+  {Payment\_Atomicity\_Under\_Liveness \ck\\
+   Settle\_Excludes\_Sender\_Refund \ck\ (no refund after settle)\\
+   Multihop\_Payment\_Possible \ck\ (witness)}
 
-% ===========================================================================
-% Legend panel (right side) -- generous vertical spacing so 2-line bodies
-% never collide with the next item's badge.
-% ===========================================================================
-\draw[black!20] (16.3,15.4) -- (16.3,-2.4);
+\lemma{-6.05}{mgreen}{5}{Value \& fee conservation}
+  {EndToEnd\_Value\_Conservation \md Fee\_Conservation\_Hop1/2\\
+   Fee\_Strictly\_Positive\_Hop1/2 \md Receiver\_Paid\_Invoice\_Amount \ck\\
+   Fees\_Charged\_On\_Path\_Possible \ck\ (witness: both hops earn)}
 
-\node[anchor=west, font=\bfseries\scriptsize, titledark] at (16.7,15.0)
-  {LEMMAS $\cdot$ \texttt{multihop.spthy}};
+\lemma{-7.25}{cOrange}{6}{Refund / griefing}
+  {Refund\_Requires\_Timeout \md Loss\_Requires\_Inaction \ck\\
+   Honest\_Intermediary\_Refunds \ck\ (reachable refund/DoS)}
 
-\newcommand{\legitem}[5]{%
-  \node[badge=#2] at (17.1,#1) {#3};
-  \node[legtitle, anchor=west, text=#2] at (17.5,#1) {#4};
-  \node[legbody, anchor=north west, text width=6.8cm] at (16.7,#1-0.35) {#5};
-}
+\lemma{-8.25}{cRed}{7}{Wormhole fee theft}
+  {Wormhole\_Fee\_Theft\_Reachable \ck\\
+   Wormhole\_Steals\_Exactly\_The\_Fees \ck\ (theft = path fees)}
 
-\legitem{14.4}{honestgreen}{1}{Invoice \& preimage authentication}
-  {\texttt{Invoice\_Authenticates\_Settlement}, \texttt{Preimage\_Secret\_Until\_Released},\\
-   \texttt{Forged\_Invoice\_Requires\_Key\_Compromise}, \texttt{Invoice\_Released\_Once} \checkmark}
+\lemma{-9.25}{dgreen}{8}{Intermediary safety (under liveness T2b)}
+  {Intermediary\_Never\_Loses\_Under\_Liveness \ck\\
+   Timeout\_Race\_Blocked \ck\ (race blocked with T2b)}
 
-\legitem{12.4}{honestgreen}{2}{Lock causality (forward needs previous)}
-  {\texttt{Forward1\_Requires\_Offer}, \texttt{Forward2\_Requires\_Forward1},\\
-   \texttt{HTLC\_On\_Opened\_Channel} \checkmark}
-
-\legitem{10.7}{honestgreen}{3}{Release causality (redeem needs preimage)}
-  {\texttt{Fulfill\_Requires\_Forward2}, \texttt{Claim\_Requires\_Release},\\
-   \texttt{Settle\_Requires\_Receiver\_Release} \checkmark}
-
-\legitem{9.0}{honestgreen}{4}{Atomicity + non-vacuity}
-  {\texttt{Payment\_Atomicity\_Under\_Liveness} \checkmark,\\
-   \texttt{Multihop\_Payment\_Possible} \checkmark\ (witness)}
-
-\legitem{7.3}{honestgreen}{5}{Value \& fee conservation}
-  {\texttt{EndToEnd\_Value\_Conservation}, \texttt{Fee\_Conservation\_Hop1/2},\\
-   \texttt{Fee\_Strictly\_Positive\_Hop1/2}, \texttt{Receiver\_Paid\_Invoice\_Amount} \checkmark}
-
-\legitem{5.3}{timeoutamber}{6}{Refund / griefing}
-  {\texttt{Refund\_Requires\_Timeout}, \texttt{Loss\_Requires\_Inaction} \checkmark,\\
-   \texttt{Honest\_Intermediary\_Refunds} \checkmark\ (reachable)}
-
-\legitem{3.6}{attackred}{7}{Wormhole fee theft}
-  {\texttt{Wormhole\_Fee\_Theft\_Reachable} \checkmark,\\
-   \texttt{Wormhole\_Steals\_Exactly\_The\_Fees} \checkmark\ (theft = path fees)}
-
-\legitem{1.9}{honestgreen}{8}{Intermediary safety (under liveness T2b)}
-  {\texttt{Intermediary\_Never\_Loses\_Under\_Liveness} \checkmark,\\
-   \texttt{Timeout\_Race\_Blocked} \checkmark\ (race blocked with T2b)}
-
-\node[anchor=north west, font=\scriptsize, black!55, text width=6.8cm] at (16.7,0.0)
-  {\checkmark\ = machine-checked in \texttt{multihop.spthy} (43/43).\\
-   green = all-traces safety, orange = benign/reachable,\\
-   red = attack shown reachable (by design, no PTLC).};
-
-\node[anchor=north west, font=\scriptsize\itshape, black!45, text width=6.8cm] at (16.7,-1.6)
-  {Channel-layer lemmas (open/update/close/punish)\\
-   live on the Alice$\leftrightarrow$Bob figure.};
+\node[anchor=north west,font=\tiny,text width=6.2cm,align=left]
+     at (\xRail-0.05,-10.35)
+     {\ck\ = machine-checked in multihop.spthy (43/43).\\[2pt]
+      green = all-traces safety \md orange = benign/reachable\\
+      red = attack shown reachable (by design, no PTLC).};
+\node[anchor=north west,font=\tiny\itshape,text width=6.2cm,align=left]
+     at (\xRail-0.05,-11.45)
+     {Channel-layer lemmas (open/update/close/punish)\\
+      live on the Alice$\leftrightarrow$Bob figure.};
 
 \end{tikzpicture}
 \end{document}

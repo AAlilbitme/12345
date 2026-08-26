@@ -9,6 +9,20 @@
 % placement in the source only affects the label/citation order.
 
 % ---------------------------------------------------------------------------
+% Figure: annotated multi-hop sequence diagram, lemma rail cross-referenced
+% to multihop.spthy. Source: fig_multihop_sequence.tex (standalone,
+% compile separately with pdflatex to regenerate fig_multihop_sequence.pdf
+% after editing). Included here as a graphic since its own preamble
+% (helvet, T1 fontenc) is not shared with paper_acm.tex's acmart class.
+% ---------------------------------------------------------------------------
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_multihop_sequence.pdf}
+\caption{The 3-hop payment of Figure~\ref{fig:multihop} unrolled into a sequence diagram, with each stage cross-referenced (numbered rail, right) to the specific \texttt{multihop.spthy} lemmas it corresponds to: invoice/preimage authentication, lock and release causality, atomicity, value/fee conservation, refund/griefing, the wormhole attack, and intermediary safety under the T2b liveness assumption.}
+\label{fig:multihop-sequence}
+\end{figure*}
+
+% ---------------------------------------------------------------------------
 % Figure: multi-hop HTLC routing over a path of payment channels
 % ---------------------------------------------------------------------------
 \begin{figure*}[t]
