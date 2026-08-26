@@ -24,37 +24,33 @@
   lab/.style={font=\scriptsize}
 ]
 
-\node[party] (A) at (0,0)    {Alice};
-\node[party] (B) at (3.2,0)  {Bob};
-\node[party] (C) at (6.4,0)  {Carol};
-\node[party] (D) at (9.6,0)  {Diana};
-\node[party] (E) at (12.8,0) {Eric};
+\node[party] (S)  at (0,0)   {$S$};
+\node[party] (F1) at (4.0,0) {$F_1$};
+\node[party] (F2) at (8.0,0) {$F_2$};
+\node[party] (R)  at (12.0,0){$R$};
 
-\node[ch] at ($(A)!0.5!(B)$) {Payment\\channel};
-\node[ch] at ($(B)!0.5!(C)$) {Payment\\channel};
-\node[ch] at ($(C)!0.5!(D)$) {Payment\\channel};
-\node[ch] at ($(D)!0.5!(E)$) {Payment\\channel};
+\node[ch] at ($(S)!0.5!(F1)$) {Payment\\channel};
+\node[ch] at ($(F1)!0.5!(F2)$) {Payment\\channel};
+\node[ch] at ($(F2)!0.5!(R)$) {Payment\\channel};
 
-% Lock (HTLC) above
-\draw[arrL] (A.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_0,d_0)$} (B.north west);
-\draw[arrL] (B.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_1,d_1)$} (C.north west);
-\draw[arrL] (C.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_2,d_2)$} (D.north west);
-\draw[arrL] (D.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_3,d_3)$} (E.north west);
+% Lock (HTLC) above -- matches Sender_Offer_HTLC, Forward1_HTLC, Forward2_HTLC
+\draw[arrL] (S.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_0,d_0)$} (F1.north west);
+\draw[arrL] (F1.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_1,d_1)$} (F2.north west);
+\draw[arrL] (F2.north east) to[bend left=18] node[lab, above, sloped] {\texttt{HTLC}$(y,v_2{=}v,d_2)$} (R.north west);
 
-% Release (preimage) below
-\draw[arrR] (E.south west) to[bend left=18] node[lab, below, sloped] {$x$} (D.south east);
-\draw[arrR] (D.south west) to[bend left=18] node[lab, below, sloped] {$x$} (C.south east);
-\draw[arrR] (C.south west) to[bend left=18] node[lab, below, sloped] {$x$} (B.south east);
-\draw[arrR] (B.south west) to[bend left=18] node[lab, below, sloped] {$x$} (A.south east);
+% Release (preimage) below -- matches Receiver_Fulfill_HTLC, Intermediary_Settle, Sender_Settle
+\draw[arrR] (R.south west) to[bend left=18] node[lab, below, sloped] {$x$} (F2.south east);
+\draw[arrR] (F2.south west) to[bend left=18] node[lab, below, sloped] {$x$} (F1.south east);
+\draw[arrR] (F1.south west) to[bend left=18] node[lab, below, sloped] {$x$} (S.south east);
 
-% Invoice hint
-\draw[arrL, densely dotted] (E.north) to[bend right=20]
-  node[lab, above, pos=0.5] {invoice $y{=}H(x)$} (A.north);
+% Invoice hint -- Receiver_Create_Invoice broadcasts, Sender consumes via In(.)
+\draw[arrL, densely dotted] (R.north) to[bend right=20]
+  node[lab, above, pos=0.5] {invoice $y{=}H(x)$} (S.north);
 
-\node[lab] at ($(A)!0.5!(E) + (0,-1.5)$) {$v_0>v_1>v_2>v_3{=}v$,\quad $d_0>d_1>d_2>d_3$};
+\node[lab] at ($(S)!0.5!(R) + (0,-1.5)$) {$v_0>v_1>v_2{=}v$,\quad $d_0>d_1>d_2$};
 
 \end{tikzpicture}
-\caption{A multi-hop HTLC payment routed over a path of payment channels. Solid blue arrows: the lock round, each hop offering an HTLC with hash-lock $y$, value $v_i$, and deadline $d_i$. Dashed orange arrows: the release round, the preimage $x$ propagating backward once revealed.}
+\caption{The 3-hop multi-hop HTLC payment routed over a path of payment channels, exactly as modeled in \texttt{multihop.spthy} ($S \to F_1 \to F_2 \to R$). Solid blue arrows: the lock round, each hop offering an HTLC with hash-lock $y$, value $v_i$, and deadline $d_i$. Dashed orange arrows: the release round, the preimage $x$ propagating backward once revealed.}
 \label{fig:multihop}
 \end{figure*}
 
