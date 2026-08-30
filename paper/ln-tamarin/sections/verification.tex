@@ -1,0 +1,253 @@
+\section{Verification of the Core Model}
+\label{sec:verification}
+
+Across five theories (\Cref{tab:theories}) we discharge 87 lemma checks over 61
+distinct properties. The concrete theory \code{multihop.spthy} contributes 43
+lemmas: 33 all-traces and 10 exists-trace witnesses, of which 5 all-traces
+lemmas are \code{[reuse]} helpers rather than protocol goals. The $N$-hop
+theory \code{Modif.spthy} re-proves 26 of these over an abstract routing layer
+and adds 5 new ones, for 31 in total. The remaining 13 come from the three
+timing theories.
+
+\Cref{fig:multihop} shows the flow the concrete theory models, with each stage
+annotated by the lemmas that constrain it.
+
+\input{fig}
+
+\subsection{Linear Facts and the Single-Spend Discipline}
+\label{sec:discipline}
+
+The central modelling lesson of this work concerns the choice between linear
+and persistent facts. Recall from \Cref{sec:notation} that a persistent fact
+\code{!F(t)} is checked by a rule but not consumed, whereas a linear fact
+\code{F(t)} is removed from the state when the rule fires. This distinction is
+standard; what is not obvious is which side of it an on-chain output belongs
+on.
+
+\begin{defn}[Single-spend discipline]
+\label{def:singlespend}
+A protocol resource that corresponds to \emph{one} on-chain output, spendable
+at most once, must be modelled by a linear fact. A resource that corresponds to
+\emph{knowledge}, which cannot be un-learned, may be modelled by a persistent
+fact. Where a single event creates both --- a secret becomes known \emph{and}
+an output becomes spendable --- the two must be separated into distinct facts.
+\end{defn}
+
+Lightning's revocation mechanism is exactly such an event, and it is a trap.
+When a channel state is revoked, the counterparty learns the revocation secret
+(knowledge, persistent) and simultaneously gains the right to spend one revoked
+commitment output (a resource, linear). The natural encoding conflates them,
+because the protocol description presents revocation as the disclosure of a
+secret, and disclosure is what persistent facts are for.
+
+\medbfparagraph{Instance 1: unbounded punishment}
+Our first formulation gated the punishment rule on the persistent revocation
+secret alone:
+
+\begin{lstlisting}
+rule Publish_Revoked_A:   // WRONG
+    [ !ChannelRecord(ptr, $A, $B), !ValidOnChain(ptr),
+      !RevokedSecret($A, n_old, sAold, oldCommitA) ]
+    --[ PublishRevoked($A, n_old, oldCommitA), Cheat($A, n_old) ]->
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
+\end{lstlisting}
+
+Every premise here is persistent, so the rule may fire arbitrarily often for a
+single revoked state. The model admitted traces in which the honest party
+confiscates the channel balance repeatedly on the strength of one act of
+cheating. The defect is silent: every individual safety lemma about punishment
+continues to hold. \code{No\_Punishment\_Without\_Cheating} is unaffected, since
+punishment still requires a prior cheat. Only the \emph{multiplicity} is wrong,
+and no single safety lemma in the original formulation constrained
+multiplicity.
+
+The repair separates the two roles. \code{Revoke\_Old\_Secret} now emits a
+linear token alongside the persistent secret:
+
+\begin{lstlisting}
+    [ StateA(...), StateB(...),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      // linear one-shot spend of the revoked commitment output
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+\end{lstlisting}
+
+and \code{Publish\_Revoked\_A} consumes that token, so the same commitment
+cannot enter the punishment path twice:
+
+\begin{lstlisting}
+rule Publish_Revoked_A:   // FIXED
+    [ !ChannelRecord(ptr, $A, $B), !ValidOnChain(ptr),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
+    --[ PublishRevoked($A, n_old, oldCommitA), Cheat($A, n_old) ]->
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
+\end{lstlisting}
+
+Knowledge of the secret is retained; only the spend is one-shot.
+
+\medbfparagraph{Instance 2: HTLC slot reuse}
+The same pathology appeared independently in the routing layer. A channel's
+HTLC output was re-derivable from the persistent \code{!ChannelConnect} fact, so
+one channel could carry unboundedly many concurrent HTLCs on the same output.
+The repair is identical in shape: \code{Lock\_Funds\_And\_Open} mints a linear
+\code{Free(ptr)} token, and every rule that adds an HTLC consumes it.
+
+That two independent gaps in different layers had the same cause, and the same
+one-line repair, is what makes \Cref{def:singlespend} worth stating as a
+discipline rather than as two bug fixes.
+
+\medbfparagraph{Re-verification}
+Adding a linear premise shrinks a rule's enabling condition, so
+$\mathrm{traces}(R') \subseteq \mathrm{traces}(R)$: every all-traces property is
+preserved automatically, but exists-trace witnesses may be destroyed. We
+therefore re-ran the full theory rather than appealing to monotonicity. All 43
+lemmas re-verify. Notably the hardened $N$-hop theory verifies \emph{faster}
+than the unhardened one ($134$\,s versus $265$\,s), because each additional
+linear premise prunes the search space --- the opposite of the intuition that
+had previously discouraged us from combining the two.
+
+\subsection{Protocol Properties}
+
+We state the main guarantees as theorems, each naming the \mtamarin\ lemma that
+discharges it. Throughout, ``honest'' abbreviates the absence of any long-term
+key compromise, which our model exposes as an explicit adversarial capability
+(\code{Compromise\_Ltk}).
+
+\begin{thrm}[Payment atomicity]
+\label{thm:atomicity}
+If both intermediaries forwarded, the receiver's HTLC was redeemed, and no key
+was compromised, then the sender's HTLC on the same hash cannot be refunded.
+\hfill(\code{Payment\_Atomicity\_Under\_Liveness})
+\end{thrm}
+
+\begin{thrm}[Intermediary safety]
+\label{thm:intermediary}
+If a forwarder's outgoing HTLC is redeemed and its incoming HTLC is refunded,
+then its long-term key was compromised.
+\hfill(\code{Intermediary\_Never\_Loses\_Under\_Liveness})
+\end{thrm}
+
+\Cref{thm:intermediary} is the contrapositive of the property that matters
+operationally: an honest forwarder never pays out downstream without recovering
+upstream. It holds only under the claim obligation T3, as
+\Cref{sec:minimality} shows.
+
+\begin{thrm}[Routing causality]
+\label{thm:causality}
+Every forward is preceded by a genuine upstream offer or forward with agreeing
+amounts, unless the upstream party's key was compromised.
+\hfill(\code{Forward1\_Requires\_Offer}, \code{Forward2\_Requires\_Forward1})
+\end{thrm}
+
+The compromise-free versions are proved separately as
+\code{Forward1\_Requires\_Offer\_Honest} and
+\code{Forward2\_Requires\_Forward1\_Honest}, which drop the disjunct rather than
+carrying it.
+
+\begin{thrm}[Value conservation]
+\label{thm:value}
+Over a complete linked three-hop payment, the sender locks strictly more than
+the receiver's invoice amount.
+\hfill(\code{EndToEnd\_Value\_Conservation})
+\end{thrm}
+
+The surplus is identified with the per-hop fees by
+\code{Fee\_Conservation\_Hop1} and \code{Fee\_Conservation\_Hop2}, each of which
+states $v_{\mathrm{in}} = v_{\mathrm{out}} + f$ at its hop. Taken together
+these give the quantitative statement the wormhole analysis needs: value is
+neither created nor destroyed along the path, and the difference between what
+the sender pays and what the receiver receives is exactly $\sum_i f_i$.
+
+\medbfparagraph{Non-vacuity}
+Safety properties are vacuously true of a model that cannot execute. We
+therefore accompany them with exists-trace witnesses.
+\code{Multihop\_Payment\_Possible} exhibits a complete eight-event payment from
+invoice to sender settlement. \code{Distinct\_Parties\_Configuration} exhibits
+three channels between four pairwise-distinct parties with no compromise and no
+dispute. \code{Fees\_Charged\_On\_Path\_Possible} exhibits two \emph{different}
+intermediaries each charging a fee on the same payment.
+
+\subsection{Timing Assumptions and Their Minimality}
+\label{sec:minimality}
+
+\Cref{sec:threat} introduced four timing restrictions. Two questions follow:
+are they sound, and is any of them redundant?
+
+\medbfparagraph{T2b is load-bearing}
+With T2b active, the early-timeout race is unreachable
+(\code{Timeout\_Race\_Blocked}). A minimal model with no such assumption
+exhibits the race as a concrete trace (\code{timeout.spthy},
+\code{Early\_Timeout\_Race}). The pair forms a two-sided certificate: the race
+is reachable without the assumption and unreachable with it, so T2b is neither
+vacuous nor decorative.
+
+\medbfparagraph{T3 is not implied by T1 and T2}
+It is natural to ask whether the claim obligation T3
+(\code{IntermediaryMustClaim}) follows from the ordering constraints. It does
+not. Removing T3 from \code{multihop.spthy} and re-running falsifies
+\Cref{thm:intermediary}: \mtamarin\ returns a concrete 59-step counterexample.
+T2b orders the two timeouts, $\mathit{TimedOut}(\mathit{ptrOut}) <
+\mathit{TimedOut}(\mathit{ptrIn})$, but does not compel the node to
+\emph{sweep} its incoming HTLC once the outgoing one is redeemed. That
+obligation is precisely what T3 encodes, and it corresponds in deployment to
+watchtower infrastructure~\cite{mccorry2019pisa}.
+
+\begin{inv}[Assumption minimality]
+\label{inv:minimality}
+None of T1, T2a, T2b, T3 is implied by the others. T1--T2b carry timing
+soundness; T3 alone carries intermediary safety.
+\end{inv}
+
+\medbfparagraph{Deriving what the core model assumes}
+The concrete theory treats time relationally, as an ordering of events. The two
+small natural-number theories discharge the arithmetic it takes for granted.
+\code{Cltv.spthy} derives that the CLTV delta is strictly positive and that the
+resulting claim window is non-empty across a staggered path.
+\code{Clock.spthy} runs a live block clock through the full forward lifecycle
+and derives the claim window between hops at concrete block heights
+(\code{Claim\_Window\_Exists},
+\code{Transitive\_Preimage\_Before\_Upstream\_Deadline}), together with the
+lifecycle property that no HTLC may be added after a channel closes.
+
+\subsection{Griefing and the Wormhole Attack}
+
+Two pathologies survive an otherwise correct execution. Both are reachable in
+our model, and we distinguish sharply between them.
+
+\medbfparagraph{Griefing is an availability failure}
+\code{Honest\_Intermediary\_Refunds} exhibits a trace in which capital is
+locked and later refunded with no settlement anywhere on the path and no key
+compromise. Every party follows the protocol; the receiver simply never
+discloses $x$. No safety property is violated --- the funds return --- but every
+forwarder's liquidity is immobilised until its deadline elapses. This is a
+denial of service, not theft, and we report it as such.
+
+\medbfparagraph{The wormhole, quantified}
+The wormhole attack is known~\cite{malavolta2019anonymous} and we claim no
+novelty for exhibiting it. Two non-adjacent colluding parties relay the
+preimage out of band, bypassing the honest intermediary between them, which
+forwards liquidity and earns nothing.
+\code{Wormhole\_Fee\_Theft\_Reachable} finds this trace in 51 steps: the sender
+settles and the receiver is paid, yet the middle hop is never redeemed and
+neither intermediary records a \code{FeeEarned} event.
+
+What is new is the quantification. Because our amounts are carried in the model
+rather than abstracted away, we can state and prove not merely that a loss
+occurs but exactly what it is.
+
+\begin{thrm}[Wormhole theft is exactly the path fees]
+\label{thm:wormhole}
+There is a trace in which the sender locks $v + f_1 + f_2$, the receiver is
+paid $v$, no key is compromised, and neither intermediary earns a fee.
+\hfill(\code{Wormhole\_Steals\_Exactly\_The\_Fees}, 81 steps)
+\end{thrm}
+
+Prior symbolic treatments of agent-skipping establish that the honest
+intermediary is bypassed, but their formalisms carry no numeric sort and so
+cannot express \emph{how much} is lost. \Cref{thm:wormhole} pins the
+adversary's gain to $f_1 + f_2$, the sum of the bypassed fees, which is the
+economically meaningful statement.
