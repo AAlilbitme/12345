@@ -1,0 +1,14 @@
+Stripped wormhole witness model (derived from Simon's MultiNhop + compromised-endpoint rules).
+Abstractions: channel layer replaced by Open_Channel (ptr public), amounts removed,
+one-shot Free, T3 disabled under -DWITNESS, WITNESS bounds (one invoice/offer/leak/inject,
+two compromised parties). Bounds are sound for exists-trace witnesses only.
+
+Run: tamarin-prover wormhole_witness_stripped.spthy -DWITNESS --prove=<lemma>
+
+WL2 chain+leak+inject                         verified (26 steps)
+WL3 + sender settles via injected preimage    verified (28 steps)
+R2  chain + fulfil + Refunded(p23)            verified (23 steps)
+R3  + Leaked(p3R)                             verified (26 steps)
+R4_Full_Wormhole: leak at F3->R, inject at S->F1, S settles, p23 refunded
+                                              verified (32 steps)
+R1 chain + refund (no fulfil)                 no result in 240 s
