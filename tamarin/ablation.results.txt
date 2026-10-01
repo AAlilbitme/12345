@@ -1,0 +1,33 @@
+Ablation of multihop_nhop_main.spthy: one restriction removed at a time,
+each lemma run on its own (240 s / 3-4 GB). 'no result' = not finished, NOT falsified.
+
+T1 | Intermediary_Never_Loses_Under_Liveness: no result in 240 s
+T1 | Payment_Atomicity_Under_Liveness: no result in 240 s
+T1 | Timeout_Race_Blocked: no result in 240 s
+T1 | Loss_Requires_Inaction (all-traces): verified (2 steps)
+T1 | Settle_Excludes_Sender_Refund (all-traces): verified (22 steps)
+T1 | Refund_Requires_Timeout (all-traces): verified (16 steps)
+T2 | Intermediary_Never_Loses_Under_Liveness: no result in 240 s
+T2 | Payment_Atomicity_Under_Liveness: no result in 240 s
+T2 | Timeout_Race_Blocked: no result in 240 s
+T2 | Loss_Requires_Inaction (all-traces): verified (2 steps)
+T2 | Settle_Excludes_Sender_Refund (all-traces): verified (22 steps)
+T2 | Refund_Requires_Timeout (all-traces): verified (16 steps)
+T3 | Intermediary_Never_Loses_Under_Liveness: no result in 240 s
+T3 | Payment_Atomicity_Under_Liveness: no result in 240 s
+T3 | Timeout_Race_Blocked (all-traces): verified (2 steps)
+T3 | Loss_Requires_Inaction (all-traces): verified (2 steps)
+T3 | Settle_Excludes_Sender_Refund (all-traces): verified (22 steps)
+T3 | Refund_Requires_Timeout (all-traces): verified (16 steps)
+OneOutcome | Intermediary_Never_Loses_Under_Liveness: no result in 240 s
+OneOutcome | Payment_Atomicity_Under_Liveness: no result in 240 s
+OneOutcome | Timeout_Race_Blocked (all-traces): verified (2 steps)
+OneOutcome | Loss_Requires_Inaction: no result in 240 s
+OneOutcome | Settle_Excludes_Sender_Refund (all-traces): verified (22 steps)
+OneOutcome | Refund_Requires_Timeout (all-traces): verified (16 steps)
+T2a | Intermediary_Never_Loses_Under_Liveness (all-traces): verified (2 steps)
+T2a | Payment_Atomicity_Under_Liveness (all-traces): verified (2 steps)
+T2a | Timeout_Race_Blocked (all-traces): verified (2 steps)
+T2a | Loss_Requires_Inaction (all-traces): verified (2 steps)
+T2a | Settle_Excludes_Sender_Refund (all-traces): verified (22 steps)
+T2a | Refund_Requires_Timeout (all-traces): verified (16 steps)

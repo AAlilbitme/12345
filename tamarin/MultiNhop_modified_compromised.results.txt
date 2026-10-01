@@ -19,3 +19,9 @@ Automatic proofs, one lemma at a time, 300 s / 4 GB each:
   Wormhole_Two_Colluders: no result in 300 s (not falsified)
   state_update: no result in 300 s (honest-only T3 slows the channel lemmas,
                 as already seen in the main model)
+
+Further wormhole attempts (all: no result, not falsified):
+  Wormhole_Two_Colluders  default search 29 min, BFS 29 min, custom oracle 28 min
+  Wormhole_Pruned (extra 'not' conditions excluding wrong branches)
+                          default 29 min, oracle 29 min
+  Step-wise: WL1_Leak_In_Payment, WL2_Plus_Inject, WL3_Plus_Settle: 500 s each
