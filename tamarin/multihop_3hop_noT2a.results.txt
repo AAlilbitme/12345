@@ -39,10 +39,17 @@ TIMEOUT/OOM = no result within the limit (NOT falsified). Identical to the run w
   Fee_Conservation_Hop2 (all-traces): verified (18 steps)
   Receiver_Paid_Invoice_Amount (all-traces): verified (3 steps)
   Fees_Charged_On_Path_Possible: TIMEOUT/OOM (>300s or >4GB)
-  Wormhole_Fee_Theft_Reachable: TIMEOUT/OOM (>300s or >4GB)
+  Wormhole_Fee_Theft_Reachable (exists-trace): verified (54 steps)   [rerun, 29 min limit]
   Wormhole_Steals_Exactly_The_Fees: TIMEOUT/OOM (>300s or >4GB)
   Fee_Strictly_Positive_Hop1 (all-traces): verified (2 steps)
   Fee_Strictly_Positive_Hop2 (all-traces): verified (2 steps)
   EndToEnd_Value_Conservation (all-traces): verified (2 steps)
   Honest_Intermediary_Refunds (exists-trace): verified (23 steps)
 DONE
+
+Rerun of the 4 slow lemmas, one at a time, 29 min limit (same machine):
+  file with T2a:    Multihop_Payment_Possible, Fees_Charged_On_Path_Possible,
+                    Wormhole_Fee_Theft_Reachable, Wormhole_Steals_Exactly_The_Fees: no result
+  file without T2a (3 GB memory cap):
+                    Wormhole_Fee_Theft_Reachable: verified (54 steps)
+                    the other three: no result (time or memory)
