@@ -331,4 +331,20 @@ lemma R9_Wormhole_Colluders_F1_F3:
       & not (Ex #k. LtkCompromised(F2) @ #k)
       & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
 
+lemma R10_Wormhole_F3_Compromised_In_Time:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s #c3 #t.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & LtkCompromised(F3) @ #c3 & TimedOut(p23) @ #t & #c3 < #t
+      & not (Ex #k. LtkCompromised(F2) @ #k)
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
 end
