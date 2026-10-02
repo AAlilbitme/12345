@@ -433,7 +433,7 @@ restriction HonestPartiesActBeforeIncomingTimeout:
     "All P ptrIn ptrOut y #f #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
       & TimedOut(ptrIn) @ #k
-      & not (Ex #r. LtkCompromised(P) @ #r)   // CHANGED: honest parties only
+      & not (Ex #r. LtkCompromised(P) @ #r & #r < #k)   // CHANGED: honest (not compromised before #k)
      ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
 
 restriction IntermediaryMustClaim:
@@ -442,7 +442,7 @@ restriction IntermediaryMustClaim:
       & Redeemed(ptrOut, y) @ #i
       & TimedOut(ptrIn)  @ #k
       & #i < #k
-      & not (Ex #r. LtkCompromised(P) @ #r)   // CHANGED: honest parties only
+      & not (Ex #r. LtkCompromised(P) @ #r & #r < #k)   // CHANGED: honest (not compromised before #k)
      ==> Ex #l. Redeemed(ptrIn, y) @ #l"
 
 // ---------------------------------------------------------------------------
@@ -450,9 +450,107 @@ restriction IntermediaryMustClaim:
 // ---------------------------------------------------------------------------
 
 lemma state_update [use_induction]:
-    "All A B ptr n #i.
-       StateUpdate(A, B, ptr, n) @ #i
-     ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
+  all-traces
+  "∀ A B ptr n #i.
+    (StateUpdate( A, B, ptr, n ) @ #i) ⇒
+    (∃ #j. (ChannelOpen( A, B, ptr ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B ptr n #i.
+  (StateUpdate( A, B, ptr, n ) @ #i)
+ ∧
+  ∀ #j. (ChannelOpen( A, B, ptr ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  simplify
+  solve( (∀ A B ptr n #i.
+           (StateUpdate( A, B, ptr, n ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ #j. (ChannelOpen( A, B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #r.
+             (LtkCompromised( P ) @ #r) ⇒ ((last(#r)) ∨ (#r = #k) ∨ (#k < #r))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #r.
+             (LtkCompromised( P ) @ #r) ⇒ ((last(#r)) ∨ (#r = #k) ∨ (#k < #r))) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ #j. (ChannelOpen( $A, $B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( !Pk( $A, pk(x) ) ▶₂ #i )
+        case Register_key
+        solve( !Pk( $B, pk(x) ) ▶₃ #i )
+          case Register_key
+          solve( PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n, sAnew,
+                           newCommitA, sign(newCommitA, ~ltk), fA_new, fB_new
+                 ) ▶₀ #i )
+            case Update_State_case_1
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_2
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_3
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_4
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+           (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ #m < #k) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_3
+    solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+           (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ #m < #k) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+             (∃ #l. (Redeemed( ptrIn, y ) @ #l)) )
+        case case_1
+        by contradiction /* from formulas */
+      next
+        case case_2
+        by contradiction /* cyclic */
+      qed
+    qed
+  qed
+qed
 
 lemma delayed_funds:
     "All A n #i.
@@ -623,14 +721,216 @@ solve( ReadyToLock( $A, $B, ptr, sA0, sB0, commitA0, commitB0 ) ▶₀ #k )
 qed
 
 lemma Funds_Locked_Before_Update [use_induction]:
-    "All A B ptr n #i.
-       StateUpdate(A, B, ptr, n) @ #i
-     ==> Ex #j. FundsLocked(A, B, ptr) @ #j & #j < #i"
+  all-traces
+  "∀ A B ptr n #i.
+    (StateUpdate( A, B, ptr, n ) @ #i) ⇒
+    (∃ #j. (FundsLocked( A, B, ptr ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B ptr n #i.
+  (StateUpdate( A, B, ptr, n ) @ #i)
+ ∧
+  ∀ #j. (FundsLocked( A, B, ptr ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  simplify
+  solve( (∀ A B ptr n #i.
+           (StateUpdate( A, B, ptr, n ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ #j. (FundsLocked( A, B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #r.
+             (LtkCompromised( P ) @ #r) ⇒ ((last(#r)) ∨ (#r = #k) ∨ (#k < #r))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #r.
+             (LtkCompromised( P ) @ #r) ⇒ ((last(#r)) ∨ (#r = #k) ∨ (#k < #r))) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ #j. (FundsLocked( $A, $B, ptr ) @ #j) ∧ (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( !Pk( $A, pk(x) ) ▶₂ #i )
+        case Register_key
+        solve( !Pk( $B, pk(x) ) ▶₃ #i )
+          case Register_key
+          solve( PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n, sAnew,
+                           newCommitA, sign(newCommitA, ~ltk), fA_new, fB_new
+                 ) ▶₀ #i )
+            case Update_State_case_1
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_2
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_3
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_4
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+           (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ #m < #k) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_3
+    solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+           (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ #m < #k) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+             (∃ #l. (Redeemed( ptrIn, y ) @ #l)) )
+        case case_1
+        by contradiction /* from formulas */
+      next
+        case case_2
+        by contradiction /* cyclic */
+      qed
+    qed
+  qed
+qed
 
 lemma Update_Requires_Negotiation [use_induction]:
-    "All A B ptr n #i.
-         StateUpdate(A, B, ptr, n) @ #i
-     ==> Ex fA fB #j. NewStateBuilt(A, B, ptr, n, fA, fB) @ #j & #j < #i"
+  all-traces
+  "∀ A B ptr n #i.
+    (StateUpdate( A, B, ptr, n ) @ #i) ⇒
+    (∃ fA fB #j. (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B ptr n #i.
+  (StateUpdate( A, B, ptr, n ) @ #i)
+ ∧
+  ∀ fA fB #j. (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j) ⇒ ¬(#j < #i)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  simplify
+  solve( (∀ A B ptr n #i.
+           (StateUpdate( A, B, ptr, n ) @ #i)
+          ⇒
+           ((last(#i)) ∨
+            (∃ fA fB #j.
+              (NewStateBuilt( A, B, ptr, n, fA, fB ) @ #j)
+             ∧
+              (¬(last(#j))) ∧ (#j < #i))))  ∥
+         (∃ P ptrIn ptrOut y #f #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧ (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#f))) ∧
+           (∀ #r.
+             (LtkCompromised( P ) @ #r) ⇒ ((last(#r)) ∨ (#r = #k) ∨ (#k < #r))) ∧
+           (∀ #m.
+             (TimedOut( ptrOut ) @ #m) ⇒ ((last(#m)) ∨ (#m = #k) ∨ (#k < #m))))  ∥
+         (∃ P ptrIn ptrOut y #f #i #k.
+           (ForwardHTLC( P, ptrIn, ptrOut, y ) @ #f) ∧
+           (Redeemed( ptrOut, y ) @ #i) ∧
+           (TimedOut( ptrIn ) @ #k)
+          ∧
+           (¬(last(#k))) ∧
+           (¬(last(#i))) ∧
+           (¬(last(#f))) ∧
+           (#i < #k) ∧
+           (∀ #r.
+             (LtkCompromised( P ) @ #r) ⇒ ((last(#r)) ∨ (#r = #k) ∨ (#k < #r))) ∧
+           (∀ #l. (Redeemed( ptrIn, y ) @ #l) ⇒ last(#l))) )
+    case case_1
+    solve( (last(#i))  ∥
+           (∃ fA fB #j.
+             (NewStateBuilt( $A, $B, ptr, n, fA, fB ) @ #j)
+            ∧
+             (¬(last(#j))) ∧ (#j < #i)) )
+      case case_1
+      solve( !Pk( $A, pk(x) ) ▶₂ #i )
+        case Register_key
+        solve( !Pk( $B, pk(x) ) ▶₃ #i )
+          case Register_key
+          solve( PendingA( $A, $B, ptr, n_old, sAold, oldCommitA, n, sAnew,
+                           newCommitA, sign(newCommitA, ~ltk), fA_new, fB_new
+                 ) ▶₀ #i )
+            case Update_State_case_1
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_2
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_3
+            by contradiction /* from formulas */
+          next
+            case Update_State_case_4
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+           (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ #m < #k) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_3
+    solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+           (∃ #m. (TimedOut( ptrOut ) @ #m) ∧ #m < #k) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      solve( (∃ #r. (LtkCompromised( $Me ) @ #r) ∧ #r < #k)  ∥
+             (∃ #l. (Redeemed( ptrIn, y ) @ #l)) )
+        case case_1
+        by contradiction /* from formulas */
+      next
+        case case_2
+        by contradiction /* cyclic */
+      qed
+    qed
+  qed
+qed
 
 // ---------------------------------------------------------------------------
 // Lemmas -- HTLC / payment layer
