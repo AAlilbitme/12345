@@ -400,4 +400,48 @@ lemma R5_Wormhole_F2_Loses:
       & not (Ex #k. Redeemed(p23, h(x)) @ #k)
       & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
 
+
+lemma R6_Wormhole_P12_Unpaid:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
+lemma R7_Wormhole_F2_Honest:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & not (Ex #k. LtkCompromised(F2) @ #k)"
+
+lemma R8_Wormhole_F2_Honest_Unpaid:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & not (Ex #k. LtkCompromised(F2) @ #k)
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
 end

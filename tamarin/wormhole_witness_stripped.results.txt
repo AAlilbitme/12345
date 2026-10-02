@@ -14,3 +14,9 @@ R4_Full_Wormhole: leak at F3->R, inject at S->F1, S settles, p23 refunded
 R1 chain + refund (no fulfil)                 no result in 240 s
 R5_Wormhole_F2_Loses: R4 + F1,F3 compromised, F2 honest, p12/p23 never redeemed
                                               no result in 1700 s
+R6_Wormhole_P12_Unpaid: R4 + p12 never redeemed      verified (32 steps)
+R7_Wormhole_F2_Honest:  R4 + F2 never compromised    verified (32 steps)
+R8_Wormhole_F2_Honest_Unpaid: R4 + F2 honest + p12 never redeemed
+                                              verified (32 steps, 3m40s)
+  => honest F2 forwards, is paid on neither hop (p12 unredeemed, p23 refunded),
+     while S settles with F1 via the leaked/injected preimage.
