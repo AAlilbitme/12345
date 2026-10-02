@@ -1,0 +1,24 @@
+MultiNhop_simon_honest.spthy (commit 9ae8d4a): compromised-endpoint attacker, T2/T3 honest = not compromised before #k, T2a removed.
+
+Saved proofs (replay: tamarin-prover MultiNhop_simon_honest.spthy):
+state_update 21 | Funds_Locked_Before_Update 21 | Update_Requires_Negotiation 21 | Protocol_execution 47 | Cooperative_Close_Execution 33 | Distinct_Parties_Configuration 89 | Refund_Possible 58 | Multihop_Payment_Possible 128 -- all verified
+
+Other lemmas (--prove=<lemma>, 600 s, 2 parallel; time includes ~180 s precomputation):
+delayed_funds | verified (44 steps) | 202s
+instant_funds | verified (60 steps) | 212s
+No_Punishment_Without_Cheating | verified (20 steps) | 181s
+settlement_is_traceable | verified (4 steps) | 208s
+Invoice_Released_Once | verified (8 steps) | 191s
+Ltk_Known_Implies_Compromised | no result in 600 s | 601s
+Invoice_Has_Secret_Preimage | verified (2 steps) | 183s
+Preimage_Secret_Until_Released | no result in 600 s | 601s
+HTLC_On_Opened_Channel | verified (23 steps) | 172s
+Settle_Excludes_Sender_Refund | verified (17 steps) | 198s
+Forged_Invoice_Requires_Key_Compromise | verified (14 steps) | 462s
+Invoice_Authenticates_Settlement | no result in 600 s | 601s
+Loss_Requires_Inaction | verified (2 steps) | 173s
+Refund_Requires_Timeout | verified (58 steps) | 183s
+Intermediary_Never_Loses_Under_Liveness | verified (7 steps) | 184s
+Payment_Atomicity_Under_Liveness | verified (13 steps) | 182s
+Timeout_race_Blocked | verified (4 steps) | 187s
+Wormhole_Honest_F2_Robbed | no result in 600 s | 600s
