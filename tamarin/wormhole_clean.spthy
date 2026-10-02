@@ -172,23 +172,17 @@ restriction HonestPartiesActBeforeIncomingTimeout:
       & TimedOut(ptrIn) @ #k
      ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
 
-#ifdef WITNESS
-#else
-restriction IntermediaryMustClaim:
-    "All P ptrIn ptrOut y #f #i #k.
-        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
-      & Redeemed(ptrOut, y) @ #i
-      & TimedOut(ptrIn)  @ #k
-      & #i < #k
-      & not (Ex #r. LtkCompromised(P) @ #r)   // CHANGED: honest nodes only
-     ==> Ex #l. Redeemed(ptrIn, y) @ #l"
-#endif
+// T3 (IntermediaryMustClaim) is omitted in this attack file. Only exists-trace
+// lemmas are stated here, and the witness lemmas pin down the trace:
+// F2 is honest and its outgoing HTLC p23 is refunded (never redeemed), so T3 is
+// vacuous for F2; F1 and F3 are compromised (T3 is honest-only, so it does
+// not constrain them).
 
 
-#ifdef WITNESS
-// Bounds used ONLY when searching for exists-trace witnesses (run with
-// -DWITNESS). Restricting traces can only remove traces, so any witness found
-// under these bounds is a real trace of the unbounded model.
+// Search bounds. This file contains ONLY exists-trace lemmas: adding
+// restrictions can only remove traces, so every witness found under these
+// bounds is a real trace of the unbounded model. Do NOT add all-traces lemmas
+// to this file (they would only be proven for the bounded model).
 restriction W_OneInvoice:
     "All a b y c d z #i #j. InvoiceCreated(a, b, y) @ #i & InvoiceCreated(c, d, z) @ #j ==> #i = #j"
 restriction W_OneOffer:
@@ -200,9 +194,8 @@ restriction W_OneInject:
 restriction W_TwoCompromised:
     "All a b c #i #j #k. LtkCompromised(a) @ #i & LtkCompromised(b) @ #j & LtkCompromised(c) @ #k
      ==> #i = #j | #j = #k | #i = #k"
-#endif
 
-// --- Attack witnesses (run with -DWITNESS) ---
+// --- Attack witnesses ---
 
 lemma W0_Chain_Only:
     exists-trace
@@ -320,6 +313,22 @@ lemma R8_Wormhole_F2_Honest_Unpaid:
       & Refunded(p23, h(x)) @ #u
       & Injected(pSF, x) @ #i
       & SenderSettled(S, F1, R, pSF, x) @ #s
+      & not (Ex #k. LtkCompromised(F2) @ #k)
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
+lemma R9_Wormhole_Colluders_F1_F3:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s #c1 #c3.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & LtkCompromised(F1) @ #c1 & LtkCompromised(F3) @ #c3
       & not (Ex #k. LtkCompromised(F2) @ #k)
       & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
 
