@@ -435,6 +435,7 @@ restriction HonestPartiesActBeforeIncomingTimeout:
     "All P ptrIn ptrOut y #f #k.
         ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
       & TimedOut(ptrIn) @ #k
+      & not (Ex #r. LtkCompromised(P) @ #r)   // CHANGED: honest parties only
      ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
 
 restriction IntermediaryMustClaim:
