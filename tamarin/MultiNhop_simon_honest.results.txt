@@ -29,3 +29,21 @@ Wormhole_Honest_F2_Robbed | no result in 600 s | 600s
 
 Total: 28/29 verified. Open: Wormhole_Honest_F2_Robbed (verified as R8 in wormhole_clean.spthy, abstract model).
 Finding: without the invoice tag, Offer_Requires_Invoice is falsified (13 steps) -- a handshake signature <'proposal',A,B,ptr> parses as an invoice <R,S,y> (missing domain separation).
+
+Sanity / non-vacuity witnesses (saved proofs, found with tools/dfs_witness_search.py over
+`tamarin-prover interactive`; the autoprover gives no result in 15 min because it loops on
+recycled Free(ptr) and relayed Fulfill facts):
+Sanity_Honest_Payment_Completes          verified (82 steps)  2-hop payment fully settles, nobody compromised
+Sanity_Compromised_Intermediary_Can_Lose verified (67 steps)  Intermediary_Never_Loses_Under_Liveness is not vacuous
+Sanity_Injected_Settlement               verified (69 steps)  leak/inject attacker rules reach a settlement in the full model
+
+Review notes (no effect on the verified safety results, but state them in the paper):
+- Fees are not linked across hops: each Forward_HTLC reads %vIn/%fee/%vOut from the network,
+  so no claim about amounts or fee theft follows from this model.
+- Free(ptr) recycling is inconsistent (Intermediary_Settle frees ptrIn only; Receiver_Fulfill_HTLC
+  frees nothing). Only limits channel reuse.
+- Receiver_Fulfill_HTLC does not check that the route belongs to the invoice's sender (harmless:
+  Eq(h(x), y) binds the preimage).
+- Fulfill_Compromised_In can create a Fulfill on a channel with no pending HTLC (dead fact).
+- Never_Loses / Payment_Atomicity assume "never compromised"; T2/T3 use "not compromised before
+  #k". The lemmas are correct but weaker than they could be.
