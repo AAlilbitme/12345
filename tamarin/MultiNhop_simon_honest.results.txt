@@ -1,24 +1,31 @@
-MultiNhop_simon_honest.spthy (commit 9ae8d4a): compromised-endpoint attacker, T2/T3 honest = not compromised before #k, T2a removed.
+MultiNhop_simon_honest.spthy (commit e6c6073)
+Changes vs Simon: compromised-endpoint attacker (Tamarin manual pattern), T2/T3 honest = not compromised before #k (prefix-closed), T2a removed, tagged invoices <'invoice',R,S,y>, OfferFor annotation, sources lemma Fulfill_Origin, helpers Settle_Requires_Offer / Offer_Requires_Invoice.
 
-Saved proofs (replay: tamarin-prover MultiNhop_simon_honest.spthy):
-state_update 21 | Funds_Locked_Before_Update 21 | Update_Requires_Negotiation 21 | Protocol_execution 47 | Cooperative_Close_Execution 33 | Distinct_Parties_Configuration 89 | Refund_Possible 58 | Multihop_Payment_Possible 128 -- all verified
+Saved proofs (replay: tamarin-prover MultiNhop_simon_honest.spthy): all verified
+state_update 21 | Funds_Locked_Before_Update 21 | Update_Requires_Negotiation 21 | Protocol_execution 35 | Cooperative_Close_Execution 21 | Distinct_Parties_Configuration 41 | Refund_Possible 34 | Multihop_Payment_Possible 64
 
-Other lemmas (--prove=<lemma>, 600 s, 2 parallel; time includes ~180 s precomputation):
-delayed_funds | verified (44 steps) | 202s
-instant_funds | verified (60 steps) | 212s
-No_Punishment_Without_Cheating | verified (20 steps) | 181s
-settlement_is_traceable | verified (4 steps) | 208s
-Invoice_Released_Once | verified (8 steps) | 191s
-Ltk_Known_Implies_Compromised | no result in 600 s | 601s
-Invoice_Has_Secret_Preimage | verified (2 steps) | 183s
-Preimage_Secret_Until_Released | no result in 600 s | 601s
-HTLC_On_Opened_Channel | verified (23 steps) | 172s
-Settle_Excludes_Sender_Refund | verified (17 steps) | 198s
-Forged_Invoice_Requires_Key_Compromise | verified (14 steps) | 462s
-Invoice_Authenticates_Settlement | no result in 600 s | 601s
-Loss_Requires_Inaction | verified (2 steps) | 173s
-Refund_Requires_Timeout | verified (58 steps) | 183s
-Intermediary_Never_Loses_Under_Liveness | verified (7 steps) | 184s
-Payment_Atomicity_Under_Liveness | verified (13 steps) | 182s
-Timeout_race_Blocked | verified (4 steps) | 187s
+Other lemmas (--prove=<lemma>, 600 s, 2 parallel; time includes ~100 s precomputation):
+delayed_funds | verified (44 steps) | 127s
+Fulfill_Origin | verified (669 steps) | 189s
+instant_funds | verified (60 steps) | 113s
+settlement_is_traceable | verified (4 steps) | 115s
+No_Punishment_Without_Cheating | verified (20 steps) | 147s
+Ltk_Known_Implies_Compromised | verified (3 steps) | 120s
+Invoice_Released_Once | verified (8 steps) | 113s
+Preimage_Secret_Until_Released | verified (9 steps) | 127s
+Invoice_Has_Secret_Preimage | verified (2 steps) | 117s
+HTLC_On_Opened_Channel | verified (23 steps) | 111s
+Settle_Excludes_Sender_Refund | verified (17 steps) | 111s
+Settle_Requires_Offer | verified (18 steps) | 113s
+Offer_Requires_Invoice | verified (5 steps) | 114s
+Invoice_Authenticates_Settlement | verified (4 steps) | 117s
+Loss_Requires_Inaction | verified (2 steps) | 113s
+Refund_Requires_Timeout | verified (202 steps) | 122s
+Intermediary_Never_Loses_Under_Liveness | verified (7 steps) | 106s
+Forged_Invoice_Requires_Key_Compromise | verified (26 steps) | 478s
+Payment_Atomicity_Under_Liveness | verified (13 steps) | 110s
+Timeout_race_Blocked | verified (4 steps) | 110s
 Wormhole_Honest_F2_Robbed | no result in 600 s | 600s
+
+Total: 28/29 verified. Open: Wormhole_Honest_F2_Robbed (verified as R8 in wormhole_clean.spthy, abstract model).
+Finding: without the invoice tag, Offer_Requires_Invoice is falsified (13 steps) -- a handshake signature <'proposal',A,B,ptr> parses as an invoice <R,S,y> (missing domain separation).
