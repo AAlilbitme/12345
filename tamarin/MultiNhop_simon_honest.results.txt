@@ -27,7 +27,7 @@ Payment_Atomicity_Under_Liveness | verified (13 steps) | 110s
 Timeout_race_Blocked | verified (4 steps) | 110s
 Wormhole_Honest_F2_Robbed | no result in 600 s | 600s
 
-Total: 28/29 verified. Open: Wormhole_Honest_F2_Robbed (verified as R8 in wormhole_clean.spthy, abstract model).
+Total: all lemmas verified except the unpinned Wormhole_Honest_F2_Robbed (its pinned version is verified, see below).
 Finding: without the invoice tag, Offer_Requires_Invoice is falsified (13 steps) -- a handshake signature <'proposal',A,B,ptr> parses as an invoice <R,S,y> (missing domain separation).
 
 Sanity / non-vacuity witnesses (saved proofs, found with tools/dfs_witness_search.py over
@@ -47,3 +47,11 @@ Review notes (no effect on the verified safety results, but state them in the pa
 - Fulfill_Compromised_In can create a Fulfill on a channel with no pending HTLC (dead fact).
 - Never_Loses / Payment_Atomicity assume "never compromised"; T2/T3 use "not compromised before
   #k". The lemmas are correct but weaker than they could be.
+
+FULL-MODEL WORMHOLE (saved proof, found with tools/dfs_witness_search.py):
+Wormhole_Honest_F2_Robbed_Pinned verified (114 steps)
+  Path S -> F1 -> F2 -> F3 -> R with the full channel layer, amounts, honest-only prefix-closed
+  T2/T3 and no search bounds. F1 and F3 compromised (F3 before p23 times out); honest F2
+  forwards but is paid on neither hop (p12 never redeemed, p23 refunded); the preimage leaks
+  off F3's channel p3R and is injected on S's channel pSF; S settles. One HTLC per channel.
+(The unpinned Wormhole_Honest_F2_Robbed still gives no result with the autoprover.)
