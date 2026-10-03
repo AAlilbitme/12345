@@ -1,0 +1,128 @@
+\begin{thebibliography}{10}
+
+\bibitem{oneml}
+Lightning network statistics -- 1ml, bitcoin mainnet, 2026.
+\newblock \url{https://1ml.com/statistics}.
+
+\bibitem{aumayr2021generalized}
+Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Kristina
+  Host{\'a}kov{\'a}, Matteo Maffei, Pedro Moreno-Sanchez, and Siavash Riahi.
+\newblock Generalized channels from limited blockchain scripts and adaptor
+  signatures.
+\newblock In {\em Advances in Cryptology -- ASIACRYPT 2021}, volume 13091,
+  pages 635--664. Springer, 2021.
+
+\bibitem{baelde2021interactive}
+David Baelde, St{\'e}phanie Delaune, Charlie Jacomme, Adrien Koutsos, and
+  Sol{\`e}ne Moreau.
+\newblock An interactive prover for protocol verification in the computational
+  model.
+\newblock In {\em 2021 IEEE Symposium on Security and Privacy (SP)}, pages
+  537--554, 2021.
+
+\bibitem{barthe2011computer}
+Gilles Barthe, Benjamin Gr{\'e}goire, Sylvain Heraud, and Santiago
+  Zanella~B{\'e}guelin.
+\newblock Computer-aided security proofs for the working cryptographer.
+\newblock In {\em Advances in Cryptology -- CRYPTO 2011}, pages 71--90.
+  Springer, 2011.
+
+\bibitem{blanchet2001efficient}
+Bruno Blanchet.
+\newblock An efficient cryptographic protocol verifier based on prolog rules.
+\newblock In {\em 14th IEEE Computer Security Foundations Workshop (CSFW-14)},
+  pages 82--96, 2001.
+
+\bibitem{blanchet2006computationally}
+Bruno Blanchet.
+\newblock A computationally sound mechanized prover for security protocols.
+\newblock In {\em 2006 IEEE Symposium on Security and Privacy (S\&P'06)}, pages
+  140--154, 2006.
+
+\bibitem{cremers2017comprehensive}
+Cas Cremers, Marko Horvat, Jonathan Hoyland, Sam Scott, and Thyla van~der
+  Merwe.
+\newblock A comprehensive symbolic analysis of {TLS} 1.3.
+\newblock In {\em Proceedings of the 2017 ACM SIGSAC Conference on Computer and
+  Communications Security (CCS '17)}, pages 1773--1788, 2017.
+
+\bibitem{dolev1983security}
+Danny Dolev and Andrew Yao.
+\newblock On the security of public key protocols.
+\newblock {\em IEEE Transactions on Information Theory}, 29(2):198--208, 1983.
+
+\bibitem{grundmann2026security}
+Matthias Grundmann and Hannes Hartenstein.
+\newblock Security of the lightning network: Model checking a stepwise
+  refinement with {TLA+}.
+\newblock In {\em Integrated Formal Methods}, pages 313--335. Springer Nature
+  Switzerland, 2026.
+
+\bibitem{litos2026formally}
+Grzegorz Grzegorz, Rafa{\l} Stefanski, and Orfeas~Stefanos Thyfronitis~Litos.
+\newblock A formally verified lightning network.
+\newblock In {\em Financial Cryptography and Data Security}, pages 3--20.
+  Springer Nature Switzerland, 2026.
+
+\bibitem{jeanteur2024cryptovampire}
+Simon Jeanteur, Laura Kov{\'a}cs, Matteo Maffei, and Michael Rawson.
+\newblock Cryptovampire: Automated reasoning for the complete symbolic attacker
+  cryptographic model.
+\newblock In {\em 2024 IEEE Symposium on Security and Privacy (SP)}, pages
+  3165--3183, 2024.
+
+\bibitem{bolts}
+{Lightning Network}.
+\newblock Lightning/bolts, 2026.
+\newblock \url{https://github.com/lightning/bolts}.
+
+\bibitem{lipp2019mechanised}
+Benjamin Lipp, Bruno Blanchet, and Karthikeyan Bhargavan.
+\newblock A mechanised cryptographic proof of the wireguard virtual private
+  network protocol.
+\newblock In {\em 2019 IEEE European Symposium on Security and Privacy
+  (EuroS\&P)}, pages 231--246, 2019.
+
+\bibitem{malavolta2019anonymous}
+Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
+  Matteo Maffei.
+\newblock Anonymous multi-hop locks for blockchain scalability and
+  interoperability.
+\newblock In {\em Proceedings 2019 Network and Distributed System Security
+  Symposium (NDSS)}, 2019.
+
+\bibitem{mccorry2019pisa}
+Patrick McCorry, Surya Bakshi, Iddo Bentov, Sarah Meiklejohn, and Andrew
+  Miller.
+\newblock Pisa: Arbitration outsourcing for state channels.
+\newblock In {\em Proceedings of the 1st ACM Conference on Advances in
+  Financial Technologies (AFT '19)}, pages 16--30, 2019.
+
+\bibitem{meier2013tamarin}
+Simon Meier, Benedikt Schmidt, Cas Cremers, and David Basin.
+\newblock The {TAMARIN} prover for the symbolic analysis of security protocols.
+\newblock In {\em Computer Aided Verification}, pages 696--701. Springer, 2013.
+
+\bibitem{nakamoto2008}
+Satoshi Nakamoto.
+\newblock Bitcoin: A peer-to-peer electronic cash system, 2008.
+
+\bibitem{poon2016lightning}
+Joseph Poon and Thaddeus Dryja.
+\newblock The bitcoin lightning network: Scalable off-chain instant payments,
+  2016.
+
+\bibitem{smith2022modelling}
+Zach Smith, Peter Y.~A. Ryan, et~al.
+\newblock Modelling agent-skipping attacks in message forwarding protocols.
+\newblock In {\em Proceedings on Privacy Enhancing Technologies (POST)}, 2022.
+\newblock Bibliographic details need verification.
+
+\bibitem{tikhomirov2020quantitative}
+Sergei Tikhomirov, Pedro Moreno-Sanchez, and Matteo Maffei.
+\newblock A quantitative analysis of security, anonymity and scalability for
+  the lightning network.
+\newblock In {\em 2020 IEEE European Symposium on Security and Privacy
+  Workshops (EuroS\&PW)}, pages 387--396, 2020.
+
+\end{thebibliography}

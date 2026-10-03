@@ -1,0 +1,85 @@
+theory cltv_blocks
+begin
+
+builtins: natural-numbers
+
+// ---------------------------------------------------------------------------
+// Block clock
+// ---------------------------------------------------------------------------
+
+rule Clock_Init:
+    [] --[]-> [ BlockHeight(%1) ]
+
+
+//// advance clock by one block and record the height as a persistent witness
+rule Clock_Tick:
+    [ BlockHeight(%b) ]
+    --[ Block(%b) ]->
+    [ BlockHeight(%b %+ %1), !BlockReached(%b) ]
+
+// ---------------------------------------------------------------------------
+// CLTV hop setup
+// ---------------------------------------------------------------------------
+// A hop is defined by (ptrOut, ptrIn, d_out, d_in) where d_out < d_in.
+// The forwarder picks a positive delta and sets d_in = d_out %+ delta.
+// ---------------------------------------------------------------------------
+// Outgoing = Bob → Carol (d_out)
+// Incoming = Alice → Bob (d_in)
+// the initial outgoing deadline from the clock.
+rule Int_Deadline:
+    [ Fr(~ptr), BlockHeight(%b), In(%extra) ]   // b is the current block height, extra is some extra time to add to the deadline
+    --[ IntDeadline(~ptr, %b %+ %extra) ]->   // the initial deadline is set to the current block height plus some extra time
+    [ !Deadline(~ptr, %b %+ %extra) ]
+
+// Outgoing pointer has deadline d_out, incoming pointer has
+// deadline d_in = d_out %+ delta. 
+rule Register_Hop:
+    [ !Deadline(~ptrOut, %d_out), In(%delta), Fr(~ptrIn) ]   // d is the outgoing deadline, delta is the extra time for the incoming deadline
+    --[ HopRegistered(~ptrOut, ~ptrIn, %d_out, %d_out %+ %delta) ]->   // register the hop with the outgoing and incoming deadlines
+    [ !Deadline(~ptrIn, %d_out %+ %delta) ]
+
+// witness a preimage reveal at some block height already reached
+rule Reveal_Preimage:
+    [ !Deadline(~ptrOut, %d_out), !BlockReached(%b) ]
+    --[ Revealed(%b, ~ptrOut, %d_out) ]->
+    []
+
+// ---------------------------------------------------------------------------
+// Restrictions
+// ---------------------------------------------------------------------------
+
+// Delta must be strictly positive: d_out < d_in = d_out %+ delta.
+restriction DeltaPositive:
+    "All ptrOut ptrIn d_out d_in #i.
+       HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
+     ==> d_out << d_in"   //deadline of outgoing pointer must be strictly less than the deadline of the incoming
+
+// Preimage is revealed strictly before the outgoing deadline (b < d_out).
+restriction FulfillInTime:
+    "All b ptrOut d_out #i.
+       Revealed(b, ptrOut, d_out) @ #i
+     ==> b << d_out"
+
+// Lemma 1: CLTV_Gap_Is_Positive
+lemma CLTV_Gap_Is_Positive:
+    "All ptrOut ptrIn d_out d_in #i.
+       HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
+     ==> d_out << d_in"
+
+// Claim_Window_Nonempty
+lemma Claim_Window_Nonempty:
+    "All ptrOut ptrIn d_out d_in b #i #j.
+       HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
+     & Revealed(b, ptrOut, d_out) @ #j
+     ==> b << d_in"
+
+// If preimage is revealed at block b <= d1 (the tightest deadline),
+// then b < d2 and b < d3 — both intermediaries have non-empty claim windows.
+lemma Staggered_Path_Safe:
+    "All ptr1 ptr2 ptr2b ptr3 d1 d2 d3 b #i #j #k.
+       HopRegistered(ptr1, ptr2, d1, d2) @ #i
+     & HopRegistered(ptr2b, ptr3, d2, d3) @ #j
+     & Revealed(b, ptr1, d1) @ #k
+     ==> b << d2 & b << d3"
+
+end

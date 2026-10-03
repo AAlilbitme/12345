@@ -1,0 +1,350 @@
+theory wormhole_stripped
+begin
+
+builtins: hashing, signing, natural-numbers
+
+// ---------------------------------------------------------------------------
+// Key management
+// ---------------------------------------------------------------------------
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A, ~ltk) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk), !Compromised($A) ]   // CHANGED: marks A as compromised
+
+// STRIPPED: channel layer replaced by an abstract open (channel lemmas are
+// proven in the full model).
+rule Open_Channel:
+    [ Fr(~ptr) ]
+    --[ ChannelOpen($A, $B, ~ptr), Neq($A, $B) ]->
+    [ !ChannelConnect(~ptr, $A, $B), !ChannelConnect(~ptr, $B, $A), Free(~ptr),
+      Out(~ptr) ]   // channel ids are public, as via A_Send_Proposal in the full model
+
+// ---------------------------------------------------------------------------
+// HTLC layer GENERALIZED to N hops
+// ---------------------------------------------------------------------------
+
+rule Receiver_Create_Invoice:
+    let y = h(~x)
+        invoice = <$Receiver, $Sender, y>
+        sigR    = sign(invoice, ltkR)
+    in
+    [ Fr(~x), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y),
+        SecretPreimage($Receiver, ~x) ]->
+    [ ReceiverInv($Receiver, $Sender, ~x),
+      Out(<'SecretRS', invoice, sigR>) ]
+
+rule Sender_Offer_HTLC:
+    let invoice = <$Receiver, $Sender, y>
+    in
+    [ In(<'SecretRS', invoice, sigR>),
+      !Pk($Receiver, pkR),
+      !Ltk($Sender, ltkS),
+      !ChannelConnect(ptrSF, $Sender, $Forward1),
+      Free(ptrSF) ] 
+    --[ HTLCOffered($Sender, $Forward1, ptrSF, y),
+        HTLCAdded(ptrSF, y),
+        Neq($Sender, $Forward1),
+        Neq($Sender, $Receiver),
+        Neq($Forward1, $Receiver),
+        Eq(verify(sigR, invoice, pkR), true) ]->
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
+      Route($Sender, $Forward1, ptrSF, y) ]
+
+// GENERIC FORWARD -- one rule, any number of hops.
+rule Forward_HTLC:
+    [ Route($Prev, $Me, ptrIn, y),
+      !ChannelConnect(ptrOut, $Me, $Next),
+      Free(ptrOut) ]
+    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y),
+        HTLCAdded(ptrOut, y),
+        ForwardHTLC($Me, ptrIn, ptrOut, y),
+        Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]->
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y),
+      Route($Me, $Next, ptrOut, y) ]
+
+rule Receiver_Fulfill_HTLC:
+    [ Route($Prev, $Receiver, ptrIn, y),
+      ReceiverInv($Receiver, $Sender, x) ]
+    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y),
+        PreimageReleased($Receiver, x),
+        Redeemed(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ] // no free ?
+
+rule Intermediary_Settle:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y),
+      Fulfill(ptrOut, x) ]
+    --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
+        FeeEarned($Me, ptrIn, ptrOut, y),
+        Redeemed(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ]
+
+rule Sender_Settle:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
+      Fulfill(ptrSF, x) ]
+    --[ SenderSettled($Sender, $Forward1, $Receiver, ptrSF, x),
+        PaymentComplete($Sender, $Receiver, h(x)),
+        Redeemed(ptrSF, y),
+        Eq(h(x), y) ]->
+    [ ]
+
+rule Open_Timeout:
+    [ !ChannelConnect(ptr, A, B) ] --[ TimedOut(ptr) ]-> [ !Timeout(ptr) ]
+
+rule Sender_Timeout_Refund:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y), !Timeout(ptrSF) ]
+    --[ HTLCRefunded($Sender, ptrSF, y), Refunded(ptrSF, y) ]->
+    [ ]
+
+rule Intermediary_Timeout_Refund:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y),
+      !Timeout(ptrOut) ]
+    --[ HTLCRefunded($Me, ptrOut, y),
+        Refunded(ptrOut, y) ]->
+    [ ]
+
+// ---- Attacker influence -----
+// CHANGED: AttackerKnowsRoute and AttackerSkip are replaced by the secure-channel
+// pattern with compromised endpoints (Tamarin book, compromised_in / _out).
+// Fulfill(ptr, x) is a private channel message; the attacker can only read it
+// from, or write it into, a channel that has a compromised endpoint.
+// (AttackerKnowsRoute was dead code: $ptrIn / $y never match fresh values, and
+// pointers are already public via A_Send_Proposal.)
+
+// A compromised endpoint of ptr takes the fulfil message off the channel and
+// publishes the preimage (instead of using it honestly).
+rule Fulfill_Compromised_Out:
+    [ Fulfill(ptr, x), !ChannelConnect(ptr, $A, $B), !Compromised($A) ]
+    --[ Rev($A, 'fulfill'), Leaked(ptr, x) ]->
+    [ Out(<ptr, x>) ]
+
+// A compromised endpoint of ptr injects a fulfil message it knows.
+rule Fulfill_Compromised_In:
+    [ In(<ptr, x>), !ChannelConnect(ptr, $A, $B), !Compromised($A) ]
+    --[ Rev($A, 'fulfill'), Injected(ptr, x) ]->
+    [ Fulfill(ptr, x) ]
+
+// ---------------------------------------------------------------------------
+// Restrictions
+// ---------------------------------------------------------------------------
+
+restriction OneOutcomePerHTLC:
+    "All ptr y #i #j.
+       Redeemed(ptr, y) @ #i & Refunded(ptr, y) @ #j ==> F"
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction OneTimeoutPerPtr:
+    "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
+
+restriction OneChannelPerPtr:
+    "All A B C D ptr #i #j.
+       ChannelOpen(A, B, ptr) @ #i
+     & ChannelOpen(C, D, ptr) @ #j
+     ==> #i = #j"
+
+restriction RedeemBeforeTimeout:
+    "All ptr y #i #j.
+        Redeemed(ptr, y) @ #i & TimedOut(ptr) @ #j ==> #i < #j"
+
+// ForwardTimeGap (T2a) removed, as in MultiNhop_simon_honest.spthy.
+
+restriction HonestPartiesActBeforeIncomingTimeout:
+    "All P ptrIn ptrOut y #f #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrIn) @ #k
+      & not (Ex #r. LtkCompromised(P) @ #r & #r < #k)
+     ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
+
+// T3, honest-only and prefix-closed (as in MultiNhop_simon_honest.spthy).
+restriction IntermediaryMustClaim:
+    "All P ptrIn ptrOut y #f #i #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & TimedOut(ptrIn)  @ #k
+      & #i < #k
+      & not (Ex #r. LtkCompromised(P) @ #r & #r < #k)
+     ==> Ex #l. Redeemed(ptrIn, y) @ #l"
+
+// Search bounds. This file contains ONLY exists-trace lemmas: adding
+// restrictions can only remove traces, so every witness found under these
+// bounds is a real trace of the unbounded model. Do NOT add all-traces lemmas
+// to this file (they would only be proven for the bounded model).
+restriction W_OneInvoice:
+    "All a b y c d z #i #j. InvoiceCreated(a, b, y) @ #i & InvoiceCreated(c, d, z) @ #j ==> #i = #j"
+restriction W_OneOffer:
+    "All a b p y c d q z #i #j. HTLCOffered(a, b, p, y) @ #i & HTLCOffered(c, d, q, z) @ #j ==> #i = #j"
+restriction W_OneLeak:
+    "All p x q z #i #j. Leaked(p, x) @ #i & Leaked(q, z) @ #j ==> #i = #j"
+restriction W_OneInject:
+    "All p x q z #i #j. Injected(p, x) @ #i & Injected(q, z) @ #j ==> #i = #j"
+restriction W_TwoCompromised:
+    "All a b c #i #j #k. LtkCompromised(a) @ #i & LtkCompromised(b) @ #j & LtkCompromised(c) @ #k
+     ==> #i = #j | #j = #k | #i = #k"
+
+// --- Attack witnesses ---
+
+lemma W0_Chain_Only:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r.
+        HTLCOffered(S, F1, pSF, h(x))                @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x))     @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x))    @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x))     @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x))              @ #r"
+
+lemma WL1_Leak_In_Payment:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l.
+        HTLCOffered(S, F1, pSF, h(x))                @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x))     @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x))    @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x))     @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x))              @ #r
+      & Leaked(p3R, x)                               @ #l"
+
+lemma WL2_Plus_Inject:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #j.
+        HTLCOffered(S, F1, pSF, h(x))                @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x))     @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x))    @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x))     @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x))              @ #r
+      & Leaked(p3R, x)                               @ #l
+      & Injected(pSF, x)                             @ #j"
+
+lemma WL3_Plus_Settle:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #j #s.
+        HTLCOffered(S, F1, pSF, h(x))                @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x))     @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x))    @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x))     @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x))              @ #r
+      & Leaked(p3R, x)                               @ #l
+      & Injected(pSF, x)                             @ #j
+      & SenderSettled(S, F1, R, pSF, x)              @ #s"
+
+lemma R2_Fulfil_Then_Refund23:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #u.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Refunded(p23, h(x)) @ #u"
+
+lemma R3_Leak_Then_Refund23:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u"
+
+lemma R4_Full_Wormhole:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s"
+
+lemma R6_Wormhole_P12_Unpaid:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
+lemma R7_Wormhole_F2_Honest:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & not (Ex #k. LtkCompromised(F2) @ #k)"
+
+lemma R8_Wormhole_F2_Honest_Unpaid:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & not (Ex #k. LtkCompromised(F2) @ #k)
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
+lemma R9_Wormhole_Colluders_F1_F3:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s #c1 #c3.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & LtkCompromised(F1) @ #c1 & LtkCompromised(F3) @ #c3
+      & not (Ex #k. LtkCompromised(F2) @ #k)
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
+lemma R10_Wormhole_F3_Compromised_In_Time:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s #c3 #t.
+        HTLCOffered(S, F1, pSF, h(x)) @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x)) @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x)) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x)) @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x)) @ #r
+      & Leaked(p3R, x) @ #l
+      & Refunded(p23, h(x)) @ #u
+      & Injected(pSF, x) @ #i
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & LtkCompromised(F3) @ #c3 & TimedOut(p23) @ #t & #c3 < #t
+      & not (Ex #k. LtkCompromised(F2) @ #k)
+      & not (Ex #k. Redeemed(p12, h(x)) @ #k)"
+
+end
