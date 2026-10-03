@@ -21,5 +21,7 @@ which an honest intermediary F2 forwards the payment, is paid on neither hop (`p
 never redeemed, `p23` refunded), while the sender settles with F1 using the preimage
 leaked at F3's channel and injected at F1's channel.
 
-What this argument does *not* claim: that Tamarin verified the attack in the full
-model (`Wormhole_Honest_F2_Robbed` gives no result within 10 minutes there).
+**Update:** the attack is now verified directly in the full model:
+`Wormhole_Honest_F2_Robbed_Pinned` in `MultiNhop_simon_honest.spthy` (114 steps, saved proof),
+with T3 included and F3 compromised before `p23` times out. This document is kept as the
+explanation of the abstract witness; the full-model proof no longer depends on it.
