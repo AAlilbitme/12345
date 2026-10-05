@@ -1,0 +1,38 @@
+MultiNhop_final.spthy = MultiNhop_simon_honest_clean.spthy + slot fix (Intermediary_Settle frees ptrOut; refunds free their slot).
+Each lemma: --prove=<lemma>, 600 s, 2 parallel.
+
+state_update | verified (21 steps) | 128s
+Fulfill_Origin | verified (669 steps) | 178s
+delayed_funds | verified (44 steps) | 107s
+instant_funds | verified (60 steps) | 109s
+settlement_is_traceable | verified (4 steps) | 108s
+Protocol_execution | verified (26 steps) | 115s
+No_Punishment_Without_Cheating | verified (20 steps) | 101s
+Cooperative_Close_Execution | verified (15 steps) | 104s
+Funds_Locked_Before_Update | verified (21 steps) | 108s
+Update_Requires_Negotiation | verified (21 steps) | 106s
+Ltk_Known_Implies_Compromised | verified (3 steps) | 105s
+Invoice_Released_Once | verified (8 steps) | 98s
+Distinct_Parties_Configuration | verified (23 steps) | 107s
+Refund_Possible | verified (16 steps) | 109s
+Invoice_Has_Secret_Preimage | verified (2 steps) | 6s
+Preimage_Secret_Until_Released | verified (9 steps) | 105s
+HTLC_On_Opened_Channel | verified (23 steps) | 103s
+Settle_Excludes_Sender_Refund | verified (17 steps) | 105s
+Settle_Requires_Offer | verified (30 steps) | 108s
+Offer_Requires_Invoice | verified (5 steps) | 109s
+Invoice_Authenticates_Settlement | verified (4 steps) | 106s
+Loss_Requires_Inaction | verified (2 steps) | 6s
+Refund_Requires_Timeout | verified (12 steps) | 108s
+Intermediary_Never_Loses_Under_Liveness | verified (7 steps) | 102s
+Payment_Atomicity_Under_Liveness | verified (13 steps) | 110s
+Timeout_race_Blocked | verified (4 steps) | 105s
+Forged_Invoice_Requires_Key_Compromise | verified (26 steps) | 398s (run alone; >600 s under parallel load)
+Multihop_Payment_Possible | verified (30 steps) | 400s
+Wormhole_Honest_F2_Robbed | no result in 600 s | 601s
+Sanity_Compromised_Intermediary_Can_Lose | verified (29 steps) | 251s
+Sanity_Honest_Payment_Completes | no result in 600 s | 600s
+Sanity_Injected_Settlement | no result in 600 s | 601s
+Wormhole_Honest_F2_Robbed_Pinned | no result in 600 s | 601s
+
+29/33 verified with plain --prove. Open without saved proofs: Sanity_Honest_Payment_Completes, Sanity_Injected_Settlement, Wormhole_Honest_F2_Robbed_Pinned, Wormhole_Honest_F2_Robbed.
