@@ -698,23 +698,19 @@ lemma Timeout_race_Blocked:
 
 lemma Multihop_Payment_Possible:
   exists-trace
-  "∃ S F1 F2 R p0 p1 p2 x #t2 #t3 #t4 #t5.
-    (((((((((HTLCOffered( S, F1, p0, h(x) ) @ #t2) ∧
-            (HTLCForwarded( F1, S, F2, p0, p1, h(x) ) @ #t3)) ∧
-           (HTLCForwarded( F2, F1, R, p1, p2, h(x) ) @ #t4)) ∧
-          (HTLCFulfilled( R, F2, p2, h(x) ) @ #t5)) ∧
-         (#t2 < #t3)) ∧
-        (#t3 < #t4)) ∧
-       (#t4 < #t5)) ∧
-      (¬(∃ A B p y #u.
-          (HTLCOffered( A, B, p, y ) @ #u) ∧ (¬((A = S) ∧ (B = F1)))))) ∧
-     (¬(∃ Me Prev Next pi po y #u.
-         ((HTLCForwarded( Me, Prev, Next, pi, po, y ) @ #u) ∧
-          (¬(((Me = F1) ∧ (Prev = S)) ∧ (Next = F2)))) ∧
-         (¬(((Me = F2) ∧ (Prev = F1)) ∧ (Next = R)))))) ∧
-    (¬(∃ ptr y1 y2 #m #n.
-        ((HTLCAdded( ptr, y1 ) @ #m) ∧ (HTLCAdded( ptr, y2 ) @ #n)) ∧
-        (¬(#m = #n))))"
+  "Ex S F1 F2 R p0 p1 p2 x #t1 #t2 #t3 #t4 #t5.
+      InvoiceCreated(R, S, h(x)) @ #t1
+    & HTLCOffered(S, F1, p0, h(x)) @ #t2
+    & HTLCForwarded(F1, S, F2, p0, p1, h(x)) @ #t3
+    & HTLCForwarded(F2, F1, R, p1, p2, h(x)) @ #t4
+    & HTLCFulfilled(R, F2, p2, h(x)) @ #t5
+    & #t1 < #t2 & #t2 < #t3 & #t3 < #t4 & #t4 < #t5
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+    // the payment needs no settlement; excluding the settle rules removes the
+    // Free(ptr) recycling loop from the backward search
+    & not (Ex Me P q z #c. IntermediaryClaimed(Me, P, q, z) @ #c)
+    & not (Ex A B C q z #c. SenderSettled(A, B, C, q, z) @ #c)"
+
 lemma Wormhole_Honest_F2_Robbed:
     exists-trace
     "Ex S F1 F2 F3 R pSF p12 p23 p3R x #o #a #b #d #r #l #u #i #s.

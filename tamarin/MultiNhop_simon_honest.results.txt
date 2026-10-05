@@ -55,3 +55,6 @@ Wormhole_Honest_F2_Robbed_Pinned verified (114 steps)
   forwards but is paid on neither hop (p12 never redeemed, p23 refunded); the preimage leaks
   off F3's channel p3R and is injected on S's channel pSF; S settles. One HTLC per channel.
 (The unpinned Wormhole_Honest_F2_Robbed still gives no result with the autoprover.)
+
+Update: Multihop_Payment_Possible replaced by an invoice-anchored version that excludes settlements
+(removes the Free(ptr) recycling loop); verified (30 steps) with plain --prove, no saved proof.

@@ -28,11 +28,11 @@ Intermediary_Never_Loses_Under_Liveness | verified (7 steps) | 104s
 Payment_Atomicity_Under_Liveness | verified (13 steps) | 106s
 Timeout_race_Blocked | verified (4 steps) | 105s
 Forged_Invoice_Requires_Key_Compromise | verified (26 steps) | 474s
-Multihop_Payment_Possible | no result in 600 s | 600s
+Multihop_Payment_Possible | verified (30 steps) | ~230s   (new version: invoice-anchored, settlements excluded)
 Wormhole_Honest_F2_Robbed | no result in 600 s | 600s
 Sanity_Honest_Payment_Completes | no result in 600 s | 601s
 Sanity_Compromised_Intermediary_Can_Lose | no result in 600 s | 600s
 Sanity_Injected_Settlement | no result in 600 s | 600s
 Wormhole_Honest_F2_Robbed_Pinned | no result in 600 s | 601s
 
-27/33 verified with plain --prove. The 6 exists-trace witnesses need the saved proofs in MultiNhop_simon_honest.spthy.
+28/33 verified with plain --prove. The 5 remaining exists-trace witnesses need the saved proofs in MultiNhop_simon_honest.spthy.
