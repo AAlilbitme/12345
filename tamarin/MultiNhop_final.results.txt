@@ -36,3 +36,12 @@ Sanity_Injected_Settlement | no result in 600 s | 601s
 Wormhole_Honest_F2_Robbed_Pinned | no result in 600 s | 601s
 
 29/33 verified with plain --prove. Open without saved proofs: Sanity_Honest_Payment_Completes, Sanity_Injected_Settlement, Wormhole_Honest_F2_Robbed_Pinned, Wormhole_Honest_F2_Robbed.
+
+Saved proofs added (copied from MultiNhop_simon_honest.spthy; replay verified on this model
+with `tamarin-prover MultiNhop_final.spthy`):
+Sanity_Honest_Payment_Completes   verified (89 steps)
+Sanity_Injected_Settlement        verified (76 steps)
+Wormhole_Honest_F2_Robbed_Pinned  verified (128 steps)
+
+Total: 32/33 verified (29 by --prove, 3 by saved proof). Open: Wormhole_Honest_F2_Robbed
+(unpinned; the pinned version proves the same attack).
