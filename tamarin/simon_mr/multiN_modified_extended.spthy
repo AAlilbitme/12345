@@ -624,7 +624,9 @@ lemma Multihop_Payment_Possible:
       & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u
               & not (Me = F1 & Prev = S & Next = F2)
               & not (Me = F2 & Prev = F1 & Next = R))
-      & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))"
+      & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+      & not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)
+      & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
 
 lemma Wormhole_Fee_Theft_Reachable:
     exists-trace
