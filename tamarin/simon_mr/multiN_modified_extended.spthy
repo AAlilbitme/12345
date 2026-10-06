@@ -684,37 +684,8 @@ lemma Sanity_Compromised_Intermediary_Can_Lose:
     & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
 
 
-tactic: noskip_first
-presort: s
-prio:
-    regex "Skipped" | regex "IntermediaryPending" | regex "Fulfilled"
-deprio:
-    regex "KU" | regex "Mutex" | regex "ChannelConnect"
-
-// Helpers for Skip_Requires_Compromise.
-// (a) Without any skip, redemption propagates one hop downstream: a forwarder
-//     whose incoming HTLC is redeemed settled with a Fulfilled on its outgoing
-//     HTLC, which only a redemption of that outgoing HTLC produces.
-lemma NoSkip_Redeem_Propagates [reuse, heuristic={noskip_first}]:
-    "All Me Prev Next pIn pOut y #f #r.
-        HTLCForwarded(Me, Prev, Next, pIn, pOut, y) @ #f
-      & Redeemed(pIn, y) @ #r
-      & not (Ex p z #k. Skipped(p, z) @ #k)
-     ==> Ex #l. Redeemed(pOut, y) @ #l"
-
-// (b) By induction along the route: if the payment is offered once and its
-//     first HTLC is redeemed (and nothing was skipped), every forwarder's
-//     incoming HTLC is redeemed.
-lemma NoSkip_Route_Redeemed [reuse, use_induction]:
-    "All Me Prev Next pIn pOut y S F1 pSF #f #o #r.
-        HTLCForwarded(Me, Prev, Next, pIn, pOut, y) @ #f
-      & HTLCOffered(S, F1, pSF, y) @ #o
-      & Redeemed(pSF, y) @ #r
-      & (All A B p #o2. HTLCOffered(A, B, p, y) @ #o2 ==> p = pSF)
-      & not (Ex p z #k. Skipped(p, z) @ #k)
-     ==> Ex #l. Redeemed(pIn, y) @ #l"
-
-// (1) A wormhole needs compromise.  If a payment is offered once, settles, and
+// (1) A wormhole needs compromise.  OPEN: no result with --prove (15/60 min);
+// a helper-lemma chain ran out of memory.  Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
 // an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
 // party was compromised.
 lemma Skip_Requires_Compromise:
