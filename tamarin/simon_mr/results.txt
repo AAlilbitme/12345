@@ -49,3 +49,5 @@ Sanity_Atomic_Payment_Completes | verified (44 steps), ~26 min alone
 # 2026-10-06: Multihop_Payment_Possible with IntermediaryClaimed/SenderSettled excluded (commit e9b156c)
 Multihop_Payment_Possible (exists-trace): verified (28 steps)  -- --prove, 380 s, run alone
 Skip_Requires_Compromise: no result in 7000 s (--prove, run alone, 12G cap; timeout, not out of memory) -- OPEN
+Fulfilled_Source (all-traces): verified (112 steps) -- --prove, 105 s
+NoSkip_Redeem_Propagates (with Fulfilled_Source): no result in 3600 s -- removed
