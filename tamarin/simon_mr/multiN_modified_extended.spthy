@@ -684,11 +684,18 @@ lemma Sanity_Compromised_Intermediary_Can_Lose:
     & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
 
 
+tactic: noskip_first
+presort: s
+prio:
+    regex "Skipped" | regex "IntermediaryPending" | regex "Fulfilled"
+deprio:
+    regex "KU" | regex "Mutex" | regex "ChannelConnect"
+
 // Helpers for Skip_Requires_Compromise.
 // (a) Without any skip, redemption propagates one hop downstream: a forwarder
 //     whose incoming HTLC is redeemed settled with a Fulfilled on its outgoing
 //     HTLC, which only a redemption of that outgoing HTLC produces.
-lemma NoSkip_Redeem_Propagates [reuse]:
+lemma NoSkip_Redeem_Propagates [reuse, heuristic={noskip_first}]:
     "All Me Prev Next pIn pOut y #f #r.
         HTLCForwarded(Me, Prev, Next, pIn, pOut, y) @ #f
       & Redeemed(pIn, y) @ #r
