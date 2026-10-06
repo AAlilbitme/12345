@@ -39,3 +39,9 @@ Sanity_Honest_Payment_Completes | (exists-trace): verified (30 steps) | 203s
 Sanity_Compromised_Intermediary_Can_Lose | (exists-trace): verified (29 steps) | 162s
 
 34/36 verified. Multihop_Payment_Possible and Wormhole_Fee_Theft_Reachable need Simon's saved proofs (invoice signature updated to the tagged form).
+
+Extended lemmas (multiN_modified_extended.spthy, --prove, 900 s):
+Intermediary_Never_Loses_Strong | verified (4 steps)
+Offer_Requires_Invoice          | verified (70 steps)
+Skip_Requires_Compromise        | no result in 900 s (open; not in Makefile)
+Sanity_Atomic_Payment_Completes | no result in 900 s (open; not in Makefile)
