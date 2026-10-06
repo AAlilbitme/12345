@@ -44,10 +44,10 @@ AUTO_EXISTS_LEMMAS := \
 	Distinct_Parties_Configuration Refund_Possible \
 	Forged_Invoice_Requires_Key_Compromise \
 	Sanity_Honest_Payment_Completes Sanity_Compromised_Intermediary_Can_Lose \
-	Sanity_Atomic_Payment_Completes
+	Sanity_Atomic_Payment_Completes Multihop_Payment_Possible
 
 REPLAY_LEMMAS := \
-	Multihop_Payment_Possible Wormhole_Fee_Theft_Reachable
+	Wormhole_Fee_Theft_Reachable
 
 PROVE_ALL    := $(addprefix --prove=,$(ALL_TRACES_LEMMAS))
 PROVE_EXISTS := $(addprefix --prove=,$(AUTO_EXISTS_LEMMAS))
