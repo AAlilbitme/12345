@@ -43,7 +43,8 @@ AUTO_EXISTS_LEMMAS := \
 	Protocol_execution Cooperative_Close_Execution \
 	Distinct_Parties_Configuration Refund_Possible \
 	Forged_Invoice_Requires_Key_Compromise \
-	Sanity_Honest_Payment_Completes Sanity_Compromised_Intermediary_Can_Lose
+	Sanity_Honest_Payment_Completes Sanity_Compromised_Intermediary_Can_Lose \
+	Sanity_Atomic_Payment_Completes
 
 REPLAY_LEMMAS := \
 	Multihop_Payment_Possible Wormhole_Fee_Theft_Reachable
