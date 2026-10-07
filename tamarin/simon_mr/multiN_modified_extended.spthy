@@ -1,8 +1,9 @@
 theory multihop_nhop
 begin
 
-// Simon's MR version (multiN_modified), lemma statements only: saved proof
-// scripts removed (replay them from the original file).
+// Simon's MR model + tagged invoice + extra lemmas.  All lemmas except
+// Wormhole_Fee_Theft_Reachable (needs a saved proof) and Skip_Requires_Compromise
+// (open) verify with --prove.
 
 builtins: hashing, signing, natural-numbers
 
@@ -695,8 +696,8 @@ lemma Fulfilled_Source [reuse]:
      ==> (Ex #j. Redeemed(p, h(x)) @ #j & #j < #i)
        | (Ex #j. Skipped(p, x) @ #j & #j < #i)"
 
-// (1) A wormhole needs compromise.  OPEN: no result with --prove (15/60 min);
-// a helper-lemma chain ran out of memory.  Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
+// (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
+// Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
 // an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
 // party was compromised.
 lemma Skip_Requires_Compromise:
