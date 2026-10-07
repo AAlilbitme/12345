@@ -73,3 +73,5 @@ Wormhole_Fee_Theft_Reachable: replay verified (927 steps) after adding labels
 
 # Independent reproduction on the user laptop (make verify, MEM=6G): ALL lemmas verified
 #   32 all-traces + 7 first-hop + 9 exists-trace + 1 replay (Wormhole_Fee_Theft_Reachable)
+
+# Optimized single file (pruned wormhole proof, #ifdef necessity): make verify -> ALL lemmas verified (49)
