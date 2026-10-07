@@ -8,7 +8,7 @@ builtins: natural-numbers
 // ---------------------------------------------------------------------------
 
 rule Clock_Init:
-    [] --[]-> [ BlockHeight(%1) ]
+    [] --[ ClockStart() ]-> [ BlockHeight(%1) ]
 
 
 //// advance clock by one block and record the height as a persistent witness
@@ -29,7 +29,7 @@ rule Clock_Tick:
 rule Int_Deadline:
     [ Fr(~ptr), BlockHeight(%b), In(%extra) ]   // b is the current block height, extra is some extra time to add to the deadline
     --[ IntDeadline(~ptr, %b %+ %extra) ]->   // the initial deadline is set to the current block height plus some extra time
-    [ !Deadline(~ptr, %b %+ %extra) ]
+    [ !Deadline(~ptr, %b %+ %extra), BlockHeight(%b) ]   // give the clock back
 
 // Outgoing pointer has deadline d_out, incoming pointer has
 // deadline d_in = d_out %+ delta. 
@@ -48,6 +48,10 @@ rule Reveal_Preimage:
 // Restrictions
 // ---------------------------------------------------------------------------
 
+// Exactly one clock (Clock_Init has no premise).
+restriction OneClock:
+    "All #i #j. ClockStart() @ #i & ClockStart() @ #j ==> #i = #j"
+
 // Delta must be strictly positive: d_out < d_in = d_out %+ delta.
 restriction DeltaPositive:
     "All ptrOut ptrIn d_out d_in #i.
@@ -60,7 +64,7 @@ restriction FulfillInTime:
        Revealed(b, ptrOut, d_out) @ #i
      ==> b << d_out"
 
-// Lemma 1: CLTV_Gap_Is_Positive
+// Lemma 1: CLTV_Gap_Is_Positive (restates restriction DeltaPositive; kept as a sanity check)
 lemma CLTV_Gap_Is_Positive:
     "All ptrOut ptrIn d_out d_in #i.
        HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i

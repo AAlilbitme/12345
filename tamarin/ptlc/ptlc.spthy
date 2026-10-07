@@ -1,0 +1,125 @@
+theory ptlc
+begin
+
+/*
+  PTLC countermeasure model (point time-locked contracts), fixed route
+      S -> H1 -> H2 -> H3 -> R   over channels c0, c1, c2, c3.
+
+  Locks are group elements 'g'^s.  The receiver's secret is x (point X = g^x).
+  The sender gives every hop Hi a fresh tweak ti and sets the channel secrets
+      s3 = x,  s2 = x*t3,  s1 = x*t3*t2,  s0 = x*t3*t2*t1
+  so an honest hop that learns the secret of its OUTGOING channel computes the
+  secret of its INCOMING channel by multiplying with its own tweak.
+
+  Attacker: Dolev-Yao + compromise.  A compromised hop leaks its tweak; every
+  secret used to claim a channel becomes public (on-chain); the payee of a
+  channel who is compromised can claim it with ANY value the adversary knows.
+  There is no special "skip" rule: the wormhole must be assembled from
+  adversary knowledge.  Companion model htlc_baseline.spthy differs only in
+  the locks (all channels share h(x)).
+*/
+
+builtins: diffie-hellman
+
+rule Compromise:
+    [ ] --[ Compromised($A) ]-> [ !Comp($A) ]
+
+rule Invoice:
+    [ Fr(~x) ]
+    --[ InvoiceCreated($R, 'g'^~x) ]->
+    [ !RecvSecret($R, ~x), !Invoice($R, $S, 'g'^~x), Out('g'^~x) ]
+
+// Sender builds the route: fresh channels and tweaks, per-hop locks.
+rule Sender_Setup:
+    let L3 = X
+        L2 = X^(~t3)
+        L1 = X^(~t3*~t2)
+        L0 = X^(~t3*~t2*~t1)
+    in
+    [ !Invoice($R, $S, X), Fr(~c0), Fr(~c1), Fr(~c2), Fr(~c3),
+      Fr(~t1), Fr(~t2), Fr(~t3) ]
+    --[ Pay($S, $H1, $H2, $H3, $R, ~c0, ~c1, ~c2, ~c3),
+        Neq($S, $H1), Neq($S, $H2), Neq($S, $H3), Neq($S, $R),
+        Neq($H1, $H2), Neq($H2, $H3), Neq($H1, $H3),
+        Neq($H1, $R), Neq($H2, $R), Neq($H3, $R) ]->
+    [ !Lock(~c0, $S, $H1, L0), Open(~c0), SenderWait($S, ~c0),
+      !Hop($H1, ~c0, ~c1, $H2, L1, ~t1),
+      !Hop($H2, ~c1, ~c2, $H3, L2, ~t2),
+      !Hop($H3, ~c2, ~c3, $R,  L3, ~t3),
+      Out(L0), Out(L1), Out(L2), Out(L3) ]
+
+// A compromised hop leaks its tweak.
+rule Leak_Tweak:
+    [ !Hop($H, cIn, cOut, N, Lout, t), !Comp($H) ]
+    --[ Leaked($H) ]->
+    [ Out(t) ]
+
+// Hop forwards: once its incoming HTLC exists it opens the outgoing one.
+rule Forward:
+    [ !Lock(cIn, P, $H, Lin), !Hop($H, cIn, cOut, N, Lout, t) ]
+    --[ Forwarded($H, cIn, cOut), Once(cOut) ]->
+    [ !Lock(cOut, $H, N, Lout), Open(cOut), Pend($H, cIn, cOut, t) ]
+
+// Receiver claims the last channel with x.
+rule Receiver_Claim:
+    [ !Lock(c, P, $R, L), Open(c), !RecvSecret($R, x) ]
+    --[ Redeemed(c), Eq('g'^x, L) ]->
+    [ ClaimInfo(c, x), Out(x) ]
+
+// Honest hop: secret of outgoing channel -> secret of incoming channel.
+rule Hop_Settle:
+    [ Pend($H, cIn, cOut, t), ClaimInfo(cOut, s), !Lock(cIn, P, $H, Lin), Open(cIn) ]
+    --[ Redeemed(cIn), HopSettled($H, cIn, cOut), Eq('g'^(s*t), Lin) ]->
+    [ ClaimInfo(cIn, s*t), Out(s*t) ]
+
+// A compromised payee claims with any value the adversary knows.
+rule Adversary_Claim:
+    [ !Lock(c, P, B, L), Open(c), !Comp(B), In(s) ]
+    --[ Redeemed(c), AdvClaim(c), Eq('g'^s, L) ]->
+    [ ClaimInfo(c, s), Out(s) ]
+
+// Timeout refund (timing abstracted: any open HTLC may be refunded).
+rule Refund:
+    [ !Lock(c, P, B, L), Open(c) ]
+    --[ Refunded(c) ]->
+    [ ]
+
+rule Sender_Settle:
+    [ SenderWait($S, c0), ClaimInfo(c0, s) ]
+    --[ SenderSettled($S, c0) ]->
+    [ ]
+
+restriction Equality:   "All a b #i. Eq(a, b) @ #i ==> a = b"
+restriction Inequality: "All a b #i. Neq(a, b) @ #i ==> not (a = b)"
+restriction OnceForward:"All c #i #j. Once(c) @ #i & Once(c) @ #j ==> #i = #j"
+
+// Sanity: an honest payment completes end to end.
+lemma Honest_Payment_Completes:
+  exists-trace
+  "Ex S H1 H2 H3 R c0 c1 c2 c3 #p #s.
+      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p
+    & SenderSettled(S, c0) @ #s
+    & not (Ex A #k. Compromised(A) @ #k)"
+
+// Sanity: the colluders H1, H3 can still cheat each other / refund etc.;
+// here: with H1 and H3 compromised the payment can still complete honestly.
+lemma Colluders_Present_Payment_Completes:
+  exists-trace
+  "Ex S H1 H2 H3 R c0 c1 c2 c3 #p #s #k1 #k3.
+      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p
+    & SenderSettled(S, c0) @ #s
+    & Compromised(H1) @ #k1 & Compromised(H3) @ #k3"
+
+// Countermeasure: the wormhole around an honest H2 is impossible, even with
+// both neighbours compromised.  (H2's outgoing c2 refunded while the sender's
+// c0 is redeemed.)
+lemma No_Wormhole_Around_Honest_Hop:
+  "All S H1 H2 H3 R c0 c1 c2 c3 #p #a #b.
+      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p
+    & Redeemed(c0) @ #a
+    & Refunded(c2) @ #b
+    & not (Ex #k. Compromised(H2) @ #k)
+    & not (Ex #k. Compromised(S) @ #k)
+   ==> F"
+
+end
