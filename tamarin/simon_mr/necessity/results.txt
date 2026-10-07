@@ -1,0 +1,1 @@
+no_IntermediaryMustClaim.spthy | ForwardTimeGap |   ForwardTimeGap (all-traces): verified (6 steps) | 97s
