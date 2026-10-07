@@ -13,3 +13,5 @@ no_RedeemBeforeTimeout.spthy | Timeout_Race_Blocked |   Timeout_Race_Blocked (al
 no_RedeemBeforeTimeout.spthy | Intermediary_Never_Loses_Under_Liveness |   Intermediary_Never_Loses_Under_Liveness (all-traces): verified (4 steps) | 261s
 no_RedeemBeforeTimeout.spthy | Intermediary_Never_Loses_Strong |   Intermediary_Never_Loses_Strong (all-traces): verified (4 steps) | 258s
 no_RedeemBeforeTimeout.spthy | Payment_Atomicity_Under_Liveness |   Payment_Atomicity_Under_Liveness (all-traces): verified (10 steps) | 263s
+no_IntermediaryMustClaim.spthy | Necessity_IMC_Honest_Intermediary_Loses |   Necessity_IMC_Honest_Intermediary_Loses (exists-trace): verified (27 steps) | 145s
+no_OutgoingTimesOutFirst.spthy | Necessity_OTF_Timeout_Order_Broken | no result in 1800 s | 1801s
