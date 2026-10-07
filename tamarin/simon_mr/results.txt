@@ -54,3 +54,5 @@ NoSkip_Redeem_Propagates (with Fulfilled_Source): no result in 3600 s -- removed
 Preimage_Never_Known (all-traces): verified (3 steps) -- 94 s
 Single_Settlement_Per_Preimage: no result in 1200 s -- removed
 Multihop_Payment_Possible renamed to Multihop_Routing_Reachable (same statement, verified 28 steps)
+Skipped_Requires_Compromise (all-traces): verified (3 steps) -- 97 s
+Redeem_Propagates_Or_Compromise: no result in 2400 s -- removed (with Route_Redeemed_Or_Compromise)

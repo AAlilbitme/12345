@@ -37,7 +37,7 @@ ALL_TRACES_LEMMAS := \
 	Timeout_Race_Blocked ForwardTimeGap OneOutcomePerHTLC \
 	Fee_Only_On_Successful_Forward \
 	Intermediary_Never_Loses_Strong \
-	Offer_Requires_Invoice Fulfilled_Source Preimage_Never_Known
+	Offer_Requires_Invoice Fulfilled_Source Preimage_Never_Known Skipped_Requires_Compromise
 
 AUTO_EXISTS_LEMMAS := \
 	Protocol_execution Cooperative_Close_Execution \
