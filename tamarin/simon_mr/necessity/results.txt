@@ -1,3 +1,9 @@
 no_IntermediaryMustClaim.spthy | ForwardTimeGap |   ForwardTimeGap (all-traces): verified (6 steps) | 97s
 no_IntermediaryMustClaim.spthy | Timeout_Race_Blocked |   Timeout_Race_Blocked (all-traces): verified (4 steps) | 91s
 no_IntermediaryMustClaim.spthy | Intermediary_Never_Loses_Under_Liveness | no result | 601s
+no_IntermediaryMustClaim.spthy | Intermediary_Never_Loses_Strong | no result | 600s
+no_IntermediaryMustClaim.spthy | Payment_Atomicity_Under_Liveness | no result | 600s
+no_OutgoingTimesOutFirst.spthy | ForwardTimeGap | no result | 601s
+no_OutgoingTimesOutFirst.spthy | Timeout_Race_Blocked |   Timeout_Race_Blocked (all-traces): verified (4 steps) | 94s
+no_OutgoingTimesOutFirst.spthy | Intermediary_Never_Loses_Under_Liveness |   Intermediary_Never_Loses_Under_Liveness (all-traces): verified (4 steps) | 93s
+no_OutgoingTimesOutFirst.spthy | Intermediary_Never_Loses_Strong |   Intermediary_Never_Loses_Strong (all-traces): verified (4 steps) | 93s
