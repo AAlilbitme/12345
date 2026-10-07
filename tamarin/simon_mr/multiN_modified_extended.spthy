@@ -318,6 +318,7 @@ rule Intermediary_Settle:
       Fulfilled(ptrOut, x) ]
     --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
         UsedFulfilled(ptrOut, x),   // annotation: which Fulfilled fact was consumed
+        SettledHop(ptrIn, ptrOut, y),   // annotation: this hop settled
         FeeEarned($Me, ptrIn, ptrOut, y, %fee),
         Redeemed(ptrIn, y),
         Old(ptrIn, y),
@@ -329,6 +330,7 @@ rule Sender_Settle:
     [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
       Fulfilled(ptrSF, x) ]
     --[ SenderSettled($Sender, $Forward1, $Receiver, ptrSF, x),
+        UsedFulfilled(ptrSF, x),   // annotation: which Fulfilled fact was consumed
         Eq(h(x), y) ]->
     [ ]
 
@@ -345,6 +347,7 @@ rule Intermediary_Timeout_Refund:
     [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
       !Timeout(ptrOut) ]
     --[ Refunded($Me, ptrOut, y),
+        RefundHop(ptrIn, ptrOut, y),   // annotation: this hop refunded
         Old(ptrOut, y) ]->
     [ Mutex(ptrOut) ]
 
@@ -5348,6 +5351,61 @@ lemma Skipped_Requires_Compromise [reuse]:
 
 // (1b)/(1c) Redeem_Propagates_Or_Compromise and Route_Redeemed_Or_Compromise
 // were tried: (1b) had no result in 40 min, so both were removed.
+
+// ---- First-hop characterisation (F1 cannot be bypassed without compromise) ----
+// Small helpers, each proved separately; kept last so no earlier lemma reuses them.
+
+tactic: route_first
+presort: s
+prio:
+    regex "Route\(" | regex "IntermediaryPending\(" | regex "SenderPending\("
+prio:
+    regex "∥" | regex "Fulfilled\("
+deprio:
+    regex "KU\(" | regex "Ltk" | regex "ChannelConnect" | regex "ReadyToLock" | regex "Wallet" | regex "Mutex" | regex "ReceiverInv"
+
+lemma Forward_Unique_Per_Incoming [reuse, heuristic={route_first}]:
+    "All M1 P1 N1 M2 P2 N2 pIn o1 o2 y #i #j.
+        HTLCForwarded(M1, P1, N1, pIn, o1, y) @ #i
+      & HTLCForwarded(M2, P2, N2, pIn, o2, y) @ #j
+     ==> #i = #j"
+
+lemma SettledHop_From_Forward [reuse, heuristic={route_first}]:
+    "All pIn pOut y #i. SettledHop(pIn, pOut, y) @ #i
+     ==> Ex M P N #j. HTLCForwarded(M, P, N, pIn, pOut, y) @ #j & #j < #i"
+
+lemma No_Settle_And_Refund_Same_Hop [reuse, heuristic={route_first}]:
+    "All pIn pOut y #i #j. SettledHop(pIn, pOut, y) @ #i & RefundHop(pIn, pOut, y) @ #j ==> F"
+
+lemma No_Fulfill_On_Forwarded_Incoming [reuse, heuristic={route_first}]:
+    "All R Q M P N p o y #i #j.
+        HTLCFulfilled(R, Q, p, y) @ #i & HTLCForwarded(M, P, N, p, o, y) @ #j ==> F"
+
+lemma Redeemed_Source [reuse]:
+    "All p y #i. Redeemed(p, y) @ #i
+     ==> (Ex o. SettledHop(p, o, y) @ #i)
+       | (Ex R Q. HTLCFulfilled(R, Q, p, y) @ #i)"
+
+lemma SenderSettled_Uses_Fulfilled [reuse]:
+    "All S F1 R p x #i. SenderSettled(S, F1, R, p, x) @ #i ==> UsedFulfilled(p, x) @ #i"
+
+tactic: lemmas_first
+presort: s
+prio:
+    regex "∥"
+prio:
+    regex "@"
+deprio:
+    regex "▶"
+
+// Theorem: if the payment settles at the sender but the first forwarder's
+// outgoing HTLC is refunded, someone was compromised.
+lemma First_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S F1 R pSF Next pOut x #s #f #r.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, Next, pSF, pOut, h(x)) @ #f
+      & RefundHop(pSF, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
 
 // (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
 // Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
