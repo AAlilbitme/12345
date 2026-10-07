@@ -70,7 +70,7 @@ define check
 	done
 endef
 
-.PHONY: verify verify-f1 verify-all-traces verify-auto-exists verify-replay verify-one clean help
+.PHONY: necessity verify verify-f1 verify-all-traces verify-auto-exists verify-replay verify-one clean help
 
 verify: verify-all-traces verify-f1 verify-auto-exists verify-replay
 	@echo "==> All lemmas verified."
@@ -110,6 +110,17 @@ verify-one:
 		echo "$$L | $${r:-no result}"; \
 	done
 
+# Necessity of the liveness restrictions (same file, preprocessor flags):
+# each run removes one restriction and checks which liveness lemmas survive.
+LIVENESS := ForwardTimeGap Timeout_Race_Blocked Intermediary_Never_Loses_Under_Liveness \
+	Intermediary_Never_Loses_Strong Payment_Atomicity_Under_Liveness
+necessity:
+	@for V in NO_IMC NO_OTF NO_RBT; do for L in $(LIVENESS); do \
+		r=$$(timeout 600 $(TAMARIN) $(FILE) -D=$$V -D=NECESSITY --prove=$$L $(FLAGS) 2>&1 | grep -E "^  $$L "); \
+		echo "$$V | $$L | $${r:-no result in 600 s}"; done; done
+	@r=$$($(TAMARIN) $(FILE) -D=NO_IMC -D=NECESSITY --prove=Necessity_IMC_Honest_Intermediary_Loses $(FLAGS) 2>&1 | grep -E "^  Necessity"); \
+		echo "NO_IMC | counterexample | $${r:-no result}"
+
 clean:
 	rm -f $(LOG)
 
@@ -119,5 +130,6 @@ help:
 	@echo "make verify-f1          $(words $(F1_LEMMAS)) first-hop characterisation lemmas"
 	@echo "make verify-auto-exists $(words $(AUTO_EXISTS_LEMMAS)) exists-trace lemmas found by --prove"
 	@echo "make verify-replay      $(words $(REPLAY_LEMMAS)) exists-trace lemmas with saved proofs"
+	@echo "make necessity         drop one liveness restriction at a time (-D flags)"
 	@echo "make verify-one         one lemma per run (use if memory runs out)"
 	@echo "Options: FILE=..., MEM=4G"
