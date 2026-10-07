@@ -696,6 +696,29 @@ lemma Fulfilled_Source [reuse]:
      ==> (Ex #j. Redeemed(p, h(x)) @ #j & #j < #i)
        | (Ex #j. Skipped(p, x) @ #j & #j < #i)"
 
+// (1a) Every skip happens after some compromise.
+lemma Skipped_Requires_Compromise [reuse]:
+    "All p x #i. Skipped(p, x) @ #i ==> Ex P #c. LtkCompromised(P) @ #c & #c < #i"
+
+// (1b) One hop: if a forwarder's incoming HTLC is redeemed, its outgoing one
+//      was redeemed too, or someone is compromised.
+lemma Redeem_Propagates_Or_Compromise [reuse]:
+    "All Me Prev Next pIn pOut y #f #r.
+        HTLCForwarded(Me, Prev, Next, pIn, pOut, y) @ #f
+      & Redeemed(pIn, y) @ #r
+     ==> (Ex #l. Redeemed(pOut, y) @ #l)
+       | (Ex P #c. LtkCompromised(P) @ #c)"
+
+// (1c) Along the route, by induction: a settled single-offer payment redeems
+//      every forwarder's incoming HTLC, or someone is compromised.
+lemma Route_Redeemed_Or_Compromise [reuse, use_induction]:
+    "All Me Prev Next pIn pOut S F1 R pSF x #f #s.
+        HTLCForwarded(Me, Prev, Next, pIn, pOut, h(x)) @ #f
+      & SenderSettled(S, F1, R, pSF, x) @ #s
+      & (All A B p #o. HTLCOffered(A, B, p, h(x)) @ #o ==> p = pSF)
+     ==> (Ex #l. Redeemed(pIn, h(x)) @ #l)
+       | (Ex P #c. LtkCompromised(P) @ #c)"
+
 // (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
 // Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
 // an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
