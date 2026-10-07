@@ -1101,34 +1101,6 @@ lemma Sanity_Compromised_Intermediary_Can_Lose:
     & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
 
 
-// Helper for Skip_Requires_Compromise (verified, 112 steps).  The next helper,
-// NoSkip_Redeem_Propagates, had no result in 60 min and was removed.
-// (0) Source of a consumed Fulfilled fact: a redemption of that HTLC, or a skip.
-lemma Fulfilled_Source [reuse]:
-    "All p x #i. UsedFulfilled(p, x) @ #i
-     ==> (Ex #j. Redeemed(p, h(x)) @ #j & #j < #i)
-       | (Ex #j. Skipped(p, x) @ #j & #j < #i)"
-
-// (1a) Every skip happens after some compromise.
-lemma Skipped_Requires_Compromise [reuse]:
-    "All p x #i. Skipped(p, x) @ #i ==> Ex P #c. LtkCompromised(P) @ #c & #c < #i"
-
-// (1b)/(1c) Redeem_Propagates_Or_Compromise and Route_Redeemed_Or_Compromise
-// were tried: (1b) had no result in 40 min, so both were removed.
-
-// (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
-// Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
-// an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
-// party was compromised.
-lemma Skip_Requires_Compromise:
-    "All S F1 R pSF x Me Prev Next pIn pOut #s #f #u.
-        SenderSettled(S, F1, R, pSF, x) @ #s
-      & HTLCForwarded(Me, Prev, Next, pIn, pOut, h(x)) @ #f
-      & Refunded(Me, pOut, h(x)) @ #u
-      & (All A B p #o. HTLCOffered(A, B, p, h(x)) @ #o ==> p = pSF)
-      & not (Ex #c. LtkCompromised(Me) @ #c)
-     ==> Ex P #c. LtkCompromised(P) @ #c"
-
 // (2) Stronger: a forwarder that loses was compromised BEFORE its incoming
 // HTLC timed out (matches the prefix-closed honesty of the restrictions).
 lemma Intermediary_Never_Loses_Strong:
@@ -1168,5 +1140,34 @@ lemma Sanity_Atomic_Payment_Completes:
 // holds trivially because of this: x is never output in this model.)
 lemma Preimage_Never_Known:
     "All R x #i. SecretPreimage(R, x) @ #i ==> not (Ex #j. K(x) @ #j)"
+
+// Kept last so that no earlier lemma reuses these helpers.
+// Helper for Skip_Requires_Compromise (verified, 112 steps).  The next helper,
+// NoSkip_Redeem_Propagates, had no result in 60 min and was removed.
+// (0) Source of a consumed Fulfilled fact: a redemption of that HTLC, or a skip.
+lemma Fulfilled_Source [reuse]:
+    "All p x #i. UsedFulfilled(p, x) @ #i
+     ==> (Ex #j. Redeemed(p, h(x)) @ #j & #j < #i)
+       | (Ex #j. Skipped(p, x) @ #j & #j < #i)"
+
+// (1a) Every skip happens after some compromise.
+lemma Skipped_Requires_Compromise [reuse]:
+    "All p x #i. Skipped(p, x) @ #i ==> Ex P #c. LtkCompromised(P) @ #c & #c < #i"
+
+// (1b)/(1c) Redeem_Propagates_Or_Compromise and Route_Redeemed_Or_Compromise
+// were tried: (1b) had no result in 40 min, so both were removed.
+
+// (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
+// Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
+// an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
+// party was compromised.
+lemma Skip_Requires_Compromise:
+    "All S F1 R pSF x Me Prev Next pIn pOut #s #f #u.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(Me, Prev, Next, pIn, pOut, h(x)) @ #f
+      & Refunded(Me, pOut, h(x)) @ #u
+      & (All A B p #o. HTLCOffered(A, B, p, h(x)) @ #o ==> p = pSF)
+      & not (Ex #c. LtkCompromised(Me) @ #c)
+     ==> Ex P #c. LtkCompromised(P) @ #c"
 
 end
