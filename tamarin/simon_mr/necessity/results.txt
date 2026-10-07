@@ -1,1 +1,3 @@
 no_IntermediaryMustClaim.spthy | ForwardTimeGap |   ForwardTimeGap (all-traces): verified (6 steps) | 97s
+no_IntermediaryMustClaim.spthy | Timeout_Race_Blocked |   Timeout_Race_Blocked (all-traces): verified (4 steps) | 91s
+no_IntermediaryMustClaim.spthy | Intermediary_Never_Loses_Under_Liveness | no result | 601s
