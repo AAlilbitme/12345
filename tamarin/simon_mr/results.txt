@@ -70,3 +70,6 @@ Redeemed_Source |   Redeemed_Source (all-traces): verified (4 steps) | 214s
 SenderSettled_Uses_Fulfilled |   SenderSettled_Uses_Fulfilled (all-traces): verified (2 steps) | 228s
 First_Hop_Skip_Requires_Compromise |   First_Hop_Skip_Requires_Compromise (all-traces): verified (6 steps) | 228s
 Wormhole_Fee_Theft_Reachable: replay verified (927 steps) after adding labels
+
+# Independent reproduction on the user laptop (make verify, MEM=6G): ALL lemmas verified
+#   32 all-traces + 7 first-hop + 9 exists-trace + 1 replay (Wormhole_Fee_Theft_Reachable)
