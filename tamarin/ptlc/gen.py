@@ -4,14 +4,17 @@ import sys
 PTLC = sys.argv[1] == "ptlc"
 name = "ptlc" if PTLC else "htlc_baseline"
 if PTLC:
-    secrets = "s3 = ~x\n        s2 = ~x XOR ~t3\n        s1 = ~x XOR ~t3 XOR ~t2\n        s0 = ~x XOR ~t3 XOR ~t2 XOR ~t1"
-    step = "sec XOR t"
+    secrets = "s3 = ~x\n        s2 = h(<s3, ~t3>)\n        s1 = h(<s2, ~t2>)\n        s0 = h(<s1, ~t1>)"
+    step = "h(<sec, t>)"
     header = """  PTLC / multi-hop-lock model: every channel has its OWN secret.
   Channel secrets (sender-generated, as in anonymous multi-hop locks):
-      s3 = x,  s2 = x+t3,  s1 = x+t3+t2,  s0 = x+t3+t2+t1   (+ = XOR)
-  An honest hop that learns its OUTGOING secret adds its own tweak to obtain
-  its INCOMING secret.  Locks are h(secret)."""
-    builtins = "hashing, xor"
+      s3 = x,  s2 = H(x,t3),  s1 = H(s2,t2),  s0 = H(s1,t1)
+  An honest hop that learns its OUTGOING secret combines it with its own
+  private tweak to obtain its INCOMING secret.  Locks are h(secret).
+  The hash chain abstracts the additive PTLC tweak (s_in = s_out + t): in both,
+  deriving a hop's incoming secret requires that hop's tweak.  (An XOR encoding
+  exhausted memory in Tamarin.)"""
+    builtins = "hashing"
 else:
     secrets = "s3 = ~x\n        s2 = ~x\n        s1 = ~x\n        s0 = ~x"
     step = "sec"
@@ -26,6 +29,27 @@ body_w = """  "Ex S H1 H2 H3 R c0 c1 c2 c3 #p #a #b.
     & not (Ex #k. Compromised(S) @ #k)\""""
 if PTLC:
     wlemma = "lemma No_Wormhole_Around_Honest_Hop:\n  all-traces\n  \"not (\n" + body_w.split('"',1)[1].rsplit('"',1)[0] + ")\""
+    wlemma += """
+
+// Control 1: H2's outgoing HTLC CAN be refunded while the payment is set up
+// (so the premise of the lemma above is not unsatisfiable on its own).
+lemma Control_Refund_Of_H2_Outgoing:
+  exists-trace
+  "Ex S H1 H2 H3 R c0 c1 c2 c3 #p #b.
+      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p
+    & Refunded(c2) @ #b
+    & not (Ex #k. Compromised(H2) @ #k)"
+
+// Control 2: if H2 itself is compromised (its tweak leaks), the wormhole IS
+// reachable -- the proof above depends on H2's tweak staying secret.
+lemma Control_Wormhole_If_H2_Compromised:
+  exists-trace
+  "Ex S H1 H2 H3 R c0 c1 c2 c3 #p #a #b #k.
+      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p
+    & Redeemed(c0) @ #a
+    & Refunded(c2) @ #b
+    & Compromised(H2) @ #k
+    & not (Ex #j. Compromised(S) @ #j)\""""
 else:
     wlemma = "lemma Wormhole_Around_Honest_Hop:\n  exists-trace\n" + body_w
 print(f"""theory {name}
