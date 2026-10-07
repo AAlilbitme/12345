@@ -51,7 +51,8 @@ F1_LEMMAS := \
 	Forward_Unique_Per_Incoming SettledHop_From_Forward \
 	No_Settle_And_Refund_Same_Hop No_Fulfill_On_Forwarded_Incoming \
 	Redeemed_Source SenderSettled_Uses_Fulfilled \
-	First_Hop_Skip_Requires_Compromise
+	First_Hop_Skip_Requires_Compromise \
+	SettledHop_Uses_Outgoing Second_Hop_Skip_Requires_Compromise
 
 REPLAY_LEMMAS := \
 	Wormhole_Fee_Theft_Reachable

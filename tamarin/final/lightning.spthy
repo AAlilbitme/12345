@@ -1212,6 +1212,20 @@ lemma First_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
       & RefundHop(pSF, pOut, h(x)) @ #r
      ==> Ex P #c. LtkCompromised(P) @ #c"
 
+lemma SettledHop_Uses_Outgoing [reuse]:
+    "All pIn pOut y #i. SettledHop(pIn, pOut, y) @ #i
+     ==> Ex x. UsedFulfilled(pOut, x) @ #i & h(x) = y"
+
+// Theorem: the SECOND forwarder (the victim in the wormhole trace
+// S -> Att1 -> F2 -> Att2 -> R) cannot be bypassed without compromise.
+lemma Second_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S F1 R pSF x F2 p1 Next pOut #s #f1 #f2 #r.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1
+      & HTLCForwarded(F2, F1, Next, p1, pOut, h(x)) @ #f2
+      & RefundHop(p1, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
+
 // (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
 // Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
 // an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
