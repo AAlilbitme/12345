@@ -57,3 +57,4 @@ Multihop_Payment_Possible renamed to Multihop_Routing_Reachable (same statement,
 Skipped_Requires_Compromise (all-traces): verified (3 steps) -- 97 s
 Redeem_Propagates_Or_Compromise: no result in 2400 s -- removed (with Route_Redeemed_Or_Compromise)
 Offer_Requires_Invoice: verified (70 steps, 113 s) after moving Fulfilled_Source/Skipped_Requires_Compromise/Skip_Requires_Compromise to end of file
+Wormhole_Fee_Theft_Reachable (exists-trace): verified (927 steps) -- saved proof replayed with --lemma (Simon proof repaired for tagged invoice)
