@@ -614,7 +614,9 @@ lemma Timeout_Race_Blocked:
       & #k < #i
       & not (Ex #c. LtkCompromised(P) @ #c & #c < #k))"
 
-lemma Multihop_Payment_Possible:
+// Routing phase only: the payment reaches the receiver over two forwarders
+// (nobody settles).  End-to-end completion: Sanity_Atomic_Payment_Completes.
+lemma Multihop_Routing_Reachable:
     exists-trace
     "Ex S F1 F2 R p0 p1 p2 x #t2 #t3 #t4 #t5.
         HTLCOffered(S, F1, p0, h(x)) @ #t2
