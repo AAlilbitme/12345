@@ -51,3 +51,5 @@ Multihop_Payment_Possible (exists-trace): verified (28 steps)  -- --prove, 380 s
 Skip_Requires_Compromise: no result in 7000 s (--prove, run alone, 12G cap; timeout, not out of memory) -- OPEN
 Fulfilled_Source (all-traces): verified (112 steps) -- --prove, 105 s
 NoSkip_Redeem_Propagates (with Fulfilled_Source): no result in 3600 s -- removed
+Preimage_Never_Known (all-traces): verified (3 steps) -- 94 s
+Single_Settlement_Per_Preimage: no result in 1200 s -- removed
