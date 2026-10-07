@@ -58,3 +58,15 @@ Skipped_Requires_Compromise (all-traces): verified (3 steps) -- 97 s
 Redeem_Propagates_Or_Compromise: no result in 2400 s -- removed (with Route_Redeemed_Or_Compromise)
 Offer_Requires_Invoice: verified (70 steps, 113 s) after moving Fulfilled_Source/Skipped_Requires_Compromise/Skip_Requires_Compromise to end of file
 Wormhole_Fee_Theft_Reachable (exists-trace): verified (927 steps) -- saved proof replayed with --lemma (Simon proof repaired for tagged invoice)
+
+# First-hop characterisation (main file, --prove, each run alone)
+Fulfilled_Source |   Fulfilled_Source (all-traces): verified (214 steps) | 214s
+Skipped_Requires_Compromise |   Skipped_Requires_Compromise (all-traces): verified (3 steps) | 216s
+Forward_Unique_Per_Incoming |   Forward_Unique_Per_Incoming (all-traces): verified (46 steps) | 228s
+SettledHop_From_Forward |   SettledHop_From_Forward (all-traces): verified (4 steps) | 221s
+No_Settle_And_Refund_Same_Hop |   No_Settle_And_Refund_Same_Hop (all-traces): verified (4 steps) | 217s
+No_Fulfill_On_Forwarded_Incoming |   No_Fulfill_On_Forwarded_Incoming (all-traces): verified (24 steps) | 218s
+Redeemed_Source |   Redeemed_Source (all-traces): verified (4 steps) | 214s
+SenderSettled_Uses_Fulfilled |   SenderSettled_Uses_Fulfilled (all-traces): verified (2 steps) | 228s
+First_Hop_Skip_Requires_Compromise |   First_Hop_Skip_Requires_Compromise (all-traces): verified (6 steps) | 228s
+Wormhole_Fee_Theft_Reachable: replay verified (927 steps) after adding labels

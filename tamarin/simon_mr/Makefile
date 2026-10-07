@@ -46,10 +46,18 @@ AUTO_EXISTS_LEMMAS := \
 	Sanity_Honest_Payment_Completes Sanity_Compromised_Intermediary_Can_Lose \
 	Sanity_Atomic_Payment_Completes Multihop_Routing_Reachable
 
+# First-hop characterisation: helpers + theorem (each uses its own tactic)
+F1_LEMMAS := \
+	Forward_Unique_Per_Incoming SettledHop_From_Forward \
+	No_Settle_And_Refund_Same_Hop No_Fulfill_On_Forwarded_Incoming \
+	Redeemed_Source SenderSettled_Uses_Fulfilled \
+	First_Hop_Skip_Requires_Compromise
+
 REPLAY_LEMMAS := \
 	Wormhole_Fee_Theft_Reachable
 
 PROVE_ALL    := $(addprefix --prove=,$(ALL_TRACES_LEMMAS))
+PROVE_F1     := $(addprefix --prove=,$(F1_LEMMAS))
 PROVE_EXISTS := $(addprefix --prove=,$(AUTO_EXISTS_LEMMAS))
 LEMMA_REPLAY := $(addprefix --lemma=,$(REPLAY_LEMMAS))
 
@@ -62,9 +70,9 @@ define check
 	done
 endef
 
-.PHONY: verify verify-all-traces verify-auto-exists verify-replay verify-one clean help
+.PHONY: verify verify-f1 verify-all-traces verify-auto-exists verify-replay verify-one clean help
 
-verify: verify-all-traces verify-auto-exists verify-replay
+verify: verify-all-traces verify-f1 verify-auto-exists verify-replay
 	@echo "==> All lemmas verified."
 
 verify-all-traces:
@@ -72,6 +80,12 @@ verify-all-traces:
 	$(TAMARIN) $(FILE) $(PROVE_ALL) $(FLAGS) > $(LOG) 2>&1
 	$(call check,$(ALL_TRACES_LEMMAS))
 	@echo "==> All all-traces lemmas verified."
+
+verify-f1:
+	@echo "==> Proving $(words $(F1_LEMMAS)) first-hop lemmas (single run)"
+	$(TAMARIN) $(FILE) $(PROVE_F1) $(FLAGS) > $(LOG) 2>&1
+	$(call check,$(F1_LEMMAS))
+	@echo "==> First-hop characterisation verified."
 
 verify-auto-exists:
 	@echo "==> Proving $(words $(AUTO_EXISTS_LEMMAS)) exists-trace lemmas (single run)"
@@ -87,7 +101,7 @@ verify-replay:
 
 # Low-memory alternative: one lemma per invocation, 15 min each.
 verify-one:
-	@for L in $(ALL_TRACES_LEMMAS) $(AUTO_EXISTS_LEMMAS); do \
+	@for L in $(ALL_TRACES_LEMMAS) $(F1_LEMMAS) $(AUTO_EXISTS_LEMMAS); do \
 		r=$$(timeout 900 $(TAMARIN) $(FILE) --prove=$$L $(FLAGS) 2>&1 | grep -E "^  $$L "); \
 		echo "$$L | $${r:-no result in 900 s}"; \
 	done
@@ -102,6 +116,7 @@ clean:
 help:
 	@echo "make verify            all three groups (default)"
 	@echo "make verify-all-traces  $(words $(ALL_TRACES_LEMMAS)) safety lemmas"
+	@echo "make verify-f1          $(words $(F1_LEMMAS)) first-hop characterisation lemmas"
 	@echo "make verify-auto-exists $(words $(AUTO_EXISTS_LEMMAS)) exists-trace lemmas found by --prove"
 	@echo "make verify-replay      $(words $(REPLAY_LEMMAS)) exists-trace lemmas with saved proofs"
 	@echo "make verify-one         one lemma per run (use if memory runs out)"
