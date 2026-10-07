@@ -65,13 +65,13 @@ restriction FulfillInTime:
      ==> b << d_out"
 
 // Lemma 1: CLTV_Gap_Is_Positive (restates restriction DeltaPositive; kept as a sanity check)
-lemma CLTV_Gap_Is_Positive:
+lemma CLTV_Gap_Is_Positive [reuse]:
     "All ptrOut ptrIn d_out d_in #i.
        HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
      ==> d_out << d_in"
 
 // Claim_Window_Nonempty
-lemma Claim_Window_Nonempty:
+lemma Claim_Window_Nonempty [reuse]:
     "All ptrOut ptrIn d_out d_in b #i #j.
        HopRegistered(ptrOut, ptrIn, d_out, d_in) @ #i
      & Revealed(b, ptrOut, d_out) @ #j
