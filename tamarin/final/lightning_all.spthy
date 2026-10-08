@@ -1875,6 +1875,40 @@ next
 qed
 #endif
 
+#ifdef not AUX
+// ---- Necessity checks (run with -D=NECESSITY plus one of -D=NO_IMC/NO_OTF/NO_RBT) ----
+#endif
+
+#ifdef not AUX & NO_IMC
+// Without IntermediaryMustClaim an HONEST intermediary can lose.
+lemma Necessity_IMC_Honest_Intermediary_Loses:
+  exists-trace
+  "Ex S F1 R p0 p1 x #o #a #r #u.
+      HTLCOffered(S, F1, p0, h(x)) @ #o
+    & HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a
+    & HTLCFulfilled(R, F1, p1, h(x)) @ #r
+    & Refunded(S, p0, h(x)) @ #u
+    & not (Ex P #k. LtkCompromised(P) @ #k)
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+    & not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)
+    & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
+#endif
+
+
+#ifdef not AUX & NO_OTF
+// Without OutgoingTimesOutFirst an honest forwarder's incoming HTLC can time
+// out before its outgoing one (search did not finish in 30 min).
+lemma Necessity_OTF_Timeout_Order_Broken:
+  exists-trace
+  "Ex P Prev Next pIn pOut y #f #j #k.
+      HTLCForwarded(P, Prev, Next, pIn, pOut, y) @ #f
+    & TimedOut(pOut) @ #j & TimedOut(pIn) @ #k & #k < #j
+    & not (Ex Q #c. LtkCompromised(Q) @ #c)
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+    & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)
+    & not (Ex U q z #e. Refunded(U, q, z) @ #e)"
+#endif
+
 // ============ PTLC countermeasure / HTLC baseline ============
 #ifdef AUX & PTLC
 /*
