@@ -1226,6 +1226,55 @@ lemma Second_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
       & RefundHop(p1, pOut, h(x)) @ #r
      ==> Ex P #c. LtkCompromised(P) @ #c"
 
+// Theorem: the forwarder at position 3 on the sender's route cannot be
+// bypassed (its own hop refunded while the sender settles) without compromise.
+lemma Hop3_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S R x pSF pOut Next F1 F2 F3 p1 p2 #s #r #f1 #f2 #f3.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1
+      & HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2
+      & HTLCForwarded(F3, F2, Next, p2, pOut, h(x)) @ #f3
+      & RefundHop(p2, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
+
+// Theorem: the forwarder at position 4 on the sender's route cannot be
+// bypassed (its own hop refunded while the sender settles) without compromise.
+lemma Hop4_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S R x pSF pOut Next F1 F2 F3 F4 p1 p2 p3 #s #r #f1 #f2 #f3 #f4.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1
+      & HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2
+      & HTLCForwarded(F3, F2, F4, p2, p3, h(x)) @ #f3
+      & HTLCForwarded(F4, F3, Next, p3, pOut, h(x)) @ #f4
+      & RefundHop(p3, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
+
+// Theorem: the forwarder at position 5 on the sender's route cannot be
+// bypassed (its own hop refunded while the sender settles) without compromise.
+lemma Hop5_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S R x pSF pOut Next F1 F2 F3 F4 F5 p1 p2 p3 p4 #s #r #f1 #f2 #f3 #f4 #f5.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1
+      & HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2
+      & HTLCForwarded(F3, F2, F4, p2, p3, h(x)) @ #f3
+      & HTLCForwarded(F4, F3, F5, p3, p4, h(x)) @ #f4
+      & HTLCForwarded(F5, F4, Next, p4, pOut, h(x)) @ #f5
+      & RefundHop(p4, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
+
+// Theorem: the forwarder at position 6 on the sender's route cannot be
+// bypassed (its own hop refunded while the sender settles) without compromise.
+lemma Hop6_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S R x pSF pOut Next F1 F2 F3 F4 F5 F6 p1 p2 p3 p4 p5 #s #r #f1 #f2 #f3 #f4 #f5 #f6.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1
+      & HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2
+      & HTLCForwarded(F3, F2, F4, p2, p3, h(x)) @ #f3
+      & HTLCForwarded(F4, F3, F5, p3, p4, h(x)) @ #f4
+      & HTLCForwarded(F5, F4, F6, p4, p5, h(x)) @ #f5
+      & HTLCForwarded(F6, F5, Next, p5, pOut, h(x)) @ #f6
+      & RefundHop(p5, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
 // (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
 // Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
 // an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
