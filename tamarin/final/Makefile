@@ -73,7 +73,7 @@ define check
 	done
 endef
 
-.PHONY: aux necessity verify verify-f1 verify-all-traces verify-auto-exists verify-replay verify-one clean help
+.PHONY: aux general necessity verify verify-f1 verify-all-traces verify-auto-exists verify-replay verify-one clean help
 
 verify: verify-all-traces verify-f1 verify-auto-exists verify-replay
 	@echo "==> All lemmas verified."
@@ -113,6 +113,20 @@ verify-one:
 		echo "$$L | $${r:-no result}"; \
 	done
 
+# General n-hop theorem (any route length).  Proved in the model WITHOUT the
+# liveness restrictions; removing restrictions only adds traces, so it holds in
+# the full model too.  Every [reuse] lemma it relies on is re-proved in the same
+# mode in the same run.
+GENERAL_FLAGS := -D=GENERAL -D=NO_IMC -D=NO_OTF -D=NO_RBT -D=NECESSITY
+GENERAL_LEMMAS := \
+	OneOutcomePerHTLC Ltk_Known_Implies_Compromised Invoice_Released_Once Invoice_Has_Secret_Preimage HTLC_On_Opened_Channel Fulfilled_Requires_Release Refund_Requires_Timeout Fulfilled_Source Skipped_Requires_Compromise Forward_Unique_Per_Incoming SettledHop_From_Forward No_Settle_And_Refund_Same_Hop No_Fulfill_On_Forwarded_Incoming Redeemed_Source SenderSettled_Uses_Fulfilled SettledHop_Uses_Outgoing \
+	Forward_Parent Hop_Redeem_Propagates Sender_Channel_Redeemed Root_First Next_Is_Child Route_Redeemed_Gen Route_Redeemed_No_Compromise Any_Hop_Skip_Requires_Compromise
+general:
+	@echo "==> Proving $(words $(GENERAL_LEMMAS)) lemmas of the general n-hop theorem (liveness-free mode)"
+	$(TAMARIN) $(FILE) $(GENERAL_FLAGS) $(addprefix --prove=,$(GENERAL_LEMMAS)) $(FLAGS) > $(LOG) 2>&1
+	$(call check,$(GENERAL_LEMMAS))
+	@echo "==> General n-hop theorem verified."
+
 # Necessity of the liveness restrictions (same file, preprocessor flags):
 # each run removes one restriction and checks which liveness lemmas survive.
 LIVENESS := ForwardTimeGap Timeout_Race_Blocked Intermediary_Never_Loses_Under_Liveness \
@@ -140,6 +154,7 @@ help:
 	@echo "make verify-auto-exists $(words $(AUTO_EXISTS_LEMMAS)) exists-trace lemmas found by --prove"
 	@echo "make verify-replay      $(words $(REPLAY_LEMMAS)) exists-trace lemmas with saved proofs"
 	@echo "make aux               PTLC / HTLC baseline / timing models (lightning_aux.spthy)"
+	@echo "make general           any-hop (n-hop) bypass theorem, liveness-free mode"
 	@echo "make necessity         drop one liveness restriction at a time (-D flags)"
 	@echo "make verify-one         one lemma per run (use if memory runs out)"
 	@echo "Options: FILE=..., MEM=4G"

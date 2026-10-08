@@ -1275,48 +1275,570 @@ lemma Hop6_Skip_Requires_Compromise [heuristic={lemmas_first}]:
       & HTLCForwarded(F6, F5, Next, p5, pOut, h(x)) @ #f6
       & RefundHop(p5, pOut, h(x)) @ #r
      ==> Ex P #c. LtkCompromised(P) @ #c"
-// (1) A wormhole needs compromise.  OPEN: no result with --prove in 2 h.
-// Not [reuse], so nothing depends on it.  If a payment is offered once, settles, and
-// an honest forwarder on it is skipped (its outgoing HTLC refunded), then some
-// party was compromised.
-lemma Skip_Requires_Compromise:
-    "All S F1 R pSF x Me Prev Next pIn pOut #s #f #u.
+
+// ---- General theorem: only active with -D=GENERAL (proved in the liveness-free
+// mode: make general) ----
+#ifdef GENERAL
+// ---- General (any route length n) bypass theorem ----
+// Proved WITHOUT the liveness restrictions (-D=NO_IMC -D=NO_OTF -D=NO_RBT -D=NECESSITY); removing restrictions only
+// adds traces, so these all-traces results also hold in the full model.
+
+lemma Forward_Parent [reuse, heuristic={route_first}]:
+    "All Me Prev Next pIn pOut y #i.
+        HTLCForwarded(Me, Prev, Next, pIn, pOut, y) @ #i
+     ==> (Ex S #j. HTLCOffered(S, Me, pIn, y) @ #j & #j < #i)
+       | (Ex P0 pin0 #j. HTLCForwarded(Prev, P0, Me, pin0, pIn, y) @ #j & #j < #i)"
+
+// One hop: with no compromise, redemption of a forwarder's incoming HTLC
+// implies redemption of its outgoing HTLC.
+lemma Hop_Redeem_Propagates [reuse, heuristic={lemmas_first}]:
+    "All M P N pin0 pIn y #f #r.
+        HTLCForwarded(M, P, N, pin0, pIn, y) @ #f
+      & Redeemed(pin0, y) @ #r
+      & not (Ex Q #c. LtkCompromised(Q) @ #c)
+     ==> Ex #l. Redeemed(pIn, y) @ #l"
+
+// Base: with no compromise, a sender settle implies its channel was redeemed.
+lemma Sender_Channel_Redeemed [reuse, heuristic={lemmas_first}]:
+    "All S F1 R pSF x #s.
         SenderSettled(S, F1, R, pSF, x) @ #s
-      & HTLCForwarded(Me, Prev, Next, pIn, pOut, h(x)) @ #f
-      & Refunded(Me, pOut, h(x)) @ #u
-      & (All A B p #o. HTLCOffered(A, B, p, h(x)) @ #o ==> p = pSF)
-      & not (Ex #c. LtkCompromised(Me) @ #c)
-     ==> Ex P #c. LtkCompromised(P) @ #c"
+      & not (Ex Q #c. LtkCompromised(Q) @ #c)
+     ==> Ex #l. Redeemed(pSF, h(x)) @ #l"
 
+// ---- Chain-structure helpers (lane B reformulation) ----
+// Every forward has a root forward (incoming = an offered channel) no later than it.
+lemma Root_First [reuse, use_induction, heuristic={lemmas_first},
+                  hide_lemma=Redeemed_Source, hide_lemma=SettledHop_From_Forward,
+                  hide_lemma=SettledHop_Uses_Outgoing, hide_lemma=Fulfilled_Source,
+                  hide_lemma=No_Settle_And_Refund_Same_Hop,
+                  hide_lemma=No_Fulfill_On_Forwarded_Incoming,
+                  hide_lemma=SenderSettled_Uses_Fulfilled,
+                  hide_lemma=Fulfilled_Requires_Release,
+                  hide_lemma=HTLC_On_Opened_Channel,
+                  hide_lemma=Skipped_Requires_Compromise,
+                  hide_lemma=Hop_Redeem_Propagates,
+                  hide_lemma=Sender_Channel_Redeemed]:
+  all-traces
+  "∀ Me Prev Next pIn pOut y #f.
+    (HTLCForwarded( Me, Prev, Next, pIn, pOut, y ) @ #f) ⇒
+    ((∃ S #o. HTLCOffered( S, Me, pIn, y ) @ #o) ∨
+     (∃ S M P N pS p1 #o #k.
+       ((HTLCOffered( S, M, pS, y ) @ #o) ∧
+        (HTLCForwarded( M, P, N, pS, p1, y ) @ #k)) ∧
+       (#k < #f)))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Me Prev Next pIn pOut y #f.
+  (HTLCForwarded( Me, Prev, Next, pIn, pOut, y ) @ #f)
+ ∧
+  (∀ S #o. (HTLCOffered( S, Me, pIn, y ) @ #o) ⇒ ⊥) ∧
+  (∀ S M P N pS p1 #o #k.
+    (HTLCOffered( S, M, pS, y ) @ #o) ∧
+    (HTLCForwarded( M, P, N, pS, p1, y ) @ #k)
+   ⇒
+    ¬(#k < #f))"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  simplify
+  solve( (∃ S #j. (HTLCOffered( S, $Me, pIn, y ) @ #j) ∧ #j < #f)  ∥
+         (∃ P0 pin0 #j.
+           (HTLCForwarded( $Prev, P0, $Me, pin0, pIn, y ) @ #j) ∧ #j < #f) )
+    case case_1
+    by contradiction /* from formulas */
+  next
+    case case_2
+    solve( (∃ S #o.
+             (HTLCOffered( S, $Prev, pin0, y ) @ #o) ∧ ¬(last(#o)))  ∥
+           (∃ S M P N pS p1 #o #k.
+             (HTLCOffered( S, M, pS, y ) @ #o) ∧
+             (HTLCForwarded( M, P, N, pS, p1, y ) @ #k)
+            ∧
+             (¬(last(#k))) ∧ (¬(last(#o))) ∧ (#k < #j)) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      by contradiction /* from formulas */
+    qed
+  qed
+qed
 
-// ---- Necessity checks (run with -D=NECESSITY plus one of -D=NO_IMC/NO_OTF/NO_RBT) ----
-#ifdef NO_IMC
-// Without IntermediaryMustClaim an HONEST intermediary can lose.
-lemma Necessity_IMC_Honest_Intermediary_Loses:
-  exists-trace
-  "Ex S F1 R p0 p1 x #o #a #r #u.
-      HTLCOffered(S, F1, p0, h(x)) @ #o
-    & HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a
-    & HTLCFulfilled(R, F1, p1, h(x)) @ #r
-    & Refunded(S, p0, h(x)) @ #u
-    & not (Ex P #k. LtkCompromised(P) @ #k)
-    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
-    & not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)
-    & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
-#endif
+// With a single offered channel, the first forward of y after a forward j is j's child.
+lemma Next_Is_Child [reuse, use_induction,
+                     heuristic={lemmas_first}, hide_lemma=Redeemed_Source,
+                     hide_lemma=SettledHop_From_Forward,
+                     hide_lemma=SettledHop_Uses_Outgoing, hide_lemma=Fulfilled_Source,
+                     hide_lemma=No_Settle_And_Refund_Same_Hop,
+                     hide_lemma=No_Fulfill_On_Forwarded_Incoming,
+                     hide_lemma=SenderSettled_Uses_Fulfilled,
+                     hide_lemma=Fulfilled_Requires_Release,
+                     hide_lemma=HTLC_On_Opened_Channel,
+                     hide_lemma=Skipped_Requires_Compromise,
+                     hide_lemma=Hop_Redeem_Propagates,
+                     hide_lemma=Sender_Channel_Redeemed]:
+  all-traces
+  "∀ Prev P0 Me pin0 pIn M P N a b y #j #g.
+    ((((HTLCForwarded( Prev, P0, Me, pin0, pIn, y ) @ #j) ∧
+       (HTLCForwarded( M, P, N, a, b, y ) @ #g)) ∧
+      (#j < #g)) ∧
+     (∀ A B C D p q #o1 #o2.
+       ((HTLCOffered( A, B, p, y ) @ #o1) ∧
+        (HTLCOffered( C, D, q, y ) @ #o2)) ⇒
+       (p = q))) ⇒
+    ((∃ Nx pOut. HTLCForwarded( Me, Prev, Nx, pIn, pOut, y ) @ #g) ∨
+     (∃ Nx pOut #f.
+       (HTLCForwarded( Me, Prev, Nx, pIn, pOut, y ) @ #f) ∧ (#f < #g)))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Prev P0 Me pin0 pIn M P N a b y #j #g.
+  (HTLCForwarded( Prev, P0, Me, pin0, pIn, y ) @ #j) ∧
+  (HTLCForwarded( M, P, N, a, b, y ) @ #g)
+ ∧
+  (#j < #g) ∧
+  (∀ A B C D p q #o1 #o2.
+    (HTLCOffered( A, B, p, y ) @ #o1) ∧
+    (HTLCOffered( C, D, q, y ) @ #o2)
+   ⇒
+    p = q) ∧
+  (∀ Nx pOut.
+    (HTLCForwarded( Me, Prev, Nx, pIn, pOut, y ) @ #g) ⇒ ⊥) ∧
+  (∀ Nx pOut #f.
+    (HTLCForwarded( Me, Prev, Nx, pIn, pOut, y ) @ #f) ⇒ ¬(#f < #g))"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  simplify
+  solve( (last(#g))  ∥
+         (∃ A B C D p q #o1 #o2.
+           (HTLCOffered( A, B, p, y ) @ #o1) ∧
+           (HTLCOffered( C, D, q, y ) @ #o2)
+          ∧
+           (¬(last(#o2))) ∧ (¬(last(#o1))) ∧ (¬(p = q)))  ∥
+         (∃ Nx pOut.
+           (HTLCForwarded( $Next, $Me, Nx, pIn, pOut, y ) @ #g))  ∥
+         (∃ Nx pOut #f.
+           (HTLCForwarded( $Next, $Me, Nx, pIn, pOut, y ) @ #f)
+          ∧
+           (¬(last(#f))) ∧ (#f < #g)) )
+    case case_1
+    solve( (∃ S #j. (HTLCOffered( S, $Me, a, y ) @ #j) ∧ #j < #g)  ∥
+           (∃ P0 pin0 #j.
+             (HTLCForwarded( $Prev, P0, $Me, pin0, a, y ) @ #j) ∧ #j < #g) )
+      case case_1
+      solve( (∃ S #o. (HTLCOffered( S, $Me.1, pin0, y ) @ #o))  ∥
+             (∃ S M P N pS p1 #o #k.
+               (HTLCOffered( S, M, pS, y ) @ #o) ∧
+               (HTLCForwarded( M, P, N, pS, p1, y ) @ #k)
+              ∧
+               #k < #j) )
+        case case_1
+        by contradiction /* cyclic */
+      next
+        case case_2
+        by contradiction /* cyclic */
+      qed
+    next
+      case case_2
+      solve( (#j = #j.1)  ∥ (#j.1 < #j)  ∥
+             (∃ A B C D p q #o1 #o2.
+               (HTLCOffered( A, B, p, y ) @ #o1) ∧
+               (HTLCOffered( C, D, q, y ) @ #o2)
+              ∧
+               (¬(last(#o2))) ∧ (¬(last(#o1))) ∧ (¬(p = q)))  ∥
+             (∃ Nx pOut.
+               (HTLCForwarded( $Next.1, $Me.1, Nx, pIn, pOut, y ) @ #j.1))  ∥
+             (∃ Nx pOut #f.
+               (HTLCForwarded( $Next.1, $Me.1, Nx, pIn, pOut, y ) @ #f)
+              ∧
+               (¬(last(#f))) ∧ (#f < #j.1)) )
+        case case_1
+        by contradiction /* from formulas */
+      next
+        case case_2
+        solve( (∃ A B C D p q #o1 #o2.
+                 (HTLCOffered( A, B, p, y ) @ #o1) ∧
+                 (HTLCOffered( C, D, q, y ) @ #o2)
+                ∧
+                 (¬(last(#o2))) ∧ (¬(last(#o1))) ∧ (¬(p = q)))  ∥
+               (∃ Nx pOut. (HTLCForwarded( $Me, $Prev, Nx, a, pOut, y ) @ #j))  ∥
+               (∃ Nx pOut #f.
+                 (HTLCForwarded( $Me, $Prev, Nx, a, pOut, y ) @ #f)
+                ∧
+                 (¬(last(#f))) ∧ (#f < #j)) )
+          case case_1
+          by contradiction /* from formulas */
+        next
+          case case_2
+          by contradiction /* cyclic */
+        next
+          case case_3
+          by contradiction /* cyclic */
+        qed
+      next
+        case case_3
+        by contradiction /* from formulas */
+      next
+        case case_4
+        by contradiction /* from formulas */
+      next
+        case case_5
+        by contradiction /* from formulas */
+      qed
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  next
+    case case_3
+    by contradiction /* from formulas */
+  next
+    case case_4
+    by contradiction /* from formulas */
+  qed
+qed
 
-#ifdef NO_OTF
-// Without OutgoingTimesOutFirst an honest forwarder's incoming HTLC can time
-// out before its outgoing one (search did not finish in 30 min).
-lemma Necessity_OTF_Timeout_Order_Broken:
-  exists-trace
-  "Ex P Prev Next pIn pOut y #f #j #k.
-      HTLCForwarded(P, Prev, Next, pIn, pOut, y) @ #f
-    & TimedOut(pOut) @ #j & TimedOut(pIn) @ #k & #k < #j
-    & not (Ex Q #c. LtkCompromised(Q) @ #c)
-    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
-    & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)
-    & not (Ex U q z #e. Refunded(U, q, z) @ #e)"
+// Redemption of an earlier forward's incoming HTLC propagates to every later forward's incoming HTLC.
+lemma Route_Redeemed_Gen [reuse, use_induction,
+                          heuristic={lemmas_first}, hide_lemma=Redeemed_Source,
+                          hide_lemma=SettledHop_From_Forward,
+                          hide_lemma=SettledHop_Uses_Outgoing, hide_lemma=Fulfilled_Source,
+                          hide_lemma=No_Settle_And_Refund_Same_Hop,
+                          hide_lemma=No_Fulfill_On_Forwarded_Incoming,
+                          hide_lemma=SenderSettled_Uses_Fulfilled,
+                          hide_lemma=Fulfilled_Requires_Release,
+                          hide_lemma=HTLC_On_Opened_Channel,
+                          hide_lemma=Skipped_Requires_Compromise,
+                          hide_lemma=Sender_Channel_Redeemed]:
+  all-traces
+  "∀ Me Prev Next pIn pOut M P N pT pT2 y #f #g #r.
+    ((((((HTLCForwarded( Me, Prev, Next, pIn, pOut, y ) @ #f) ∧
+         (HTLCForwarded( M, P, N, pT, pT2, y ) @ #g)) ∧
+        ((#g < #f) ∨ (#g = #f))) ∧
+       (Redeemed( pT, y ) @ #r)) ∧
+      (∀ A B C D p q #o1 #o2.
+        ((HTLCOffered( A, B, p, y ) @ #o1) ∧
+         (HTLCOffered( C, D, q, y ) @ #o2)) ⇒
+        (p = q))) ∧
+     (¬(∃ Q #c. LtkCompromised( Q ) @ #c))) ⇒
+    (∃ #l. Redeemed( pIn, y ) @ #l)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Me Prev Next pIn pOut M P N pT pT2 y #f #g #r.
+  (HTLCForwarded( Me, Prev, Next, pIn, pOut, y ) @ #f) ∧
+  (HTLCForwarded( M, P, N, pT, pT2, y ) @ #g) ∧
+  (Redeemed( pT, y ) @ #r)
+ ∧
+  (((#g < #f) ∨ (#g = #f))) ∧
+  (∀ A B C D p q #o1 #o2.
+    (HTLCOffered( A, B, p, y ) @ #o1) ∧
+    (HTLCOffered( C, D, q, y ) @ #o2)
+   ⇒
+    p = q) ∧
+  (∀ Q #c. (LtkCompromised( Q ) @ #c) ⇒ ⊥) ∧
+  (∀ #l. (Redeemed( pIn, y ) @ #l) ⇒ ⊥)"
+*/
+induction
+  case empty_trace
+  by contradiction /* from formulas */
+next
+  case non_empty_trace
+  simplify
+  solve( (#g < #f)  ∥ (#g = #f) )
+    case case_1
+    solve( (last(#r))  ∥ (last(#f))  ∥
+           (∃ A B C D p q #o1 #o2.
+             (HTLCOffered( A, B, p, y ) @ #o1) ∧
+             (HTLCOffered( C, D, q, y ) @ #o2)
+            ∧
+             (¬(last(#o2))) ∧ (¬(last(#o1))) ∧ (¬(p = q)))  ∥
+           (∃ Q #c. (LtkCompromised( Q ) @ #c) ∧ ¬(last(#c)))  ∥
+           (∃ #l. (Redeemed( pIn, y ) @ #l) ∧ ¬(last(#l))) )
+      case case_1
+      solve( (∃ Q #c. (LtkCompromised( Q ) @ #c))  ∥
+             (∃ #l. (Redeemed( pT2, y ) @ #l)) )
+        case case_1
+        by contradiction /* from formulas */
+      next
+        case case_2
+        solve( (∃ A B C D p q #o1 #o2.
+                 (HTLCOffered( A, B, p, y ) @ #o1) ∧
+                 (HTLCOffered( C, D, q, y ) @ #o2)
+                ∧
+                 ¬(p = q))  ∥
+               (∃ Nx pOut.
+                 (HTLCForwarded( $Next.1, $Me.1, Nx, pT2, pOut, y ) @ #f))  ∥
+               (∃ Nx pOut #f.1.
+                 (HTLCForwarded( $Next.1, $Me.1, Nx, pT2, pOut, y ) @ #f.1)
+                ∧
+                 #f.1 < #f) )
+          case case_1
+          by contradiction /* from formulas */
+        next
+          case case_2
+          by contradiction /* from formulas */
+        next
+          case case_3
+          solve( (last(#l))  ∥ (last(#f))  ∥
+                 (∃ A B C D p q #o1 #o2.
+                   (HTLCOffered( A, B, p, y ) @ #o1) ∧
+                   (HTLCOffered( C, D, q, y ) @ #o2)
+                  ∧
+                   (¬(last(#o2))) ∧ (¬(last(#o1))) ∧ (¬(p = q)))  ∥
+                 (∃ Q #c. (LtkCompromised( Q ) @ #c) ∧ ¬(last(#c)))  ∥
+                 (∃ #l. (Redeemed( pIn, y ) @ #l) ∧ ¬(last(#l))) )
+            case case_1
+            solve( Redeemed( pT, y ) @ #l )
+              case Intermediary_Settle
+              solve( Redeemed( pT2, h(x) ) @ #l )
+                case Intermediary_Settle
+                by contradiction /* from formulas */
+              qed
+            next
+              case Receiver_Fulfill_HTLC
+              solve( Redeemed( pT2, h(x) ) @ #l )
+                case Receiver_Fulfill_HTLC
+                by contradiction /* from formulas */
+              qed
+            qed
+          next
+            case case_2
+            by solve( Redeemed( pT, y ) @ #f )
+          next
+            case case_3
+            by contradiction /* from formulas */
+          next
+            case case_4
+            by contradiction /* from formulas */
+          next
+            case case_5
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_2
+      solve( (∃ S #j. (HTLCOffered( S, $Me, pIn, y ) @ #j) ∧ #j < #f)  ∥
+             (∃ P0 pin0 #j.
+               (HTLCForwarded( $Prev, P0, $Me, pin0, pIn, y ) @ #j) ∧ #j < #f) )
+        case case_1
+        solve( (∃ S #o. (HTLCOffered( S, $Me.1, pT, y ) @ #o))  ∥
+               (∃ S M P N pS p1 #o #k.
+                 (HTLCOffered( S, M, pS, y ) @ #o) ∧
+                 (HTLCForwarded( M, P, N, pS, p1, y ) @ #k)
+                ∧
+                 #k < #g) )
+          case case_1
+          by contradiction /* cyclic */
+        next
+          case case_2
+          by contradiction /* cyclic */
+        qed
+      next
+        case case_2
+        solve( (last(#r))  ∥ ((((#g = #j) ∨ (#j < #g))) ∧ (¬(#g = #j)))  ∥
+               (∃ A B C D p q #o1 #o2.
+                 (HTLCOffered( A, B, p, y ) @ #o1) ∧
+                 (HTLCOffered( C, D, q, y ) @ #o2)
+                ∧
+                 (¬(last(#o2))) ∧ (¬(last(#o1))) ∧ (¬(p = q)))  ∥
+               (∃ Q #c. (LtkCompromised( Q ) @ #c) ∧ ¬(last(#c)))  ∥
+               (∃ #l. (Redeemed( pin0, y ) @ #l) ∧ ¬(last(#l))) )
+          case case_1
+          by solve( Redeemed( pT, y ) @ #f )
+        next
+          case case_2
+          solve( (¬(#j < #g))  ∥
+                 (∃ A B C D p q #o1 #o2.
+                   (HTLCOffered( A, B, p, y ) @ #o1) ∧
+                   (HTLCOffered( C, D, q, y ) @ #o2)
+                  ∧
+                   ¬(p = q))  ∥
+                 (∃ Nx pOut.
+                   (HTLCForwarded( $Me, $Prev, Nx, pIn, pOut, y ) @ #g))  ∥
+                 (∃ Nx pOut #f.
+                   (HTLCForwarded( $Me, $Prev, Nx, pIn, pOut, y ) @ #f) ∧ #f < #g) )
+            case case_1
+            solve( (#g = #j)  ∥ (#j < #g) )
+              case case_1
+              by contradiction /* from formulas */
+            next
+              case case_2
+              by contradiction /* from formulas */
+            qed
+          next
+            case case_2
+            by contradiction /* from formulas */
+          next
+            case case_3
+            by contradiction /* cyclic */
+          next
+            case case_4
+            by contradiction /* cyclic */
+          qed
+        next
+          case case_3
+          by contradiction /* from formulas */
+        next
+          case case_4
+          by contradiction /* from formulas */
+        next
+          case case_5
+          solve( (∃ Q #c. (LtkCompromised( Q ) @ #c))  ∥
+                 (∃ #l. (Redeemed( pIn, y ) @ #l)) )
+            case case_1
+            by contradiction /* from formulas */
+          next
+            case case_2
+            by contradiction /* from formulas */
+          qed
+        qed
+      qed
+    next
+      case case_3
+      by contradiction /* from formulas */
+    next
+      case case_4
+      by contradiction /* from formulas */
+    next
+      case case_5
+      by contradiction /* from formulas */
+    qed
+  next
+    case case_2
+    by contradiction /* from formulas */
+  qed
+qed
+
+// Route_Redeemed_No_Compromise: the settlement-unrolling helpers are hidden
+// (hide_lemma) because eager use of them unrolls settlement chains forever.
+lemma Route_Redeemed_No_Compromise [reuse, use_induction,
+                                    heuristic={lemmas_first}, hide_lemma=Redeemed_Source,
+                                    hide_lemma=SettledHop_From_Forward,
+                                    hide_lemma=SettledHop_Uses_Outgoing,
+                                    hide_lemma=Fulfilled_Source,
+                                    hide_lemma=No_Settle_And_Refund_Same_Hop,
+                                    hide_lemma=No_Fulfill_On_Forwarded_Incoming,
+                                    hide_lemma=Forward_Unique_Per_Incoming,
+                                    hide_lemma=SenderSettled_Uses_Fulfilled,
+                                    hide_lemma=Fulfilled_Requires_Release,
+                                    hide_lemma=HTLC_On_Opened_Channel,
+                                    hide_lemma=Skipped_Requires_Compromise]:
+  all-traces
+  "∀ Me Prev Next pIn pOut S F1 R pSF x #f #s.
+    ((((HTLCForwarded( Me, Prev, Next, pIn, pOut, h(x) ) @ #f) ∧
+       (SenderSettled( S, F1, R, pSF, x ) @ #s)) ∧
+      (∀ A B p #o. (HTLCOffered( A, B, p, h(x) ) @ #o) ⇒ (p = pSF))) ∧
+     (¬(∃ Q #c. LtkCompromised( Q ) @ #c))) ⇒
+    (∃ #l. Redeemed( pIn, h(x) ) @ #l)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Me Prev Next pIn pOut S F1 R pSF x #f #s.
+  (HTLCForwarded( Me, Prev, Next, pIn, pOut, h(x) ) @ #f) ∧
+  (SenderSettled( S, F1, R, pSF, x ) @ #s)
+ ∧
+  (∀ A B p #o. (HTLCOffered( A, B, p, h(x) ) @ #o) ⇒ p = pSF) ∧
+  (∀ Q #c. (LtkCompromised( Q ) @ #c) ⇒ ⊥) ∧
+  (∀ #l. (Redeemed( pIn, h(x) ) @ #l) ⇒ ⊥)"
+*/
+simplify
+solve( (∃ Q #c. (LtkCompromised( Q ) @ #c))  ∥
+       (∃ #l. (Redeemed( pSF, h(x) ) @ #l)) )
+  case case_1
+  by contradiction /* from formulas */
+next
+  case case_2
+  solve( (∃ S #o. (HTLCOffered( S, $Me, pIn, h(x) ) @ #o))  ∥
+         (∃ S M P N pS p1 #o #k.
+           (HTLCOffered( S, M, pS, h(x) ) @ #o) ∧
+           (HTLCForwarded( M, P, N, pS, p1, h(x) ) @ #k)
+          ∧
+           #k < #f) )
+    case case_1
+    by contradiction /* from formulas */
+  next
+    case case_2
+    solve( (∃ A B C D p q #o1 #o2.
+             (HTLCOffered( A, B, p, h(x) ) @ #o1) ∧
+             (HTLCOffered( C, D, q, h(x) ) @ #o2)
+            ∧
+             ¬(p = q))  ∥
+           (∃ Q #c. (LtkCompromised( Q ) @ #c))  ∥
+           (∃ #l. (Redeemed( pSF, h(x) ) @ #l)) )
+      case case_1
+      by contradiction /* from formulas */
+    next
+      case case_2
+      by contradiction /* from formulas */
+    next
+      case case_3
+      solve( (∃ A B C D p q #o1 #o2.
+               (HTLCOffered( A, B, p, h(x) ) @ #o1) ∧
+               (HTLCOffered( C, D, q, h(x) ) @ #o2)
+              ∧
+               ¬(p = q))  ∥
+             (∃ Q #c. (LtkCompromised( Q ) @ #c))  ∥
+             (∃ #l. (Redeemed( pIn, h(x) ) @ #l)) )
+        case case_1
+        by contradiction /* from formulas */
+      next
+        case case_2
+        by contradiction /* from formulas */
+      next
+        case case_3
+        by contradiction /* from formulas */
+      qed
+    qed
+  qed
+qed
+
+// Theorem (any route length n): a single-offer payment that settles while ANY
+// forwarder's own hop is refunded requires a compromise.
+lemma Any_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+  all-traces
+  "∀ S F1 R pSF x Me Prev Next pIn pOut #s #f #r.
+    ((((SenderSettled( S, F1, R, pSF, x ) @ #s) ∧
+       (HTLCForwarded( Me, Prev, Next, pIn, pOut, h(x) ) @ #f)) ∧
+      (RefundHop( pIn, pOut, h(x) ) @ #r)) ∧
+     (∀ A B p #o. (HTLCOffered( A, B, p, h(x) ) @ #o) ⇒ (p = pSF))) ⇒
+    (∃ P #c. LtkCompromised( P ) @ #c)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ S F1 R pSF x Me Prev Next pIn pOut #s #f #r.
+  (SenderSettled( S, F1, R, pSF, x ) @ #s) ∧
+  (HTLCForwarded( Me, Prev, Next, pIn, pOut, h(x) ) @ #f) ∧
+  (RefundHop( pIn, pOut, h(x) ) @ #r)
+ ∧
+  (∀ A B p #o. (HTLCOffered( A, B, p, h(x) ) @ #o) ⇒ p = pSF) ∧
+  (∀ P #c. (LtkCompromised( P ) @ #c) ⇒ ⊥)"
+*/
+simplify
+solve( (∃ A B p #o.
+         (HTLCOffered( A, B, p, h(x) ) @ #o) ∧ ¬(p = pSF))  ∥
+       (∃ Q #c. (LtkCompromised( Q ) @ #c))  ∥
+       (∃ #l. (Redeemed( pIn, h(x) ) @ #l)) )
+  case case_1
+  by contradiction /* from formulas */
+next
+  case case_2
+  by contradiction /* from formulas */
+next
+  case case_3
+  solve( (∃ o. (SettledHop( pIn, o, h(x) ) @ #l))  ∥
+         (∃ R Q. (HTLCFulfilled( R, Q, pIn, h(x) ) @ #l)) )
+    case case_1
+    by contradiction /* from formulas */
+  next
+    case case_2
+    by contradiction /* from formulas */
+  qed
+qed
 #endif
 
 end
