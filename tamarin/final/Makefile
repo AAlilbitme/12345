@@ -73,10 +73,20 @@ define check
 	done
 endef
 
-.PHONY: aux general necessity verify verify-f1 verify-all-traces verify-auto-exists verify-replay verify-one clean help
+.PHONY: all aux general necessity verify verify-f1 verify-all-traces verify-auto-exists verify-replay verify-one clean help
+# All targets share one log file: never run them in parallel.
+.NOTPARALLEL:
 
 verify: verify-all-traces verify-f1 verify-auto-exists verify-replay
 	@echo "==> All lemmas verified."
+
+# Everything, in order (slowest last).  Stops at the first failed lemma.
+all:
+	@$(MAKE) --no-print-directory verify
+	@$(MAKE) --no-print-directory general
+	@$(MAKE) --no-print-directory aux
+	@$(MAKE) --no-print-directory necessity
+	@echo "==> make all finished: verify, general, aux, necessity."
 
 verify-all-traces:
 	@echo "==> Proving $(words $(ALL_TRACES_LEMMAS)) all-traces lemmas (single run)"
@@ -148,7 +158,8 @@ clean:
 	rm -f $(LOG)
 
 help:
-	@echo "make verify            all three groups (default)"
+	@echo "make all               verify + general + aux + necessity, in that order"
+	@echo "make verify            all four groups of lightning.spthy (default)"
 	@echo "make verify-all-traces  $(words $(ALL_TRACES_LEMMAS)) safety lemmas"
 	@echo "make verify-f1          $(words $(F1_LEMMAS)) first-hop characterisation lemmas"
 	@echo "make verify-auto-exists $(words $(AUTO_EXISTS_LEMMAS)) exists-trace lemmas found by --prove"
