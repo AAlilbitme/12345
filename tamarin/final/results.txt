@@ -27,3 +27,8 @@ Caveats: Maude 3.2 is reported as unsupported by Tamarin 1.10; every run reports
 derivation-check timeout warning (benign, same for the unmodified model).
 
 Independently reproduced on the author laptop: make verify FILE=C.spthy MEM=6G -> ALL 55 lemmas verified (32 + 13 + 9 + 1 replay).
+Laptop, csf_final folder as shipped (lightning.spthy, MEM=6G):
+  make verify   -> ALL 55 lemmas verified (32 + 13 + 9 + 1 replay)
+  make general  -> General n-hop theorem verified (24/24)
+  make aux      -> PTLC 5/5, HTLC 3/3, Clock 9/9, Cltv 3/3, timeout 1/1 (21/21)
+  make necessity -> (pending)
