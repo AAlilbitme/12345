@@ -1,0 +1,139 @@
+% macros.tex -- shared preamble for the LN/Tamarin paper.
+% NOTE vs. the original: hyperref is loaded (it was commented out, which
+% broke \renewcommand{\autoref}{\Cref}); the duplicated \definecolor block
+% is deduplicated; a `tamarin' listings language is defined; and the
+% theorem environments are numbered so they can be \Cref'd.
+
+\usepackage{todonotes}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{tabularx}
+\let\comment\undefined
+\usepackage[markup=underlined,final]{changes}
+\usepackage{tikz}
+\usetikzlibrary{positioning,shadows,fit,calc,shapes,backgrounds,arrows.meta}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{listings}
+\usepackage[inline]{enumitem}
+\usepackage{microtype}
+\PassOptionsToPackage{breakurls}{hyperref}
+\usepackage{url}
+\usepackage{soul}
+\usepackage{stfloats}
+\usepackage{comment}
+\usepackage{rotating}
+\usepackage{xspace}
+\usepackage{mathtools}
+\usepackage{subcaption}
+\usepackage{colortbl}
+\usepackage{fontawesome5}
+\usepackage{csquotes}
+\usepackage{cleveref}
+\renewcommand{\autoref}{\Cref}
+\Crefname{section}{Sec.}{Sec.}
+\crefname{figure}{Fig.}{Fig.}
+\Crefname{equation}{Eq.}{Eq.}
+\usepackage{placeins}
+\usepackage{xparse}
+\usepackage{mleftright}\mleftright
+\usepackage{mathpartir}
+\usepackage{bbm}
+
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{amssymb}
+\usetikzlibrary{arrows.meta,calc,positioning,backgrounds,fit}
+
+% ---------------------------------------------------------------- colours
+\definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}
+\definecolor{tacticcolor}{rgb}{0.0, 0.1, 0.6}
+\definecolor{commentcolor}{rgb}{0.25, 0.5, 0.35}
+\definecolor{symbolcolor}{rgb}{0.0, 0.1, 0.6}
+\definecolor{sortcolor}{rgb}{0.1, 0.5, 0.1}
+\definecolor{attributecolor}{rgb}{0.7, 0.1, 0.1}
+\definecolor{stringcolor}{rgb}{0.5, 0.15, 0.55}
+
+% figure palette
+\definecolor{dgreen}{HTML}{14532D}   % actor boxes / headings
+\definecolor{mgreen}{HTML}{1E7A46}   % honest messages
+\definecolor{lgreen}{HTML}{DCEBE0}   % round bands / timeline bars
+\definecolor{cOrange}{HTML}{E58A15}  % timeout / refund
+\definecolor{cRed}{HTML}{A81616}     % attack (reachable)
+\definecolor{cGray}{HTML}{7A7A7A}    % footnotes
+\definecolor{cRule}{HTML}{CFCFCF}    % separators
+
+% ------------------------------------------------------------- shorthands
+\newcommand{\ck}{\checkmark}
+\newcommand{\md}{\,\textperiodcentered\,}
+
+% ------------------------------------------------ Tamarin code listings
+\lstdefinelanguage{tamarin}{
+  morekeywords={rule,lemma,restriction,theory,begin,end,builtins,
+                All,Ex,exists,trace,not,let,in,reuse,use,induction},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]',
+}
+\lstset{
+  language=tamarin,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{keywordcolor}\bfseries,
+  commentstyle=\color{commentcolor}\itshape,
+  stringstyle=\color{stringcolor},
+  columns=fullflexible,
+  breaklines=true,
+  xleftmargin=4pt,
+  frame=none,
+  aboveskip=5pt,belowskip=5pt,
+}
+
+% -------------------------------------------------------------- theorems
+\theoremstyle{plain}
+\newtheorem{thrm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{inv}{Invariant}
+\Crefname{thrm}{Theorem}{Theorems}
+\Crefname{defn}{Definition}{Definitions}
+\Crefname{inv}{Invariant}{Invariants}
+
+\setlength{\marginparwidth}{1.45cm}
+
+\newcommand{\ie}{i.e.}
+\newcommand{\eg}{e.g.}
+\newcommand{\etal}{et al.}
+
+\newcommand{\MM}[1]{\todo[bordercolor=red,linecolor=red,backgroundcolor=red!25,size=\tiny,author={Matteo}]{#1}}
+\newcommand{\SJ}[1]{\todo[bordercolor=green,linecolor=green,backgroundcolor=green!25,size=\tiny,author={Simon}]{#1}}
+\newcommand{\SG}[1]{\todo[bordercolor=blue,linecolor=blue,backgroundcolor=blue!25,size=\tiny,author={Sana}]{#1}}
+\definechangesauthor[color=green]{SG}
+\definechangesauthor[color=red]{MM}
+\setcommentmarkup{\todo[color={authorcolor!20},size=\tiny]{#3: #1}}
+
+\newcommand{\alert}[1]{{\color{red} #1 }}
+\newcommand*\important[1]{\tikz[baseline=(char.base)]{
+    \node[shape=rectangle,fill=yellow!45,text=red,font=\bfseries,inner sep=0.4pt] (char) {\texttt{\underline{#1}}};}}
+\newcommand{\TODO}{\important{[TODO]}}
+\newcommand{\code}[1]{\texttt{\hyphenchar\font=`\-\small#1}}
+\newcommand{\codesc}[1]{\texttt{\hyphenchar\font=`\-\scriptsize#1}}
+\newcommand{\CR}[1]{}
+
+\newcommand{\bfparagraph}[1]{\smallskip\noindent\textbf{#1}.\,}
+\newcommand{\itparagraph}[1]{\smallskip\noindent\textit{#1}.\,}
+\newcommand{\medbfparagraph}[1]{\medskip\noindent\textbf{#1}.\,}
+
+% ------------------------------------------------------------ tool names
+\newcommand{\mLN}{Lightning Network\xspace}
+\newcommand{\mproverif}{\textsc{ProVerif}\xspace}
+\newcommand{\mtamarin}{\textsc{Tamarin}\xspace}
+\newcommand{\mcryptoverif}{\textsc{CryptoVerif}\xspace}
+\newcommand{\mcryptovampire}{\textsc{CryptoVampire}\xspace}
+\newcommand{\msquirrel}{\textsc{Squirrel}\xspace}
+\newcommand{\measycrypt}{\textsc{EasyCrypt}\xspace}
+\newcommand{\mwhy}{\textsc{Why3}\xspace}
+\newcommand{\mrocq}{\textsc{Rocq}\xspace}
+
+\hyphenation{block-chain Trace-Event}

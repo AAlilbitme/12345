@@ -1,0 +1,1217 @@
+theory multihop_nhop
+begin
+
+/*
+  Lightning multi-hop payments: payment channels + multi-hop HTLC routing.
+
+  Based on Simon's MR model (multiN_modified).  Changes w.r.t. that model:
+    * Protocol (one change): the invoice is domain-separated,
+        invoice = <'invoice', R, S, y>   (Receiver_Create_Invoice, Sender_Offer_HTLC)
+      Without the tag a channel-handshake signature can be accepted as an invoice.
+    * Annotation-only actions (no change in behaviour): OfferFor, UsedFulfilled,
+      SettledHop, RefundHop, Skipped.  They let lemmas talk about these events.
+    * Multihop_Payment_Possible is now Multihop_Routing_Reachable (it also
+      excludes claims/settlements, so --prove finds the trace automatically).
+    * New lemmas: non-vacuity (Sanity_*), Intermediary_Never_Loses_Strong,
+      Offer_Requires_Invoice, Preimage_Never_Known, and the first-hop wormhole
+      characterisation (First_Hop_Skip_Requires_Compromise + helpers).
+
+  Verification (Tamarin 1.10): every lemma verifies with --prove except
+  Wormhole_Fee_Theft_Reachable, which replays the saved proof below
+  (tamarin-prover --lemma=Wormhole_Fee_Theft_Reachable).
+  NOTE: lemma ORDER matters -- [reuse] lemmas are only used by later lemmas;
+  moving the helper block earlier makes some proofs much slower.
+*/
+
+builtins: hashing, signing, natural-numbers
+
+// ---------------------------------------------------------------------------
+// Keys and compromise
+// ---------------------------------------------------------------------------
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A, ~ltk) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk), !Compromised($A) ]
+
+// ---------------------------------------------------------------------------
+// Channel opening: funds, proposal handshake, initial states
+// ---------------------------------------------------------------------------
+
+rule Acquire_funds:
+    [ Fr(~f) ]
+    --[ FundsAcquired($A, ~f) ]->
+    [ Wallet($A, ~f) ]
+
+rule A_Send_Proposal:
+    let proposal = <'proposal', $A, $B, ~ptr>
+        sigA     = sign(proposal, ltkA)
+    in
+    [ Fr(~ptr), !Ltk($A, ltkA) ]
+    --[ A_ProposalSent($A, $B, ~ptr) ]->
+    [ A_WaitAck($A, $B, ~ptr),
+      Out(<'proposal', $A, $B, ~ptr, sigA>) ]
+
+rule B_Recv_Proposal:
+    let proposal = <'proposal', $A, $B, ptr>
+        sigB     = sign(proposal, ltkB)
+    in
+    [ !Ltk($B, ltkB), !Pk($A, pkA),
+      In(<'proposal', $A, $B, ptr, sigA>) ]
+    --[ ProposalExchange($A, $B, ptr),
+        Eq(verify(sigA, proposal, pkA), true) ]->
+    [ !ProposalCommitted($A, $B, ptr),
+      Out(<'proposal_ack', $A, $B, ptr, sigB>) ]
+
+rule A_Recv_From_B:
+    let proposal = <'proposal', $A, $B, ptr>
+    in
+    [ A_WaitAck($A, $B, ptr),
+      !Pk($B, pkB),
+      In(<'proposal_ack', $A, $B, ptr, sigB>) ]
+    --[ A_Received($A, $B, ptr),
+        Eq(verify(sigB, proposal, pkB), true) ]->
+    [ !A_HandshakeDone($A, $B, ptr) ]
+
+rule Create_State_A:
+    let commitA0 = <'commit', ptr, $A, $B, '0', h(~sA0)>
+        sigA0    = sign(commitA0, ltkA)
+    in
+    [ Fr(~sA0), !Ltk($A, ltkA),
+      !A_HandshakeDone($A, $B, ptr) ]
+    --[ StateCreated($A, '0', commitA0) ]->
+    [ CommittedStateA($A, $B, ptr, '0', ~sA0, commitA0, sigA0) ]
+
+rule Create_State_B:
+    let commitB0 = <'commit', ptr, $B, $A, '0', h(~sB0)>
+        sigB0    = sign(commitB0, ltkB)
+    in
+    [ Fr(~sB0), !Ltk($B, ltkB),
+      !ProposalCommitted($A, $B, ptr) ]
+    --[ StateCreated($B, '0', commitB0) ]->
+    [ CommittedStateB($A, $B, ptr, '0', ~sB0, commitB0, sigB0) ]
+
+rule Both_States_Committed:
+    [ CommittedStateA($A, $B, ptr, '0', sA0, commitA0, sigA0),
+      CommittedStateB($A, $B, ptr, '0', sB0, commitB0, sigB0),
+      !Pk($A, pkA), !Pk($B, pkB) ]
+    --[ Stage1Complete($A, $B, ptr),
+        Eq(verify(sigA0, commitA0, pkA), true),
+        Eq(verify(sigB0, commitB0, pkB), true) ]->
+    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0) ]
+
+rule Lock_Funds_And_Open:
+    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0),
+      Wallet($A, ~fA), Wallet($B, ~fB) ]
+    --[ ChannelOpen($A, $B, ptr), FundsLocked($A, $B, ptr),
+        NewStateBuilt($A, $B, ptr, '0', ~fA, ~fB) ]->
+    [ StateA($A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB),
+      StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
+      !ValidOnChain(ptr),
+      !ChannelRecord(ptr, $A, $B),
+      !ChannelConnect(ptr, $A, $B),
+      !ChannelConnect(ptr, $B, $A),
+      Mutex(ptr) ]
+
+// ---------------------------------------------------------------------------
+// Channel updates and revocation
+// ---------------------------------------------------------------------------
+
+rule Update_State:
+    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
+        newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
+        sigAnew    = sign(newCommitA, ltkA)
+        sigBnew    = sign(newCommitB, ltkB)
+    in
+    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
+      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
+      In(<fA_new, fB_new>) ]
+    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new) ]
+
+rule Revoke_Old_Secret:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !Pk($A, pkA), !Pk($B, pkB) ]
+    --[ StateUpdate($A, $B, ptr, n_new),
+        Revoke($A, n_old, sAold),
+        Revoke($B, n_old, sBold),
+        Eq(verify(sigAnew, newCommitA, pkA), true),
+        Eq(verify(sigBnew, newCommitB, pkB), true) ]->
+    [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
+      StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+
+// ---------------------------------------------------------------------------
+// Publishing, closing, punishment and claiming funds
+// ---------------------------------------------------------------------------
+
+rule Publish_Old_Grace_Period_A:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ PublishOldBeforeRevocation($A, n_old),
+        PublishState($A, n_old),
+        OnChainDelayedProduce($A, n_old),
+        OnChainInstantProduce($B, n_old) ]->
+    [ OnChainDelayed($A, n_old, oldCommitA),
+      OnChainInstant($B, n_old, oldCommitA) ]
+
+rule Publish_Old_Grace_Period_B:
+    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ PublishOldBeforeRevocation($B, n_old),
+        PublishState($B, n_old),
+        OnChainDelayedProduce($B, n_old),
+        OnChainInstantProduce($A, n_old) ]->
+    [ OnChainDelayed($B, n_old, oldCommitB),
+      OnChainInstant($A, n_old, oldCommitB) ]
+
+rule Publish_Current_A:
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB), !ValidOnChain(ptr) ]
+    --[ Publish($A, n, commitA),
+        PublishState($A, n),
+        OnChainDelayedProduce($A, n),
+        OnChainInstantProduce($B, n) ]->
+    [ OnChainDelayed($A, n, commitA),
+      OnChainInstant($B, n, commitA) ]
+
+rule Publish_Current_B:
+    [ StateB($A, $B, ptr, n, sB, commitB, fA, fB), !ValidOnChain(ptr) ]
+    --[ Publish($B, n, commitB),
+        PublishState($B, n),
+        OnChainDelayedProduce($B, n),
+        OnChainInstantProduce($A, n) ]->
+    [ OnChainDelayed($B, n, commitB),
+      OnChainInstant($A, n, commitB) ]
+
+rule Publish_Pending_A:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ Publish($A, n_new, newCommitA),
+        PublishFromPending($A, n_old, n_new),
+        OnChainDelayedProduce($A, n_new),
+        OnChainInstantProduce($B, n_new) ]->
+    [ OnChainDelayed($A, n_new, newCommitA),
+      OnChainInstant($B, n_new, newCommitA) ]
+
+rule Publish_Pending_B:
+    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !ValidOnChain(ptr) ]
+    --[ Publish($B, n_new, newCommitB),
+        PublishFromPending($B, n_old, n_new),
+        OnChainDelayedProduce($B, n_new),
+        OnChainInstantProduce($A, n_new) ]->
+    [ OnChainDelayed($B, n_new, newCommitB),
+      OnChainInstant($A, n_new, newCommitB) ]
+
+rule Honest_Close:
+    let closetx = <'commit', ptr, $A, $B, n, fA, fB>
+        signA   = sign(closetx, ltkA)
+        signB   = sign(closetx, ltkB)
+    in
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB),
+      StateB($A, $B, ptr, n, sB, commitB, fA, fB),
+      !ValidOnChain(ptr),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      !Pk($A, pkA),   !Pk($B, pkB) ]
+    --[ Close($A, $B, ptr, n),
+        OnChainInstantProduce($A, n),
+        OnChainInstantProduce($B, n),
+        Eq(verify(signA, closetx, pkA), true),
+        Eq(verify(signB, closetx, pkB), true) ]->
+    [ OnChainInstant($A, n, closetx),
+      OnChainInstant($B, n, closetx) ]
+
+rule Publish_Revoked_A:
+    [ !ChannelRecord(ptr, $A, $B),
+      !ValidOnChain(ptr),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
+    --[ PublishRevoked($A, n_old, oldCommitA),
+        Cheat($A, n_old) ]->
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
+
+rule Publish_Revoked_B:
+    [ !ChannelRecord(ptr, $A, $B),
+      !ValidOnChain(ptr),
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+    --[ PublishRevoked($B, n_old, oldCommitB),
+        Cheat($B, n_old) ]->
+    [ OnChainCheat($B, $A, n_old, oldCommitB),
+      RevealedSecret($B, n_old, sBold, oldCommitB) ]
+
+rule Punish_A:
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
+    --[ Punish($B, $A, n_old) ]->
+    [ AllFundsTo($B) ]
+
+rule Punish_B:
+    [ OnChainCheat($B, $A, n_old, oldCommitB),
+      RevealedSecret($B, n_old, sBold, oldCommitB) ]
+    --[ Punish($A, $B, n_old) ]->
+    [ AllFundsTo($A) ]
+
+rule Instant_Funds_A:
+    [ OnChainInstant($A, n, txContent) ]
+    --[ FundsSettled($A, n), SettledTx($A, txContent) ]->
+    [ ]
+
+rule Instant_Funds_B:
+    [ OnChainInstant($B, n, txContent) ]
+    --[ FundsSettled($B, n), SettledTx($B, txContent) ]->
+    [ ]
+
+rule Claim_Funds_A:
+    [ OnChainDelayed($A, n, txContent) ]
+    --[ ClaimFunds($A, n), CSVPassed($A, n), SettledTx($A, txContent) ]->
+    [ FundsTo($A, n) ]
+
+rule Claim_Funds_B:
+    [ OnChainDelayed($B, n, txContent) ]
+    --[ ClaimFunds($B, n), CSVPassed($B, n), SettledTx($B, txContent) ]->
+    [ FundsTo($B, n) ]
+
+// ---------------------------------------------------------------------------
+// Payments: invoice, HTLC offer, forwarding, settlement, refund
+// ---------------------------------------------------------------------------
+
+rule Receiver_Create_Invoice:
+    let y = h(~x)
+        invoice = <'invoice', $Receiver, $Sender, y>   // tagged: domain separation
+        sigR    = sign(invoice, ltkR)
+    in
+    [ Fr(~x), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y),
+        SecretPreimage($Receiver, ~x) ]->
+    [ ReceiverInv($Receiver, $Sender, ~x),
+      Out(<'SecretRS', invoice, sigR>) ]
+
+rule Sender_Offer_HTLC:
+    let invoice = <'invoice', $Receiver, $Sender, y>   // tagged: domain separation
+    in
+    [ In(<'SecretRS', invoice, sigR>),
+      !Pk($Receiver, pkR),
+      !Ltk($Sender, ltkS),
+      !ChannelConnect(ptrSF, $Sender, $Forward1),
+      Mutex(ptrSF) ]
+    --[ HTLCOffered($Sender, $Forward1, ptrSF, y),
+        OfferFor($Sender, $Receiver, ptrSF, y),   // annotation: names the receiver
+        HTLCAdded(ptrSF, y),
+        Neq($Sender, $Forward1),
+        Neq($Sender, $Receiver),
+        Neq($Forward1, $Receiver),
+        Eq(verify(sigR, invoice, pkR), true) ]->
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
+      Route($Sender, $Forward1, ptrSF, y),
+      !RouteInfo($Sender, $Forward1, ptrSF, y) ]
+
+rule Forward_HTLC:
+    [ Route($Prev, $Me, ptrIn, y),
+      !ChannelConnect(ptrOut, $Me, $Next),
+      Mutex(ptrOut),
+      In(%vIn), In(%fee), In(%vOut) ]
+    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y),
+        HTLCAdded(ptrOut, y),
+        FeeCharged($Me, y, %fee),
+        Eq(%vIn,  %vOut %+ %fee),
+        Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]->
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+      Route($Me, $Next, ptrOut, y),
+      !RouteInfo($Me, $Next, ptrOut, y) ]
+
+rule Receiver_Fulfill_HTLC:
+    [ Route($Prev, $Receiver, ptrIn, y),
+      ReceiverInv($Receiver, $Sender, x) ]
+    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y),
+        PreimageReleased($Receiver, x),
+        Redeemed(ptrIn, y),
+        Old(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Fulfilled(ptrIn, x), Mutex(ptrIn) ]
+
+rule Intermediary_Settle:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+      Fulfilled(ptrOut, x) ]
+    --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
+        UsedFulfilled(ptrOut, x),   // annotation: which Fulfilled fact was consumed
+        SettledHop(ptrIn, ptrOut, y),   // annotation: this hop settled
+        FeeEarned($Me, ptrIn, ptrOut, y, %fee),
+        Redeemed(ptrIn, y),
+        Old(ptrIn, y),
+        FulfilledProduced(ptrIn, x),
+        Eq(h(x), y) ]->
+    [ Fulfilled(ptrIn, x), Mutex(ptrIn) ]
+
+rule Sender_Settle:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
+      Fulfilled(ptrSF, x) ]
+    --[ SenderSettled($Sender, $Forward1, $Receiver, ptrSF, x),
+        UsedFulfilled(ptrSF, x),   // annotation: which Fulfilled fact was consumed
+        Eq(h(x), y) ]->
+    [ ]
+
+rule Open_Timeout:
+    [ !ChannelConnect(ptr, A, B) ] --[ TimedOut(ptr) ]-> [ !Timeout(ptr) ]
+
+rule Sender_Timeout_Refund:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y), !Timeout(ptrSF) ]
+    --[ Refunded($Sender, ptrSF, y),
+        Old(ptrSF, y) ]->
+    [ Mutex(ptrSF) ]
+
+rule Intermediary_Timeout_Refund:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+      !Timeout(ptrOut) ]
+    --[ Refunded($Me, ptrOut, y),
+        RefundHop(ptrIn, ptrOut, y),   // annotation: this hop refunded
+        Old(ptrOut, y) ]->
+    [ Mutex(ptrOut) ]
+
+// ---------------------------------------------------------------------------
+// Wormhole attacker: two compromised parties on the route skip the honest hops in between
+// ---------------------------------------------------------------------------
+
+rule AttackerSkip:
+    [ Fulfilled(ptrExit, x),
+      !RouteInfo(ExitAtt, Next, ptrExit, y)[-,no_precomp],
+      !RouteInfo(EntryAtt, Skipped, ptrSkip, y)[-,no_precomp],
+      !Compromised(ExitAtt),
+      !Compromised(EntryAtt) ]
+    --[ FulfilledProduced(ptrSkip, x),
+        Skipped(ptrSkip, x),   // annotation: marks a wormhole skip
+        Eq(h(x), y) ]->
+    [ Fulfilled(ptrSkip, x) ]
+
+// ---------------------------------------------------------------------------
+// Restrictions (well-formedness)
+// ---------------------------------------------------------------------------
+
+restriction OneResolutionPerHTLC:
+    "All ptr y #i #j. Old(ptr, y) @ #i & Old(ptr, y) @ #j ==> #i = #j"
+
+restriction OneHTLCPerHashPerChannel:
+    "All ptr y #m #n. HTLCAdded(ptr, y) @ #m & HTLCAdded(ptr, y) @ #n ==> #m = #n"
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction OneTimeoutPerPtr:
+    "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
+
+restriction OneChannelPerPtr:
+    "All A B C D ptr #i #j.
+       ChannelOpen(A, B, ptr) @ #i
+     & ChannelOpen(C, D, ptr) @ #j
+     ==> #i = #j"
+
+// ---------------------------------------------------------------------------
+// Restrictions (liveness / timing assumptions)
+// ---------------------------------------------------------------------------
+
+restriction RedeemBeforeTimeout:
+    "All ptr y #i #j.
+        Redeemed(ptr, y) @ #i & TimedOut(ptr) @ #j ==> #i < #j"
+
+restriction OutgoingTimesOutFirst:
+    "All P Prev Next ptrIn ptrOut y #f #k.
+        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrIn) @ #k
+      & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
+     ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
+
+restriction IntermediaryMustClaim:
+    "All P Prev Next ptrIn ptrOut y #f #i #k.
+        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & TimedOut(ptrIn)  @ #k
+      & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
+     ==> Ex #l. Redeemed(ptrIn, y) @ #l"
+
+// ---------------------------------------------------------------------------
+// Lemmas
+// ---------------------------------------------------------------------------
+
+lemma ForwardTimeGap [reuse]:
+    "All P Prev Next ptrIn ptrOut y #f #j #k.
+        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrOut) @ #j
+      & TimedOut(ptrIn)  @ #k
+      & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
+     ==> #j < #k"
+
+tactic: route_info_first
+presort: s
+prio:
+    regex "RouteInfo" | regex "Compromised"
+
+tactic: sender_pending
+presort: s
+prio:
+    regex "Refunded" | regex "SenderPending" | regex "IntermediaryPending"
+
+lemma state_update [use_induction]:
+    "All A B ptr n #i.
+       StateUpdate(A, B, ptr, n) @ #i
+     ==> Ex #j. ChannelOpen(A, B, ptr) @ #j & #j < #i"
+
+lemma delayed_funds:
+    "All A n #i.
+       ClaimFunds(A, n) @ #i
+     ==> Ex #j. OnChainDelayedProduce(A, n) @ #j & #j < #i"
+
+lemma instant_funds:
+    "All A n #i.
+       FundsSettled(A, n) @ #i
+     ==> Ex #j. OnChainInstantProduce(A, n) @ #j & #j < #i"
+
+lemma settlement_is_traceable:
+    "All A n #i.
+       FundsSettled(A, n) @ #i
+     ==> Ex tx #j. SettledTx(A, tx) @ #j & #j = #i"
+
+lemma Protocol_execution:
+    exists-trace
+    "Ex A B ptr n fA fB #i #j #k #l.
+        ChannelOpen(A, B, ptr) @ #i
+      & NewStateBuilt(A, B, ptr, n, fA, fB) @ #j
+      & StateUpdate(A, B, ptr, n) @ #k
+      & Close(A, B, ptr, n) @ #l
+      & #i < #j & #j < #k & #k < #l
+      & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))"
+
+lemma No_Punishment_Without_Cheating:
+    "All A B n #i.
+        Punish(B, A, n) @ #i
+     ==> (Ex #k. Cheat(A, n) @ #k & #k < #i)
+       | (Ex #j. LtkCompromised(A) @ #j & #j < #i)"
+
+lemma Cooperative_Close_Execution:
+    exists-trace
+    "Ex A B ptr n #k #i.
+        ChannelOpen(A, B, ptr) @ #k & Close(A, B, ptr, n) @ #i & #k < #i
+      & not (Ex A2 B2 ptr2 n2 #j. StateUpdate(A2, B2, ptr2, n2) @ #j)
+      & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))"
+
+lemma Funds_Locked_Before_Update [use_induction]:
+    "All A B ptr n #i.
+       StateUpdate(A, B, ptr, n) @ #i
+     ==> Ex #j. FundsLocked(A, B, ptr) @ #j & #j < #i"
+
+lemma Update_Requires_Negotiation [use_induction]:
+    "All A B ptr n #i.
+         StateUpdate(A, B, ptr, n) @ #i
+     ==> Ex fA fB #j. NewStateBuilt(A, B, ptr, n, fA, fB) @ #j & #j < #i"
+
+lemma OneOutcomePerHTLC [reuse]:
+    "All Up ptr y #i #j.
+       Redeemed(ptr, y) @ #i & Refunded(Up, ptr, y) @ #j ==> F"
+
+lemma Ltk_Known_Implies_Compromised [reuse]:
+    "All A ltk #i #j.
+        KeyGen(A, ltk) @ #i
+      & !KU(ltk) @ #j
+     ==> Ex #k. LtkCompromised(A) @ #k"
+
+lemma Invoice_Released_Once [reuse]:
+    "All R x #i #j.
+        PreimageReleased(R, x) @ #i
+      & PreimageReleased(R, x) @ #j
+     ==> #i = #j"
+
+lemma Distinct_Parties_Configuration:
+    exists-trace
+    "Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #t1 #t2 #t3.
+        ChannelOpen(S, F1, ptrSF1) @ #t1
+      & ChannelOpen(F1, F2, ptrF1F2) @ #t2
+      & ChannelOpen(F2, R, ptrF2R) @ #t3
+      & not (S = F1) & not (S = F2) & not (S = R)
+      & not (F1 = F2) & not (F1 = R) & not (F2 = R)
+      & not (Ex P #i. LtkCompromised(P) @ #i)
+      & not (Ex P Q p n #j. StateUpdate(P, Q, p, n) @ #j)
+      & not (Ex P n #k. PublishState(P, n) @ #k)
+      & not (Ex P Q p n #l. Close(P, Q, p, n) @ #l)
+      & not (Ex P n #m. Cheat(P, n) @ #m)
+      & not (Ex Me Prev Next pi po y #n. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #n)
+      & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))"
+
+lemma Refund_Possible:
+    exists-trace
+    "Ex S F1 R p y #i #j #k.
+        InvoiceCreated(R, S, y) @ #j
+      & HTLCOffered(S, F1, p, y) @ #k
+      & Refunded(S, p, y) @ #i
+      & #j < #k & #k < #i
+      & not (Ex A MidP B p2 x #l. SenderSettled(A, MidP, B, p2, x) @ #l)
+      & not (Ex P #r. LtkCompromised(P) @ #r)
+      & not (Ex Me Prev Next pi po y2 #t1. HTLCForwarded(Me, Prev, Next, pi, po, y2) @ #t1)
+      & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))"
+
+// Holds trivially: x is never output, so K(x) never happens (see
+// Preimage_Never_Known).  Kept from the original model.
+lemma Preimage_Secret_Until_Released:
+    "All R x #i #j.
+        SecretPreimage(R, x) @ #i
+      & K(x) @ #j
+      & #i < #j
+     ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #j"
+
+lemma Invoice_Has_Secret_Preimage [reuse]:
+    "All R S x #i.
+        InvoiceCreated(R, S, h(x)) @ #i
+     ==> SecretPreimage(R, x) @ #i"
+
+lemma HTLC_On_Opened_Channel [reuse, use_induction]:
+    "All ptr y #i.
+        HTLCAdded(ptr, y) @ #i
+     ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
+
+lemma Fulfilled_Requires_Release [reuse, use_induction, heuristic=S]:
+    "All ptr x #i.
+        FulfilledProduced(ptr, x) @ #i
+     ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"
+
+lemma Settle_Requires_Receiver_Release:
+    "All S F1 R ptr x #i #j.
+        SenderSettled(S, F1, R, ptr, x) @ #i
+      & InvoiceCreated(R, S, h(x)) @ #j
+     ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
+
+lemma Claim_Requires_Release [use_induction]:
+    "All MidP InP ptrIn R x #i #j.
+        IntermediaryClaimed(MidP, InP, ptrIn, x) @ #i
+      & SecretPreimage(R, x) @ #j
+     ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
+
+lemma Forward_Requires_Incoming [use_induction]:
+    "All Me Prev Next ptrIn ptrOut y #i.
+        HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #i
+     ==> (Ex S #j. HTLCOffered(S, Me, ptrIn, y) @ #j & #j < #i)
+       | (Ex P0 pin0 #j. HTLCForwarded(Prev, P0, Me, pin0, ptrIn, y) @ #j & #j < #i)"
+
+lemma Redeem_Requires_Receiver_Release [use_induction]:
+    "All ptr y #i.
+        Redeemed(ptr, y) @ #i
+     ==> Ex R x #k. PreimageReleased(R, x) @ #k & h(x) = y"
+
+lemma Settle_Excludes_Sender_Refund [heuristic={sender_pending}]:
+    "All S F1 R ptr x #i.
+        SenderSettled(S, F1, R, ptr, x) @ #i
+     ==> not (Ex #j. Refunded(S, ptr, h(x)) @ #j)"
+
+lemma Invoice_Authenticates_Settlement:
+    "All S F1 R ptr x #i.
+        SenderSettled(S, F1, R, ptr, x) @ #i
+     ==> (Ex #j. InvoiceCreated(R, S, h(x)) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(R) @ #r & #r < #i)"
+
+lemma Forged_Invoice_Requires_Key_Compromise:
+    exists-trace
+    "Ex S F1 R ptr x #i #r.
+        SenderSettled(S, F1, R, ptr, x) @ #i
+      & LtkCompromised(R) @ #r
+      & not (Ex #j. InvoiceCreated(R, S, h(x)) @ #j)
+      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u)"
+
+lemma Loss_Requires_Inaction:
+    "All P Prev Next Up ptrIn ptrOut y #i #j #k.
+        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i
+      & Redeemed(ptrOut, y) @ #j
+      & Refunded(Up, ptrIn, y) @ #k
+     ==> not (Ex #l. Redeemed(ptrIn, y) @ #l)"
+
+lemma Refund_Requires_Timeout [reuse]:
+    "All Up ptr y #i.
+        Refunded(Up, ptr, y) @ #i
+     ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
+
+lemma Intermediary_Never_Loses_Under_Liveness:
+    "All P Prev Next Up ptrIn ptrOut y #i #j #k.
+        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i
+      & Redeemed(ptrOut, y) @ #j
+      & Refunded(Up, ptrIn, y) @ #k
+     ==> Ex #l. LtkCompromised(P) @ #l"
+
+lemma Payment_Atomicity_Under_Liveness:
+    "All F1 F2 Prev1 Next1 Prev2 Next2 ptrSF1 ptrF1F2 ptrF2R y #i #j #k.
+        HTLCForwarded(F1, Prev1, Next1, ptrSF1, ptrF1F2, y) @ #i
+      & HTLCForwarded(F2, Prev2, Next2, ptrF1F2, ptrF2R, y) @ #j
+      & Redeemed(ptrF2R, y) @ #k
+      & (not Ex P #l. LtkCompromised(P) @ #l)
+     ==> not (Ex Up #m. Refunded(Up, ptrSF1, y) @ #m)"
+
+lemma Timeout_Race_Blocked:
+    "not (Ex P Prev Next Up ptrIn ptrOut y #l #i #j #k.
+        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #l
+      & TimedOut(ptrIn)     @ #k
+      & Refunded(Up, ptrIn, y)  @ #j
+      & Redeemed(ptrOut, y) @ #i
+      & #k < #i
+      & not (Ex #c. LtkCompromised(P) @ #c & #c < #k))"
+
+// Routing phase only: the payment reaches the receiver over two forwarders
+// (nobody settles).  End-to-end completion: Sanity_Atomic_Payment_Completes.
+lemma Multihop_Routing_Reachable:
+    exists-trace
+    "Ex S F1 F2 R p0 p1 p2 x #t2 #t3 #t4 #t5.
+        HTLCOffered(S, F1, p0, h(x)) @ #t2
+      & HTLCForwarded(F1, S, F2, p0, p1, h(x)) @ #t3
+      & HTLCForwarded(F2, F1, R, p1, p2, h(x)) @ #t4
+      & HTLCFulfilled(R, F2, p2, h(x)) @ #t5
+      & #t2 < #t3 & #t3 < #t4 & #t4 < #t5
+      & not (Ex A B p y #u. HTLCOffered(A, B, p, y) @ #u & not (A = S & B = F1))
+      & not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u
+              & not (Me = F1 & Prev = S & Next = F2)
+              & not (Me = F2 & Prev = F1 & Next = R))
+      & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+      & not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)
+      & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
+
+// Wormhole attack (reachable): two compromised parties Att1, Att2 skip the honest
+// Indiana; the payment completes while Indiana is refunded and earns no fee.
+// Saved proof script (replay with --lemma); branches not on the trace path
+// are "by sorry", which is fine for an exists-trace lemma.
+lemma Wormhole_Fee_Theft_Reachable:
+  exists-trace
+  "∃ Alice Bob Att1 Att2 Indiana ptrAliceAtt1 ptrAtt1Indiana
+     ptrIndianaAtt2 ptrAtt2Bob x #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.
+    (((((((((((((((InvoiceCreated( Bob, Alice, h(x) ) @ #t1) ∧
+                  (HTLCOffered( Alice, Att1, ptrAliceAtt1, h(x) ) @ #t2)) ∧
+                 (HTLCForwarded( Att1, Alice, Indiana, ptrAliceAtt1, ptrAtt1Indiana,
+                                 h(x)
+                  ) @ #t3)) ∧
+                (HTLCForwarded( Indiana, Att1, Att2, ptrAtt1Indiana,
+                                ptrIndianaAtt2, h(x)
+                 ) @ #t4)) ∧
+               (HTLCForwarded( Att2, Indiana, Bob, ptrIndianaAtt2, ptrAtt2Bob,
+                               h(x)
+                ) @ #t5)) ∧
+              (HTLCFulfilled( Bob, Att2, ptrAtt2Bob, h(x) ) @ #t6)) ∧
+             (SenderSettled( Alice, Att1, Bob, ptrAliceAtt1, x ) @ #t7)) ∧
+            (Refunded( Indiana, ptrIndianaAtt2, h(x) ) @ #t8)) ∧
+           (¬(Indiana = Alice))) ∧
+          (¬(Indiana = Bob))) ∧
+         (¬(Att1 = Att2))) ∧
+        (¬(∃ #c. LtkCompromised( Alice ) @ #c))) ∧
+       (¬(∃ #c. LtkCompromised( Bob ) @ #c))) ∧
+      (¬(∃ #c. LtkCompromised( Indiana ) @ #c))) ∧
+     (¬(∃ ptr1 ptr2 yy %fee #k.
+         FeeEarned( Indiana, ptr1, ptr2, yy, %fee ) @ #k))) ∧
+    (¬(∃ ptr y1 y2 #m #n.
+        ((HTLCAdded( ptr, y1 ) @ #m) ∧ (HTLCAdded( ptr, y2 ) @ #n)) ∧
+        (¬(#m = #n))))"
+simplify
+solve( !Ltk( $Receiver, ltkR ) ▶₁ #t1 )
+  case Register_key
+  solve( !Pk( $Receiver.1, pk(x.1) ) ▶₁ #t2 )
+    case Register_key
+    solve( !Ltk( $Sender, ltkS ) ▶₂ #t2 )
+      case Register_key
+      solve( !ChannelConnect( ptrAliceAtt1, $Sender, $Forward1 ) ▶₃ #t2 )
+        case Lock_Funds_And_Open_case_1
+        solve( Mutex( ~ptr ) ▶₄ #t2 )
+          case Intermediary_Settle_case_1
+            by sorry
+          next
+          case Intermediary_Settle_case_2
+            by sorry
+          next
+          case Lock_Funds_And_Open
+          solve( !ChannelConnect( ptrAtt1Indiana, $Forward1, $Next ) ▶₁ #t3 )
+            case Lock_Funds_And_Open_case_1
+            solve( Mutex( ~ptr.1 ) ▶₂ #t3 )
+              case Intermediary_Settle_case_1
+                by sorry
+              next
+              case Intermediary_Settle_case_2
+                by sorry
+              next
+              case Intermediary_Timeout_Refund_case_1
+                by sorry
+              next
+              case Intermediary_Timeout_Refund_case_2
+                by sorry
+              next
+              case Lock_Funds_And_Open
+              solve( !ChannelConnect( ptrIndianaAtt2, $Next, $Next.1 ) ▶₁ #t4 )
+                case Lock_Funds_And_Open_case_1
+                solve( (∃ #c. (LtkCompromised( $B.1 ) @ #c) ∧ #c < #j)  ∥ (∃ #l. (Redeemed( ~ptr, h(~x) ) @ #l)) )
+                  case case_1
+                  solve( (∃ #c. (LtkCompromised( $B.1 ) @ #c) ∧ #c < #j)  ∥ (∃ #m. (TimedOut( ptrAtt2Bob ) @ #m) ∧ #m < #j) )
+                    case case_1
+                    solve( !ChannelConnect( ptrAtt2Bob, $B, $Receiver ) ▶₁ #t5 )
+                      case Lock_Funds_And_Open_case_1
+                      solve( Mutex( ~ptr ) ▶₂ #t4 )
+                        case Intermediary_Settle_case_1
+                          by sorry
+                        next
+                        case Intermediary_Settle_case_2
+                          by sorry
+                        next
+                        case Intermediary_Timeout_Refund_case_1
+                          by sorry
+                        next
+                        case Intermediary_Timeout_Refund_case_2
+                          by sorry
+                        next
+                        case Lock_Funds_And_Open
+                        solve( Mutex( ~ptr.3 ) ▶₂ #t5 )
+                          case Intermediary_Settle_case_1
+                            by sorry
+                          next
+                          case Intermediary_Settle_case_2
+                            by sorry
+                          next
+                          case Lock_Funds_And_Open
+                          solve( Route( $B, $Receiver, ~ptr.3, h(~x) ) ▶₀ #t6 )
+                            case Forward_HTLC
+                            solve( ReceiverInv( $Receiver, $Sender.1, ~x ) ▶₁ #t6 )
+                              case Receiver_Create_Invoice
+                              solve( SenderPending( $Sender, $Forward1, $Receiver, ~ptr.1, h(~x) ) ▶₀ #t7 )
+                                case Sender_Offer_HTLC
+                                solve( !Ltk( $B, ltk ) ▶₀ #c )
+                                  case Register_key
+                                  solve( Refunded( $Next, ~ptr, h(~x) ) @ #t8 )
+                                    case Intermediary_Timeout_Refund
+                                    solve( IntermediaryPending( $Next, $Prev, $Next.1, ptrIn, ~ptr, h(~x), %vIn, %vOut.3, %fee.3 ) ▶₀ #t8 )
+                                      case Forward_HTLC
+                                      solve( !Timeout( ~ptr ) ▶₁ #t8 )
+                                        case Open_Timeout_case_1
+                                        solve( Fulfilled( ~ptr.1, ~x ) ▶₁ #t7 )
+                                          case AttackerSkip
+                                            by sorry
+                                          next
+                                          case Intermediary_Settle_case_1
+                                          solve( Route( $Prev, $Me, ~ptr.1, h(~x) ) ▶₀ #vr.61 )
+                                            case Sender_Offer_HTLC
+                                            solve( Route( $Prev.1, $Forward1, ~ptr.1, h(~x) ) ▶₀ #t3 )
+                                              case Sender_Offer_HTLC
+                                              solve( Fulfilled( ~ptr.2, ~x ) ▶₁ #vr.60 )
+                                                case AttackerSkip
+                                                solve( ReceiverInv( $Receiver, $Sender, ~x ) ▶₁ #k )
+                                                  case Receiver_Create_Invoice
+                                                  solve( ReceiverInv( $Receiver.1, $Sender.1, ~x ) ▶₁ #k.1 )
+                                                    case Receiver_Create_Invoice
+                                                    solve( Fulfilled( ptrExit, ~x ) ▶₀ #vr.61 )
+                                                      case AttackerSkip
+                                                        by sorry
+                                                      next
+                                                      case Intermediary_Settle_case_1
+                                                        by sorry
+                                                      next
+                                                      case Intermediary_Settle_case_2
+                                                        by sorry
+                                                      next
+                                                      case Receiver_Fulfill_HTLC
+                                                      solve( !RouteInfo( $A, Next.1, ~ptr.1, h(~x) )[-, no_precomp] ▶₁ #vr.61 )
+                                                        case Forward_HTLC
+                                                        solve( !RouteInfo( $A.1, Skipped, ~ptr.3, h(~x) )[-, no_precomp] ▶₂ #vr.61 )
+                                                          case Forward_HTLC
+                                                          solve( Route( $Forward1, $Next, ~ptr.3, h(~x) ) ▶₀ #t4 )
+                                                            case Forward_HTLC
+                                                            solve( Route( $Next, $A, ~ptr, h(~x) ) ▶₀ #t5 )
+                                                              case Forward_HTLC
+                                                              solve( !KU( sign(<'invoice',  $Receiver, $Sender, h(~x)>, ~ltk.2) ) @ #vk.20 )
+                                                                case Receiver_Create_Invoice
+                                                                solve( !KU( sign(<'proposal',  $Sender, $Forward1, ~ptr.2 >, ~ltk.5) ) @ #vk.42 )
+                                                                  case A_Send_Proposal
+                                                                    by sorry
+                                                                  next
+                                                                  case B_Recv_Proposal
+                                                                  solve( !KU( sign(<'proposal',  $Sender, $Forward1, ~ptr.2>, ~ltk.7) ) @ #vk.49 )
+                                                                    case A_Send_Proposal
+                                                                    solve( !KU( sign(<'proposal',  $Forward1, $Next, ~ptr.3 >, ~ltk.10) ) @ #vk.58 )
+                                                                      case A_Send_Proposal
+                                                                        by sorry
+                                                                      next
+                                                                      case B_Recv_Proposal
+                                                                      solve( !KU( sign(<'proposal',  $Forward1, $Next, ~ptr.3>, ~ltk.12) ) @ #vk.63 )
+                                                                        case A_Send_Proposal
+                                                                        solve( !KU( sign(< 'proposal', $Next, $A, ~ptr>, ~ltk.15) ) @ #vk.70 )
+                                                                          case A_Send_Proposal
+                                                                            by sorry
+                                                                          next
+                                                                          case B_Recv_Proposal
+                                                                          solve( !KU( sign(< 'proposal', $Next, $A, ~ptr >, ~ltk.17) ) @ #vk.75 )
+                                                                            case A_Send_Proposal
+                                                                            solve( !KU( sign(< 'proposal', $A, $Receiver, ~ptr.1 >, ~ltk.20) ) @ #vk.79 )
+                                                                              case A_Send_Proposal
+                                                                                by sorry
+                                                                              next
+                                                                              case B_Recv_Proposal
+                                                                              solve( !KU( sign(< 'proposal', $A, $Receiver, ~ptr.1 >, ~ltk.22) ) @ #vk.84 )
+                                                                                case A_Send_Proposal
+                                                                                solve( !KU( sign(< 'proposal', $Sender, $Forward1, ~ptr.2 >, ~ltk.25) ) @ #vk.85 )
+                                                                                  case A_Send_Proposal
+                                                                                  solve( !KU( sign(< 'proposal', $Forward1, $Next, ~ptr.3 >, ~ltk.25) ) @ #vk.81 )
+                                                                                    case A_Send_Proposal
+                                                                                    solve( !KU( sign(< 'proposal', $Next, $A, ~ptr >, ~ltk.25) ) @ #vk.77 )
+                                                                                      case A_Send_Proposal
+                                                                                      solve( !KU( sign(< 'proposal', $A, $Receiver, ~ptr.1 >, ~ltk.25) ) @ #vk.73 )
+                                                                                        case A_Send_Proposal
+                                                                                        solve( !KU( ~ptr.2 ) @ #vk.62 )
+                                                                                          case A_Send_Proposal
+                                                                                          solve( !KU( ~ptr.3 ) @ #vk.65 )
+                                                                                            case A_Send_Proposal
+                                                                                            solve( !KU( ~ptr ) @ #vk.67 )
+                                                                                              case A_Send_Proposal
+                                                                                              solve( !KU( ~ptr.1 ) @ #vk.68 )
+                                                                                                case A_Send_Proposal
+                                                                                                solve( !KU( h(~x) ) @ #vk.54 )
+                                                                                                  case Receiver_Create_Invoice
+                                                                                                  SOLVED // trace found
+                                                                                                  next
+                                                                                                  case c_h
+                                                                                                    by sorry
+                                                                                                qed
+                                                                                              qed
+                                                                                            qed
+                                                                                          qed
+                                                                                        qed
+                                                                                        next
+                                                                                        case B_Recv_Proposal
+                                                                                          by sorry
+                                                                                        next
+                                                                                        case c_sign
+                                                                                          by sorry
+                                                                                      qed
+                                                                                      next
+                                                                                      case B_Recv_Proposal
+                                                                                        by sorry
+                                                                                      next
+                                                                                      case c_sign
+                                                                                        by sorry
+                                                                                    qed
+                                                                                    next
+                                                                                    case B_Recv_Proposal
+                                                                                      by sorry
+                                                                                    next
+                                                                                    case c_sign
+                                                                                      by sorry
+                                                                                  qed
+                                                                                  next
+                                                                                  case B_Recv_Proposal
+                                                                                    by sorry
+                                                                                  next
+                                                                                  case c_sign
+                                                                                    by sorry
+                                                                                qed
+                                                                                next
+                                                                                case B_Recv_Proposal
+                                                                                  by sorry
+                                                                                next
+                                                                                case c_sign
+                                                                                  by sorry
+                                                                              qed
+                                                                              next
+                                                                              case c_sign
+                                                                                by sorry
+                                                                            qed
+                                                                            next
+                                                                            case B_Recv_Proposal
+                                                                              by sorry
+                                                                            next
+                                                                            case c_sign
+                                                                              by sorry
+                                                                          qed
+                                                                          next
+                                                                          case c_sign
+                                                                            by sorry
+                                                                        qed
+                                                                        next
+                                                                        case B_Recv_Proposal
+                                                                          by sorry
+                                                                        next
+                                                                        case c_sign
+                                                                          by sorry
+                                                                      qed
+                                                                      next
+                                                                      case c_sign
+                                                                        by sorry
+                                                                    qed
+                                                                    next
+                                                                    case B_Recv_Proposal
+                                                                      by sorry
+                                                                    next
+                                                                    case c_sign
+                                                                      by sorry
+                                                                  qed
+                                                                  next
+                                                                  case c_sign
+                                                                    by sorry
+                                                                qed
+                                                                next
+                                                                case c_sign
+                                                                  by sorry
+                                                              qed
+                                                            qed
+                                                          qed
+                                                        qed
+                                                      qed
+                                                    qed
+                                                  qed
+                                                qed
+                                                next
+                                                case Intermediary_Settle_case_1
+                                                  by sorry
+                                                next
+                                                case Intermediary_Settle_case_2
+                                                  by sorry
+                                              qed
+                                            qed
+                                          qed
+                                          next
+                                          case Intermediary_Settle_case_2
+                                            by sorry
+                                        qed
+                                        next
+                                        case Open_Timeout_case_2
+                                          by sorry
+                                      qed
+                                    qed
+                                    next
+                                    case Sender_Timeout_Refund
+                                      by sorry
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                          next
+                          case Receiver_Fulfill_HTLC
+                            by sorry
+                          next
+                          case Sender_Timeout_Refund_case_1
+                            by sorry
+                          next
+                          case Sender_Timeout_Refund_case_2
+                            by sorry
+                        qed
+                        next
+                        case Receiver_Fulfill_HTLC
+                          by sorry
+                        next
+                        case Sender_Timeout_Refund_case_1
+                          by sorry
+                        next
+                        case Sender_Timeout_Refund_case_2
+                          by sorry
+                      qed
+                      next
+                      case Lock_Funds_And_Open_case_2
+                        by sorry
+                    qed
+                    next
+                    case case_2
+                      by sorry
+                  qed
+                  next
+                  case case_2
+                    by sorry
+                qed
+                next
+                case Lock_Funds_And_Open_case_2
+                  by sorry
+              qed
+              next
+              case Receiver_Fulfill_HTLC
+                by sorry
+              next
+              case Sender_Timeout_Refund_case_1
+                by sorry
+              next
+              case Sender_Timeout_Refund_case_2
+                by sorry
+            qed
+            next
+            case Lock_Funds_And_Open_case_2
+              by sorry
+          qed
+          next
+          case Receiver_Fulfill_HTLC
+            by sorry
+          next
+          case Sender_Timeout_Refund_case_1
+            by sorry
+          next
+          case Sender_Timeout_Refund_case_2
+            by sorry
+        qed
+        next
+        case Lock_Funds_And_Open_case_2
+          by sorry
+      qed
+    qed
+  qed
+qed
+
+lemma Fee_Only_On_Successful_Forward [heuristic={route_info_first}]:
+    "All Me ptrIn ptrOut y %fee #i.
+        FeeEarned(Me, ptrIn, ptrOut, y, %fee) @ #i
+      & not (Ex #c. LtkCompromised(Me) @ #c)
+     ==> (Ex #j. Redeemed(ptrOut, y) @ #j & #j < #i)
+       & (Ex Prev Next #f. HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #f & #f < #i)"
+
+// Non-vacuity: an honest 2-hop payment fully settles.
+lemma Sanity_Honest_Payment_Completes:
+  exists-trace
+  "Ex S F1 R p0 p1 x #o #a #r #c #s.
+      HTLCOffered(S, F1, p0, h(x)) @ #o
+    & HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a
+    & HTLCFulfilled(R, F1, p1, h(x)) @ #r
+    & IntermediaryClaimed(F1, S, p0, x) @ #c
+    & SenderSettled(S, F1, R, p0, x) @ #s
+    & not (Ex P #k. LtkCompromised(P) @ #k)
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+    & (All Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e ==> #e = #c)
+    & (All A B C q z #e. SenderSettled(A, B, C, q, z) @ #e ==> #e = #s)
+    & not (Ex U q z #e. Refunded(U, q, z) @ #e)"
+
+// Non-vacuity of Intermediary_Never_Loses_Under_Liveness: a compromised
+// intermediary CAN lose (outgoing redeemed, incoming refunded).
+lemma Sanity_Compromised_Intermediary_Can_Lose:
+  exists-trace
+  "Ex S F1 R p0 p1 x #o #a #r #u #k.
+      HTLCOffered(S, F1, p0, h(x)) @ #o
+    & HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a
+    & HTLCFulfilled(R, F1, p1, h(x)) @ #r
+    & Refunded(S, p0, h(x)) @ #u
+    & LtkCompromised(F1) @ #k
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+    & not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)
+    & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
+
+// Stronger no-loss: a forwarder that loses was compromised BEFORE its incoming
+// HTLC timed out (Intermediary_Never_Loses_Under_Liveness follows from it).
+lemma Intermediary_Never_Loses_Strong:
+    "All P Prev Next Up ptrIn ptrOut y #i #j #k.
+        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i
+      & Redeemed(ptrOut, y) @ #j
+      & Refunded(Up, ptrIn, y) @ #k
+     ==> Ex #l #t. LtkCompromised(P) @ #l & TimedOut(ptrIn) @ #t & #l < #t"
+
+// Invoice authentication at offer time (needs the tagged invoice): an HTLC is
+// offered for R only against an invoice R created, or with R's key leaked.
+lemma Offer_Requires_Invoice:
+    "All S R ptr y #o.
+        OfferFor(S, R, ptr, y) @ #o
+     ==> (Ex #j. InvoiceCreated(R, S, y) @ #j & #j < #o)
+       | (Ex #r. LtkCompromised(R) @ #r)"
+
+// Non-vacuity of Payment_Atomicity_Under_Liveness: an honest payment with two
+// forwarders completes end to end.
+lemma Sanity_Atomic_Payment_Completes:
+  exists-trace
+  "Ex S F1 F2 R p0 p1 p2 x #o #a #b #r #c1 #c2 #s.
+      HTLCOffered(S, F1, p0, h(x)) @ #o
+    & HTLCForwarded(F1, S, F2, p0, p1, h(x)) @ #a
+    & HTLCForwarded(F2, F1, R, p1, p2, h(x)) @ #b
+    & HTLCFulfilled(R, F2, p2, h(x)) @ #r
+    & IntermediaryClaimed(F2, F1, p1, x) @ #c2
+    & IntermediaryClaimed(F1, S, p0, x) @ #c1
+    & SenderSettled(S, F1, R, p0, x) @ #s
+    & not (Ex P #k. LtkCompromised(P) @ #k)
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+    & (All Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e ==> (#e = #c1 | #e = #c2))
+    & (All A B C q z #e. SenderSettled(A, B, C, q, z) @ #e ==> #e = #s)
+    & not (Ex U q z #e. Refunded(U, q, z) @ #e)"
+
+// The preimage never reaches the adversary (even under key compromise).
+lemma Preimage_Never_Known:
+    "All R x #i. SecretPreimage(R, x) @ #i ==> not (Ex #j. K(x) @ #j)"
+
+// ---------------------------------------------------------------------------
+// Wormhole characterisation (first hop).  These [reuse] helpers are placed
+// LAST on purpose: earlier lemmas would otherwise reuse them and slow down.
+// ---------------------------------------------------------------------------
+
+// A consumed preimage token comes from a redemption of that HTLC or a skip.
+lemma Fulfilled_Source [reuse]:
+    "All p x #i. UsedFulfilled(p, x) @ #i
+     ==> (Ex #j. Redeemed(p, h(x)) @ #j & #j < #i)
+       | (Ex #j. Skipped(p, x) @ #j & #j < #i)"
+
+// Every skip happens after some compromise.
+lemma Skipped_Requires_Compromise [reuse]:
+    "All p x #i. Skipped(p, x) @ #i ==> Ex P #c. LtkCompromised(P) @ #c & #c < #i"
+
+// ---- First-hop characterisation (F1 cannot be bypassed without compromise) ----
+// Small helpers, each proved separately; kept last so no earlier lemma reuses them.
+
+tactic: route_first
+presort: s
+prio:
+    regex "Route\(" | regex "IntermediaryPending\(" | regex "SenderPending\("
+prio:
+    regex "∥" | regex "Fulfilled\("
+deprio:
+    regex "KU\(" | regex "Ltk" | regex "ChannelConnect" | regex "ReadyToLock" | regex "Wallet" | regex "Mutex" | regex "ReceiverInv"
+
+lemma Forward_Unique_Per_Incoming [reuse, heuristic={route_first}]:
+    "All M1 P1 N1 M2 P2 N2 pIn o1 o2 y #i #j.
+        HTLCForwarded(M1, P1, N1, pIn, o1, y) @ #i
+      & HTLCForwarded(M2, P2, N2, pIn, o2, y) @ #j
+     ==> #i = #j"
+
+lemma SettledHop_From_Forward [reuse, heuristic={route_first}]:
+    "All pIn pOut y #i. SettledHop(pIn, pOut, y) @ #i
+     ==> Ex M P N #j. HTLCForwarded(M, P, N, pIn, pOut, y) @ #j & #j < #i"
+
+lemma No_Settle_And_Refund_Same_Hop [reuse, heuristic={route_first}]:
+    "All pIn pOut y #i #j. SettledHop(pIn, pOut, y) @ #i & RefundHop(pIn, pOut, y) @ #j ==> F"
+
+lemma No_Fulfill_On_Forwarded_Incoming [reuse, heuristic={route_first}]:
+    "All R Q M P N p o y #i #j.
+        HTLCFulfilled(R, Q, p, y) @ #i & HTLCForwarded(M, P, N, p, o, y) @ #j ==> F"
+
+lemma Redeemed_Source [reuse]:
+    "All p y #i. Redeemed(p, y) @ #i
+     ==> (Ex o. SettledHop(p, o, y) @ #i)
+       | (Ex R Q. HTLCFulfilled(R, Q, p, y) @ #i)"
+
+lemma SenderSettled_Uses_Fulfilled [reuse]:
+    "All S F1 R p x #i. SenderSettled(S, F1, R, p, x) @ #i ==> UsedFulfilled(p, x) @ #i"
+
+tactic: lemmas_first
+presort: s
+prio:
+    regex "∥"
+prio:
+    regex "@"
+deprio:
+    regex "▶"
+
+// Theorem: if the payment settles at the sender while the first forwarder's own
+// hop (pSF -> pOut) is refunded, some party was compromised.
+lemma First_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S F1 R pSF Next pOut x #s #f #r.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, Next, pSF, pOut, h(x)) @ #f
+      & RefundHop(pSF, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
+
+end

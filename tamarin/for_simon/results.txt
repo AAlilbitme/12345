@@ -1,0 +1,3 @@
+# make verify on multiN_lightning_clean.spthy (Tamarin 1.10): ALL 49 lemmas verified
+#   32 all-traces + 7 first-hop + 9 exists-trace + 1 replayed (Wormhole_Fee_Theft_Reachable)
+# Independently reproduced on the author laptop (make verify FILE=2.spthy, MEM=6G): ALL 49 lemmas verified

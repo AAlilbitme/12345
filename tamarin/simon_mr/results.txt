@@ -1,0 +1,77 @@
+multiN_modified_tagged_sanity.spthy (Simon's MR model, no saved proofs, + tagged invoice + 2 sanity lemmas)
+--prove=<lemma>, 900 s, 6 GB, 2 in parallel
+
+ForwardTimeGap | (all-traces): verified (6 steps) | 122s
+state_update | (all-traces): verified (19 steps) | 123s
+instant_funds | (all-traces): verified (60 steps) | 118s
+delayed_funds | (all-traces): verified (44 steps) | 122s
+Protocol_execution | (exists-trace): verified (26 steps) | 124s
+settlement_is_traceable | (all-traces): verified (4 steps) | 141s
+No_Punishment_Without_Cheating | (all-traces): verified (20 steps) | 106s
+Cooperative_Close_Execution | (exists-trace): verified (15 steps) | 116s
+Funds_Locked_Before_Update | (all-traces): verified (19 steps) | 99s
+Update_Requires_Negotiation | (all-traces): verified (19 steps) | 107s
+OneOutcomePerHTLC | (all-traces): verified (7 steps) | 90s
+Ltk_Known_Implies_Compromised | (all-traces): verified (3 steps) | 98s
+Invoice_Released_Once | (all-traces): verified (8 steps) | 100s
+Distinct_Parties_Configuration | (exists-trace): verified (23 steps) | 113s
+Refund_Possible | (exists-trace): verified (16 steps) | 112s
+Invoice_Has_Secret_Preimage | (all-traces): verified (2 steps) | 5s
+Preimage_Secret_Until_Released | (all-traces): verified (3 steps) | 114s
+HTLC_On_Opened_Channel | (all-traces): verified (21 steps) | 103s
+Fulfilled_Requires_Release | (all-traces): verified (31 steps) | 100s
+Settle_Requires_Receiver_Release | (all-traces): verified (330 steps) | 137s
+Claim_Requires_Release | (all-traces): verified (19 steps) | 117s
+Redeem_Requires_Receiver_Release | (all-traces): verified (15 steps) | 97s
+Forward_Requires_Incoming | (all-traces): verified (338 steps) | 129s
+Invoice_Authenticates_Settlement | (all-traces): verified (834 steps) | 168s
+Settle_Excludes_Sender_Refund | (all-traces): verified (118 steps) | 177s
+Loss_Requires_Inaction | (all-traces): verified (2 steps) | 6s
+Refund_Requires_Timeout | (all-traces): verified (12 steps) | 116s
+Forged_Invoice_Requires_Key_Compromise | (exists-trace): verified (15 steps) | 148s
+Intermediary_Never_Loses_Under_Liveness | (all-traces): verified (4 steps) | 116s
+Payment_Atomicity_Under_Liveness | (all-traces): verified (10 steps) | 106s
+Timeout_Race_Blocked | (all-traces): verified (4 steps) | 118s
+Multihop_Payment_Possible | no result in 900 s | 900s
+Wormhole_Fee_Theft_Reachable | no result in 900 s | 900s
+Fee_Only_On_Successful_Forward | (all-traces): verified (333 steps) | 194s
+Sanity_Honest_Payment_Completes | (exists-trace): verified (30 steps) | 203s
+Sanity_Compromised_Intermediary_Can_Lose | (exists-trace): verified (29 steps) | 162s
+
+34/36 verified. Multihop_Payment_Possible and Wormhole_Fee_Theft_Reachable need Simon's saved proofs (invoice signature updated to the tagged form).
+
+Extended lemmas (multiN_modified_extended.spthy, --prove, 900 s):
+Intermediary_Never_Loses_Strong | verified (4 steps)
+Offer_Requires_Invoice          | verified (70 steps)
+Skip_Requires_Compromise        | no result in 900 s (open; not in Makefile)
+Sanity_Atomic_Payment_Completes | verified (44 steps), ~26 min alone
+
+# 2026-10-06: Multihop_Payment_Possible with IntermediaryClaimed/SenderSettled excluded (commit e9b156c)
+Multihop_Payment_Possible (exists-trace): verified (28 steps)  -- --prove, 380 s, run alone
+Skip_Requires_Compromise: no result in 7000 s (--prove, run alone, 12G cap; timeout, not out of memory) -- OPEN
+Fulfilled_Source (all-traces): verified (112 steps) -- --prove, 105 s
+NoSkip_Redeem_Propagates (with Fulfilled_Source): no result in 3600 s -- removed
+Preimage_Never_Known (all-traces): verified (3 steps) -- 94 s
+Single_Settlement_Per_Preimage: no result in 1200 s -- removed
+Multihop_Payment_Possible renamed to Multihop_Routing_Reachable (same statement, verified 28 steps)
+Skipped_Requires_Compromise (all-traces): verified (3 steps) -- 97 s
+Redeem_Propagates_Or_Compromise: no result in 2400 s -- removed (with Route_Redeemed_Or_Compromise)
+Offer_Requires_Invoice: verified (70 steps, 113 s) after moving Fulfilled_Source/Skipped_Requires_Compromise/Skip_Requires_Compromise to end of file
+Wormhole_Fee_Theft_Reachable (exists-trace): verified (927 steps) -- saved proof replayed with --lemma (Simon proof repaired for tagged invoice)
+
+# First-hop characterisation (main file, --prove, each run alone)
+Fulfilled_Source |   Fulfilled_Source (all-traces): verified (214 steps) | 214s
+Skipped_Requires_Compromise |   Skipped_Requires_Compromise (all-traces): verified (3 steps) | 216s
+Forward_Unique_Per_Incoming |   Forward_Unique_Per_Incoming (all-traces): verified (46 steps) | 228s
+SettledHop_From_Forward |   SettledHop_From_Forward (all-traces): verified (4 steps) | 221s
+No_Settle_And_Refund_Same_Hop |   No_Settle_And_Refund_Same_Hop (all-traces): verified (4 steps) | 217s
+No_Fulfill_On_Forwarded_Incoming |   No_Fulfill_On_Forwarded_Incoming (all-traces): verified (24 steps) | 218s
+Redeemed_Source |   Redeemed_Source (all-traces): verified (4 steps) | 214s
+SenderSettled_Uses_Fulfilled |   SenderSettled_Uses_Fulfilled (all-traces): verified (2 steps) | 228s
+First_Hop_Skip_Requires_Compromise |   First_Hop_Skip_Requires_Compromise (all-traces): verified (6 steps) | 228s
+Wormhole_Fee_Theft_Reachable: replay verified (927 steps) after adding labels
+
+# Independent reproduction on the user laptop (make verify, MEM=6G): ALL lemmas verified
+#   32 all-traces + 7 first-hop + 9 exists-trace + 1 replay (Wormhole_Fee_Theft_Reachable)
+
+# Optimized single file (pruned wormhole proof, #ifdef necessity): make verify -> ALL lemmas verified (49)

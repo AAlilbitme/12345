@@ -1,0 +1,23 @@
+wormhole_attack.spthy -- run in the cloud session, one lemma at a time
+(tamarin-prover 1.10, Maude 3.2, --derivcheck-timeout=0, 240 s / 5 GB per lemma)
+
+  Invoice_Released_Once (all-traces): verified (60 steps)
+  Refund_Requires_Timeout (all-traces): verified (16 steps)
+  Forward_Time_Gap_Derived (all-traces): verified (2 steps)
+  Intermediary_Never_Loses_Under_Liveness (all-traces): verified (4 steps)
+  Payment_Atomicity_Under_Liveness (all-traces): verified (6 steps)
+  P1_One_Forward (exists-trace): verified (11 steps)
+  P2_Two_Hops_Plain (exists-trace): verified (16 steps)
+  Wa_Chain_Fulfill (exists-trace): verified (19 steps)
+  Wb_Plus_Relay (exists-trace): verified (24 steps)
+
+Removed from this file because they gave no result here (not falsified):
+  P4_Pinned_Settle   -- no result in 560 s with Colluder_Settle_Via_Relay present.
+                        It verified (32 steps) in an earlier variant whose relay rule
+                        produced Fulfill directly; that variant is not included.
+  Wc2/Wc3/W4_Full    -- F1 settling with the relayed preimage: no result in 400-500 s.
+
+Caveat: no intermediary-settles witness verifies in THIS file, so the two
+liveness lemmas above could still be vacuous here.
+Also: the run of all lemmas in one process (--prove) did not finish in 28 min;
+run them one at a time.
