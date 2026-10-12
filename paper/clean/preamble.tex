@@ -1,0 +1,66 @@
+% Preamble shared by main.tex and the per-section test builds (build_one.sh).
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{amsmath,amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+
+% ---------------------------------------------------------------- names
+\newcommand{\tamarin}{\textsc{Tamarin}}
+\newcommand{\proverif}{\textsc{ProVerif}}
+\newcommand{\sapic}{\textsc{Sapic+}}
+\newcommand{\maude}{\textsc{Maude}}
+% Inline code: lemma, rule, fact and file names.  Breaks at underscores.
+% Use \code{...} in running text.  In captions, section titles and table cells
+% that move (e.g. \caption), use \texttt{Name\_With\_Underscores} instead.
+\DeclareUrlCommand\code{\urlstyle{tt}}
+
+% ---------------------------------------------------------------- theorems
+\theoremstyle{plain}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+
+% ---------------------------------------------------------------- listings
+\definecolor{kwred}{RGB}{170,20,20}
+\definecolor{cmtgray}{RGB}{110,110,110}
+\lstdefinelanguage{spthy}{
+  morekeywords={rule,lemma,restriction,let,in,exists-trace,all-traces,builtins,
+                theory,begin,end,functions,equations},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+}
+\lstset{
+  language=spthy,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{kwred},
+  commentstyle=\itshape\color{cmtgray},
+  stringstyle=\ttfamily,
+  numbers=left, numberstyle=\tiny\color{cmtgray}, numbersep=4pt,
+  xleftmargin=10pt, columns=fullflexible, keepspaces=true,
+  breaklines=true, breakatwhitespace=true, postbreak=\mbox{\tiny$\hookrightarrow$\ },
+  showstringspaces=false, upquote=true, aboveskip=4pt, belowskip=4pt,
+  literate={∃}{{$\exists$}}1 {∀}{{$\forall$}}1 {∧}{{$\wedge$}}1 {∨}{{$\vee$}}1
+           {¬}{{$\neg$}}1 {⇒}{{$\Rightarrow$}}1 {∥}{{$\parallel$}}1 {⊥}{{$\bot$}}1
+           {→}{{$\rightarrow$}}1,
+}
+\lstnewenvironment{spthy}[1][]{\lstset{#1}}{}
+
+% ---------------------------------------------------------------- tables
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
