@@ -97,9 +97,9 @@ for the \texttt{CheckLockTimeVerify} opcode). The real Lightning Network uses a
 two-stage construction to separate the CLTV and CSV conditions;
 Fig.~\ref{fig:transaction} collapses it into a single output per HTLC.
 
-Our model keeps Outputs~\txout{3} and~\txout{4} and the revocation path, but
-not the in-flight Outputs~\txout{1} and~\txout{2}: HTLCs are resolved in the
-routing layer, and the single on-chain spend of an HTLC output becomes the
+Of this transaction, our model retains counterparts of Outputs~\txout{3}
+and~\txout{4} and of the revocation path, but not the in-flight
+Outputs~\txout{1} and~\txout{2}: HTLCs are resolved in the routing layer, and the single on-chain spend of an HTLC output becomes the
 named assumption that each HTLC is resolved at most once
 (Sec.~\ref{sec:method}).
 
