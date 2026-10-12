@@ -31,4 +31,11 @@ Laptop, csf_final folder as shipped (lightning.spthy, MEM=6G):
   make verify   -> ALL 55 lemmas verified (32 + 13 + 9 + 1 replay)
   make general  -> General n-hop theorem verified (24/24)
   make aux      -> PTLC 5/5, HTLC 3/3, Clock 9/9, Cltv 3/3, timeout 1/1 (21/21)
-  make necessity -> (pending)
+  make necessity -> (one restriction removed per row; 600 s limit per check)
+                     ForwardTimeGap  Timeout_Race  INL_Liveness  INL_Strong  Atomicity
+     no T3 (IMC)     verified        verified      no result     no result   no result
+     no T2b (OTF)    no result       verified      verified      verified    no result
+     no T1 (RBT)     verified        verified      verified      verified    verified
+     NO_IMC counterexample: Necessity_IMC_Honest_Intermediary_Loses verified (28 steps)
+     => T3 is necessary for intermediary safety; T1 is not needed by any of the five
+        liveness lemmas; T2b is not needed for intermediary safety.
