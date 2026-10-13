@@ -3,7 +3,7 @@
 
 Table~\ref{tab:groups} sorts all lemmas of \code{lightning.spthy} into the groups of
 Sec.~\ref{sec:properties}, one per stage of a payment that they constrain;
-Appendix~\ref{app:catalogue} follows the same groups and gives every statement. The lemmas of
+Appendix~\ref{app:catalogue} follows the same groups and catalogues every lemma. The lemmas of
 Sec.~\ref{sec:properties} to Sec.~\ref{sec:wormhole} that are stated there in prose are printed
 verbatim in the catalogue: Lemma~\ref{lem:atomicity} in Appendix~\ref{app:atomicity},
 Lemmas~\ref{lem:intermediary} and~\ref{lem:intermediary-strong}, \code{Timeout_Race_Blocked}
@@ -11,78 +11,6 @@ and \code{Necessity_IMC_Honest_Intermediary_Loses} in Appendix~\ref{app:safety},
 Lemma~\ref{lem:causality} in Appendix~\ref{app:lock} and Lemma~\ref{lem:fee} in
 Appendix~\ref{app:fees}; Lemma~\ref{lem:skip} is printed in Appendix~\ref{lst:skipped}.
 
-\begin{table*}[t]
-  \caption{Lemma groups of \texttt{lightning.spthy}; the circled numbers in
-    Figs.~\ref{fig:inflight} and~\ref{fig:wormhole} refer to groups 1 to 7. A: all-traces;
-    E: exists-trace. Unmarked rows: the 55 lemmas of \texttt{make verify}, all verified
-    (32 all-traces safety lemmas, the 13 hop-bypass lemmas of group 9, 9 exists-trace lemmas
-    found automatically, and \texttt{Wormhole\_Fee\_Theft\_Reachable}, replayed from a saved
-    116-step proof). $\dagger$:~proved in \texttt{make general} (liveness restrictions removed;
-    Sec.~\ref{sec:bypass}). $\ddagger$:~exists-trace, checked with T3 removed
-    (Table~\ref{tab:necessity}).}
-  \label{tab:groups}
-  \centering
-  \footnotesize
-  \setlength{\tabcolsep}{4pt}
-  \renewcommand{\arraystretch}{1.05}
-  \begin{tabular}{@{}rL{2.75cm}L{13.6cm}c@{}}
-    \toprule
-    \# & Group & Lemmas & Kind\\
-    \midrule
-    0 & Channel layer, keys
-      & \code{state_update}, \code{delayed_funds}, \code{instant_funds},
-        \code{settlement_is_traceable}, \code{No_Punishment_Without_Cheating},
-        \code{Funds_Locked_Before_Update}, \code{Update_Requires_Negotiation},
-        \code{Ltk_Known_Implies_Compromised} & A\\
-      & \quad non-vacuity & \code{Protocol_execution}, \code{Cooperative_Close_Execution} & E\\
-    1 & Invoice \& preimage
-      & \code{Invoice_Authenticates_Settlement}, \code{Preimage_Secret_Until_Released},
-        \code{Preimage_Never_Known}, \code{Invoice_Has_Secret_Preimage},
-        \code{Invoice_Released_Once} & A\\
-      & \quad reachable & \code{Forged_Invoice_Requires_Key_Compromise} & E\\
-    2 & Lock causality
-      & \code{Forward_Requires_Incoming}, \code{HTLC_On_Opened_Channel},
-        \code{Offer_Requires_Invoice} & A\\
-    3 & Release causality
-      & \code{Claim_Requires_Release}, \code{Settle_Requires_Receiver_Release},
-        \code{Redeem_Requires_Receiver_Release}, \code{Fulfilled_Requires_Release},
-        \code{Fulfilled_Source} & A\\
-    4 & Atomicity
-      & \code{Payment_Atomicity_Under_Liveness}, \code{Settle_Excludes_Sender_Refund},
-        \code{OneOutcomePerHTLC} & A\\
-      & \quad non-vacuity
-      & \code{Multihop_Routing_Reachable}, \code{Sanity_Honest_Payment_Completes},
-        \code{Sanity_Atomic_Payment_Completes}, \code{Distinct_Parties_Configuration} & E\\
-    5 & Fees
-      & \code{Fee_Only_On_Successful_Forward} (per hop, incoming amount = outgoing amount + fee
-        by construction) & A\\
-    6 & Refund / griefing & \code{Refund_Requires_Timeout}, \code{Loss_Requires_Inaction} & A\\
-      & \quad reachable & \code{Refund_Possible} & E\\
-    7 & Wormhole & \code{Skipped_Requires_Compromise} & A\\
-      & \quad reachable
-      & \code{Wormhole_Fee_Theft_Reachable} (saved 116-step proof, replayed) & E\\
-    8 & Intermediary safety, timing
-      & \code{Intermediary_Never_Loses_Under_Liveness}, \code{Intermediary_Never_Loses_Strong},
-        \code{Timeout_Race_Blocked}, \code{ForwardTimeGap} & A\\
-      & \quad non-vacuity & \code{Sanity_Compromised_Intermediary_Can_Lose} & E\\
-      & \quad necessity $\ddagger$ & \code{Necessity_IMC_Honest_Intermediary_Loses} & E\\
-    9 & Hop bypass
-      & \code{First_Hop_Skip_Requires_Compromise}, \code{Second_Hop_Skip_Requires_Compromise},
-        \code{Hop3_Skip_Requires_Compromise}, \code{Hop4_Skip_Requires_Compromise},
-        \code{Hop5_Skip_Requires_Compromise}, \code{Hop6_Skip_Requires_Compromise} & A\\
-      & \quad helpers
-      & \code{Forward_Unique_Per_Incoming}, \code{SettledHop_From_Forward},
-        \code{SettledHop_Uses_Outgoing}, \code{No_Settle_And_Refund_Same_Hop},
-        \code{No_Fulfill_On_Forwarded_Incoming}, \code{Redeemed_Source},
-        \code{SenderSettled_Uses_Fulfilled} & A\\
-      & \quad any length $\dagger$ & \code{Any_Hop_Skip_Requires_Compromise} & A\\
-      & \quad helpers $\dagger$
-      & \code{Forward_Parent}, \code{Hop_Redeem_Propagates}, \code{Sender_Channel_Redeemed},
-        \code{Root_First}, \code{Next_Is_Child}, \code{Route_Redeemed_Gen},
-        \code{Route_Redeemed_No_Compromise} & A\\
-    \bottomrule
-  \end{tabular}
-\end{table*}
 
 \subsection{Skips Require Compromise}\label{lst:skipped}
 

@@ -66,7 +66,7 @@ and the adversary never learns it (\code{Preimage_Never_Known}); instead, two co
 with HTLCs on the same payment hash can relay~$x$ around the parties between them with the rule
 \code{AttackerSkip} (Secs.~\ref{sec:core-skip} and~\ref{sec:wormhole}): the wormhole attack~\cite{malavolta2019}. Apart
 from their keys, \code{AttackerSkip} and the exemptions of Sec.~\ref{sec:restrictions},
-compromised parties follow the protocol rules.
+compromised parties follow the protocol.
 
 \paragraph{Time and Liveness} Time is abstract: the timeout of channel \code{ptr} is the event
 \code{TimedOut(ptr)} of rule \code{Open_Timeout}, which can happen at any point after the channel
@@ -130,8 +130,8 @@ time; our results say nothing about such traces (Sec.~\ref{par:liveness-scope}).
 punishment (Sec.~\ref{par:punishment}) is not encoded: no restriction mentions cheating or
 punishment. Only T3 is necessary for intermediary safety (Sec.~\ref{sec:timing}). The bypass
 theorem for routes of any length and a single offer per payment hash (Sec.~\ref{sec:bypass-any})
-is proved without T1 to T3, all other results of the main theory under all nine restrictions
-(six structural; Appendix~\ref{lst:structural}).
+is proved without T1 to T3, all other results of the main theory (except the necessity checks
+of Sec.~\ref{sec:timing}) under all nine restrictions (six structural; Appendix~\ref{lst:structural}).
 
 \subsection{Structural Limitations}\label{sec:structure}
 
@@ -146,9 +146,9 @@ clock and the CLTV arithmetic; the others are the PTLC countermeasure, its HTLC 
 early-timeout race.
 
 Five deliberate non-goals buy generality or tractability. \emph{Onion privacy:} any channel
-partner may be the next hop and nothing is encrypted in layers, so the results cover every route but
-claim no privacy. \emph{On-chain fees:} publishing a transaction is free,
+partner may be the next hop and nothing is encrypted in layers, so the model admits every route but
+we claim no privacy. \emph{On-chain fees:} publishing a transaction is free,
 separating protocol logic from fee economics. \emph{Fee policy:} the adversary chooses
 every routing fee, so the results hold for any policy. \emph{Wallet capacity:} HTLC amounts are
 not checked against balances, so the results hold for all amounts. \emph{Per-HTLC CSV
-stage:} HTLCs are resolved in one step, with no second-stage transaction.
+stage:} HTLCs are resolved in one step, with no second stage.

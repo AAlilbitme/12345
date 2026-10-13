@@ -56,7 +56,7 @@ No other references may be cited.
 - `00_abstract.tex`: `\begin{abstract}...\end{abstract}` (~200 words) + `\begin{IEEEkeywords}` optional.
 - `01_intro.tex`: `\section{Introduction}\label{sec:intro}` with `\paragraph{Payment Channel Networks}`,
   `\paragraph{Protocol Verification}`, `\paragraph{Contributions}` (itemised, each item points to its section) and a one-line paper outline.
-- `02_overview.tex`: `\section{Protocol Overview and Threat Model}\label{sec:overview}`;
+- `02_overview.tex`: `\section{Protocol Overview}\label{sec:overview}`;
   `\subsection{Payment Channels}\label{sec:channel}` with `\subsubsection{The Transactions}\label{sec:transactions}`,
   `\subsubsection{The Protocol}\label{sec:protocol}` and `\paragraph{Opening}\label{par:opening}`, Update `par:update`,
   Revocation `par:revocation`, Closing `par:closing`, Punishment `par:punishment`;

@@ -4,20 +4,21 @@
 
 We state the guarantees of \code{lightning.spthy} as lemmas, each named after the \tamarin{}
 property that establishes it. We apply honesty assumptions explicitly, in each lemma, not
-globally; only the restrictions of Sec.~\ref{sec:restrictions} hold in every trace. Unless
+globally; only the nine restrictions (Sec.~\ref{sec:restrictions}, Appendix~\ref{lst:structural})
+hold in every trace. Unless
 stated otherwise, every lemma here is proved in the default mode (\texttt{make verify}), under all
 nine restrictions, including T1 to T3. We sort all lemmas into ten groups, one per stage of a
-payment that they constrain (Table~\ref{tab:groups} in Appendix~\ref{lst:groups}; the circled
+payment that they constrain (Table~\ref{tab:groups} in Appendix~\ref{app:catalogue}; the circled
 numbers in Figs.~\ref{fig:inflight} and~\ref{fig:wormhole}): channel layer and keys~(0), invoice and
 preimage~(1), lock~(2) and release~(3) causality, atomicity~(4), fees~(5), refund and
 griefing~(6), wormhole~(7), intermediary safety and timing~(8), hop bypass~(9). We present the
-central lemmas below; Appendix~\ref{app:catalogue} states every lemma verbatim.
+central lemmas below; Appendix~\ref{app:catalogue} catalogues every lemma.
 
 The first guarantee is atomicity: on a route with two forwarders and no key compromise, once
 the receiver has redeemed its HTLC, the sender can no longer be refunded.
 
 \begin{lemma}[Payment Atomicity]\label{lem:atomicity}
-For any two consecutive forwarders $F_1$ and $F_2$ on a payment with hash $y$ (the incoming HTLC
+Under T1 to T3, for any two consecutive forwarders $F_1$ and $F_2$ on a payment with hash $y$ (the incoming HTLC
 of $F_2$ is the outgoing HTLC of $F_1$): if the outgoing HTLC of $F_2$ on $y$ is redeemed and no
 party's key was ever compromised, then the incoming HTLC of $F_1$ on $y$ is never refunded, by
 anyone (\code{Payment_Atomicity_Under_Liveness}, Appendix~\ref{app:atomicity}).
@@ -27,8 +28,8 @@ The second guarantee protects the intermediaries, who lock their own funds for a
 is not theirs.
 
 \begin{lemma}[Intermediary Safety]\label{lem:intermediary}
-If a forwarder's outgoing HTLC is redeemed while its incoming HTLC is refunded, then that
-forwarder's long-term key was compromised (\code{Intermediary_Never_Loses_Under_Liveness},
+Under T1 to T3, if a forwarder's outgoing HTLC is redeemed while its incoming HTLC is refunded,
+then that forwarder's long-term key was compromised (\code{Intermediary_Never_Loses_Under_Liveness},
 Appendix~\ref{app:safety}).
 \end{lemma}
 Lemma~\ref{lem:intermediary} does not say when the key was compromised: a compromise after the
@@ -39,7 +40,10 @@ Under the premises of Lemma~\ref{lem:intermediary}, that forwarder's key was com
 its incoming HTLC timed out (\code{Intermediary_Never_Loses_Strong}, Appendix~\ref{app:safety}).
 \end{lemma}
 This matches T2 and T3, which bind only forwarders not compromised before their incoming HTLC
-times out. As \code{Forward_HTLC} is one generic rule, Lemma~\ref{lem:atomicity} holds for any two
+times out. Given T3, both lemmas follow in a few steps: a refund needs a timeout
+(\code{Refund_Requires_Timeout}), T3 then forces the incoming HTLC to be redeemed unless the
+forwarder was compromised before that timeout, and no HTLC is both redeemed and refunded
+(\code{OneOutcomePerHTLC}). Their weight thus lies in T3 itself (Sec.~\ref{par:liveness-scope}). As \code{Forward_HTLC} is one generic rule, Lemma~\ref{lem:atomicity} holds for any two
 consecutive forwarders and Lemmas~\ref{lem:intermediary} and~\ref{lem:intermediary-strong} for
 every forwarder, anywhere on a route of any length (under T1 to T3).
 Nothing is forwarded out of thin air:
@@ -75,7 +79,7 @@ one and two forwarders settle end to end, with no key compromise and no refund: 
 forwarder claims its incoming HTLC and the sender settles (\code{Sanity_Honest_Payment_Completes}, \code{Sanity_Atomic_Payment_Completes}; the second
 satisfies the premises of Lemma~\ref{lem:atomicity}); three channels among four different
 parties open with no compromise and no dispute (\code{Distinct_Parties_Configuration}); a
-compromised forwarder's outgoing HTLC is redeemed while its incoming HTLC is refunded
+compromised forwarder's outgoing HTLC is redeemed while its incoming one is refunded
 (\code{Sanity_Compromised_Intermediary_Can_Lose}), so the
 premises of Lemmas~\ref{lem:intermediary} and~\ref{lem:intermediary-strong} are satisfiable.
 
@@ -136,7 +140,7 @@ without a result we conclude nothing: we do not claim that T2 is needed by
 % The label sits before \paragraph so that it prints as "V-D" (IEEEtran would print "V-D0a").
 \phantomsection\label{par:liveness-scope}%
 \paragraph{Liveness as Restrictions}
-Two of our three liveness assumptions, T2 and T3, are \tamarin{} restrictions of the form
+Two of our three liveness restrictions, T2 and T3, have the form
 \emph{if A happens, then B happens} (T1 only orders a redemption before a timeout); in T3, for
 instance, B is the redemption of the forwarder's incoming HTLC. A restriction removes every
 trace that violates it, including traces in which B is impossible rather than merely late, so a
@@ -154,14 +158,14 @@ including the bypass theorems for positions 1 to 6, are proved with all three re
 place; apart from the five lemmas of Table~\ref{tab:necessity}, we have not checked which of
 them hold without them.
 
-\emph{A claim window exists, in a separate model.} The Clock model (\code{-D=CLOCK},
+\emph{A claim window exists, in a separate model.} The CLOCK model (\code{-D=CLOCK},
 Table~\ref{tab:results}, Appendix~\ref{app:aux}) gives channels concrete deadlines on a block
 clock, has no liveness restriction and proves \code{Claim_Window_Exists}: if a forwarder's
 outgoing HTLC is redeemed and its incoming HTLC is refunded, the redemption happens at a
 strictly lower block height than the refund, so the forwarder had a non-empty window in which
 to claim. It also proves
 \code{Loss_Implies_Skipped_Claim}: a forwarder that loses in this way never claimed its incoming
-HTLC. The Clock model is not composed with \code{lightning.spthy}, so it supports T3 but does
+HTLC. The CLOCK model is not composed with \code{lightning.spthy}, so it supports T3 but does
 not discharge it.
 
 \emph{Alternatives.} A more faithful treatment would replace the restrictions by the progress

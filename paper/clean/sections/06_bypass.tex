@@ -7,7 +7,7 @@
 The wormhole of Sec.~\ref{sec:wormhole} lets a payment settle while an honest forwarder between
 two compromised parties is bypassed: its outgoing HTLC is refunded and it earns no fee. We now
 show that in our model a bypass requires key compromise: for the forwarder at each of the
-positions 1 to 6 of a route, and, for payments whose hash is offered on a single channel, for a
+positions 1 to 6 of a route (under T1 to T3), and, for payments whose hash is offered on a single channel, for a
 forwarder at any position of a route of any length. Secs.~\ref{sec:bypass-fixed}
 to~\ref{sec:bypass-caveats} concern the main theory \code{lightning.spthy}; there is no separate
 N-hop theory. HTLC offers between channel peers are not network messages but the private,
@@ -15,7 +15,7 @@ single-use fact \code{Route}, which each application of the one generic rule
 \code{Forward_HTLC} consumes and re-creates for the next hop (Sec.~\ref{sec:core-routing}): with
 the offer as a public, signed message, \tamarin{} treats every party as a potential sender when
 tracing a forwarded message, and the analysis of routes of unbounded length did not terminate
-(what this takes away from the adversary: Sec.~\ref{sec:limitations}).
+(what the adversary loses: Sec.~\ref{sec:limitations}).
 
 \subsection{Bypass Requires Compromise}\label{sec:bypass-fixed}
 
@@ -29,7 +29,7 @@ hop is refunded; \code{Intermediary_Timeout_Refund} records such a refund as
 route we prove, in the full model with T1, T2 and T3 in place:
 
 \begin{theorem}[Bypass Resistance at Positions 1 to 6]
-Let $1 \le k \le 6$. If a sender settles a payment with preimage $x$ on its own channel, the
+Let $1 \le k \le 6$ and assume T1 to T3. If a sender settles a payment with preimage $x$ on its own channel, the
 HTLC on $h(x)$ is forwarded hop by hop from that channel by forwarders $F_1, \dots, F_k$, and
 the hop of $F_k$ is refunded, then some party's long-term key was compromised.
 \end{theorem}
@@ -67,7 +67,7 @@ lemma Any_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
 \end{spthy}
 The last conjunct of the premise, every offer for $h(x)$ is on \code{pSF}, is the
 \emph{single-offer premise}. No position appears in the statement: \code{Me} is any forwarder of
-$h(x)$, at any distance from the sender.
+$h(x)$.
 
 \subsection{Proof}\label{sec:bypass-proof}
 
@@ -117,9 +117,9 @@ such payments bypass resistance at positions 1 to 6 rests on the liveness restri
 Theorem~\ref{thm:anyhop} (single-offer payments) is shown to hold without them.
 
 \emph{Weak conclusion.} All bypass theorems conclude only that some party's long-term key was
-compromised at some point of the trace: not which party (e.g., a neighbour of the bypassed
+compromised in the trace: not which party (e.g., a neighbour of the bypassed
 forwarder, as in the wormhole), and not that the compromise precedes the settlement or the
-refund. Only \code{Skipped_Requires_Compromise} orders the compromise before the skip.
+refund. Only Lemma~\ref{lem:skip} orders the compromise before the skip.
 
 \subsection{Countermeasure: PTLC}\label{sec:ptlc}
 
@@ -154,7 +154,7 @@ adversary knowledge alone. Timing is abstracted: an open HTLC may be refunded at
 (\code{Refund}).
 
 \begin{lemma}[No Wormhole with Per-Hop Locks]
-In the PTLC model, as long as S and H2 are uncompromised, the sender's channel \texttt{c0} is
+In the PTLC model, if S and H2 are never compromised, the sender's channel \texttt{c0} is
 never redeemed while H2's outgoing channel \texttt{c2} is refunded, whichever of H1, H3 and R
 are compromised ({\upshape\code{No_Wormhole_Around_Honest_Hop}}, all-traces, verified,
 25~steps).
@@ -167,8 +167,7 @@ that the PTLC result is not vacuous. \code{Control_Refund_Of_H2_Outgoing} (exist
 not excluded by the model itself. \code{Control_Wormhole_If_H2_Compromised} (exists-trace,
 18 steps): once H2 itself is compromised, the bypass is reachable with S still uncompromised, so
 the safety proof depends on H2 being honest. Sanity lemmas in both models show that a payment
-completes end to end without any compromise (\code{Honest_Payment_Completes}: 10 steps in PTLC,
-10 in HTLC) and with both neighbours H1 and H3 of H2 compromised
+completes end to end without any compromise (\code{Honest_Payment_Completes}: 10 steps in each) and with both neighbours H1 and H3 of H2 compromised
 (\code{Colluders_Present_Payment_Completes}: 14 steps in PTLC, 8 in HTLC). All eight lemmas are
 verified by \texttt{make aux} (PTLC 5/5, HTLC 3/3).
 

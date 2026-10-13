@@ -3,9 +3,10 @@
 
 Grundmann and Hartenstein~\cite{grundmann2026} model-check a stepwise refinement of the
 Lightning Network in TLA+; model checking explores a bounded state space. Our \tamarin{} proofs
-are symbolic and unbounded: subject to the restrictions of our model
+of the main theory are symbolic and unbounded: subject to the restrictions of our model
 (Sec.~\ref{sec:restrictions}), including three liveness restrictions, they cover any number of
-parties, channels, channel updates and payments over routes of any length. \cite{litos2026} presents a formally verified Lightning Network.
+parties, channels, channel updates and payments over routes of any length. A formally verified
+Lightning Network is presented in~\cite{litos2026}.
 % TODO: one sentence on the scope and the tool of [9] and how it differs from our work
 % (keep it consistent with the corresponding sentence of the introduction).
 
@@ -15,18 +16,18 @@ composability framework, that the Lightning protocol realises it. Their guarante
 computational and composable, and their proof is by hand. Ours are symbolic but machine-checked
 by \tamarin; they include bypass resistance for routes of any length (for single-offer
 payments), and they contrast the wormhole under HTLCs with its absence under PTLC-style locks on
-a fixed route.
+a fixed route with an honest sender.
 
 Malavolta et al.~\cite{malavolta2019} describe the wormhole attack on HTLC-based multi-hop
 payments and propose anonymous multi-hop locks as a countermeasure; their instantiation with
 adaptor signatures is the basis of PTLCs. Adaptor signatures also underlie the generalised
-channels of Aumayr et al.~\cite{aumayr2021}, built from limited blockchain scripts. Our main
+channels of~\cite{aumayr2021}. Our main
 model reproduces the wormhole (Sec.~\ref{sec:wormhole}), and our auxiliary models check the
 countermeasure symbolically on a fixed route (Sec.~\ref{sec:ptlc}).
 Smith et al.~\cite{smith2022} formalise agent-skipping attacks on message-forwarding protocols;
 the wormhole is an instance of such an attack. Our bypass theorems (Sec.~\ref{sec:bypass}) state
-the corresponding security property for Lightning routing: a forwarder at positions 1 to 6 of a
-route, or at any position for single-offer payments, can be skipped only if some long-term key
+the matching property for Lightning routing: a forwarder at positions 1 to 6 of a
+route (under T1 to T3), or at any position for single-offer payments, can be skipped only if some long-term key
 is compromised.
 
 Backes et al.~\cite{backes2017} reason about liveness in cryptographic protocols with a progress
@@ -42,7 +43,8 @@ eventually do, and apply it to fair exchange. We impose liveness as trace restri
   restrictions, and T1, T2 and T3 (the last two only for forwarders not compromised before their
   incoming HTLC times out) stand in for CLTV deadlines and timely claiming. They prune every
   trace that violates them, including traces in which an uncompromised forwarder could not have
-  claimed in time; results proved under them say nothing about such runs. Only the 24 lemmas of
+  claimed in time; results proved under them say nothing about such runs. Given T3,
+  intermediary safety is nearly immediate (Sec.~\ref{sec:properties}). Only the 24 lemmas of
   \texttt{make general} are proved with all three removed;
   the necessity runs remove one at a time, and T3 is necessary for intermediary safety
   (Sec.~\ref{sec:timing}). Block heights appear only in the auxiliary CLOCK and CLTV models, which
@@ -69,10 +71,8 @@ eventually do, and apply it to fair exchange. We impose liveness as trace restri
   chooses amounts and fees, controls the delivery of invoices and can compromise keys. It never
   learns a preimage (\code{Preimage_Never_Known}): in the main model the wormhole comes from the
   explicit rule \code{AttackerSkip}, which needs both ends of the skip compromised, rather than
-  from adversary knowledge. There is no
-  onion routing: every forwarder knows its
-  predecessor, its successor and the payment hash, and the next hop is any party with which it
-  shares a channel. We make no privacy claims.
+  from adversary knowledge. There is no onion
+  routing (every forwarder knows its neighbours and the payment hash), and we claim no privacy.
 \end{itemize}
 
 \section{Conclusion}\label{sec:conclusion}
@@ -80,19 +80,20 @@ eventually do, and apply it to fair exchange. We impose liveness as trace restri
 We presented one \tamarin{} theory of the Lightning Network that covers the channel layer and
 multi-hop HTLC routing over routes of any length, against a Dolev-Yao adversary that can also
 compromise long-term keys. We proved that only cheating or compromised parties are punished,
-that settlements are authenticated by the receiver's invoice and that preimages stay secret;
+that settlements are authenticated by the receiver's invoice unless its key is compromised, and
+that preimages stay secret;
 under three liveness restrictions, an uncompromised intermediary never has its outgoing HTLC
-redeemed while its incoming one is refunded, and payments are atomic in runs without key
-compromise. The assumption that intermediaries claim in time is necessary: without it, \tamarin{}
+redeemed while its incoming one is refunded, and payments are atomic across any two consecutive
+intermediaries in runs without key compromise. Timely claiming (T3) is necessary: without it, \tamarin{}
 finds a run without any compromise in which an honest intermediary loses. The wormhole is a
 \tamarin-checked trace in which two compromised parties bypass an honest one, which is refunded
 and earns no fee. Conversely, a bypass requires some key compromise: under the liveness
 restrictions at positions 1 to 6 of any route, and, for payments whose hash is offered on a
 single channel, at every position even without them. On a fixed route, per-hop locks in the
-style of PTLCs rule out the bypass of an honest hop when the sender is honest, whereas a shared
+style of PTLCs rule out the bypass of the honest middle hop when the sender is honest, whereas a shared
 hash lock admits it. Next, we want to replace the liveness restrictions by the progress
-semantics of~\cite{backes2017}, so that runs in which an honest party cannot act are analysed
-rather than pruned, and to derive \code{OneResolutionPerHTLC} from the channel layer.
+semantics of~\cite{backes2017}, so that runs in which an honest party cannot act are kept, not
+pruned, and to derive \code{OneResolutionPerHTLC} from the channel layer.
 
 \section*{Artifact Availability}
 
@@ -103,6 +104,5 @@ a \code{Makefile}, is available as supplementary material.
 (24/24), \texttt{make aux} (21/21) and \texttt{make necessity}, in this order
 (Table~\ref{tab:results}). All results were obtained with \tamarin{} 1.10 and reproduced on a
 laptop with a 6\,GB heap (\texttt{MEM=6G}); \texttt{make verify-one} proves one lemma per run for machines with less
-memory. \tamarin{} 1.10 reports the \maude{} version used, 3.2, as unsupported; all results
-were obtained with it. Every run also reports that \tamarin's derivation checks, part of its
-well-formedness checks, timed out; this warning does not concern the proofs.
+memory. \tamarin{} 1.10 reports the \maude{} version used, 3.2, as unsupported; its warning that derivation
+checks timed out does not concern the proofs.

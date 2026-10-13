@@ -2,7 +2,8 @@
 % Rules described here in prose are printed in sections/appx_F3.tex (Appendix B).
 \section{Verification of the Model}\label{sec:verification}
 
-We describe the model (Sec.~\ref{sec:core}) and what we verified (Sec.~\ref{sec:verified}).
+We describe the model (Sec.~\ref{sec:core}), what we verified (Sec.~\ref{sec:verified}) and the
+resulting guarantees (Secs.~\ref{sec:properties} to~\ref{sec:wormhole}).
 Listings are verbatim; Appendix~\ref{app:listings} prints further rules.
 
 \subsection{The Core Model}\label{sec:core}
@@ -14,7 +15,7 @@ party, each carrying the two balances (\code{fA}, \code{fB}), a state index~\cod
 party's own revocation secret together with the corresponding commitment. The commitment is
 stored without its signature; signatures are checked when a state is installed
 (\code{Both_States_Committed} for the first, \code{Revoke_Old_Secret} for every later one) as
-\code{Eq} action facts; a rule cannot fail, so restriction \code{Equality} enforces them.
+\code{Eq} action facts, enforced by restriction \code{Equality}.
 
 The heart of the model is the \emph{update dance} (Appendix~\ref{lst:update}): commit a new
 state first, then revoke the old one, so that the old state is never revoked until a fully
@@ -92,7 +93,7 @@ rule AttackerSkip:
     [ Fulfilled(ptrSkip, x) ]
 \end{spthy}
 If two compromised parties, \code{ExitAtt} and \code{EntryAtt}, have added HTLCs for the same
-payment hash~$y$ on channels \code{ptrExit} and \code{ptrSkip}, \code{AttackerSkip} delivers the preimage released on \code{ptrExit} on \code{ptrSkip}. \code{EntryAtt} can then
+payment hash~$y$ on channels \code{ptrExit} and \code{ptrSkip}, \code{AttackerSkip} delivers the preimage released on \code{ptrExit} to \code{ptrSkip}. \code{EntryAtt} can then
 settle upstream, while the hops between \code{ptrSkip} and \code{ptrExit}, starting with
 \code{Skipped}, never see their outgoing HTLC fulfilled and can at best be refunded. The rule
 emits \code{Skipped(ptrSkip,x)} but neither \code{Redeemed} nor \code{FeeEarned}; it yields the

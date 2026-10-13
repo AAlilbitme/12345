@@ -1,4 +1,4 @@
-\section{Protocol Overview and Threat Model}\label{sec:overview}
+\section{Protocol Overview}\label{sec:overview}
 
 % Boxed output numbers of Fig. 2 (used in this section only).
 \DeclareRobustCommand{\txout}[1]{\mbox{\setlength{\fboxsep}{0.8pt}\setlength{\fboxrule}{0.4pt}\fbox{\scriptsize\textbf{#1}}}}
@@ -26,7 +26,7 @@ Sec.~\ref{sec:routing}).
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.8\columnwidth,trim={0 40pt 0 0},clip]{figs/fig1_lifecycle.pdf}
+  \includegraphics[width=0.8\columnwidth]{figs/fig1_lifecycle.pdf}
   \caption{Channel lifecycle, labelled with the rules of our model.
     \textcolor{green!45!black}{Green}: opening, cooperative close;
     \textcolor{blue!70!black}{blue}: update loop;
@@ -131,8 +131,8 @@ the wormhole attack (below) breaks this for the hops between colluding
 intermediaries. Intermediaries earn a routing fee.
 
 \begin{example}[Path]\label{ex:path}
-We will use the running example where $S$ sends money to $R$ with the
-following path:
+We will use the running example where $S$ sends money to $R$ through the
+intermediaries, or \emph{forwarders}, $F_1$ to $F_n$:
 \begin{equation}\label{eq:path}
   S \to F_1 \to \cdots \to F_n \to R
 \end{equation}
