@@ -64,7 +64,7 @@ invoices, so that a payment without an invoice of the receiver can settle
 (\code{Forged_Invoice_Requires_Key_Compromise}). The preimage~$x$ is never sent on the network,
 and the adversary never learns it (\code{Preimage_Never_Known}); instead, two compromised parties
 with HTLCs on the same payment hash can relay~$x$ around the parties between them with the rule
-\code{AttackerSkip} (Sec.~\ref{sec:core-skip}): the wormhole attack~\cite{malavolta2019}. Apart
+\code{AttackerSkip} (Secs.~\ref{sec:core-skip} and~\ref{sec:wormhole}): the wormhole attack~\cite{malavolta2019}. Apart
 from their keys, \code{AttackerSkip} and the exemptions of Sec.~\ref{sec:restrictions},
 compromised parties follow the protocol rules.
 
@@ -109,8 +109,9 @@ restriction IntermediaryMustClaim:
       & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
      ==> Ex #l. Redeemed(ptrIn, y) @ #l"
 \end{spthy}
-\noindent\textbf{T1} (\code{RedeemBeforeTimeout}) \emph{orders every redemption before the
-timeout of its channel:} a well-formedness condition, not a liveness assumption.
+\noindent\textbf{T1} (\code{RedeemBeforeTimeout}): \emph{if an HTLC is redeemed and its
+channel times out, the redemption comes first;} a well-formedness condition, not a liveness
+assumption.
 \textbf{T2} (\code{OutgoingTimesOutFirst}) is the decreasing-deadline (CLTV-delta) invariant
 of Remark~\ref{rmk:deadlines}: \emph{if the incoming HTLC of a hop times out and the
 forwarder was not compromised before, its outgoing HTLC timed out earlier.} \textbf{T3}

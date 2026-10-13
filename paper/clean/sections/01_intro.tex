@@ -49,8 +49,8 @@ satisfying the model's restrictions (Sec.~\ref{sec:method}).
   unilateral closing, punishment) and multi-hop HTLC routing, with one generic
   rule, \code{Forward_HTLC}, for every hop of routes of any length. The
   Dolev-Yao adversary can also compromise any long-term key at any time, and
-  two compromised parties on a route can relay its preimage around the parties
-  between them (\code{AttackerSkip}; Sec.~\ref{sec:threat}). The layers share
+  two compromised parties on a payment's route can relay its preimage around
+  the parties between them (\code{AttackerSkip}; Sec.~\ref{sec:threat}). The layers share
   the channel topology and a per-channel slot; their contract, that each HTLC
   is resolved at most once, is a named restriction (\code{OneResolutionPerHTLC})
   justified informally, not a composition theorem (Sec.~\ref{sec:method}).
@@ -77,9 +77,9 @@ satisfying the model's restrictions (Sec.~\ref{sec:method}).
   while an honest intermediary is refunded on its outgoing HTLC, earning no
   fee (Sec.~\ref{sec:wormhole}). Conversely, if the sender settles, a forwarder
   on its route is refunded on its outgoing HTLC only if some long-term key is
-  compromised: at each of the first six hops under the liveness restrictions,
-  and, if the payment hash is offered once, at every hop of any route
-  without them (so also with them). Neither result says whose key is
+  compromised: at each of the first six hops of a route of any length under
+  the liveness restrictions and, if the payment hash is offered once, at every
+  hop without them (so also with them). Neither result says whose key is
   compromised, or when (Sec.~\ref{sec:bypass}).
 \item \emph{Countermeasure.} On a fixed route of three intermediaries, per-hop
   locks derived with secret tweaks (a symbolic stand-in for point time-locked

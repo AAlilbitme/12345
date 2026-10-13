@@ -3,7 +3,7 @@
 \section{Verification of the Model}\label{sec:verification}
 
 We describe the model (Sec.~\ref{sec:core}) and what we verified (Sec.~\ref{sec:verified}).
-Listings are verbatim; Appendix~\ref{app:listings} prints the other rules.
+Listings are verbatim; Appendix~\ref{app:listings} prints further rules.
 
 \subsection{The Core Model}\label{sec:core}
 
@@ -13,7 +13,8 @@ tracks two mirror facts about this channel, \code{StateA} and \code{StateB}, one
 party, each carrying the two balances (\code{fA}, \code{fB}), a state index~\code{n}, and that
 party's own revocation secret together with the corresponding commitment. The commitment is
 stored without its signature; signatures are checked when a state is installed
-(\code{Both_States_Committed} for the first, \code{Revoke_Old_Secret} for every later one).
+(\code{Both_States_Committed} for the first, \code{Revoke_Old_Secret} for every later one) as
+\code{Eq} action facts; a rule cannot fail, so restriction \code{Equality} enforces them.
 
 The heart of the model is the \emph{update dance} (Appendix~\ref{lst:update}): commit a new
 state first, then revoke the old one, so that the old state is never revoked until a fully
@@ -58,7 +59,7 @@ It consumes the incoming \code{Route} fact, produces the outgoing one, takes the
 outgoing channel, and stores in \code{IntermediaryPending}
 everything the hop needs to settle or be refunded later. \code{$Next} is any party with which
 \code{$Me} shares a channel, so routes are built hop by hop and have no fixed length.
-\code{HTLCForwarded} identifies the hop in our lemmas, \code{HTLCAdded} feeds
+\code{HTLCForwarded} identifies the hop in our lemmas, \code{HTLCAdded} feeds restriction
 \code{OneHTLCPerHashPerChannel}, and \code{FeeCharged} records the fee the hop expects; the
 \code{Neq} facts make the forwarder distinct from its neighbours and the two channels distinct.
 
@@ -69,9 +70,9 @@ $y = h(x)$ of a fresh preimage~$x$, kept private in \code{ReceiverInv};
 \code{Receiver_Fulfill_HTLC} consumes the last \code{Route} fact, checks that $x$ hashes to~$y$,
 emits \code{Redeemed(ptrIn,y)} and passes \code{Fulfilled(ptrIn,x)} upstream;
 \code{Intermediary_Settle} turns \code{IntermediaryPending} and \code{Fulfilled(ptrOut,x)} into
-\code{Fulfilled(ptrIn,x)}, recording \code{FeeEarned}. Both give \code{Mutex(ptrIn)} back;
-\code{Sender_Settle} closes the payment (\code{SenderSettled}). Once \code{Open_Timeout} marks a
-channel as timed out (Sec.~\ref{sec:threat}), \code{Sender_Timeout_Refund} and
+\code{Fulfilled(ptrIn,x)}, recording \code{FeeEarned}. Both free \code{Mutex(ptrIn)};
+\code{Sender_Settle} closes the payment (\code{SenderSettled}). Once \code{Open_Timeout} times a
+channel out (an untimed event, Sec.~\ref{sec:threat}), \code{Sender_Timeout_Refund} and
 \code{Intermediary_Timeout_Refund} refund its pending HTLC without punishment
 (\code{Refunded}) and free the slot.
 
@@ -95,7 +96,7 @@ payment hash~$y$ on channels \code{ptrExit} and \code{ptrSkip}, \code{AttackerSk
 settle upstream, while the hops between \code{ptrSkip} and \code{ptrExit}, starting with
 \code{Skipped}, never see their outgoing HTLC fulfilled and can at best be refunded. The rule
 emits \code{Skipped(ptrSkip,x)} but neither \code{Redeemed} nor \code{FeeEarned}; it yields the
-wormhole trace of Sec.~\ref{sec:wormhole}.
+wormhole trace of Sec.~\ref{sec:wormhole} (\code{Wormhole_Fee_Theft_Reachable}).
 
 \subsubsection{Amounts and Fees}\label{sec:core-amounts}
 Amounts and fees are modelled per hop only. \code{Forward_HTLC} reads the incoming amount, the
@@ -107,8 +108,9 @@ value, such as the amount the receiver obtains or the total fee the sender pays.
 fees because the wormhole is a fee theft: \code{FeeCharged} is emitted when a forwarder locks
 its outgoing HTLC, \code{FeeEarned} only when it later claims its incoming one, and in the
 wormhole trace the bypassed honest hop emits only the first, although the
-sender settles and the receiver is paid (cf.\ Lemma~\ref{lem:fee}). The fee is one per-hop quantity, not
-Lightning's \texttt{base\_fee + fee\_rate} formula.
+sender settles and the receiver is paid. A hop whose key is never compromised earns a
+fee only once its outgoing HTLC is redeemed (Lemma~\ref{lem:fee}). The fee is one per-hop
+quantity, not Lightning's \texttt{base\_fee + fee\_rate} formula.
 
 Three non-goals of Sec.~\ref{sec:structure} show in the rules. \code{Forward_HTLC} has no
 \code{Wallet} premise and HTLCs do not change the balances in \code{StateA} and \code{StateB},
@@ -123,8 +125,8 @@ channel balance, the second stage's CSV delay and revocation path are enforced b
 \subsection{Verification Results}\label{sec:verified}
 
 \begin{table}[t]
-  \caption{Verification runs (\tamarin{} 1.10), in the order of \texttt{make all}; \texttt{aux}
-    runs \texttt{lightning\_aux.spthy} (Table~\ref{tab:aux}). A, E: all-traces and
+  \caption{Verification runs of \texttt{lightning.spthy} (\tamarin{} 1.10), in the order of
+    \texttt{make all}; \texttt{aux} runs \texttt{lightning\_aux.spthy} (Table~\ref{tab:aux}). A, E: all-traces and
     exists-trace lemmas.}
   \label{tab:results}
   \centering
@@ -134,8 +136,7 @@ channel balance, the second stage's CSV delay and revocation path are enforced b
     \toprule
     Target & File, flags and content & A & E\\
     \midrule
-    \texttt{verify} & \code{lightning.spthy}, all restrictions: 32 safety, 13 hop-bypass,
-        10 exists-trace (one replayed)
+    \texttt{verify} & All restrictions: 32 safety, 13 hop-bypass, 10 exists-trace (1 replayed)
       & 45 & 10\\
     \texttt{general} & \code{-D=GENERAL}, \code{NO_*}: T1 to T3 removed; Theorem~\ref{thm:anyhop}
         (7 steps), 7 helpers, 16 \texttt{verify} lemmas re-proved
@@ -155,12 +156,12 @@ channel balance, the second stage's CSV delay and revocation path are enforced b
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:results} lists every verification run of our artifact. All results were obtained with \tamarin{} 1.10
+Table~\ref{tab:results} lists every verification run of our artifact, all obtained with \tamarin{} 1.10
 (which reports the \maude{} version used, 3.2, as unsupported) and reproduced on a laptop with a
 6\,GB heap limit (\texttt{MEM=6G}). The default mode (\texttt{make verify}) proves the safety
 lemmas about channels and payments (Secs.~\ref{sec:properties} to~\ref{sec:wormhole},
-Appendix~\ref{app:catalogue}) and that the forwarders at positions 1 to 6 of a route cannot be
-bypassed without a key compromise (Sec.~\ref{sec:bypass-fixed}). Its exists-trace lemmas show that the model is not vacuous (channel updates, cooperative closes,
+Appendix~\ref{app:catalogue}) and that, if the sender settles, the forwarders at positions 1 to 6
+of a route are bypassed only if some key was compromised (Sec.~\ref{sec:bypass-fixed}). Its exists-trace lemmas show that the model is not vacuous (channel updates, cooperative closes,
 refunds and honest multi-hop payments are reachable), that the assumptions of our safety lemmas
 matter (a payment without a matching invoice can settle once the receiver's key is compromised;
 a compromised intermediary can lose), and that the wormhole is reachable. \texttt{make general}

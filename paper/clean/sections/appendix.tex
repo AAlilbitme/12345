@@ -3,10 +3,9 @@
 \section{Lemma Catalogue}\label{app:catalogue}
 
 This appendix renders every lemma of Table~\ref{tab:groups} in natural language and gives its
-exact \tamarin{} statement, so that the table can be checked against the theories. We omit two
-kinds of statements: that of \code{Skipped_Requires_Compromise}, which is printed as
-Lemma~\ref{lem:skip}, and those of the seven helper lemmas of the general theorem, which we list
-by name. The last subsection covers the lemmas of the auxiliary models.
+exact \tamarin{} statement, so that the table can be checked against the theories. Two
+kinds of statements are given elsewhere: that of \code{Skipped_Requires_Compromise} is in
+Appendix~\ref{lst:skipped}, and the seven helper lemmas of the general theorem are listed by name. The last subsection covers the lemmas of the auxiliary models.
 
 Unless stated otherwise, every lemma below is verified in \code{lightning.spthy}, the main model
 (channel layer, multi-hop routing in which one generic rule \code{Forward_HTLC} serves every hop
@@ -522,8 +521,8 @@ lemma Wormhole_Fee_Theft_Reachable:
 \end{figure*}
 
 \paragraph{\texttt{Skipped\_Requires\_Compromise} (A)}
-Every wormhole skip happens after some party's long-term key was compromised. Its statement is
-Lemma~\ref{lem:skip} in Sec.~\ref{sec:wormhole}. It is also re-proved without the liveness
+Every wormhole skip happens after some party's long-term key was compromised (Lemma~\ref{lem:skip}
+in Sec.~\ref{sec:wormhole}); its statement is in Appendix~\ref{lst:skipped}. It is also re-proved without the liveness
 restrictions (\texttt{make general}).
 
 % ---------------------------------------------------------------------------------- group 8

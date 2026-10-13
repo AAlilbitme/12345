@@ -5,9 +5,7 @@ Grundmann and Hartenstein~\cite{grundmann2026} model-check a stepwise refinement
 Lightning Network in TLA+; model checking explores a bounded state space. Our \tamarin{} proofs
 are symbolic and unbounded: subject to the restrictions of our model
 (Sec.~\ref{sec:restrictions}), including three liveness restrictions, they cover any number of
-parties, channels, channel updates and payments over routes of any length, and bypass resistance
-holds at every position of a route for single-offer payments (Sec.~\ref{sec:bypass}).
-\cite{litos2026} presents a formally verified Lightning Network.
+parties, channels, channel updates and payments over routes of any length. \cite{litos2026} presents a formally verified Lightning Network.
 % TODO: one sentence on the scope and the tool of [9] and how it differs from our work
 % (keep it consistent with the corresponding sentence of the introduction).
 
@@ -23,10 +21,8 @@ Malavolta et al.~\cite{malavolta2019} describe the wormhole attack on HTLC-based
 payments and propose anonymous multi-hop locks as a countermeasure; their instantiation with
 adaptor signatures is the basis of PTLCs. Adaptor signatures also underlie the generalised
 channels of Aumayr et al.~\cite{aumayr2021}, built from limited blockchain scripts. Our main
-model reproduces the wormhole (\code{Wormhole_Fee_Theft_Reachable}, Sec.~\ref{sec:wormhole}),
-and our auxiliary models check the countermeasure symbolically on a fixed route
-(Sec.~\ref{sec:ptlc}), with a hash chain in place of the adaptor-signature algebra.
-
+model reproduces the wormhole (Sec.~\ref{sec:wormhole}), and our auxiliary models check the
+countermeasure symbolically on a fixed route (Sec.~\ref{sec:ptlc}).
 Smith et al.~\cite{smith2022} formalise agent-skipping attacks on message-forwarding protocols;
 the wormhole is an instance of such an attack. Our bypass theorems (Sec.~\ref{sec:bypass}) state
 the corresponding security property for Lightning routing: a forwarder at positions 1 to 6 of a
@@ -40,51 +36,43 @@ eventually do, and apply it to fair exchange. We impose liveness as trace restri
 
 \section{Limitations}\label{sec:limitations}
 
-\begin{itemize}
-\item \emph{Abstract timing, liveness as restrictions.} The main model has no clock:
-  \code{Open_Timeout} lets a channel time out at any point allowed by the restrictions, and T1, T2
-  and T3 (the last two only for forwarders not compromised before their incoming HTLC times out)
-  stand in for CLTV deadlines and timely claiming. As restrictions, they remove every trace that
-  violates them, including traces in which an uncompromised forwarder could not have claimed in
-  time; results proved under them say nothing about such runs (Sec.~\ref{par:liveness-scope}).
-  Only the 24 lemmas of \texttt{make general}, among them Theorem~\ref{thm:anyhop}, are proved
-  with all three removed; the necessity runs remove one at a time, and T3 is necessary for
-  intermediary safety (Sec.~\ref{sec:timing}). Concrete block heights appear only in the auxiliary
-  CLOCK and CLTV models, which are not composed with \code{lightning.spthy}. The progress
-  semantics of Backes et al.~\cite{backes2017} would keep the traces in which an honest forwarder
-  cannot act instead of pruning them. \tamarin{} 1.10 implements it for \sapic{} processes (option
-  \code{translation-progress}), so the routing layer would have to be written as \sapic{}
-  processes; we leave this to future work.
-\item \emph{Single-offer premise.} The any-length theorem assumes that every HTLC for the
-  payment hash is offered on the sender's channel; when a hash is offered more than once, only
-  the fixed-position theorems (positions 1 to 6) apply, and these are proved under T1, T2 and T3.
-  The conclusion of all bypass theorems says that some long-term key was compromised, not whose
-  or when.
-\item \emph{No end-to-end amounts.} Each \code{Forward_HTLC} reads its incoming amount, fee and
-  outgoing amount from the network and requires the incoming amount to be the outgoing amount
-  plus the fee, but the offer, the invoice and the \code{Route} fact carry no amount. Amounts are
-  therefore not chained along the path, and we make no end-to-end claims about value, e.g., that
-  the receiver obtains the invoiced amount or that the sender pays exactly the path fees.
-\item \emph{HTLCs are not part of the commitment transactions.} The channel layer and the
-  routing layer share the theory, the adversary and the channel topology (HTLCs are added only
-  on opened channels, \code{HTLC_On_Opened_Channel}), but HTLC outputs are not folded into the
-  commitment states, and settling or refunding an HTLC does not update the channel state. That
-  each HTLC is resolved at most once is assumed as the restriction \code{OneResolutionPerHTLC},
-  not derived from the channel layer; we do not claim a composition theorem. A channel carries
-  at most one pending HTLC at a time (\code{Mutex(ptr)}).
-\item \emph{Routing abstraction.} HTLC offers travel as the private linear fact \code{Route},
-  not as network messages, so the network adversary cannot inject, replay or modify offers
-  between peers; it chooses amounts and fees, controls the delivery of invoices and can
-  compromise keys. The adversary never learns a preimage (\code{Preimage_Never_Known}), so in
-  the main model the wormhole comes from the explicit rule \code{AttackerSkip}, which requires
-  the parties at both ends of the skip to be compromised, rather than from adversary knowledge.
-  (The auxiliary PTLC and HTLC models have no such rule.)
-\item \emph{No onion routing, no privacy.} Every forwarder knows its predecessor, its successor
-  and the payment hash, and the next hop is any party with which the forwarder shares a channel.
-  We make no privacy claims.
-\item \emph{PTLC model.} The countermeasure is checked only on the fixed route
-  S$\,\to\,$H1$\,\to\,$H2$\,\to\,$H3$\,\to\,$R, with honest lock set-up, an honest sender and a
-  hash chain in place of the adaptor-signature algebra (Sec.~\ref{sec:ptlc}).
+\begin{itemize}[\setlength{\IEEElabelindent}{0pt}]
+\item \emph{Abstract timing, liveness as restrictions} (Sec.~\ref{par:liveness-scope}). The main
+  model has no clock: \code{Open_Timeout} lets a channel time out at any point allowed by the
+  restrictions, and T1, T2 and T3 (the last two only for forwarders not compromised before their
+  incoming HTLC times out) stand in for CLTV deadlines and timely claiming. They prune every
+  trace that violates them, including traces in which an uncompromised forwarder could not have
+  claimed in time; results proved under them say nothing about such runs. Only the 24 lemmas of
+  \texttt{make general} are proved with all three removed;
+  the necessity runs remove one at a time, and T3 is necessary for intermediary safety
+  (Sec.~\ref{sec:timing}). Block heights appear only in the auxiliary CLOCK and CLTV models, which
+  are not composed with \code{lightning.spthy}. The progress semantics of~\cite{backes2017}
+  would keep the pruned traces, but \tamarin{} 1.10 offers it only for \sapic{} processes.
+\item \emph{Scope of the bypass and PTLC results} (Secs.~\ref{sec:bypass-caveats}
+  and~\ref{sec:ptlc}). Theorem~\ref{thm:anyhop} needs the single-offer premise; for a hash
+  offered more than once, only positions 1 to 6 are covered, under T1, T2 and T3. No bypass
+  theorem says whose key is compromised, or when. The countermeasure is checked only on a fixed
+  route with three intermediaries, with honest lock set-up, an honest sender and a hash chain in
+  place of the adaptor-signature algebra.
+\item \emph{No end-to-end amounts.} Each \code{Forward_HTLC} requires its incoming amount to be the outgoing amount plus the fee, but the offer,
+  the invoice and the \code{Route} fact carry no amount. Amounts are therefore not chained along
+  the path, and we make no end-to-end claims about value, e.g., that the receiver obtains the
+  invoiced amount or that the sender pays exactly the path fees.
+\item \emph{HTLCs are not part of the commitment transactions.} The channel and routing layers share the theory,
+  the adversary and the channel topology (HTLCs are added only on opened channels,
+  \code{HTLC_On_Opened_Channel}), but settling or refunding an HTLC does not update the channel
+  state. That each HTLC is resolved at most once is assumed as the restriction \code{OneResolutionPerHTLC}, not
+  derived from the channel layer; we do not claim a composition theorem. A channel carries at
+  most one pending HTLC at a time (\code{Mutex(ptr)}).
+\item \emph{Routing abstraction, no privacy.} Offers travel as the private linear fact
+  \code{Route}, so the network adversary cannot inject, replay or modify offers between peers; it
+  chooses amounts and fees, controls the delivery of invoices and can compromise keys. It never
+  learns a preimage (\code{Preimage_Never_Known}): in the main model the wormhole comes from the
+  explicit rule \code{AttackerSkip}, which needs both ends of the skip compromised, rather than
+  from adversary knowledge. There is no
+  onion routing: every forwarder knows its
+  predecessor, its successor and the payment hash, and the next hop is any party with which it
+  shares a channel. We make no privacy claims.
 \end{itemize}
 
 \section{Conclusion}\label{sec:conclusion}
@@ -98,27 +86,23 @@ redeemed while its incoming one is refunded, and payments are atomic in runs wit
 compromise. The assumption that intermediaries claim in time is necessary: without it, \tamarin{}
 finds a run without any compromise in which an honest intermediary loses. The wormhole is a
 \tamarin-checked trace in which two compromised parties bypass an honest one, which is refunded
-and earns no fee. Conversely, a bypass requires
-some key compromise: under the liveness restrictions at positions 1 to 6 of any route, and, for
-payments whose hash is offered on a single channel, at every position even without them. On a fixed route, per-hop locks in the style of PTLCs rule out the
-bypass of an honest hop when the sender is honest, whereas a shared hash lock admits it. Next,
-we want to replace the liveness restrictions by the progress semantics of~\cite{backes2017}, so
-that runs in which an honest party cannot act are analysed rather than pruned, and to derive
-\code{OneResolutionPerHTLC} from the channel layer instead of assuming it.
+and earns no fee. Conversely, a bypass requires some key compromise: under the liveness
+restrictions at positions 1 to 6 of any route, and, for payments whose hash is offered on a
+single channel, at every position even without them. On a fixed route, per-hop locks in the
+style of PTLCs rule out the bypass of an honest hop when the sender is honest, whereas a shared
+hash lock admits it. Next, we want to replace the liveness restrictions by the progress
+semantics of~\cite{backes2017}, so that runs in which an honest party cannot act are analysed
+rather than pruned, and to derive \code{OneResolutionPerHTLC} from the channel layer.
 
 \section*{Artifact Availability}
 
-The artifact is available as supplementary material.
+The artifact, \code{lightning.spthy}, \code{lightning_aux.spthy} (the five auxiliary models) and
+a \code{Makefile}, is available as supplementary material.
 % TODO: artifact URL for the camera-ready version (anonymised for review).
-It consists of \code{lightning.spthy} (main model: channel layer, multi-hop routing and the
-wormhole; 37 rules), \code{lightning_aux.spthy} (five auxiliary models, selected by
-\code{-D=PTLC}, \code{-D=HTLC}, \code{-D=CLOCK}, \code{-D=CLTV} and \code{-D=TIMEOUT}) and a
-\code{Makefile}. \texttt{make all} runs, in this order, \texttt{make verify}
-(\code{lightning.spthy}, full model: 55/55 lemmas verified), \texttt{make general}
-(Sec.~\ref{sec:bypass}: 24/24), \texttt{make aux} (\code{lightning_aux.spthy}: 21/21) and
-\texttt{make necessity} (Sec.~\ref{sec:timing}); Table~\ref{tab:results} lists what each target
-proves. All results were obtained with \tamarin{} 1.10 and reproduced on a laptop with a 6\,GB
-heap (\texttt{MEM=6G}); \texttt{make verify-one} proves one lemma per run for machines with less
-memory. \tamarin{} 1.10 reports the \maude{} version used, 3.2, as unsupported; all results above
+\texttt{make all} runs \texttt{make verify} (55/55 lemmas verified), \texttt{make general}
+(24/24), \texttt{make aux} (21/21) and \texttt{make necessity}, in this order
+(Table~\ref{tab:results}). All results were obtained with \tamarin{} 1.10 and reproduced on a
+laptop with a 6\,GB heap (\texttt{MEM=6G}); \texttt{make verify-one} proves one lemma per run for machines with less
+memory. \tamarin{} 1.10 reports the \maude{} version used, 3.2, as unsupported; all results
 were obtained with it. Every run also reports that \tamarin's derivation checks, part of its
-well-formedness checks of the model, timed out; this warning does not concern the proofs.
+well-formedness checks, timed out; this warning does not concern the proofs.

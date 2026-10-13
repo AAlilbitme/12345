@@ -1,1 +1,46 @@
-% Listings moved out of the main text by the fit pass (F5).
+% Listings moved out of the main text by the fit pass (F5): rules of Sec. VI-E.
+% The bypass lemmas of Sec. VI (First_Hop/Second_Hop/Hop3..Hop6) are printed in app:bypass,
+% the PTLC and HTLC wormhole lemmas in app:aux.
+\subsection{PTLC Model: Lock Set-up and Hop Settlement}\label{lst:ptlc}
+
+These are the two rules of the PTLC model (\code{lightning_aux.spthy}, \code{-D=PTLC}) that
+implement the per-hop locks of Sec.~\ref{sec:ptlc}. \code{Sender_Setup} draws the fresh secret
+$x$, the channels \texttt{c0} to \texttt{c3} and the tweaks $t_1, t_2, t_3$, derives the channel
+secrets by the hash chain, locks the sender's channel with $h(s_0)$, gives each hop its incoming
+channel, outgoing channel, outgoing lock and tweak, and publishes all four locks.
+\begin{spthy}
+rule Sender_Setup:
+    let s3 = ~x
+        s2 = h(<s3, ~t3>)
+        s1 = h(<s2, ~t2>)
+        s0 = h(<s1, ~t1>)
+    in
+    [ Fr(~x), Fr(~c0), Fr(~c1), Fr(~c2), Fr(~c3), Fr(~t1), Fr(~t2), Fr(~t3) ]
+    --[ Pay($S, $H1, $H2, $H3, $R, ~c0, ~c1, ~c2, ~c3),
+        Neq($S, $H1), Neq($S, $H2), Neq($S, $H3), Neq($S, $R),
+        Neq($H1, $H2), Neq($H2, $H3), Neq($H1, $H3),
+        Neq($H1, $R), Neq($H2, $R), Neq($H3, $R) ]->
+    [ !Lock(~c0, $S, $H1, h(s0)), Open(~c0), SenderWait($S, ~c0),
+      !Hop($H1, ~c0, ~c1, $H2, h(s1), ~t1),
+      !Hop($H2, ~c1, ~c2, $H3, h(s2), ~t2),
+      !Hop($H3, ~c2, ~c3, $R,  h(s3), ~t3),
+      !RecvSecret($R, ~c3, ~x),
+      Out(h(s0)), Out(h(s1)), Out(h(s2)), Out(h(s3)) ]
+\end{spthy}
+\code{Hop_Settle} lets an honest hop that learns the secret \texttt{sec} of its outgoing channel
+claim its incoming channel with the secret derived from \texttt{sec} and its own tweak, and
+publishes that secret.
+\begin{spthy}
+rule Hop_Settle:
+    [ Pend($H, cIn, cOut, t), ClaimInfo(cOut, sec), !Lock(cIn, P, $H, Lin), Open(cIn) ]
+    --[ Redeemed(cIn), HopSettled($H, cIn, cOut), Eq(h(h(<sec, t>)), Lin) ]->
+    [ ClaimInfo(cIn, h(<sec, t>)), Out(h(<sec, t>)) ]
+\end{spthy}
+In the HTLC baseline (\code{-D=HTLC}), \code{Sender_Setup} binds \texttt{s0} to \texttt{s3} all
+to \texttt{\textasciitilde x}, and \code{Hop_Settle} passes the outgoing secret on unchanged:
+\begin{spthy}
+rule Hop_Settle:
+    [ Pend($H, cIn, cOut, t), ClaimInfo(cOut, sec), !Lock(cIn, P, $H, Lin), Open(cIn) ]
+    --[ Redeemed(cIn), HopSettled($H, cIn, cOut), Eq(h(sec), Lin) ]->
+    [ ClaimInfo(cIn, sec), Out(sec) ]
+\end{spthy}

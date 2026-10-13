@@ -204,6 +204,7 @@ window~\cite{mccorry2019}.
 Our model imposes this liveness as restriction T3
 (Sec.~\ref{sec:restrictions}), without which intermediary safety fails
 (Sec.~\ref{sec:timing}). Finally, as all HTLCs of a payment share the hash $y$,
-two colluding intermediaries can pass $x$ around the hops between them, which
-are refunded but earn no fee: the wormhole attack~\cite{malavolta2019}
-(Secs.~\ref{sec:wormhole} and~\ref{sec:bypass}).
+two colluding intermediaries can pass $x$ around the hops between them. In
+this wormhole attack~\cite{malavolta2019}, the payment completes while the
+bypassed hops are refunded and earn no fee (Secs.~\ref{sec:wormhole}
+and~\ref{sec:bypass}).
