@@ -1,25 +1,21 @@
 \begin{abstract}
 The Lightning Network routes payments over chains of payment channels using
-hash time-locked contracts (HTLCs). We present one \tamarin{} theory covering
-the channel layer (unboundedly many updates, revocation, punishment) and
-multi-hop routing over routes of any length, against a Dolev-Yao adversary who
-can also compromise long-term keys. We prove that only cheating or
-compromised parties are punished, that settlements are authenticated by
-the receiver's invoice, and that preimages, which our model never sends on the
-network, stay secret. Under three liveness assumptions, imposed as restrictions
-that remove every run violating them, an uncompromised
-intermediary never has its outgoing HTLC redeemed while its incoming one is
-refunded, and payment atomicity holds in runs without key compromise. The
-assumption that intermediaries claim in time is necessary: without it,
-\tamarin{} finds a run without compromise in which an intermediary loses
-funds. We give the wormhole attack as a \tamarin-checked trace: colluding
-intermediaries bypass an honest one, which is refunded but earns no fee.
-Conversely, we prove for routes of any length that a hop of a settled payment
-whose hash is offered once can be bypassed only if some long-term key is
-compromised. On a fixed route, per-hop locks in the style of point time-locked
-contracts (PTLCs) prevent the wormhole around an honest intermediary when the
-sender is honest, whereas plain HTLCs admit it. All results are machine-checked
-with \tamarin~1.10 and reproduced with one command.
+hash time-locked contracts (HTLCs). One \tamarin{} theory models its channel
+layer (unboundedly many updates, revocation, punishment) and multi-hop routing
+over routes of any length, against a Dolev-Yao adversary that can compromise
+long-term keys. We prove that only cheating or compromised parties are
+punished, that the receiver's invoice authenticates settlements, and that
+preimages, which our model never sends, stay secret. Under three liveness
+restrictions, which prune violating runs, an uncompromised intermediary never
+has its outgoing HTLC redeemed while its incoming one is refunded, and payment
+atomicity holds without key compromise. Timely claiming is necessary: without
+it, an intermediary can lose funds in a compromise-free run. In a
+\tamarin-checked wormhole trace, colluders bypass an honest intermediary, which
+is refunded but earns no fee. For routes of any length, a hop of a settled
+payment whose hash is offered once is bypassed only if some long-term key is
+compromised. On a fixed route, per-hop locks as in point time-locked contracts
+prevent bypassing an honest intermediary when the sender is honest; plain HTLCs
+admit it. All results are machine-checked with \tamarin~1.10.
 \end{abstract}
 
 \begin{IEEEkeywords}

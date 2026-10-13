@@ -1,14 +1,11 @@
 % Sec. V (Verification of the Model): V-A The Core Model and V-B Verification Results.
+% Rules described here in prose are printed in sections/appx_F3.tex (Appendix B).
 \section{Verification of the Model}\label{sec:verification}
 
-This section describes how the model is built (Sec.~\ref{sec:core}) and what we verified
-(Sec.~\ref{sec:verified}). Listings are verbatim excerpts of \code{lightning.spthy};
-\texttt{...} marks elisions.
+We describe the model (Sec.~\ref{sec:core}) and what we verified (Sec.~\ref{sec:verified}).
+Listings are verbatim; Appendix~\ref{app:listings} prints the other rules.
 
 \subsection{The Core Model}\label{sec:core}
-
-As stated in Sec.~\ref{sec:method}, the main theory contains both layers, as two groups of rules
-that share only the long-term keys and the channel topology.
 
 \subsubsection{Payment Channels}\label{sec:core-channels}
 A channel is identified by a fresh pointer \code{ptr} to its founding transaction. Our model
@@ -18,95 +15,30 @@ party's own revocation secret together with the corresponding commitment. The co
 stored without its signature; signatures are checked when a state is installed
 (\code{Both_States_Committed} for the first, \code{Revoke_Old_Secret} for every later one).
 
-The heart of the model is the \emph{update dance}: commit a new state first, then revoke the old
-one. \code{Update_State} samples the next state index and both fresh revocation secrets, reads
-the two current mirrors and the new balances from the environment, and produces two pending
-mirrors without destroying anything: each pending mirror keeps the old state next to the new,
-signed one.
-\begin{spthy}
-rule Update_State:
-    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
-        newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
-        sigAnew    = sign(newCommitA, ltkA)
-        sigBnew    = sign(newCommitB, ltkB)
-    in
-    [ ...
-      StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
-      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
-      In(<fA_new, fB_new>) ]
-    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
-    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
-        ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
-      PendingB(...) ]
-\end{spthy}
-Only afterwards does \code{Revoke_Old_Secret} supersede the old state: it consumes the two
-pending mirrors, installs them as the new state, and, crucially, records the old revocation
-secrets as persistent facts.
-\begin{spthy}
-rule Revoke_Old_Secret:
-    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
-        n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
-      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
-        n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
-      !Pk($A, pkA), !Pk($B, pkB) ]
-    --[ StateUpdate($A, $B, ptr, n_new),
-        Revoke($A, n_old, sAold),
-        Revoke($B, n_old, sBold),
-        Eq(verify(sigAnew, newCommitA, pkA), true),
-        Eq(verify(sigBnew, newCommitB, pkB), true) ]->
-    [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
-      StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
-      !RevokedSecret($A, n_old, sAold, oldCommitA),
-      !RevokedSecret($B, n_old, sBold, oldCommitB),
-      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
-      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
-\end{spthy}
-Two details deserve emphasis. First, the signature checks of Sec.~\ref{sec:channel} become the
-two \code{Eq} action facts; a \tamarin{} rule cannot fail, so restriction \code{Equality} turns
-these action facts into hard prerequisites. Second, the old revocation secret becomes
-persistent knowledge, while the old commitment's spend becomes a linear one-shot token. This
-keeps the secret available for later punishment while guaranteeing that a given revoked
-commitment is spent at most once, following the single-spend discipline of
-Sec.~\ref{par:single-spend}. The order (commit, then revoke) is what protects a party that
-aborts mid-update: the old state is never revoked until a fully signed new one exists.
+The heart of the model is the \emph{update dance} (Appendix~\ref{lst:update}): commit a new
+state first, then revoke the old one, so that the old state is never revoked until a fully
+signed new one exists. \code{Update_State} samples the next state index and both fresh
+revocation secrets, reads the new balances from the environment, and turns the two mirrors into
+two pending mirrors that keep the old state next to the new, signed one. Only afterwards does
+\code{Revoke_Old_Secret} install the new state, recording the old revocation secrets as
+persistent knowledge (\code{!RevokedSecret}) and the old commitments as linear one-shot tokens
+(\code{RevokedCommitmentUnspent}, Sec.~\ref{par:single-spend}).
 
-The remaining phases reuse the same facts, so we give only the closing path here and trust the
-pattern carries over. \code{Lock_Funds_And_Open} mints the two mirrors together with the
-persistent facts \code{!ValidOnChain(ptr)}, \code{!ChannelRecord(ptr,$A,$B)} and
-\code{!ChannelConnect} (one per direction), and the per-channel slot \code{Mutex(ptr)}, which
-the routing rules take and give back (Sec.~\ref{sec:core-routing}). A unilateral close spends
-the current mirror: \code{Publish_Current_A} turns \code{StateA} into an \code{OnChainDelayed}
-and an \code{OnChainInstant} output,
-\begin{spthy}
-rule Publish_Current_A:
-    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB), !ValidOnChain(ptr) ]
-    --[ Publish($A, n, commitA),
-        ...
-        OnChainInstantProduce($B, n) ]->
-    [ OnChainDelayed($A, n, commitA),
-      OnChainInstant($B, n, commitA) ]
-\end{spthy}
-and \code{Claim_Funds_A} later releases the delayed output to its owner:
-\begin{spthy}
-rule Claim_Funds_A:
-    [ OnChainDelayed($A, n, txContent) ]
-    --[ ClaimFunds($A, n), CSVPassed($A, n), SettledTx($A, txContent) ]->
-    [ FundsTo($A, n) ]
-\end{spthy}
-Notably, the \code{CSVPassed} action lets us capture that time has passed. A cooperative close
+\code{Lock_Funds_And_Open} mints the two mirrors, the persistent facts
+\code{!ValidOnChain(ptr)}, \code{!ChannelRecord(ptr,$A,$B)} and \code{!ChannelConnect} (one per
+direction), and the per-channel slot \code{Mutex(ptr)}. The remaining phases reuse these facts
+(Appendix~\ref{lst:close}). A unilateral close spends the current mirror:
+\code{Publish_Current_A} turns \code{StateA} into an \code{OnChainDelayed} and an
+\code{OnChainInstant} output, and \code{Claim_Funds_A} later releases the delayed output to its
+owner; its action \code{CSVPassed} captures that time has passed. A cooperative close
 (\code{Honest_Close}) signs one shared settlement transaction instead, and punishment
-(\code{Publish_Revoked_A} consuming \code{RevokedCommitmentUnspent}, then \code{Punish_A})
-transfers the whole channel to the honest party.
+(\code{Publish_Revoked_A}, then \code{Punish_A}) transfers the whole channel to the honest party.
 
 \subsubsection{Routing}\label{sec:core-routing}
-The routing layer of Sec.~\ref{sec:routing} is a chain of HTLC offers in the forward direction
-and of fulfilments in the backward one, and our model gives each direction its own fact. Forward
-obligations travel as linear facts \code{Route($Prev,$Me,ptrIn,y)}, and every added HTLC is also
-recorded in a persistent fact \code{!RouteInfo}. Once an HTLC is redeemed, the preimage travels
-back as \code{Fulfilled(ptr,x)}. The slot \code{Mutex(ptr)} acts as a per-channel lock: it is
-taken when an HTLC is added and given back when that HTLC resolves (Sec.~\ref{par:single-spend}).
-
-The core of the model is the generic forwarding rule, one rule for any number of hops.
+Each direction of the routing layer (Sec.~\ref{sec:routing}) has its own fact. HTLC
+offers travel forward as linear facts \code{Route($Prev,$Me,ptrIn,y)}, each also recorded in a
+persistent fact \code{!RouteInfo}; once an HTLC is redeemed, the preimage travels back as
+\code{Fulfilled(ptr,x)}. One generic forwarding rule serves any number of hops:
 \begin{spthy}
 rule Forward_HTLC:
     [ Route($Prev, $Me, ptrIn, y),
@@ -122,44 +54,30 @@ rule Forward_HTLC:
       Route($Me, $Next, ptrOut, y),
       !RouteInfo($Me, $Next, ptrOut, y) ]
 \end{spthy}
-\code{Forward_HTLC} advances the payment one hop: it consumes the incoming \code{Route} fact,
-produces the outgoing one, takes the slot \code{Mutex(ptrOut)} of the outgoing channel, and
-stores in \code{IntermediaryPending} everything the hop needs to settle or to be refunded
-later. \code{$Next} is any party with which \code{$Me} shares a channel, so routes are built
-hop by hop and have no fixed length; this single rule serves every forwarding hop of every
-route. The amounts and the fee are chosen by the environment, constrained only by the
-\code{Eq} action fact (Sec.~\ref{sec:core-amounts}). The action \code{HTLCForwarded} identifies the hop in our lemmas, \code{HTLCAdded} feeds restriction
-\code{OneHTLCPerHashPerChannel}, and \code{FeeCharged} records the fee the hop expects. The
-\code{Neq} facts make the forwarder distinct from both of its neighbours and the two channels
-distinct from each other.
+It consumes the incoming \code{Route} fact, produces the outgoing one, takes the slot of the
+outgoing channel, and stores in \code{IntermediaryPending}
+everything the hop needs to settle or be refunded later. \code{$Next} is any party with which
+\code{$Me} shares a channel, so routes are built hop by hop and have no fixed length.
+\code{HTLCForwarded} identifies the hop in our lemmas, \code{HTLCAdded} feeds
+\code{OneHTLCPerHashPerChannel}, and \code{FeeCharged} records the fee the hop expects; the
+\code{Neq} facts make the forwarder distinct from its neighbours and the two channels distinct.
 
-The settle round runs in the other direction on separate facts. \code{Receiver_Create_Invoice}
-signs a tagged invoice that names the receiver, the sender and the payment hash $y = h(x)$ of a
-fresh preimage~$x$, sends it with its signature, and keeps $x$ private in \code{ReceiverInv}.
-\code{Sender_Offer_HTLC} checks that signature before offering the first HTLC.
+The settle round runs backwards (Appendix~\ref{lst:settle}). \code{Receiver_Create_Invoice}
+signs and sends a tagged invoice naming the receiver, the sender and the payment hash
+$y = h(x)$ of a fresh preimage~$x$, kept private in \code{ReceiverInv};
+\code{Sender_Offer_HTLC} checks the signature before offering the first HTLC.
 \code{Receiver_Fulfill_HTLC} consumes the last \code{Route} fact, checks that $x$ hashes to~$y$,
-emits \code{Redeemed(ptrIn,y)} and passes the preimage upstream as \code{Fulfilled(ptrIn,x)}.
-The preimage is never sent over the network, and the adversary never learns it
-(\code{Preimage_Never_Known}). \code{Intermediary_Settle} then consumes
-\code{IntermediaryPending} and \code{Fulfilled(ptrOut,x)}, produces \code{Fulfilled(ptrIn,x)}
-one hop upstream, and records \code{FeeEarned} when the intermediary collects its fee. Both
-rules give the slot \code{Mutex(ptrIn)} back. \code{Sender_Settle} finally consumes
-\code{SenderPending} and \code{Fulfilled(ptrSF,x)} and closes the payment with
-\code{SenderSettled}.
-
-Finally, the model lets a payment fail without punishment. \code{Open_Timeout} marks a channel
-as timed out (an untimed event, Sec.~\ref{sec:threat}), which makes the pending HTLC on that
-channel refundable:
-\code{Sender_Timeout_Refund} and \code{Intermediary_Timeout_Refund} consume the corresponding
-pending state to return funds (recording \code{Refunded}) and give the slot \code{Mutex} back.
-The interplay of claiming and refunding is pinned down by the three liveness restrictions of
-Sec.~\ref{sec:restrictions}: T1 forbids redeeming after the timeout, T2 encodes the decreasing
-deadlines of Remark~\ref{rmk:deadlines}, and T3 the claiming liveness of
-Remarks~\ref{rmk:claiming} and~\ref{rmk:deadlines}.
+emits \code{Redeemed(ptrIn,y)} and passes \code{Fulfilled(ptrIn,x)} upstream;
+\code{Intermediary_Settle} turns \code{IntermediaryPending} and \code{Fulfilled(ptrOut,x)} into
+\code{Fulfilled(ptrIn,x)}, recording \code{FeeEarned}. Both give \code{Mutex(ptrIn)} back;
+\code{Sender_Settle} closes the payment (\code{SenderSettled}). Once \code{Open_Timeout} marks a
+channel as timed out (Sec.~\ref{sec:threat}), \code{Sender_Timeout_Refund} and
+\code{Intermediary_Timeout_Refund} refund its pending HTLC without punishment
+(\code{Refunded}) and free the slot.
 
 \subsubsection{The Wormhole Rule}\label{sec:core-skip}
 Besides the Dolev-Yao network and key compromise (\code{Compromise_Ltk}), the adversary has one
-routing rule, used for the wormhole:
+routing rule:
 \begin{spthy}
 rule AttackerSkip:
     [ Fulfilled(ptrExit, x),
@@ -172,201 +90,100 @@ rule AttackerSkip:
         Eq(h(x), y) ]->
     [ Fulfilled(ptrSkip, x) ]
 \end{spthy}
-If two compromised parties, \code{ExitAtt} and \code{EntryAtt}, have each added an HTLC for the
-same payment hash~$y$, on channels \code{ptrExit} and \code{ptrSkip}, then \code{AttackerSkip}
-takes the preimage released on \code{ptrExit} and delivers it on \code{ptrSkip}.
-\code{EntryAtt} can then settle upstream, while the hops between \code{ptrSkip} and
-\code{ptrExit}, starting with \code{Skipped}, never see their outgoing HTLC fulfilled and can at
-best be refunded. The rule emits \code{Skipped(ptrSkip,x)} but neither \code{Redeemed} nor
-\code{FeeEarned}. It yields the wormhole trace of Sec.~\ref{sec:wormhole}
-(\code{Wormhole_Fee_Theft_Reachable}), and the hop-bypass theorems
-(Secs.~\ref{sec:wormhole} and~\ref{sec:bypass}) show that, if the sender settles, a forwarder at
-positions 1 to 6 of the route, or at any position of a single-offer payment, is bypassed only if
-some key was compromised.
+If two compromised parties, \code{ExitAtt} and \code{EntryAtt}, have added HTLCs for the same
+payment hash~$y$ on channels \code{ptrExit} and \code{ptrSkip}, \code{AttackerSkip} delivers the preimage released on \code{ptrExit} on \code{ptrSkip}. \code{EntryAtt} can then
+settle upstream, while the hops between \code{ptrSkip} and \code{ptrExit}, starting with
+\code{Skipped}, never see their outgoing HTLC fulfilled and can at best be refunded. The rule
+emits \code{Skipped(ptrSkip,x)} but neither \code{Redeemed} nor \code{FeeEarned}; it yields the
+wormhole trace of Sec.~\ref{sec:wormhole}.
 
 \subsubsection{Amounts and Fees}\label{sec:core-amounts}
 Amounts and fees are modelled per hop only. \code{Forward_HTLC} reads the incoming amount, the
-fee and the outgoing amount from the network as natural-number terms and requires the incoming
+fee and the outgoing amount from the network as natural numbers and requires the incoming
 amount to equal the outgoing amount plus the fee, so this balance holds at every hop by
-construction. The three values are kept in \code{IntermediaryPending}.
-\code{Sender_Offer_HTLC}, the invoice and the \code{Route} facts carry no amount, so amounts are
-not chained along the path, and the model makes no statement about end-to-end value, such as
-the amount the receiver obtains or the total fee the sender pays. We keep per-hop fees because
-the wormhole of Sec.~\ref{sec:wormhole} is a fee theft. The fee is a single per-hop quantity
-rather than Lightning's \texttt{base\_fee + fee\_rate} formula, and we prove nothing about fee
-policy. Deadlines are not numbers either: T2 captures only their order
-(Sec.~\ref{sec:restrictions}), and the block clock and the CLTV arithmetic are checked in the
-auxiliary models of Table~\ref{tab:results}.
+construction. \code{Sender_Offer_HTLC}, the invoice and the \code{Route} facts carry no amount,
+so amounts are not chained along the path, and the model says nothing about end-to-end
+value, such as the amount the receiver obtains or the total fee the sender pays. We keep per-hop
+fees because the wormhole is a fee theft: \code{FeeCharged} is emitted when a forwarder locks
+its outgoing HTLC, \code{FeeEarned} only when it later claims its incoming one, and in the
+wormhole trace the bypassed honest hop emits only the first, although the
+sender settles and the receiver is paid (cf.\ Lemma~\ref{lem:fee}). The fee is one per-hop quantity, not
+Lightning's \texttt{base\_fee + fee\_rate} formula.
 
-Fees are charged and earned by two separate events. \code{FeeCharged} is emitted when a
-forwarder locks its outgoing HTLC; \code{FeeEarned} is emitted only when it later claims its
-incoming one. In the wormhole trace, the bypassed honest hop emits \code{FeeCharged} but never
-\code{FeeEarned}, although the sender settles and the receiver is paid
-(\code{Wormhole_Fee_Theft_Reachable}, Sec.~\ref{sec:wormhole}). Conversely, a hop whose key is
-never compromised earns a fee only after it has forwarded the payment and its outgoing HTLC has
-been redeemed (\code{Fee_Only_On_Successful_Forward}).
-
-We deliberately leave out three things (see also Sec.~\ref{sec:structure}). First, channel
-capacity: \code{Forward_HTLC} has no \code{Wallet} premise and HTLCs do not change the balances
-in \code{StateA} and \code{StateB}, so a forward never fails for lack of funds. Second,
-concurrent HTLCs on one channel: a channel carries at most one pending HTLC at a time
-(Sec.~\ref{par:single-spend}); later payments can reuse it, each with a payment hash not used
-on that channel before (restriction \code{OneHTLCPerHashPerChannel}). Third, onion routing:
-the sender chooses only the first hop, each forwarder chooses its next hop among its own
-channels, and route information is kept in local state rather than sent in layered encryption.
-We therefore make no claims about hiding who pays whom, and the wormhole appears purely as fee
-theft, as also characterised in~\cite{malavolta2019}. Similarly, \code{StateA} and
-\code{StateB} carry a state index and a revocation secret, not the output structure of
-Fig.~\ref{fig:transaction}, and the two-stage HTLC claim becomes a single transition. The
-second stage adds a CSV delay and a revocation path; for the channel balance, these are
-enforced by \code{Publish_Current_A/B}, \code{Claim_Funds_A/B} and the punishment rules.
+Three non-goals of Sec.~\ref{sec:structure} show in the rules. \code{Forward_HTLC} has no
+\code{Wallet} premise and HTLCs do not change the balances in \code{StateA} and \code{StateB},
+so a forward never fails for lack of funds. Route information is kept in local state, not in
+layered encryption: the sender chooses only the first hop, each forwarder its next hop among its
+own channels, and the wormhole appears purely as fee theft, as also characterised
+in~\cite{malavolta2019}. The mirrors abstract the output structure of
+Fig.~\ref{fig:transaction}, and the two-stage HTLC claim becomes a single transition; for the
+channel balance, the second stage's CSV delay and revocation path are enforced by
+\code{Publish_Current_A/B}, \code{Claim_Funds_A/B} and the punishment rules.
 
 \subsection{Verification Results}\label{sec:verified}
 
-Table~\ref{tab:results} lists every verification run of our artifact, one per \code{Makefile}
-target; \texttt{make all} runs them in order. All results were obtained with \tamarin{} 1.10
-(which reports the \maude{} version used, 3.2, as unsupported) and reproduced on a laptop with a
-6\,GB heap limit (\texttt{MEM=6G}).
-
-\begin{table*}[t]
-  \caption{Verification runs of the artifact (\tamarin{} 1.10), one row per \texttt{Makefile}
-    target; \texttt{make all} runs them in this order. A: all-traces lemmas; E: exists-trace
-    lemmas, all found automatically except \texttt{Wormhole\_Fee\_Theft\_Reachable}, which is
-    replayed from a saved 116-step proof; Verified: lemmas verified out of those run. Built-ins:
-    hashing, signing and natural-numbers in \texttt{lightning.spthy}; hashing and natural-numbers
-    in \texttt{lightning\_aux.spthy}.}
+\begin{table}[t]
+  \caption{Verification runs (\tamarin{} 1.10), in the order of \texttt{make all}; \texttt{aux}
+    runs \texttt{lightning\_aux.spthy} (Table~\ref{tab:aux}). A, E: all-traces and
+    exists-trace lemmas.}
   \label{tab:results}
   \centering
   \footnotesize
-  \renewcommand{\arraystretch}{1.1}
-  \begin{tabular}{@{}L{1.45cm}L{2.95cm}L{8.75cm}rrL{2.0cm}@{}}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}L{1.4cm}L{6.1cm}rr@{}}
     \toprule
-    Target & File and flags & Content & A & E & Verified\\
+    Target & File, flags and content & A & E\\
     \midrule
-    \texttt{make verify} & \code{lightning.spthy}
-      & Main model, all restrictions: 32 safety lemmas; 13 hop-bypass lemmas (six theorems for
-        positions 1 to 6, seven helpers); 10 exists-trace lemmas
-      & 45 & 10 & 55/55\\
-    \addlinespace
-    \texttt{make general} & \code{lightning.spthy} \code{-D=GENERAL} \code{-D=NO_IMC}
-        \code{-D=NO_OTF} \code{-D=NO_RBT} \code{-D=NECESSITY}
-      & Liveness restrictions T1, T2, T3 removed: \code{Any_Hop_Skip_Requires_Compromise}
-        (any route length, single offer per payment hash; 7 steps), its 7 helpers, and 16
-        lemmas of \texttt{make verify} re-proved in this mode
-      & 24 & 0 & 24/24\\
-    \addlinespace
-    \texttt{make aux} & \code{lightning_aux.spthy} \code{-D=PTLC}
-      & PTLC countermeasure on the fixed route S, H1, H2, H3, R:
-        \code{No_Wormhole_Around_Honest_Hop} (25 steps); 2 control, 2 sanity traces
-      & 1 & 4 & 5/5\\
-    & \code{lightning_aux.spthy} \code{-D=HTLC}
-      & HTLC baseline on the same route: \code{Wormhole_Around_Honest_Hop} is reachable
-        (12 steps); 2 sanity traces
-      & 0 & 3 & 3/3\\
-    & \code{lightning_aux.spthy} \code{-D=CLOCK}
-      & Block clock: channel and HTLC lifecycle, claim windows, preimage timing, exclusive
-        outcomes; 3 reachability traces
-      & 6 & 3 & 9/9\\
-    & \code{lightning_aux.spthy} \code{-D=CLTV}
-      & CLTV-delta arithmetic: positive gap, non-empty claim window, staggered path
-      & 3 & 0 & 3/3\\
-    & \code{lightning_aux.spthy} \code{-D=TIMEOUT}
-      & Four rules, no timeout ordering: the early-timeout race is reachable
-        (\code{Early_Timeout_Race})
-      & 0 & 1 & 1/1\\
-    \addlinespace
-    \texttt{make} \texttt{necessity} & \code{lightning.spthy} \code{-D=NECESSITY} and one of
-        \code{-D=NO_IMC}, \code{-D=NO_OTF}, \code{-D=NO_RBT}
-      & One liveness restriction (T3, T2 or T1) removed per run; the 5 liveness lemmas
-        re-checked, 600\,s limit each (Table~\ref{tab:necessity}); counterexample
-        \code{Necessity_IMC_Honest_Intermediary_Loses} (\code{-D=NO_IMC}, 28 steps)
-      & 5$\times$3 & 1 & 10/15 checks (5~without result); 1/1\\
+    \texttt{verify} & \code{lightning.spthy}, all restrictions: 32 safety, 13 hop-bypass,
+        10 exists-trace (one replayed)
+      & 45 & 10\\
+    \texttt{general} & \code{-D=GENERAL}, \code{NO_*}: T1 to T3 removed; Theorem~\ref{thm:anyhop}
+        (7 steps), 7 helpers, 16 \texttt{verify} lemmas re-proved
+      & 24 & 0\\
+    \texttt{aux} & \code{-D=PTLC}: countermeasure on a fixed route & 1 & 4\\
+    & \code{-D=HTLC}: baseline, wormhole reachable & 0 & 3\\
+    & \code{-D=CLOCK}: block clock & 6 & 3\\
+    & \code{-D=CLTV}: CLTV-delta arithmetic & 3 & 0\\
+    & \code{-D=TIMEOUT}: early-timeout race reachable & 0 & 1\\
+    \texttt{necessity} & T3, T2 or T1 removed per run (Table~\ref{tab:necessity}): 5 liveness
+        lemmas, 600\,s each: 10/15 verified, 5 without result; T3 counterexample (28 steps)
+      & 5$\times$3 & 1\\
     \midrule
-    \textbf{Total} & verify, general, aux
-      & 16 of the 24 proofs of \texttt{make general} re-prove lemmas of \texttt{make verify}
-        in the liveness-free mode
-      & 79 & 21 & 100/100 (plus necessity runs)\\
+    \textbf{Total} & \texttt{verify}, \texttt{general}, \texttt{aux}: 100/100 verified
+      & 79 & 21\\
     \bottomrule
   \end{tabular}
-\end{table*}
+\end{table}
 
-\code{lightning.spthy} is our main model. It contains the channel layer, multi-hop routing with
-the single generic rule \code{Forward_HTLC} and the wormhole rule \code{AttackerSkip}
-(Sec.~\ref{sec:core}), all under one Dolev-Yao adversary that can compromise long-term keys. Its
-default mode (\texttt{make verify}) proves the safety lemmas about channels and payments
-(Secs.~\ref{sec:properties} to~\ref{sec:wormhole}, Appendix~\ref{app:catalogue}) and that the
-forwarders at positions 1 to 6 of a route cannot be bypassed unless some key was compromised
-(Sec.~\ref{sec:bypass-fixed}). Its exists-trace lemmas show that the model is not vacuous
-(channel updates, cooperative closes, refunds and honest multi-hop payments are reachable),
-that the assumptions of our safety lemmas matter (a payment without a matching invoice can
-settle once the receiver's key is compromised; a compromised intermediary can lose), and that
-the wormhole is reachable. \texttt{make general} drops the three liveness restrictions and
-proves the bypass theorem for routes of any length, for payments with a single offer per
-payment hash (Sec.~\ref{sec:bypass-any}); since removing restrictions only adds traces, this
-all-traces result also holds in the default mode. Of the five auxiliary models
-(Sec.~\ref{sec:structure}), the PTLC countermeasure and its HTLC baseline are discussed in
-Sec.~\ref{sec:ptlc}; the two timing models make explicit the deadlines that the main model
-abstracts into untimed timeout events; and the early-timeout race is the trace pattern that
-\code{Timeout_Race_Blocked} excludes in the main model for uncompromised forwarders.
-\texttt{make necessity} removes one liveness restriction at a time (Sec.~\ref{sec:timing}).
+Table~\ref{tab:results} lists every verification run of our artifact. All results were obtained with \tamarin{} 1.10
+(which reports the \maude{} version used, 3.2, as unsupported) and reproduced on a laptop with a
+6\,GB heap limit (\texttt{MEM=6G}). The default mode (\texttt{make verify}) proves the safety
+lemmas about channels and payments (Secs.~\ref{sec:properties} to~\ref{sec:wormhole},
+Appendix~\ref{app:catalogue}) and that the forwarders at positions 1 to 6 of a route cannot be
+bypassed without a key compromise (Sec.~\ref{sec:bypass-fixed}). Its exists-trace lemmas show that the model is not vacuous (channel updates, cooperative closes,
+refunds and honest multi-hop payments are reachable), that the assumptions of our safety lemmas
+matter (a payment without a matching invoice can settle once the receiver's key is compromised;
+a compromised intermediary can lose), and that the wormhole is reachable. \texttt{make general}
+drops T1 to T3 and proves the bypass theorem for routes of any length,
+for payments with a single offer per payment hash (Sec.~\ref{sec:bypass-any}); since removing
+restrictions only adds traces, this all-traces result also holds in the default mode.
 
 % The label sits before \paragraph so that it prints as "V-B" (IEEEtran would print "V-B0a").
 \phantomsection\label{par:single-spend}%
 \paragraph{The Linear Single-Spend Discipline}
-We enforce the no-double-spend rule using linear facts. As mentioned in
-Sec.~\ref{sec:symbolic}, a persistent fact \texttt{!F()} is checked by a rule but not consumed,
-whereas a linear fact \texttt{F()} is removed from the state when the rule fires. In our model
-of the Lightning Network, the revocation secret is persistent knowledge
-(\code{!RevokedSecret}), and the revoked commitment output is a linear one-shot token
-(\code{RevokedCommitmentUnspent}), consumed when that state is published.
-
-Initially, the punishment rule only needed one thing to trigger: the persistent revocation
-secret alone. Our first \code{Publish_Revoked_A} had all the premises of the rule below except
-the last one, so every premise was persistent. Since punishment was gated only by
-\code{!RevokedSecret}, the rule could fire again and again for the same revoked state: if a
-party cheats, the honest party can take the channel funds many times. Lemmas like
-\code{No_Punishment_Without_Cheating} still pass, because a cheat is still required. What they
-miss is that punishment should happen only once. To fix this issue, we split the revoked state
-into two separate facts: \code{Revoke_Old_Secret} (Sec.~\ref{sec:core-channels}) still stores
-the secret as the persistent \code{!RevokedSecret}, and it also creates the linear token
-\code{RevokedCommitmentUnspent}, for both parties. \code{Publish_Revoked_A} must consume that
-token, so the same revoked commitment can be punished only once (\code{Publish_Revoked_B} is
-symmetric):
-\begin{spthy}
-rule Publish_Revoked_A:
-    [ !ChannelRecord(ptr, $A, $B),
-      !ValidOnChain(ptr),
-      !RevokedSecret($A, n_old, sAold, oldCommitA),
-      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
-    --[ PublishRevoked($A, n_old, oldCommitA),
-        Cheat($A, n_old) ]->
-    [ OnChainCheat($A, $B, n_old, oldCommitA),
-      RevealedSecret($A, n_old, sAold, oldCommitA) ]
-\end{spthy}
-Persistent knowledge of the revocation secret is retained via \code{!RevokedSecret}. Only
-spending the funds is linear.
-
-We found the same critical flaw in our initial model of the routing layer. With the persistent
+We enforce the no-double-spend rule using linear facts. Our first
+\code{Publish_Revoked_A} lacked the linear premise \code{RevokedCommitmentUnspent}, so punishment was gated only by the persistent
+\code{!RevokedSecret} and could fire again and again for the same revoked state: if a party
+cheats, the honest party can take the channel funds many times. Lemmas like
+\code{No_Punishment_Without_Cheating} still pass, because a cheat is still required; what they
+miss is that punishment should happen only once. Now \code{Revoke_Old_Secret} also creates this
+token for both parties, and \code{Publish_Revoked_A} (symmetrically
+\code{Publish_Revoked_B}) must consume it, so a revoked commitment is punished only once. We
+found the same critical flaw in our initial routing layer: with the persistent
 \code{!ChannelConnect} alone, one channel could add unboundedly many HTLCs on the same output.
-We fixed it with a linear slot \code{Mutex(ptr)}. \code{Lock_Funds_And_Open} produces it once,
-when the channel opens; \code{Sender_Offer_HTLC} and \code{Forward_HTLC} consume it when they
-add an HTLC on that channel; \code{Receiver_Fulfill_HTLC}, \code{Intermediary_Settle},
-\code{Sender_Timeout_Refund} and \code{Intermediary_Timeout_Refund} give it back when that HTLC
-is redeemed or refunded. HTLCs are thus added to a channel one at a time, and the channel can be
-reused once its HTLC has resolved.
-\begin{spthy}
-rule Lock_Funds_And_Open:
-    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0),
-      Wallet($A, ~fA), Wallet($B, ~fB) ]
-    --[ ChannelOpen($A, $B, ptr), FundsLocked($A, $B, ptr),
-        NewStateBuilt($A, $B, ptr, '0', ~fA, ~fB) ]->
-    [ StateA(...), StateB(...),
-      !ValidOnChain(ptr),
-      !ChannelRecord(ptr, $A, $B),
-      !ChannelConnect(ptr, $A, $B),
-      !ChannelConnect(ptr, $B, $A),
-      Mutex(ptr) ]
-\end{spthy}
-Adding a linear premise can remove some exists-trace witnesses. So we re-ran the whole of
-\code{lightning.spthy} after both fixes: all 55 lemmas of \texttt{make verify} are verified,
-including the ten exists-trace lemmas (Table~\ref{tab:results}).
+The linear slot \code{Mutex(ptr)} fixes it: produced once at opening, consumed by adding an
+HTLC and given back when that HTLC is redeemed or refunded, it lets a channel carry at most one
+pending HTLC at a time and be reused, each time with a payment hash not used on it before
+(\code{OneHTLCPerHashPerChannel}). Adding a linear premise
+can remove exists-trace witnesses, so we re-ran \code{lightning.spthy} after both
+fixes: all 55 lemmas of \texttt{make verify} are verified, including the ten exists-trace lemmas.
