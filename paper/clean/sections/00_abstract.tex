@@ -17,8 +17,9 @@ intermediaries bypass an honest one, which is refunded but earns no fee.
 Conversely, we prove for routes of any length that a hop of a settled payment
 whose hash is offered once can be bypassed only if some long-term key is
 compromised. On a fixed route, per-hop locks in the style of point time-locked
-contracts prevent this bypass when the sender is honest, whereas plain HTLCs
-admit it. All results are machine-checked with \tamarin~1.10.
+contracts (PTLCs) prevent the wormhole around an honest intermediary when the
+sender is honest, whereas plain HTLCs admit it. All results are machine-checked
+with \tamarin~1.10 and reproduced with one command.
 \end{abstract}
 
 \begin{IEEEkeywords}

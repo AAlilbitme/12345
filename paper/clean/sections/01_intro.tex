@@ -58,9 +58,8 @@ TLS~1.3~\cite{cremers2017}, among many others.
 % [17] is a computational (CryptoVerif) proof of WireGuard, not a Tamarin model.
 In particular, \tamarin{} is a multiset rewriting-based automated protocol
 verifier with a large pedigree of verified protocols, TLS~1.3 among them. It
-proves trace properties for an unbounded number of sessions and lets the
-modeller state assumptions explicitly, as restrictions on traces; both features
-suit a protocol with unboundedly many channels, updates and payments.
+proves trace properties for an unbounded number of sessions and states
+assumptions explicitly, as restrictions on traces.
 
 \paragraph{Contributions}
 All results are checked with \tamarin~1.10. The all-traces statements hold for
@@ -72,13 +71,14 @@ channel updates and payments.
   (\code{lightning.spthy}) covers the channel layer (opening, unboundedly many
   updates, revocation, cooperative and unilateral closing, punishment) and
   multi-hop HTLC routing, where one generic rule, \code{Forward_HTLC}, handles
-  every hop of routes of any length. The layers share a Dolev-Yao adversary
-  that can also compromise any long-term key at any time
-  (Sec.~\ref{sec:threat}), the channel topology and a per-channel slot. Their
-  contract, that each HTLC is resolved at most once, is the named restriction
-  \code{OneResolutionPerHTLC}, which we justify informally; we claim no
-  composition theorem (Sec.~\ref{sec:method}).
-\item \emph{Safety.} We prove 32 all-traces safety lemmas, e.g.: a party is
+  every hop of routes of any length. A Dolev-Yao adversary can also
+  compromise any long-term key at any time, and two compromised parties on the
+  route of a payment can relay its preimage around the parties between them
+  (\code{AttackerSkip}; Sec.~\ref{sec:threat}). The layers share the channel
+  topology and a per-channel slot. Their contract, that each HTLC is resolved
+  at most once, is the named restriction \code{OneResolutionPerHTLC}, which we
+  justify informally; we claim no composition theorem (Sec.~\ref{sec:method}).
+\item \emph{Safety.} We prove 32 all-traces safety lemmas. Among them: a party is
   punished only if it published a revoked state or its key was compromised; a
   sender settles only against an invoice of the receiver, unless the receiver's
   key was compromised; preimages stay secret (our model never sends them); no
@@ -86,8 +86,9 @@ channel updates and payments.
   T1 to T3, an intermediary whose outgoing HTLC is redeemed has its incoming
   HTLC refunded only if its key was compromised before that HTLC timed out, and
   payment atomicity holds in runs without key compromise. These restrictions
-  remove every trace that violates them, and the results say nothing about such
-  traces. Ten exists-trace lemmas show that the protocol runs and that attacks
+  remove every trace that violates them, including traces in which an
+  uncompromised forwarder could not have acted in time; the results say nothing
+  about such traces. Ten exists-trace lemmas show that the protocol runs and that attacks
   with compromised keys, such as the wormhole below, are reachable
   (Sec.~\ref{sec:verification}).
 \item \emph{The wormhole, as a trace and as a theorem.} \tamarin{} checks (by
@@ -95,15 +96,16 @@ channel updates and payments.
   while an honest intermediary is refunded on its outgoing HTLC and earns no
   fee (Sec.~\ref{sec:wormhole}). Conversely, if the sender settles, a forwarder
   on its route is refunded on its outgoing HTLC only if some long-term key is
-  compromised: we prove this for each of the first six hops of a route of any
-  length, and for every hop if the payment hash is offered only once. The
-  latter is proved without the liveness restrictions, so it also holds with
-  them. Neither result says whose key is compromised, or when
-  (Sec.~\ref{sec:bypass}).
+  compromised. For each of the first six hops of a route of any length, we
+  prove this under the liveness restrictions; for every hop, we prove it
+  without them (so it also holds with them), provided the payment hash is
+  offered only once. Neither result
+  says whose key is compromised, or when (Sec.~\ref{sec:bypass}).
 \item \emph{Necessity of the liveness assumptions.} Without T3
   (\code{IntermediaryMustClaim}), \tamarin{} finds a trace without key
   compromise in which an intermediary's outgoing HTLC is redeemed while its
-  incoming HTLC is refunded. Without T1, all five liveness lemmas we check
+  incoming HTLC is refunded, so T3 is necessary for intermediary safety.
+  Without T1, all five liveness lemmas we check
   remain provable; without T2, both intermediary-safety lemmas do. The
   CLTV-delta ordering of timeouts (\code{ForwardTimeGap}) is a lemma derived
   from T2 (Sec.~\ref{sec:timing}).

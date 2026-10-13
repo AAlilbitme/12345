@@ -1,0 +1,260 @@
+% Sec. VI: Bypass resistance for routes of any length (VI-A to VI-D: lightning.spthy),
+% VI-E: the PTLC countermeasure (lightning_aux.spthy -D=PTLC / -D=HTLC).
+\section{Bypass Resistance for Routes of Any Length}\label{sec:bypass}
+
+The wormhole of Sec.~\ref{sec:wormhole} lets a payment settle while an honest forwarder between
+two compromised parties is bypassed: its outgoing HTLC is refunded and it earns no fee. We now
+show that in our model a bypass requires key compromise: for the forwarder at each of the
+positions 1 to 6 of a route, and, for payments whose hash is offered on a single channel, for a
+forwarder at any position of a route of any length. Secs.~\ref{sec:bypass-fixed}
+to~\ref{sec:bypass-caveats} concern the main theory \code{lightning.spthy}; there is no separate
+N-hop theory.
+
+One generic rule, \code{Forward_HTLC}, serves every hop because HTLC offers are not network
+messages in our model. When tracing a forwarded message, \tamarin{} treats every party as a
+potential sender, and with the HTLC offer as a public, signed message, the analysis of routes of
+unbounded length did not terminate. We therefore swapped the public message for a private,
+single-use fact, \code{Route}, which each forward consumes and re-creates for the next hop
+(Sec.~\ref{sec:core-routing}); what this takes away from the adversary is stated in
+Sec.~\ref{sec:limitations}.
+
+\subsection{Bypass Requires Compromise}\label{sec:bypass-fixed}
+
+The only rule that produces a \code{Fulfilled} fact for an HTLC that was not redeemed is
+\code{AttackerSkip}. It requires the two parties at the ends of the skip, \code{ExitAtt} and
+\code{EntryAtt}, to be compromised, and it records \code{Skipped(ptrSkip,x)};
+\code{Fulfilled_Source} states that every \code{Fulfilled} fact used in a settlement stems from
+an earlier redemption or skip. Every skip follows a compromise (Lemma~\ref{lem:skip}).
+
+A forwarder is \emph{bypassed} when the payment settles at the sender while the forwarder's own
+hop is refunded; \code{Intermediary_Timeout_Refund} records such a refund as
+\code{RefundHop(ptrIn,ptrOut,y)}. For the forwarders at the first six positions of the sender's
+route we prove:
+
+\begin{theorem}[Bypass Resistance at Positions 1 to 6]
+Let $1 \le k \le 6$. If a sender settles a payment with preimage $x$ on its own channel, the
+HTLC on $h(x)$ is forwarded hop by hop from that channel by forwarders $F_1, \dots, F_k$, and
+the hop of $F_k$ is refunded, then some party's long-term key was compromised.
+\end{theorem}
+For $k = 1$ and $k = 2$, the statements are:
+\begin{spthy}
+lemma First_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S F1 R pSF Next pOut x #s #f #r.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, Next, pSF, pOut, h(x)) @ #f
+      & RefundHop(pSF, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
+\end{spthy}
+\begin{spthy}
+lemma Second_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+    "All S F1 R pSF x F2 p1 Next pOut #s #f1 #f2 #r.
+        SenderSettled(S, F1, R, pSF, x) @ #s
+      & HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1
+      & HTLCForwarded(F2, F1, Next, p1, pOut, h(x)) @ #f2
+      & RefundHop(p1, pOut, h(x)) @ #r
+     ==> Ex P #c. LtkCompromised(P) @ #c"
+\end{spthy}
+For the forwarder at positions 3 to 6, the lemmas \code{Hop3_Skip_Requires_Compromise} to
+\code{Hop6_Skip_Requires_Compromise} state the same, with the route from the sender's channel
+spelled out as a chain of \code{HTLCForwarded} facts (Appendix~\ref{app:catalogue}). These
+six theorems and their seven helper lemmas (group 9 of Table~\ref{tab:groups}), the 13
+hop-bypass lemmas of \texttt{make verify}, are verified in the full model, with all
+restrictions, and need no assumption on how often a payment hash is offered.
+
+In the wormhole trace \code{Wormhole_Fee_Theft_Reachable} (Fig.~\ref{fig:wormhole}), Indiana is
+the second forwarder (\code{F1} is Att1, \code{F2} is Indiana): Alice settles while Indiana's
+outgoing HTLC is refunded, and Alice, Bob and Indiana are uncompromised. The trace satisfies the
+premise of \code{Second_Hop_Skip_Requires_Compromise}, and the compromise in the conclusion is
+that of Att1 and Att2, which \code{AttackerSkip} requires: the conclusion cannot be dropped.
+
+\subsection{Routes of Any Length}\label{sec:bypass-any}
+
+Each fixed-position theorem names the route up to the bypassed forwarder and therefore covers
+one position only. The general theorem quantifies over any forward of the payment hash instead.
+
+\begin{theorem}[Bypass Resistance at Any Position]\label{thm:anyhop}
+If a sender settles a payment with preimage $x$ on its channel $p_{SF}$, every HTLC on $h(x)$
+is offered on $p_{SF}$, and some forwarder of an HTLC on $h(x)$, at any position, has its hop
+refunded, then some party's long-term key was compromised.
+\end{theorem}
+\begin{spthy}
+lemma Any_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:
+  all-traces
+  "∀ S F1 R pSF x Me Prev Next pIn pOut #s #f #r.
+    ((((SenderSettled( S, F1, R, pSF, x ) @ #s) ∧
+       (HTLCForwarded( Me, Prev, Next, pIn, pOut, h(x) ) @ #f)) ∧
+      (RefundHop( pIn, pOut, h(x) ) @ #r)) ∧
+     (∀ A B p #o. (HTLCOffered( A, B, p, h(x) ) @ #o) ⇒ (p = pSF))) ⇒
+    (∃ P #c. LtkCompromised( P ) @ #c)"
+\end{spthy}
+The last conjunct of the premise is the \emph{single-offer premise}: every HTLC offered for
+$h(x)$ is offered on the sender's channel \code{pSF}. No position appears in the statement:
+\code{Me} is any forwarder of $h(x)$, at any distance from the sender.
+
+\subsection{Proof}\label{sec:bypass-proof}
+
+The proof is organised in seven helper lemmas, proved in the same run.
+\code{Forward_Parent}: the incoming HTLC of every forward was offered by a sender or forwarded
+by the previous hop. \code{Root_First}: every forward of a payment hash is, or is preceded by, a
+forward whose incoming HTLC was offered by a sender. \code{Next_Is_Child}: if all offers of the
+hash are on one channel and \code{Prev} forwarded an HTLC to \code{Me}, every later forward of
+the hash is \code{Me}'s forward of that HTLC or comes after it. \code{Hop_Redeem_Propagates}:
+without compromise, if a forwarder's incoming HTLC is redeemed, so is its outgoing one.
+\code{Sender_Channel_Redeemed}: without compromise, if the sender settles, its own channel was
+redeemed. \code{Route_Redeemed_Gen}: without compromise and if all offers of the hash are on one
+channel, redemption of the incoming HTLC of a forward carries over to the incoming HTLC of every
+forward of the hash that does not come earlier. \code{Route_Redeemed_No_Compromise} combines it
+with \code{Sender_Channel_Redeemed} and \code{Root_First}: without compromise and under the
+single-offer premise, if the sender settles, the incoming HTLC of every forward of the hash is
+redeemed. \code{Root_First}, \code{Next_Is_Child} and \code{Route_Redeemed_Gen} are proved by
+induction over traces.
+
+The theorem then takes 7 proof steps. Assume no compromise. By
+\code{Route_Redeemed_No_Compromise}, the bypassed forwarder's incoming HTLC \code{pIn} is
+redeemed. By \code{Redeemed_Source}, this redemption is either the settlement of a forward from
+\code{pIn}, which \code{Forward_Unique_Per_Incoming}, \code{SettledHop_From_Forward} and
+\code{No_Settle_And_Refund_Same_Hop} exclude given \code{RefundHop(pIn,pOut,h(x))}, or a
+fulfilment by the receiver, which \code{No_Fulfill_On_Forwarded_Incoming} excludes. The proof
+scripts of \code{Root_First}, \code{Next_Is_Child}, \code{Route_Redeemed_Gen},
+\code{Route_Redeemed_No_Compromise} and of the theorem are stored in \code{lightning.spthy}; the
+other helpers are proved automatically.
+
+\paragraph{General Mode and Trace Inclusion}
+The theorem is proved in a separate mode of the same theory, \texttt{make general}
+(\code{-D=GENERAL} \code{-D=NO_IMC} \code{-D=NO_OTF} \code{-D=NO_RBT} \code{-D=NECESSITY}),
+which enables the general lemmas and removes the three liveness restrictions T1
+(\code{RedeemBeforeTimeout}), T2 (\code{OutgoingTimesOutFirst}) and T3
+(\code{IntermediaryMustClaim}). Removing a restriction only adds traces, so every trace of the
+full model is a trace of this mode, and an all-traces property proved in this mode also holds in
+the full model. The run proves the theorem together with all 23 \code{[reuse]} lemmas available
+in this mode (24/24 verified), so no lemma proved under the removed restrictions is reused;
+\code{ForwardTimeGap}, which is derived from T2, is not a \code{[reuse]} lemma in this mode.
+Bypass resistance for single-offer payments therefore does not depend on T1, T2 or T3.
+
+\subsection{Caveats}\label{sec:bypass-caveats}
+
+\begin{itemize}
+\item \emph{Single-offer premise.} Theorem~\ref{thm:anyhop} is proved only for payments whose
+  hash is offered on a single channel. If the same hash is offered on several channels, several
+  routes carry it, and the theorem says nothing about a forwarder on such a payment. The
+  fixed-position theorems do not need the premise, because they spell out the route from the
+  settling sender's channel; for such payments they cover positions 1 to 6 of that route.
+\item \emph{Weak conclusion.} The conclusion states only that some party's long-term key was
+  compromised at some point of the trace. It does not say which party (for instance a neighbour
+  of the bypassed forwarder, as in the wormhole) and does not order the compromise before the
+  settlement or the refund. The fixed-position theorems have the same conclusion; only
+  \code{Skipped_Requires_Compromise} orders the compromise before the skip.
+\item \emph{Liveness restrictions.} The six fixed-position theorems are proved in the full model,
+  with T1, T2 and T3 in place, and we have not checked them without these restrictions. For a
+  payment whose hash is offered on several channels, bypass resistance at positions 1 to 6
+  therefore rests on the liveness restrictions; only Theorem~\ref{thm:anyhop} (single-offer
+  payments) is shown to hold without them.
+\end{itemize}
+In numbers: \texttt{make verify} proves \code{Skipped_Requires_Compromise} and the 13
+hop-bypass lemmas in the full model, and \texttt{make general} proves 24/24 lemmas, among them
+\code{Any_Hop_Skip_Requires_Compromise} in 7 steps.
+
+\subsection{Countermeasure: PTLC}\label{sec:ptlc}
+
+The wormhole works because every channel of an HTLC route is locked with the same hash $h(x)$:
+once $x$ is known at one point of the route, a compromised party can use it on a channel further
+upstream. Malavolta et al.~\cite{malavolta2019} replace the shared lock by anonymous multi-hop
+locks, the basis of point time-locked contracts (PTLCs): every channel has its own lock, and a
+forwarder can compute the secret of its incoming lock only from the secret of its outgoing lock
+and its own tweak, chosen by the sender. We compare both designs in two small models of
+\code{lightning_aux.spthy} that differ only in how the channel secrets are derived and,
+accordingly, in how an honest hop obtains its incoming secret (\code{Hop_Settle}):
+\code{-D=PTLC} (per-hop secrets) and \code{-D=HTLC} (one shared secret, the baseline).
+
+\paragraph{Model}
+Both models fix the route S$\,\to\,$H1$\,\to\,$H2$\,\to\,$H3$\,\to\,$R over channels
+\code{c0}, \code{c1}, \code{c2}, \code{c3}. \code{Sender_Setup} draws a fresh secret $x$ and
+per-hop tweaks $t_1, t_2, t_3$ and derives the channel secrets by a hash chain
+$s_{\mathit{in}} = h(\langle s_{\mathit{out}}, t\rangle)$: $s_3 = x$,
+$s_2 = h(\langle s_3, t_3\rangle)$, $s_1 = h(\langle s_2, t_2\rangle)$,
+$s_0 = h(\langle s_1, t_1\rangle)$; channel $c_i$ is locked with $h(s_i)$. An honest hop that
+learns the secret of its outgoing channel derives the secret of its incoming channel with its
+tweak (\code{Hop_Settle}). The hash chain is a symbolic stand-in for the additive tweak of PTLCs
+built from adaptor signatures~\cite{malavolta2019}, $s_{\mathit{in}} = s_{\mathit{out}} + t$: in
+both, deriving a hop's incoming secret requires that hop's tweak. In the HTLC baseline,
+$s_0 = s_1 = s_2 = s_3 = x$, i.e., one hash lock $h(x)$ on every channel, and \code{Hop_Settle}
+passes the outgoing secret on unchanged. The two rules of the PTLC model that implement the
+per-hop locks are:
+\begin{spthy}
+rule Sender_Setup:
+    let s3 = ~x
+        s2 = h(<s3, ~t3>)
+        s1 = h(<s2, ~t2>)
+        s0 = h(<s1, ~t1>)
+    in
+    [ Fr(~x), Fr(~c0), Fr(~c1), Fr(~c2), Fr(~c3), Fr(~t1), Fr(~t2), Fr(~t3) ]
+    --[ Pay($S, $H1, $H2, $H3, $R, ~c0, ~c1, ~c2, ~c3),
+        Neq($S, $H1), Neq($S, $H2), Neq($S, $H3), Neq($S, $R),
+        Neq($H1, $H2), Neq($H2, $H3), Neq($H1, $H3),
+        Neq($H1, $R), Neq($H2, $R), Neq($H3, $R) ]->
+    [ !Lock(~c0, $S, $H1, h(s0)), Open(~c0), SenderWait($S, ~c0),
+      !Hop($H1, ~c0, ~c1, $H2, h(s1), ~t1),
+      !Hop($H2, ~c1, ~c2, $H3, h(s2), ~t2),
+      !Hop($H3, ~c2, ~c3, $R,  h(s3), ~t3),
+      !RecvSecret($R, ~c3, ~x),
+      Out(h(s0)), Out(h(s1)), Out(h(s2)), Out(h(s3)) ]
+\end{spthy}
+\begin{spthy}
+rule Hop_Settle:
+    [ Pend($H, cIn, cOut, t), ClaimInfo(cOut, sec), !Lock(cIn, P, $H, Lin), Open(cIn) ]
+    --[ Redeemed(cIn), HopSettled($H, cIn, cOut), Eq(h(h(<sec, t>)), Lin) ]->
+    [ ClaimInfo(cIn, h(<sec, t>)), Out(h(<sec, t>)) ]
+\end{spthy}
+The adversary is the same in both models: Dolev-Yao plus compromise of any party at any time
+(rule \code{Compromise}). A compromised hop leaks its tweak (\code{Leak_Tweak}); every secret
+used to claim a channel is published, as it would be on chain; a compromised payee may claim its
+channel with any value the adversary knows and that opens the lock (\code{Adversary_Claim}).
+There is no skip rule: a wormhole has to be built from adversary knowledge alone. Timing is
+abstracted: an open HTLC may be refunded at any time (\code{Refund}).
+
+\paragraph{Results}
+With per-hop locks, the sender's channel \code{c0} is never redeemed while H2's outgoing channel
+\code{c2} is refunded, as long as S and H2 are uncompromised, whichever of H1, H3 and R are
+compromised (all-traces, verified, 25 steps):
+\begin{spthy}
+lemma No_Wormhole_Around_Honest_Hop:
+  all-traces
+  "not (
+Ex S H1 H2 H3 R c0 c1 c2 c3 #p #a #b.
+      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p
+    & Redeemed(c0) @ #a
+    & Refunded(c2) @ #b
+    & not (Ex #k. Compromised(H2) @ #k)
+    & not (Ex #k. Compromised(S) @ #k))"
+\end{spthy}
+With the shared hash lock, the same situation is reachable (exists-trace, verified, 12 steps):
+\begin{spthy}
+lemma Wormhole_Around_Honest_Hop:
+  exists-trace
+  "Ex S H1 H2 H3 R c0 c1 c2 c3 #p #a #b.
+      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p
+    & Redeemed(c0) @ #a
+    & Refunded(c2) @ #b
+    & not (Ex #k. Compromised(H2) @ #k)
+    & not (Ex #k. Compromised(S) @ #k)"
+\end{spthy}
+Two control lemmas show that the PTLC result is not vacuous.
+\code{Control_Refund_Of_H2_Outgoing} (exists-trace, 6 steps): H2's outgoing HTLC can be refunded
+while H2 is honest, so the refund in the premise is not excluded by the model itself.
+\code{Control_Wormhole_If_H2_Compromised} (exists-trace, 18 steps): once H2 itself is
+compromised, the bypass is reachable with S still uncompromised, so the safety proof depends on
+H2 being honest.
+Sanity lemmas in both models show that a payment completes end to end without any compromise
+(\code{Honest_Payment_Completes}: 10 steps in PTLC, 10 in HTLC) and with both neighbours H1 and
+H3 of H2 compromised (\code{Colluders_Present_Payment_Completes}: 14 steps in PTLC, 8 in HTLC).
+All eight lemmas are verified by \texttt{make aux} (PTLC 5/5, HTLC 3/3).
+
+\paragraph{Limitations}
+The two models are separate from \code{lightning.spthy}: a fixed route with three
+intermediaries and one honest hop under attack, no channel layer, abstract timing, and an honest
+\code{Sender_Setup} that chooses all locks and tweaks consistently; the safety lemma also
+assumes that the sender is never compromised. The hash chain abstracts the group operation of
+the adaptor-signature construction: it captures that a hop's incoming secret requires that hop's
+tweak, but not the algebra of~\cite{malavolta2019} (an XOR encoding exhausted memory in
+\tamarin). We therefore claim the contrast between the two lock designs on this route, not a
+PTLC result for routes of any length.

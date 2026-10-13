@@ -1,0 +1,450 @@
+% Sec. V (continued): V-C Protocol Properties, V-D Timing and Liveness,
+% V-E Griefing and the Wormhole.
+\subsection{Protocol Properties}\label{sec:properties}
+
+We state the guarantees of \code{lightning.spthy} as lemmas. Each is named after the \tamarin{}
+property that establishes it. Adversarial capability is explicitly modelled as long-term key
+compromise (\code{Compromise_Ltk}). In addition, two compromised parties on the same payment
+can relay a preimage to each other around the parties between them (rule \code{AttackerSkip},
+Sec.~\ref{sec:core-skip}). We apply honesty assumptions explicitly, in each lemma, not
+globally; the exceptions are the restrictions of Sec.~\ref{sec:restrictions}, which hold in
+every trace. Unless stated otherwise, every lemma of this section is proved in the default mode
+of \code{lightning.spthy} (\texttt{make verify}), under all nine restrictions, including T1 to T3.
+
+Table~\ref{tab:groups} sorts all lemmas into groups, one per stage of a payment that they
+constrain. Each circled number in Figs.~\ref{fig:inflight} and~\ref{fig:wormhole} matches the
+group that constrains that stage. We present the central lemmas below;
+Appendix~\ref{app:catalogue} gives every statement.
+
+\begin{table*}[t]
+  \caption{Lemma groups of \texttt{lightning.spthy}; the circled numbers in
+    Figs.~\ref{fig:inflight} and~\ref{fig:wormhole} refer to groups 1 to 7. A: all-traces;
+    E: exists-trace. Unmarked rows: the 55 lemmas of \texttt{make verify}, all verified
+    (32 all-traces safety lemmas, the 13 hop-bypass lemmas of group 9, 9 exists-trace lemmas
+    found automatically, and \texttt{Wormhole\_Fee\_Theft\_Reachable}, replayed from a saved
+    116-step proof). $\dagger$:~proved in \texttt{make general} (liveness restrictions removed;
+    Sec.~\ref{sec:bypass}). $\ddagger$:~exists-trace, checked with T3 removed
+    (Table~\ref{tab:necessity}).}
+  \label{tab:groups}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{1.05}
+  \begin{tabular}{@{}rL{2.75cm}L{13.6cm}c@{}}
+    \toprule
+    \# & Group & Lemmas & Kind\\
+    \midrule
+    0 & Channel layer, keys
+      & \code{state_update}, \code{delayed_funds}, \code{instant_funds},
+        \code{settlement_is_traceable}, \code{No_Punishment_Without_Cheating},
+        \code{Funds_Locked_Before_Update}, \code{Update_Requires_Negotiation},
+        \code{Ltk_Known_Implies_Compromised} & A\\
+      & \quad non-vacuity & \code{Protocol_execution}, \code{Cooperative_Close_Execution} & E\\
+    1 & Invoice \& preimage
+      & \code{Invoice_Authenticates_Settlement}, \code{Preimage_Secret_Until_Released},
+        \code{Preimage_Never_Known}, \code{Invoice_Has_Secret_Preimage},
+        \code{Invoice_Released_Once} & A\\
+      & \quad reachable & \code{Forged_Invoice_Requires_Key_Compromise} & E\\
+    2 & Lock causality
+      & \code{Forward_Requires_Incoming}, \code{HTLC_On_Opened_Channel},
+        \code{Offer_Requires_Invoice} & A\\
+    3 & Release causality
+      & \code{Claim_Requires_Release}, \code{Settle_Requires_Receiver_Release},
+        \code{Redeem_Requires_Receiver_Release}, \code{Fulfilled_Requires_Release},
+        \code{Fulfilled_Source} & A\\
+    4 & Atomicity
+      & \code{Payment_Atomicity_Under_Liveness}, \code{Settle_Excludes_Sender_Refund},
+        \code{OneOutcomePerHTLC} & A\\
+      & \quad non-vacuity
+      & \code{Multihop_Routing_Reachable}, \code{Sanity_Honest_Payment_Completes},
+        \code{Sanity_Atomic_Payment_Completes}, \code{Distinct_Parties_Configuration} & E\\
+    5 & Fees
+      & \code{Fee_Only_On_Successful_Forward} (per hop, incoming amount = outgoing amount + fee
+        by construction) & A\\
+    6 & Refund / griefing & \code{Refund_Requires_Timeout}, \code{Loss_Requires_Inaction} & A\\
+      & \quad reachable & \code{Refund_Possible} & E\\
+    7 & Wormhole & \code{Skipped_Requires_Compromise} & A\\
+      & \quad reachable
+      & \code{Wormhole_Fee_Theft_Reachable} (saved 116-step proof, replayed) & E\\
+    8 & Intermediary safety, timing
+      & \code{Intermediary_Never_Loses_Under_Liveness}, \code{Intermediary_Never_Loses_Strong},
+        \code{Timeout_Race_Blocked}, \code{ForwardTimeGap} & A\\
+      & \quad non-vacuity & \code{Sanity_Compromised_Intermediary_Can_Lose} & E\\
+      & \quad necessity $\ddagger$ & \code{Necessity_IMC_Honest_Intermediary_Loses} & E\\
+    9 & Hop bypass
+      & \code{First_Hop_Skip_Requires_Compromise}, \code{Second_Hop_Skip_Requires_Compromise},
+        \code{Hop3_Skip_Requires_Compromise}, \code{Hop4_Skip_Requires_Compromise},
+        \code{Hop5_Skip_Requires_Compromise}, \code{Hop6_Skip_Requires_Compromise} & A\\
+      & \quad helpers
+      & \code{Forward_Unique_Per_Incoming}, \code{SettledHop_From_Forward},
+        \code{SettledHop_Uses_Outgoing}, \code{No_Settle_And_Refund_Same_Hop},
+        \code{No_Fulfill_On_Forwarded_Incoming}, \code{Redeemed_Source},
+        \code{SenderSettled_Uses_Fulfilled} & A\\
+      & \quad any length $\dagger$ & \code{Any_Hop_Skip_Requires_Compromise} & A\\
+      & \quad helpers $\dagger$
+      & \code{Forward_Parent}, \code{Hop_Redeem_Propagates}, \code{Sender_Channel_Redeemed},
+        \code{Root_First}, \code{Next_Is_Child}, \code{Route_Redeemed_Gen},
+        \code{Route_Redeemed_No_Compromise} & A\\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+The first guarantee is atomicity: on a route with two forwarders and no key compromise, once
+the receiver has redeemed its HTLC, the sender can no longer be refunded.
+
+\begin{lemma}[Payment Atomicity]\label{lem:atomicity}
+For any two consecutive forwarders $F_1$ and $F_2$ on a payment with hash $y$ (the incoming HTLC
+of $F_2$ is the outgoing HTLC of $F_1$): if the outgoing HTLC of $F_2$ on $y$ is redeemed and no
+party's key was ever compromised, then the incoming HTLC of $F_1$ on $y$ is never refunded, by
+anyone.
+\end{lemma}
+\begin{spthy}
+lemma Payment_Atomicity_Under_Liveness:
+  "All F1 F2 Prev1 Next1 Prev2 Next2 ptrSF1 ptrF1F2 ptrF2R y #i #j #k.
+      HTLCForwarded(F1, Prev1, Next1, ptrSF1, ptrF1F2, y) @ #i
+    & HTLCForwarded(F2, Prev2, Next2, ptrF1F2, ptrF2R, y) @ #j
+    & Redeemed(ptrF2R, y) @ #k
+    & (not Ex P #l. LtkCompromised(P) @ #l)
+   ==> not (Ex Up #m. Refunded(Up, ptrSF1, y) @ #m)"
+\end{spthy}
+Since \code{Forward_HTLC} is one generic rule, $F_1$ and $F_2$ may sit anywhere on a route of
+any length; on a three-hop route, \code{ptrSF1} is the sender's HTLC and \code{ptrF2R} the
+receiver's. \code{Sanity_Atomic_Payment_Completes} shows that the premises are satisfiable.
+
+The second guarantee protects the intermediaries, who lock their own funds for a payment that
+is not theirs.
+
+\begin{lemma}[Intermediary Safety]\label{lem:intermediary}
+If a forwarder's outgoing HTLC is redeemed while its incoming HTLC is refunded, then that
+forwarder's long-term key was compromised.
+\end{lemma}
+\begin{spthy}
+lemma Intermediary_Never_Loses_Under_Liveness:
+  "All P Prev Next Up ptrIn ptrOut y #i #j #k.
+      HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i
+    & Redeemed(ptrOut, y) @ #j
+    & Refunded(Up, ptrIn, y) @ #k
+   ==> Ex #l. LtkCompromised(P) @ #l"
+\end{spthy}
+Lemma~\ref{lem:intermediary} does not say when the key was compromised: a compromise after the
+refund also satisfies it. The strong form closes this gap.
+
+\begin{lemma}[Intermediary Safety, Strong Form]\label{lem:intermediary-strong}
+If a forwarder's outgoing HTLC is redeemed while its incoming HTLC is refunded, then that
+forwarder's key was compromised before its incoming HTLC timed out.
+\end{lemma}
+\begin{spthy}
+lemma Intermediary_Never_Loses_Strong:
+  "All P Prev Next Up ptrIn ptrOut y #i #j #k.
+      HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i
+    & Redeemed(ptrOut, y) @ #j
+    & Refunded(Up, ptrIn, y) @ #k
+   ==> Ex #l #t. LtkCompromised(P) @ #l & TimedOut(ptrIn) @ #t & #l < #t"
+\end{spthy}
+Lemma~\ref{lem:intermediary-strong} matches the honesty condition of T2 and T3, which bind a
+forwarder only if it is not compromised before its incoming HTLC times out. Both lemmas
+quantify over every forward, so they hold for every hop of a route of any length, in every
+trace that satisfies T1, T2 and T3.
+
+Routing causality says that nothing is forwarded out of thin air.
+
+\begin{lemma}[Routing Causality]\label{lem:causality}
+Every forward on hash $y$ is preceded by the HTLC it forwards: either the sender's offer on the
+forwarder's incoming channel, or the predecessor's forward that locked that channel's HTLC.
+\end{lemma}
+\begin{spthy}
+lemma Forward_Requires_Incoming [use_induction]:
+  "All Me Prev Next ptrIn ptrOut y #i.
+      HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #i
+   ==> (Ex S #j. HTLCOffered(S, Me, ptrIn, y) @ #j & #j < #i)
+     | (Ex P0 pin0 #j. HTLCForwarded(Prev, P0, Me, pin0, ptrIn, y) @ #j & #j < #i)"
+\end{spthy}
+Because \code{lightning.spthy} has a single generic \code{Forward_HTLC} rule, this one lemma
+covers every hop of a route of any length, where a model with a fixed path needs one lemma per
+position (and an honest variant of each). It needs no honesty premise, because a forward
+consumes the linear \code{Route} fact, which only \code{Sender_Offer_HTLC} and
+\code{Forward_HTLC} produce. On the release side, an HTLC is redeemed only by the receiver's
+fulfilment or by a forwarder settling that hop (\code{Redeemed_Source}), and every preimage
+that a forwarder or the sender takes from a channel in order to settle comes from an earlier
+redemption of the HTLC on that channel or from an earlier wormhole skip
+(\code{Fulfilled_Source}, Sec.~\ref{sec:wormhole}).
+
+Finally, a forwarder is paid for its service only if the service succeeded.
+
+\begin{lemma}[Fees Only on Success]\label{lem:fee}
+A forwarder whose key is never compromised earns the fee of a hop only after it has forwarded
+on that hop and its outgoing HTLC has been redeemed.
+\end{lemma}
+\begin{spthy}
+lemma Fee_Only_On_Successful_Forward [heuristic={route_info_first}]:
+  "All Me ptrIn ptrOut y %fee #i.
+      FeeEarned(Me, ptrIn, ptrOut, y, %fee) @ #i
+    & not (Ex #c. LtkCompromised(Me) @ #c)
+   ==> (Ex #j. Redeemed(ptrOut, y) @ #j & #j < #i)
+     & (Ex Prev Next #f. HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #f & #f < #i)"
+\end{spthy}
+Per hop, the incoming amount is the outgoing amount plus the fee by construction (the \code{Eq}
+action of \code{Forward_HTLC}, Sec.~\ref{sec:core-amounts}). Amounts are not chained along the
+route, however: the offer, the invoice and the \code{Route} fact carry no amount, so we make no
+end-to-end value claim.
+
+% The label sits before \paragraph so that it prints as "V-C" (IEEEtran would print "V-C0a").
+\phantomsection\label{par:nonvacuity}%
+\paragraph{Non-vacuity}
+Safety lemmas are useless if the model cannot run at all, so we also checked
+\code{exists-trace} witnesses. \code{Multihop_Routing_Reachable} shows an HTLC routed from the
+sender over two forwarders to the receiver, who fulfils it.
+\code{Sanity_Honest_Payment_Completes} and \code{Sanity_Atomic_Payment_Completes} show payments
+over one and over two forwarders that settle end to end, with no key compromise and no refund:
+every forwarder claims its incoming HTLC and the sender settles. The second witness satisfies
+the premises of Lemma~\ref{lem:atomicity}. \code{Distinct_Parties_Configuration} shows three
+channels among four different parties, with no key compromise and no dispute.
+\code{Sanity_Compromised_Intermediary_Can_Lose} shows a compromised forwarder whose outgoing
+HTLC is redeemed while its incoming HTLC is refunded, so the premises of
+Lemmas~\ref{lem:intermediary} and~\ref{lem:intermediary-strong} are satisfiable.
+
+\subsection{Timing and Liveness}\label{sec:timing}
+
+Our model has three liveness restrictions (Sec.~\ref{sec:restrictions}): T1 is
+\code{RedeemBeforeTimeout}, T2 is \code{OutgoingTimesOutFirst} and T3 is
+\code{IntermediaryMustClaim}. The order of a hop's two timeouts is not assumed separately:
+\code{ForwardTimeGap} is a lemma, derived from T2 and verified.
+
+Concrete block heights are treated in two auxiliary models of \code{lightning_aux.spthy}. With
+\code{-D=CLTV}, a positive CLTV delta (restriction \code{DeltaPositive}) leaves every forwarder
+a non-empty claim window: a preimage revealed before the outgoing deadline is revealed before
+the incoming one (\code{Claim_Window_Nonempty}), also over two staggered hops
+(\code{Staggered_Path_Safe}). With \code{-D=CLOCK}, channels carry concrete deadlines on a block
+clock, and nine lemmas (six all-traces, three exists-trace) cover the channel and HTLC
+lifecycle, e.g., \code{No_HTLC_After_Close}; we return to two of them below.
+
+The four-rule model \code{lightning_aux.spthy} \code{-D=TIMEOUT} has no ordering restriction at
+all. There \tamarin{} finds the early-timeout race (\code{Early_Timeout_Race}, exists-trace,
+6 steps): a forwarder's incoming HTLC times out and is refunded, and its outgoing HTLC is
+redeemed after that timeout. In \code{lightning.spthy}, the race is excluded for every
+forwarder that is not compromised before its incoming timeout:
+\begin{spthy}
+lemma Timeout_Race_Blocked:
+  "not (Ex P Prev Next Up ptrIn ptrOut y #l #i #j #k.
+      HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #l
+    & TimedOut(ptrIn)     @ #k
+    & Refunded(Up, ptrIn, y)  @ #j
+    & Redeemed(ptrOut, y) @ #i
+    & #k < #i
+    & not (Ex #c. LtkCompromised(P) @ #c & #c < #k))"
+\end{spthy}
+This is a two-sided check: the race is reachable without ordering restrictions and blocked in
+\code{lightning.spthy}. \code{Timeout_Race_Blocked} stays verified when any single one of T1,
+T2 and T3 is removed (Table~\ref{tab:necessity}).
+
+\begin{table}[t]
+  \caption{Necessity of the liveness restrictions (\texttt{make necessity}:
+    \texttt{lightning.spthy} with \texttt{-D=NECESSITY} and one restriction removed per column,
+    600\,s per check). verified~($n$): proved in $n$ steps; no result: neither a proof nor a
+    counterexample within 600\,s, from which we draw no conclusion. The counterexample
+    \texttt{Necessity\_IMC\_Honest\_Intermediary\_Loses} is checked only with T3 removed.}
+  \label{tab:necessity}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{3.45cm}ccc@{}}
+    \toprule
+    Lemma & T1 removed & T2 removed & T3 removed\\
+          & {\scriptsize\code{-D=NO_RBT}} & {\scriptsize\code{-D=NO_OTF}}
+          & {\scriptsize\code{-D=NO_IMC}}\\
+    \midrule
+    \code{ForwardTimeGap} & verified (6) & no result & verified (6)\\
+    \code{Timeout_Race_Blocked} & verified (4) & verified (4) & verified (4)\\
+    \code{Intermediary_Never_Loses_Under_Liveness} (Lemma~\ref{lem:intermediary})
+      & verified (4) & verified (4) & no result\\
+    \code{Intermediary_Never_Loses_Strong} (Lemma~\ref{lem:intermediary-strong})
+      & verified (4) & verified (4) & no result\\
+    \code{Payment_Atomicity_Under_Liveness} (Lemma~\ref{lem:atomicity})
+      & verified (10) & no result & no result\\
+    \midrule
+    \code{Necessity_IMC_Honest_Intermediary_Loses} (exists-trace)
+      & -- & -- & verified (28)\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+We removed each liveness restriction in turn (\texttt{make necessity}) and re-ran the five
+lemmas that may depend on them (Table~\ref{tab:necessity}). Without T3, \tamarin{} finds a counterexample
+(exists-trace, 28 steps):
+\begin{spthy}
+lemma Necessity_IMC_Honest_Intermediary_Loses:
+  exists-trace
+  "Ex S F1 R p0 p1 x #o #a #r #u.
+      HTLCOffered(S, F1, p0, h(x)) @ #o
+    & HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a
+    & HTLCFulfilled(R, F1, p1, h(x)) @ #r
+    & Refunded(S, p0, h(x)) @ #u
+    & not (Ex P #k. LtkCompromised(P) @ #k)
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))
+    & not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)
+    & not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)"
+\end{spthy}
+No key is compromised, \code{F1} forwards, \code{R} redeems the outgoing HTLC of \code{F1},
+\code{F1} never claims its incoming HTLC, and the HTLC of \code{S} to \code{F1} is refunded: the
+honest intermediary \code{F1} loses, which violates Lemmas~\ref{lem:intermediary}
+and~\ref{lem:intermediary-strong}. (The direct proof attempts of these two lemmas without T3
+gave no result within 600\,s; the counterexample is this separate exists-trace lemma.) T2 only
+orders the two timeouts; it does not force the intermediary to claim its incoming HTLC. That
+claim is exactly T3, and no ordering rule can force an action. So T3 is load-bearing for
+intermediary safety.
+
+The two ordering restrictions are not needed in this way. T1 is not needed by any of the five
+lemmas: all of them stay verified without it. T2 is not needed for intermediary safety:
+Lemmas~\ref{lem:intermediary} and~\ref{lem:intermediary-strong} stay verified without it. We
+draw no conclusion from the cells of Table~\ref{tab:necessity} without a result; in particular,
+we do not claim that \code{ForwardTimeGap} or Lemma~\ref{lem:atomicity} needs T2, or that
+Lemma~\ref{lem:atomicity} needs T3.
+
+% The label sits before \paragraph so that it prints as "V-D" (IEEEtran would print "V-D0a").
+\phantomsection\label{par:liveness-scope}%
+\paragraph{Liveness as Restrictions}
+Two of our three liveness assumptions, T2 and T3, are \tamarin{} restrictions of the form
+\emph{if A happens, then B happens} (T1 only orders a redemption before a timeout); in T3, for
+instance, B is the redemption of the forwarder's incoming HTLC. A restriction removes every
+trace that violates it, including traces in which B is impossible rather than merely late. A
+lemma proved under T3 therefore says nothing about runs in which an honest forwarder
+\emph{cannot} claim in time, which is where real timing attacks live.
+Likewise, T2 removes every trace in which an honest forwarder's incoming HTLC times out while
+its outgoing HTLC has not timed out earlier. We make the scope of this assumption explicit.
+
+\emph{Which results depend on it.} Removing T3 breaks intermediary safety (the counterexample
+above); Table~\ref{tab:necessity} shows which of the five liveness lemmas are still proved
+without each restriction. The 24 lemmas of \texttt{make general},
+namely the bypass theorem for routes of any length (Sec.~\ref{sec:bypass-any}), its helpers and
+16 lemmas of \texttt{make verify}, among them \code{Skipped_Requires_Compromise} and
+\code{Refund_Requires_Timeout}, are proved with all three liveness restrictions removed. The
+wormhole trace \code{Wormhole_Fee_Theft_Reachable} is verified with every restriction in place,
+so the restrictions do not hide it. All other all-traces lemmas of \texttt{make verify},
+including the bypass theorems for positions 1 to 6, are proved with all three restrictions in
+place; apart from the five lemmas of Table~\ref{tab:necessity}, we have not checked which of
+them still hold without them.
+
+\emph{A claim window exists, in a separate model.} The Clock model
+(\code{lightning_aux.spthy} \code{-D=CLOCK}) has no liveness restriction. It proves
+\code{Claim_Window_Exists}: if a forwarder's outgoing HTLC is redeemed and its incoming HTLC is
+refunded, the redemption happens at a strictly lower block height than the refund, so the
+forwarder had a non-empty window in which to claim. It also proves
+\code{Loss_Implies_Skipped_Claim}: a forwarder that loses in this way never claimed its incoming
+HTLC. The Clock model is not composed with \code{lightning.spthy}, so it supports T3 but does
+not discharge it.
+
+\emph{Alternatives.} A more faithful treatment would replace the restrictions by the progress
+semantics of Backes et al.~\cite{backes2017}. Roughly, honest processes that can continue
+without input from the adversary eventually do, so traces in which the forwarder cannot act
+are kept instead of pruned. \tamarin{} 1.10 implements this for \sapic{} processes (option
+\code{translation-progress}), so the routing layer would have to be written as \sapic{}
+processes. A cheaper first step is to turn T1, T2 and T3 into premises of only the lemmas that
+need them, so that they no longer prune traces for every other lemma. We leave both to future
+work (Sec.~\ref{sec:limitations}).
+
+\subsection{Griefing and the Wormhole}\label{sec:wormhole}
+
+\code{Refund_Possible} shows a griefing trace: the sender offers an HTLC against an invoice,
+nobody forwards it, and it is refunded, so the payment never settles; no key is compromised.
+Since a refund requires a timeout (\code{Refund_Requires_Timeout}), the capital stays locked
+until then. This witness refunds the sender, not an intermediary. We report it as reachable
+griefing (denial of service), not as a new attack; it belongs to group 6 of
+Table~\ref{tab:groups}, the circled 6 in Fig.~\ref{fig:griefing}.
+
+\begin{figure}[t]
+  \centering
+  \definecolor{wgreen}{RGB}{27,94,32}
+  \definecolor{wred}{RGB}{183,28,28}
+  \definecolor{worange}{RGB}{200,90,0}
+  \begin{tikzpicture}[y=0.88cm,
+      font=\sffamily\footnotesize,
+      >={Stealth[length=4pt,width=3.5pt]},
+      party/.style={rounded corners=2pt, minimum width=1.38cm, minimum height=0.5cm,
+                    inner sep=1pt, text=white, font=\sffamily\footnotesize\bfseries},
+      honest/.style={party, fill=wgreen},
+      attacker/.style={party, fill=wred},
+      life/.style={draw=black!30, dashed, thin},
+      msg/.style={->, draw=wgreen, semithick},
+      lbl/.style={font=\sffamily\scriptsize, inner sep=1.5pt, fill=white},
+    ]
+    % parties
+    \node[honest]   (A)  at (0.0, 0) {Alice};
+    \node[attacker] (M1) at (1.8, 0) {Att1};
+    \node[honest]   (I)  at (3.6, 0) {Indiana};
+    \node[attacker] (M2) at (5.4, 0) {Att2};
+    \node[honest]   (B)  at (7.2, 0) {Bob};
+    \foreach \p/\x in {A/0.0, M1/1.8, I/3.6, M2/5.4, B/7.2}
+      \draw[life] (\p.south) -- (\x, -4.2);
+    % invoice
+    \draw[->, draw=wgreen, semithick, dashed] (7.2, -0.7) -- (0.0, -0.7)
+      node[lbl, above, pos=0.5, text=wgreen] {invoice $y = h(x)$};
+    % lock: HTLC chain
+    \draw[msg] (0.0, -1.12) -- (1.8, -1.12) node[lbl, above, midway] {HTLC($y$)};
+    \draw[msg] (1.8, -1.45) -- (3.6, -1.45)  node[lbl, above, midway] {HTLC($y$)};
+    \draw[msg] (3.6, -1.85) -- (5.4, -1.85) node[lbl, above, midway] {HTLC($y$)};
+    \draw[msg] (5.4, -2.25) -- (7.2, -2.25)  node[lbl, above, midway] {HTLC($y$)};
+    % release: Bob redeems Att2's HTLC
+    \draw[msg] (7.2, -2.75) -- (5.4, -2.75) node[lbl, above, midway] {redeem($x$)};
+    % off-path relay around Indiana
+    \draw[->, draw=wred, thick, dashed] (5.4, -2.95) .. controls (4.6, -3.75) and (2.6, -3.75)
+      .. (1.8, -2.95);
+    \node[lbl, text=wred, align=center] at (3.6, -3.85)
+      {$x$ relayed off-path (\textsf{AttackerSkip})};
+    \node[circle, fill=wred, text=white, inner sep=0.6pt, minimum size=9pt,
+          font=\sffamily\scriptsize\bfseries] at (1.25, -3.85) {7};
+    % Att1 claims Alice's HTLC
+    \draw[msg] (1.8, -3.3) -- (0.0, -3.3) node[lbl, above, midway] {redeem($x$)};
+    % outcomes
+    \node[lbl, text=wgreen, font=\sffamily\scriptsize\bfseries] at (0.0, -4.45) {settles};
+    \node[lbl, text=wgreen, font=\sffamily\scriptsize\bfseries] at (7.2, -4.45) {is paid};
+    \node[lbl, draw=worange, rounded corners=2pt, text=worange, align=center,
+          font=\sffamily\scriptsize\bfseries, inner sep=2pt] at (3.6, -4.5)
+      {refunded on timeout,\\ earns no fee};
+  \end{tikzpicture}
+  \caption{Wormhole (\texttt{Wormhole\_Fee\_Theft\_Reachable}). Att1 and Att2 are compromised
+    (\texttt{AttackerSkip} requires this) and not adjacent; Alice, Indiana and Bob are honest.
+    Att2 relays $x$ to Att1 around Indiana, so Alice settles and Bob is paid, while Indiana's
+    outgoing HTLC is refunded and Indiana earns no fee. The lemma fixes no order of its events;
+    we draw them in causal order.}
+  \label{fig:wormhole}
+\end{figure}
+
+The wormhole attack~\cite{malavolta2019} is an instance of the agent-skipping attack formalised
+symbolically by~\cite{smith2022}. It is a known attack, so we do not claim it as new. First,
+after the linear single-spend fix (Sec.~\ref{par:single-spend}), it is a soundness check: the
+model must still admit this behaviour, or the fix would be too strong. Second, the model shows
+who can mount the attack. The wormhole is the attacker rule \code{AttackerSkip}
+(Sec.~\ref{sec:core-skip}): two compromised parties on the same payment pass the preimage $x$
+from the exit party's outgoing HTLC to the entry party's outgoing HTLC, around the hops between
+them.
+
+\code{Wormhole_Fee_Theft_Reachable} (exists-trace, verified by replaying a saved 116-step proof)
+is the five-party trace of Fig.~\ref{fig:wormhole}, marked by the circled 7. Bob creates an
+invoice for Alice, and the HTLC on $y = h(x)$ is locked hop by hop from Alice through Att1,
+Indiana and Att2 to Bob. Bob redeems the HTLC of Att2 with $x$ and is paid. \code{AttackerSkip}
+then relays $x$ from Att2 to Att1, off the path, and Att1 claims the HTLC of Alice, so Alice
+settles. Indiana's outgoing HTLC to Att2 is refunded on timeout, and Indiana earns no fee. The
+lemma requires that Alice, Bob and Indiana are never compromised; in the trace, Att1 and Att2
+are compromised, as \code{AttackerSkip} requires. An honest hop is thus bypassed although the
+payment settles (full statement in Appendix~\ref{app:catalogue}). Conversely, a skip requires a
+key compromise:
+
+\begin{lemma}[Skips Require Compromise]\label{lem:skip}
+Every wormhole skip happens after some party's long-term key was compromised.
+\end{lemma}
+\begin{spthy}
+lemma Skipped_Requires_Compromise [reuse]:
+  "All p x #i. Skipped(p, x) @ #i ==> Ex P #c. LtkCompromised(P) @ #c & #c < #i"
+\end{spthy}
+Lemma~\ref{lem:skip} is also re-proved without the liveness restrictions (\texttt{make general}).
+It does not exclude the wormhole; it says that the wormhole needs a compromise.
+Sec.~\ref{sec:bypass-fixed} proves, for the forwarder at each position 1 to 6 of a route
+(Indiana is at position 2), that if the sender settles while that forwarder's outgoing HTLC is
+refunded, some party's key was compromised (group 9 of Table~\ref{tab:groups}; under T1 to T3,
+with no assumption on the number of offers). Sec.~\ref{sec:bypass-any} extends this to routes
+of any length, for payments whose hash is offered once, without the liveness restrictions.
+Neither result says which party was compromised, or when. Sec.~\ref{sec:ptlc} shows, on a fixed
+route of \code{lightning_aux.spthy}, that per-hop locks rule out the attack around an honest hop
+when the sender is honest (\code{No_Wormhole_Around_Honest_Hop}), whereas a shared hash lock
+admits it (\code{Wormhole_Around_Honest_Hop}).

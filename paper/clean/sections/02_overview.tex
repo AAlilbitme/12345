@@ -32,8 +32,9 @@ model, this meeting point becomes an explicit interface between the two layers
     punishment: the persistent \texttt{!RevokedSecret} (dashed, checked but
     never consumed) and the linear \texttt{RevokedCommitmentUnspent} (solid,
     consumed once); gating on the persistent fact alone would let the same
-    revoked commitment be spent more than once (Sec.~\ref{sec:verified}).
-    Grace-period and pending-publish paths, and the counterparty's instant
+    revoked commitment be punished more than once (Sec.~\ref{par:single-spend}).
+    Cooperative and unilateral closes end in settlement; punishment ends in
+    \texttt{AllFundsTo}. Grace-period and pending-publish paths, and the counterparty's instant
     output on a unilateral close, are elided.}
   \label{fig:lifecycle}
 \end{figure}
@@ -99,9 +100,9 @@ Fig.~\ref{fig:transaction} collapses it into a single output per HTLC.
 
 Of this transaction, our model retains counterparts of Outputs~\txout{3}
 and~\txout{4} and of the revocation path, but not the in-flight
-Outputs~\txout{1} and~\txout{2}: HTLCs are resolved in the routing layer, and the single on-chain spend of an HTLC output becomes the
-named assumption that each HTLC is resolved at most once
-(Sec.~\ref{sec:method}).
+Outputs~\txout{1} and~\txout{2}: HTLCs are resolved in the routing layer,
+and the single on-chain spend of an HTLC output becomes the named assumption
+that each HTLC is resolved at most once (Sec.~\ref{sec:method}).
 
 \subsubsection{The Protocol}\label{sec:protocol}
 The lifecycle of a channel has five phases: opening, update, revocation,
@@ -139,8 +140,8 @@ A state is retired by handing its revocation key to the counterparty: Alice
 revokes state $n$ by giving $rk^n_A$ to Bob. The key is useless unless Alice
 later publishes that state, at which point it lets Bob take the whole channel
 balance. Revoking is therefore a proof of honesty, as publishing that old state
-could then result in punishment. A commitment that has not been revoked yet is a valid unilateral close: either party may
-publish it without penalty. Punishment is triggered only when a revoked
+could then result in punishment. A commitment that has not been revoked yet
+is a valid unilateral close: either party may publish it without penalty. Punishment is triggered only when a revoked
 commitment is published.
 
 \paragraph{Closing}\label{par:closing}

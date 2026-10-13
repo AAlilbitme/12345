@@ -16,102 +16,95 @@ that $L$ is rewritten as $R$ in~$S$, and the action facts~$A$ are appended to th
 while the latter (prefixed with \texttt{!}) can be reused arbitrarily many times. The tool also
 provides the built-in facts \code{In}, \code{Out} and \code{Fr}, capturing respectively
 receiving from and sending to a public (i.e., attacker-controlled) channel, and generating fresh
-and unique values (e.g., for nonces). In rules, \texttt{\~{}x} denotes a fresh value and
-\texttt{\$A} a public name, such as the identity of a party.
+and unique values (e.g., for nonces).
 
-We further use the hashing, signing and natural-numbers built-ins. Hashing provides the
-function~$h$, which we use for payment hashes $y = h(x)$ and for the commitment $h(s)$ to a
-revocation secret~$s$. Signing provides \code{sign}, \code{verify} and \code{pk}, which we use
-for the channel handshake, the commitments and the invoices. Natural numbers provide a sort for
-amounts (variables prefixed with \texttt{\%}) with addition, which we use for the per-hop
-constraint between the incoming amount, the outgoing amount and the fee
-(Sec.~\ref{sec:core-amounts}).
+We further use the hashing, signing and natural-numbers built-ins. Hashing provides~$h$, used
+for payment hashes $y = h(x)$ and for the commitment $h(s)$ to a revocation secret~$s$. Signing
+provides \code{sign}, \code{verify} and \code{pk}, used for the channel handshake, the
+commitments and the invoices. Natural numbers provide the sort of amounts (variables prefixed
+with \texttt{\%}) with addition, used for the per-hop constraint between incoming amount,
+outgoing amount and fee (Sec.~\ref{sec:core-amounts}).
 
 An execution produces a trace of action facts. Security goals are then first-order formulas
-over these traces, enabling security queries (over all traces, \code{all-traces} lemmas) and
-reachability queries (ensuring that a certain trace exists, \code{exists-trace} lemmas). Such
-formulas quantify over messages and over the time points (written \texttt{\#i}) at which action
-facts occur. A \emph{restriction} is a formula of the same kind that \tamarin{} imposes on the
-model: only the traces that satisfy every restriction are considered.
+over these traces (with time points \texttt{\#i}), enabling security queries over all traces
+(\code{all-traces} lemmas) and reachability queries, ensuring that a certain trace exists
+(\code{exists-trace} lemmas). A \emph{restriction} is a formula of the same kind that
+\tamarin{} imposes on the model: only traces that satisfy every restriction are considered.
 
 \section{Formal Modelling Methodology}\label{sec:method}
 
-We model the protocol as a single \tamarin{} theory, \code{lightning.spthy}, with 37 rules and a
+We model the protocol as a single \tamarin{} theory, \code{lightning.spthy} (37 rules), with a
 single adversary. It contains both the payment-channel protocol (Sec.~\ref{sec:channel}) and
-multi-hop routing (Sec.~\ref{sec:routing}); one generic rule, \code{Forward_HTLC}, handles every
+multi-hop routing (Sec.~\ref{sec:routing}). One generic rule, \code{Forward_HTLC}, handles every
 forwarding hop, so routes of any length are covered. The routing layer does not abstract the
 channel layer away, but the coupling is deliberately thin: commitment transactions carry no HTLC
-outputs, and, besides the long-term keys, the two layers interact only through three explicit
+outputs, and, besides the long-term keys, the layers interact only through three explicit
 interfaces.
 
 \paragraph{Topology and Slot} \code{Lock_Funds_And_Open} mints the persistent facts
-\code{!ChannelConnect}, one per direction, which the routing rules \code{Sender_Offer_HTLC},
-\code{Forward_HTLC} and \code{Open_Timeout} require. HTLCs are therefore added only on opened
-channels (\code{HTLC_On_Opened_Channel}). Opening also mints one linear fact
-\code{Mutex(ptr)}: adding an HTLC consumes it, and redeeming or refunding that HTLC returns it.
-A channel thus holds at most one in-flight HTLC at a time and can be reused afterwards.
+\code{!ChannelConnect}, one per direction, which \code{Sender_Offer_HTLC}, \code{Forward_HTLC}
+and \code{Open_Timeout} require; HTLCs are therefore added only on opened channels
+(\code{HTLC_On_Opened_Channel}). Opening also mints one linear fact \code{Mutex(ptr)}: adding an
+HTLC consumes it, and redeeming or refunding that HTLC returns it. A channel thus holds at most
+one in-flight HTLC at a time and can be reused afterwards.
 
 \paragraph{Resolution} Every rule that redeems or refunds an HTLC records the action fact
-\code{Old}, and the following restriction lets each HTLC be resolved at most once:
+\code{Old}, and each HTLC is resolved at most once:
 \begin{spthy}
 restriction OneResolutionPerHTLC:
     "All ptr y #i #j. Old(ptr, y) @ #i & Old(ptr, y) @ #j
      ==> #i = #j"
 \end{spthy}
-This is the interface assumption between the two layers. In the protocol, it holds because an
-HTLC output of the current commitment transaction can be spent only once on chain. Spending it
-again from an older state means publishing a revoked commitment, which lets the counterparty
-take the whole channel balance (\code{Publish_Revoked_A/B}, \code{Punish_A/B}). This argument
-relies on the counterparty reacting in time and is not mechanised: we claim no composition
-theorem. All other abstractions are also explicit, named restrictions
+This is the interface assumption between the layers. In the protocol, it holds because an HTLC
+output of the current commitment can be spent only once on chain; spending it from an older
+state requires publishing a revoked commitment, which the counterparty can punish
+(\code{Publish_Revoked_A/B}, \code{Punish_A/B}). This argument is not mechanised, and we claim
+no composition theorem. All other abstractions are also explicit, named restrictions
 (Sec.~\ref{sec:restrictions}).
 
 \subsection{Threat Model}\label{sec:threat}
 
-\tamarin{} assumes the standard Dolev-Yao adversary model~\cite{dolevyao1983}: the adversary
-controls the whole network; it can read, modify and inject messages of arbitrary complexity; it
-is, however, constrained to the term algebra under consideration. Our adversary keeps this full
-control. Public keys, channel proposals and acknowledgements, and invoices are sent over the
-network. The adversary also chooses the values that honest rules read from it: the balances of a
-channel update (\code{Update_State}) and, at each hop, the incoming amount, the fee and the
-outgoing amount (\code{Forward_HTLC}), subject only to the incoming amount being the outgoing
-amount plus the fee. HTLC offers and fulfilments between adjacent hops are linear facts
-(\code{Route}, \code{Fulfilled}), that is, authenticated, non-replayable messages between
-channel partners.
+\tamarin{} assumes the standard Dolev-Yao adversary model~\cite{dolevyao1983}: it controls the
+whole network; it can read, modify and inject messages of arbitrary complexity; it is, however,
+constrained to the term algebra under consideration. Our adversary keeps this full control.
+Public keys, channel proposals and acknowledgements, and invoices are sent over the network. The
+adversary also chooses the values that honest rules read from it: the balances of a channel
+update (\code{Update_State}) and, at each hop, the incoming amount, the fee and the outgoing
+amount (\code{Forward_HTLC}), subject only to the incoming amount being the outgoing amount plus
+the fee. HTLC offers and fulfilments between adjacent hops are linear facts (\code{Route},
+\code{Fulfilled}), that is, authenticated, non-replayable messages between channel partners.
 
 \paragraph{Key Compromise} Rule \code{Compromise_Ltk} reveals the long-term key of any party at
-any time (action fact \code{LtkCompromised}); the adversary can then sign as that party. For
-instance, once the receiver's key is compromised, a sender can settle a payment for which the
-receiver created no invoice (\code{Forged_Invoice_Requires_Key_Compromise}). The preimage~$x$ is
-never sent on the network, so the adversary never learns it (\code{Preimage_Never_Known}). What
+any time (action fact \code{LtkCompromised}); the adversary can then sign as that party, e.g.,
+forge its invoices: a payment for which the receiver created no invoice can then settle
+(\code{Forged_Invoice_Requires_Key_Compromise}). The preimage~$x$ is never
+sent on the network, and the adversary never learns it (\code{Preimage_Never_Known}). What
 compromised parties can do with it is given explicitly by rule \code{AttackerSkip}: two
 compromised parties that offered or forwarded HTLCs with the same payment hash may move the
 fulfilment of one party's outgoing HTLC to the other party's outgoing HTLC, relaying~$x$ around
-the parties between them. This is the wormhole attack~\cite{malavolta2019}
-(Sec.~\ref{sec:wormhole}). Otherwise, compromised parties follow the protocol rules, with the
-exemptions of Sec.~\ref{sec:restrictions}.
+the parties between them: the wormhole attack~\cite{malavolta2019} (Sec.~\ref{sec:wormhole}).
+Apart from their keys, \code{AttackerSkip} and the exemptions of Sec.~\ref{sec:restrictions},
+compromised parties follow the protocol rules.
 
-\paragraph{Time} Time is abstract. The timeout of channel \code{ptr} is the event
-\code{TimedOut(ptr)} of rule \code{Open_Timeout}. It can happen at any point after the channel
-is opened, and at most once per channel (\code{OneTimeoutPerPtr}). The adversary therefore
-chooses when timeouts happen relative to honest actions.
+\paragraph{Time} Time is abstract: the timeout of channel \code{ptr} is the event
+\code{TimedOut(ptr)} of rule \code{Open_Timeout}, which can happen at any point after the
+channel is opened, and at most once per channel (\code{OneTimeoutPerPtr}). The adversary
+therefore chooses when timeouts happen relative to honest actions.
 
 \paragraph{Liveness} As mentioned before, the security of the Lightning Network relies on the
-liveness of the participants, whether to deter cheating behaviour (Sec.~\ref{par:punishment}) or to
-claim HTLCs (Remark~\ref{rmk:claiming}). However, a standard Dolev-Yao adversary has full
-control over the network. It can notably keep a party from seeing the network (e.g.,
-preventing it from noticing a fraud) or from sending a message (e.g., the defending
-transaction), leading to trivial attacks on the Lightning Network~\cite{mccorry2019}. This is
-why our model must encode liveness: no honest forwarder can be forcibly put offline. We do so
-with \tamarin{} restrictions.
+liveness of the participants, whether to deter cheating behaviour (Sec.~\ref{par:punishment}) or
+to claim HTLCs (Remark~\ref{rmk:claiming}). However, a standard Dolev-Yao adversary has full
+control over the network. It can notably keep a party from seeing the network (e.g., preventing
+it from noticing a fraud) or from sending a message (e.g., the defending transaction), leading to
+trivial attacks on the Lightning Network~\cite{mccorry2019}. Our model therefore uses \tamarin{}
+restrictions to impose liveness on honest forwarders, as explained next.
 
 \subsection{Liveness Restrictions}\label{sec:restrictions}
 
 To make the model relevant, we restrict the adversary's control over the order of events to
-allow for liveness, and we rule out pathological honest behaviour. Concretely, we impose three
-restrictions on the routing layer. We show them without the preprocessor flags
-(\code{NO_RBT}, \code{NO_OTF}, \code{NO_IMC}) that remove them for the necessity runs of
-Sec.~\ref{sec:timing}.
+allow for liveness. We also rule out pathological honest behaviour. Concretely, we impose the
+following three restrictions, which constrain the routing layer (shown without the flags
+\code{NO_RBT}, \code{NO_OTF}, \code{NO_IMC} that remove them for the necessity runs).
 \begin{spthy}[linerange={1-3,9-14,20-26}]
 restriction RedeemBeforeTimeout:
     "All ptr y #i #j.
@@ -148,20 +141,19 @@ well-formedness condition on timeouts, and it applies to every HTLC.
 \noindent\textbf{Restriction T2} (\code{OutgoingTimesOutFirst}). \emph{If the incoming HTLC of a
 forwarding hop times out and the forwarder was not compromised before, then its outgoing HTLC
 timed out earlier.} This is the decreasing-deadline (CLTV-delta) invariant of
-Remark~\ref{rmk:deadlines}: deadlines are not numbers in the main model, and T2 captures their
-order.
+Remark~\ref{rmk:deadlines}.
 
 \noindent\textbf{Restriction T3} (\code{IntermediaryMustClaim}). \emph{If a forwarder's outgoing
 HTLC is redeemed and its incoming HTLC times out, and the forwarder was not compromised before
 that timeout, then its incoming HTLC is redeemed too.} This is the claiming liveness of
-Remarks~\ref{rmk:claiming} and~\ref{rmk:deadlines}. It only constrains traces in which the
-incoming HTLC times out, the only ones in which the upstream party can be refunded
-(\code{Refund_Requires_Timeout}); by T1, the claim then precedes the timeout.
+Remarks~\ref{rmk:claiming} and~\ref{rmk:deadlines}, on which intermediary safety rests. It only
+constrains traces in which the incoming HTLC times out, the only ones in which the upstream
+party can be refunded (\code{Refund_Requires_Timeout}); by T1, the claim then precedes the
+timeout.
 
 T2 and T3 do not constrain forwarders compromised before their incoming timeout. The order of a
-hop's two timeouts is not assumed separately: \tamarin{} proves from T2 and
-\code{OneTimeoutPerPtr} that, if both time out and the forwarder was not compromised before its
-incoming timeout, the outgoing one times out first.
+hop's two timeouts is not assumed separately: \tamarin{} proves it from T2 and
+\code{OneTimeoutPerPtr}.
 \begin{spthy}
 lemma ForwardTimeGap [reuse]:
     "All P Prev Next ptrIn ptrOut y #f #j #k.
@@ -171,10 +163,10 @@ lemma ForwardTimeGap [reuse]:
       & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
      ==> #j < #k"
 \end{spthy}
-Being restrictions, T1 to T3 remove every trace that violates them, including traces in which an
+As restrictions, T1 to T3 remove every trace that violates them, including traces in which an
 uncompromised forwarder could not have acted in time; our results say nothing about such traces
-(Sec.~\ref{par:liveness-scope}). The liveness of punishment (Sec.~\ref{par:punishment}) is not
-encoded: no restriction mentions cheating or punishment.
+(Sec.~\ref{par:liveness-scope}). So, in our model, the liveness of punishment
+(Sec.~\ref{par:punishment}) is not encoded: no restriction mentions cheating or punishment.
 
 The six remaining restrictions are structural. \code{Equality} and \code{Inequality} turn the
 action facts \code{Eq} and \code{Neq} into constraints, which encodes checks such as signature
@@ -182,45 +174,42 @@ verification; \code{OneChannelPerPtr} and \code{OneTimeoutPerPtr} let a channel 
 out at most once; \code{OneHTLCPerHashPerChannel} lets a payment hash be added at most once per
 channel; and \code{OneResolutionPerHTLC} is the interface assumption above.
 
-Sec.~\ref{sec:timing} removes one liveness restriction at a time. Without T3, \tamarin{} finds a
-trace with no key compromise in which an intermediary's outgoing HTLC is redeemed while its
-incoming one is refunded; T1 is not needed by any of the five liveness lemmas, and T2 is not
-needed for intermediary safety. Under all restrictions, we prove the properties of
-Secs.~\ref{sec:properties} to~\ref{sec:wormhole} and the bypass theorems for positions 1 to 6
-(Sec.~\ref{sec:bypass-fixed}); the bypass theorem for routes of any length
-(Sec.~\ref{sec:bypass-any}) is proved without T1, T2 and T3.
+Sec.~\ref{sec:timing} removes one liveness restriction at a time. T3 is necessary for
+intermediary safety: without it, \tamarin{} finds a trace with no key compromise in which an
+intermediary's outgoing HTLC is redeemed while its incoming one is refunded. T1 is not needed by
+any of the five liveness lemmas checked there, and T2 is not needed for intermediary safety. The
+bypass theorem for routes of any length and a single offer per payment hash
+(Sec.~\ref{sec:bypass-any}) is proved without T1, T2 and T3; all other results of the main theory are
+proved under all restrictions.
 
 \subsection{Structural Limitations}\label{sec:structure}
 
 The Lightning Network is a complex protocol. Verifying it as a single monolithic block quickly
 hits scalability problems with verification tools~\cite{grundmann2026}, and \tamarin{} is no
-exception. This is not an assumption but an observation: when signatures, an equational theory,
-natural-number induction and an unbounded clock are combined, \tamarin{} exhausts memory;
-without the unbounded clock, the others are tractable together. We therefore keep the block
-clock out of the main theory, which represents timeouts as untimed events ordered by the
-restrictions of Sec.~\ref{sec:restrictions}. The block clock and the CLTV arithmetic are
-analysed in small auxiliary models that use hashing and natural numbers only.
+exception. This is not an assumption but an observation. When different built-ins are combined
+in \tamarin{}, the search space explodes: with signatures, an equational theory,
+natural-number induction and an unbounded clock, \tamarin{} exhausts memory; without the
+unbounded clock, the remaining ones are tractable together. We therefore keep the block clock
+out of the main theory, which represents timeouts as untimed events ordered by the restrictions above. The block clock and the CLTV arithmetic are analysed
+in small auxiliary models that use hashing and natural numbers only.
 
 Our artifact thus consists of one main theory and five small auxiliary models, all in
-\code{lightning_aux.spthy} and each selected by a preprocessor flag: the PTLC countermeasure
+\code{lightning_aux.spthy}, each selected by a preprocessor flag: the PTLC countermeasure
 (\code{-D=PTLC}) and its HTLC baseline (\code{-D=HTLC}), a block-clock model of CLTV deadlines
 (\code{-D=CLOCK}), CLTV-delta arithmetic (\code{-D=CLTV}) and the early-timeout race
-(\code{-D=TIMEOUT}). Each auxiliary model is self-contained and is not composed with the main
-theory; Table~\ref{tab:results} states what each run establishes.
+(\code{-D=TIMEOUT}). Each is self-contained and is not composed with the main theory
+(Table~\ref{tab:results}). Inside the main theory, HTLC state is deliberately not folded into
+the commitment transactions: \code{StateA} and \code{StateB} carry balances and revocation data
+but no HTLC outputs. This keeps the channel state independent of the payments routed over it.
+The price is \code{OneResolutionPerHTLC}, imposed rather than derived from the channel
+mechanics; a mechanised discharge, by composition or by refinement as in~\cite{grundmann2026},
+is the natural next step.
 
-Inside the main theory, HTLC state is deliberately not folded into the commitment transactions:
-\code{StateA} and \code{StateB} carry balances and revocation data but no HTLC outputs. This
-keeps the channel state independent of the payments routed over it, while one theory and one
-adversary cover channels with any number of updates and routes of any length. The price is the
-interface assumption \code{OneResolutionPerHTLC}, imposed rather than derived from the channel
-mechanics. A mechanised discharge of it, by composition or by refinement as
-in~\cite{grundmann2026}, is the natural next step.
-
-Finally, five aspects are deliberate non-goals. \emph{Onion privacy:} each forwarder may pick
-any channel partner as its next hop and nothing is encrypted in layers, so the results cover
-every route but claim no privacy. \emph{On-chain fees:} publishing a transaction is free, which
-separates the protocol logic from fee economics. \emph{Fee policy:} the adversary chooses every
-routing fee, so the results hold for any policy. \emph{Wallet capacity:} balances are opaque
-terms and HTLC amounts are not checked against them, so the results hold for all amounts.
-\emph{Per-HTLC CSV stage:} an HTLC is redeemed or refunded in one step, without a second-stage
-transaction, so each HTLC has a single resolution event.
+Five aspects are deliberate non-goals, each of which buys generality or tractability.
+\emph{Onion privacy:} each forwarder may pick any channel partner as its next hop and nothing is
+encrypted in layers, so the results cover every route but claim no privacy. \emph{On-chain
+fees:} publishing a transaction is free, which separates the protocol logic from fee economics.
+\emph{Fee policy:} the adversary chooses every routing fee, so the results hold for any policy.
+\emph{Wallet capacity:} HTLC amounts are not checked against the balances, so the results hold
+for all amounts. \emph{Per-HTLC CSV stage:} an HTLC is redeemed or refunded in one step, without
+a second-stage transaction.
