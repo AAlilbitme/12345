@@ -98,9 +98,9 @@ redeemed while its incoming one is refunded, and payments are atomic in runs wit
 compromise. The assumption that intermediaries claim in time is necessary: without it, \tamarin{}
 finds a run without any compromise in which an honest intermediary loses. The wormhole is a
 \tamarin-checked trace in which two compromised parties bypass an honest one, which is refunded
-and earns no fee. Conversely, a bypass requires some key compromise, at positions 1 to 6 of any
-route and, for payments whose hash is offered once, at every position, the latter even without
-the liveness restrictions. On a fixed route, per-hop locks in the style of PTLCs rule out the
+and earns no fee. Conversely, a bypass requires
+some key compromise: under the liveness restrictions at positions 1 to 6 of any route, and, for
+payments whose hash is offered on a single channel, at every position even without them. On a fixed route, per-hop locks in the style of PTLCs rule out the
 bypass of an honest hop when the sender is honest, whereas a shared hash lock admits it. Next,
 we want to replace the liveness restrictions by the progress semantics of~\cite{backes2017}, so
 that runs in which an honest party cannot act are analysed rather than pruned, and to derive

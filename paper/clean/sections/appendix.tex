@@ -579,8 +579,9 @@ lemma Sanity_Compromised_Intermediary_Can_Lose:
 
 \paragraph{\texttt{Necessity\_IMC\_Honest\_Intermediary\_Loses} (E)}
 Checked with \code{-D=NO_IMC} and \code{-D=NECESSITY} (\texttt{make necessity}, 28 steps).
-Without T3 an honest forwarder loses: its outgoing HTLC is fulfilled by the receiver while its
-incoming HTLC is refunded to the sender, with no key compromise, no claim and no settlement.
+Without T3 an honest forwarder can lose: there is a trace in which its outgoing HTLC is
+fulfilled by the receiver while its incoming HTLC is refunded to the sender, with no key
+compromise, no claim and no settlement.
 Hence T3 is necessary for intermediary safety (Sec.~\ref{sec:timing}).
 \begin{spthy}
 lemma Necessity_IMC_Honest_Intermediary_Loses:
@@ -639,8 +640,8 @@ lemma ForwardTimeGap [reuse]:
 
 If the payment settles at the sender while a forwarder's own hop is refunded (its outgoing HTLC
 is refunded, \code{RefundHop}), some party's key was compromised. The conclusion does not say
-which party, or when. The lemmas for positions 1 to 6 are proved by \texttt{make verify} and need
-no single-offer premise; \code{Any_Hop_Skip_Requires_Compromise} covers any position on a route
+which party, or when. The lemmas for positions 1 to 6 are proved by \texttt{make verify}, in the
+full model under T1 to T3, and need no single-offer premise; \code{Any_Hop_Skip_Requires_Compromise} covers any position on a route
 of any length under a single-offer premise (every offer on $h(x)$ uses the sender's channel
 \texttt{pSF}) and is proved by \texttt{make general}. Sec.~\ref{sec:bypass} discusses these
 results.
@@ -1048,7 +1049,7 @@ either channel may time out at any point, and the outgoing HTLC may be redeemed 
 \paragraph{\texttt{No\_Wormhole\_Around\_Honest\_Hop} (A, PTLC)}
 In the PTLC model, the channel \texttt{c0} of the sender is never redeemed while the outgoing
 channel \texttt{c2} of an uncompromised H2 is refunded, unless the sender is compromised. The
-proof depends on the tweak of H2 staying secret: once H2 is compromised, the wormhole is
+result depends on the tweak of H2 staying secret: once H2 is compromised, the wormhole is
 reachable (\code{Control_Wormhole_If_H2_Compromised}), and the refund of the outgoing channel of
 an uncompromised H2 alone is reachable too (\code{Control_Refund_Of_H2_Outgoing}).
 \begin{spthy}

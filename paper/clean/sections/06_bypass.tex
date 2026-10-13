@@ -10,11 +10,11 @@ forwarder at any position of a route of any length. Secs.~\ref{sec:bypass-fixed}
 to~\ref{sec:bypass-caveats} concern the main theory \code{lightning.spthy}; there is no separate
 N-hop theory.
 
-One generic rule, \code{Forward_HTLC}, serves every hop because HTLC offers are not network
-messages in our model. When tracing a forwarded message, \tamarin{} treats every party as a
-potential sender, and with the HTLC offer as a public, signed message, the analysis of routes of
-unbounded length did not terminate. We therefore swapped the public message for a private,
-single-use fact, \code{Route}, which each forward consumes and re-creates for the next hop
+HTLC offers between channel peers are not network messages in our model. When tracing a
+forwarded message, \tamarin{} treats every party as a potential sender, and with the offer as a
+public, signed message, the analysis of routes of unbounded length did not terminate. We
+therefore swapped the public message for a private, single-use fact, \code{Route}, which each
+application of the one generic rule \code{Forward_HTLC} consumes and re-creates for the next hop
 (Sec.~\ref{sec:core-routing}); what this takes away from the adversary is stated in
 Sec.~\ref{sec:limitations}.
 
@@ -29,7 +29,7 @@ an earlier redemption or skip. Every skip follows a compromise (Lemma~\ref{lem:s
 A forwarder is \emph{bypassed} when the payment settles at the sender while the forwarder's own
 hop is refunded; \code{Intermediary_Timeout_Refund} records such a refund as
 \code{RefundHop(ptrIn,ptrOut,y)}. For the forwarders at the first six positions of the sender's
-route we prove:
+route we prove, in the full model with T1, T2 and T3 in place:
 
 \begin{theorem}[Bypass Resistance at Positions 1 to 6]
 Let $1 \le k \le 6$. If a sender settles a payment with preimage $x$ on its own channel, the
@@ -150,9 +150,6 @@ Bypass resistance for single-offer payments therefore does not depend on T1, T2 
   therefore rests on the liveness restrictions; only Theorem~\ref{thm:anyhop} (single-offer
   payments) is shown to hold without them.
 \end{itemize}
-In numbers: \texttt{make verify} proves \code{Skipped_Requires_Compromise} and the 13
-hop-bypass lemmas in the full model, and \texttt{make general} proves 24/24 lemmas, among them
-\code{Any_Hop_Skip_Requires_Compromise} in 7 steps.
 
 \subsection{Countermeasure: PTLC}\label{sec:ptlc}
 
