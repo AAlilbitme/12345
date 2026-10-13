@@ -1,0 +1,29 @@
+MultiNhop_simon_newrules.spthy = Simon's file, AttackerKnowsRoute/AttackerSkip replaced by Fulfill_Compromised_Out/_In, Compromise_Ltk outputs !Compromised(A). Nothing else changed (T3 as in Simon).
+Each lemma: tamarin-prover --prove=<lemma>, 600 s timeout, 2 in parallel (time includes ~190 s precomputation).
+
+state_update | verified (15 steps) | 288s
+delayed_funds | verified (44 steps) | 297s
+instant_funds | verified (60 steps) | 273s
+settlement_is_traceable | verified (4 steps) | 272s
+No_Punishment_Without_Cheating | verified (20 steps) | 281s
+Protocol_execution | no result in 600 s | 476s
+Funds_Locked_Before_Update | verified (15 steps) | 227s
+Cooperative_Close_Execution | no result in 600 s | 601s
+Update_Requires_Negotiation | verified (15 steps) | 195s
+Invoice_Released_Once | verified (8 steps) | 210s
+Distinct_Parties_Configuration | verified (89 steps) | 189s
+Ltk_Known_Implies_Compromised | no result in 600 s | 600s
+Refund_Possible | verified (80 steps) | 200s
+Invoice_Has_Secret_Preimage | verified (2 steps) | 213s
+HTLC_On_Opened_Channel | verified (17 steps) | 198s
+Preimage_Secret_Until_Released | no result in 600 s | 600s
+Settle_Excludes_Sender_Refund | verified (17 steps) | 193s
+Forged_Invoice_Requires_Key_Compromise | verified (14 steps) | 501s
+Invoice_Authenticates_Settlement | no result in 600 s | 601s
+Loss_Requires_Inaction | verified (2 steps) | 202s
+Refund_Requires_Timeout | verified (58 steps) | 206s
+Intermediary_Never_Loses_Under_Liveness | verified (2 steps) | 215s
+Payment_Atomicity_Under_Liveness | verified (2 steps) | 213s
+Timeout_race_Blocked | verified (2 steps) | 207s
+Multihop_Payment_Possible | no result in 600 s | 600s
+Wormhole_Fee_Theft_Reachable | no result in 600 s | 600s

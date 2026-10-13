@@ -1,0 +1,81 @@
+// auth_local_sources.spthy -- AUTH on a generic signed forward rule, with a
+// hand-written [sources] lemma to tame the self-referential signed message.
+// If precomputation terminates and AUTH verifies, the soundness-theorem crux
+// is machine-checked on a generic (any-hop) rule.
+
+// ===========================================================================
+// RESULT (tested): adding a hand-written [sources] lemma did NOT tame the
+// self-referential signed offer -- the sources lemma itself, AUTH, and the
+// Chain_Reachable witness all time out at 420s. A single naive sources lemma is
+// insufficient; taming this generic rule would need a custom oracle / multiple
+// staged sources lemmas (uncertain, real research effort). The local AUTH proof
+// is therefore taken in the fixed-hop concrete model (multihop.spthy), where it
+// verifies.
+// ===========================================================================
+
+theory auth_local_sources
+begin
+
+builtins: hashing, signing
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A, ~ltk) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk) ]
+
+rule Originate_HTLC:
+    let offer = <'htlc', ~ptr, $S, $B, y>
+        sig   = sign(offer, ltkS)
+    in
+    [ Fr(~ptr), !Ltk($S, ltkS), In(y) ]
+    --[ HTLCOffered($S, $B, ~ptr, y),
+        SignedOffer(offer) ]->
+    [ Out(<offer, sig>) ]
+
+rule Forward_HTLC:
+    let inOffer  = <'htlc', ptrIn,  $P, $M, y>
+        outOffer = <'htlc', ~ptrOut, $M, $N, y>
+        sigM     = sign(outOffer, ltkM)
+    in
+    [ In(<inOffer, sigP>), Fr(~ptrOut),
+      !Pk($P, pkP), !Ltk($M, ltkM) ]
+    --[ HTLCForwarded($M, $N, $P, ~ptrOut, y),
+        GotOffer(inOffer, sigP),
+        SignedOffer(outOffer),
+        Neq($P, $M), Neq($M, $N),
+        Eq(verify(sigP, inOffer, pkP), true) ]->
+    [ Out(<outOffer, sigM>) ]
+
+restriction Equality:
+    "All a b #i. Eq(a, b) @ #i ==> a = b"
+restriction Inequality:
+    "All a b #i. Neq(a, b) @ #i ==> not(a = b)"
+
+// SOURCES: every offer accepted by a forwarding node was either genuinely
+// signed earlier (Originate/Forward), or its signature was known to the
+// adversary (which, for an honest key, requires key compromise).
+lemma offer_sources [sources]:
+    "All m sig #i.
+        GotOffer(m, sig) @ #i
+     ==> (Ex #j. SignedOffer(m) @ #j & #j < #i)
+       | (Ex #j. KU(sig) @ #j & #j < #i)"
+
+lemma AUTH [use_induction]:
+    "All M N P ptrOut y #i.
+        HTLCForwarded(M, N, P, ptrOut, y) @ #i
+     ==> (Ex ptrIn #j. HTLCOffered(P, M, ptrIn, y) @ #j & #j < #i)
+       | (Ex X ptrIn #j. HTLCForwarded(P, M, X, ptrIn, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(P) @ #r & #r < #i)"
+
+lemma Chain_Reachable:
+    exists-trace
+    "Ex M N P X ptrIn ptrOut y #i #j.
+        HTLCForwarded(P, M, X, ptrIn, y) @ #i
+      & HTLCForwarded(M, N, P, ptrOut, y) @ #j & #i < #j"
+
+end

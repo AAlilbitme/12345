@@ -1,0 +1,285 @@
+{
+ "section": "E",
+ "strikes": [
+  {
+   "page": 13,
+   "start": "Unless stated otherwise, every lemma below is",
+   "end": "We give line numbers in that file.",
+   "why": "describes multihop_modified.spthy (older three-hop lineage); replaced by the red note at \"Unless stated otherwise\" (csf_final files)"
+  },
+  {
+   "page": 13,
+   "start": "Throughout, action facts carry their intended meaning",
+   "end": "the adversary knows the term x.",
+   "why": "action-fact names and arities of the older lineage (HTLCForwarded1/2, ForwardHTLC, ReceiverPaid, amounts in InvoiceCreated); replaced by the red glossary note at \"Throughout\""
+  },
+  {
+   "page": 13,
+   "start": "691 lemma Invoice_Authenticates_Settlement: 692 \"All S F1",
+   "end": "| (Ex #r. LtkCompromised(R) @ #r & #r < #i)\"",
+   "why": "old listing (invoice with amount %v); replaced by the csf_final listing in the red note at Lemma 5"
+  },
+  {
+   "page": 14,
+   "start": "The sender can settle an HTLC even though",
+   "end": "InvoiceCreated(R, S, h(x), %v) @ #j)\"",
+   "why": "description overstates an exists-trace lemma; old listing (amount %v); replaced by the red note at Lemma 7"
+  },
+  {
+   "page": 14,
+   "start": "Remark 3. In the theory this lemma",
+   "end": "in the table should be corrected to E.",
+   "why": "resolved by the new Table II, which classifies Forged_Invoice_Requires_Key_Compromise as an exists-trace (E) lemma"
+  },
+  {
+   "page": 14,
+   "start": "This holds because the preimage is fresh per invoice",
+   "end": "release the preimage a second time.",
+   "why": "csf_final has no public fulfil message; replaced by the justification in the red note at Lemma 8"
+  },
+  {
+   "page": 14,
+   "start": "Lemma 9 (Forward1_Requires_Offer (\u2200)). The first inter-",
+   "end": "| (Ex #k. LtkCompromised(S) @ #k & #k < #i)\"",
+   "why": "no csf_final counterpart (hop-indexed HTLCForwarded1 with amounts); replaced by Forward_Requires_Incoming, red note at \"B. Lock Causality\""
+  },
+  {
+   "page": 14,
+   "start": "Lemma 10 (Forward2_Requires_Forward1 (\u2200)). The sec-",
+   "end": "| (Ex #k. LtkCompromised(F1) @ #k & #k < #i)\"",
+   "why": "no csf_final counterpart (HTLCForwarded2, amounts); replaced by Forward_Requires_Incoming, red note at \"B. Lock Causality\""
+  },
+  {
+   "page": 14,
+   "start": "Lemma 12 (Fulfill_Requires_Forward2 (\u2200)). The re-",
+   "end": "| (Ex #r. LtkCompromised(F2) @ #r & #r < #i)\"",
+   "why": "no csf_final counterpart (fixed second intermediary, amounts); csf_final release-causality lemmas are listed in the red insert after p. 17 (additions to C)"
+  },
+  {
+   "page": 15,
+   "start": "629 lemma Settle_Requires_Receiver_Release: 630 \"All S F1",
+   "end": "==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i\"",
+   "why": "old listing (invoice with amount %v); replaced by the red note at Lemma 14"
+  },
+  {
+   "page": 15,
+   "start": "If both intermediaries have forwarded the HTLCs",
+   "end": "==> not (Ex #m. Refunded(ptrSF1, y) @ #m)\"",
+   "why": "description and listing of the fixed three-hop version (ForwardHTLC); replaced by the red note at Lemma 15"
+  },
+  {
+   "page": 15,
+   "start": "685 lemma Settle_Excludes_Sender_Refund: 686 \"All S F1",
+   "end": "==> not (Ex #j. HTLCRefunded(S, ptr, h(x)) @ #j)\"",
+   "why": "old listing (HTLCRefunded does not exist in csf_final); replaced by the red note at Lemma 16"
+  },
+  {
+   "page": 15,
+   "start": "Lemma 17 (Multihop_Payment_Possible (\u2203)). Non-",
+   "end": "& #t5 < #t6 & #t6 < #t7 & #t7 < #t8\"",
+   "why": "no csf_final counterpart (HTLCForwarded1/2, amounts); replaced by Multihop_Routing_Reachable and Sanity_Atomic_Payment_Completes, red note at Lemma 17"
+  },
+  {
+   "page": 15,
+   "start": "Lemma 18 (Fee_Conservation_Hop1 (\u2200)). At the first",
+   "end": "with precisely this amount, at an",
+   "why": "Lemmas 18-23 have no csf_final counterpart (amounts are not chained along the path; no HTLCForwarded1/2, no ReceiverPaid); replaced by the red note at \"E. Value and Fee\""
+  },
+  {
+   "page": 16,
+   "start": "earlier time. 764 lemma Receiver_Paid_Invoice_Amount:",
+   "end": "& not (F1 = F2)\"",
+   "why": "rest of Lemma 23 and Lemma 24: no csf_final counterpart (no ReceiverPaid; Fees_Charged_On_Path_Possible not in csf_final); see the red note at \"E. Value and Fee\" on p. 15"
+  },
+  {
+   "page": 16,
+   "start": "714 lemma Refund_Requires_Timeout [reuse]:",
+   "end": "==> Ex #j. TimedOut(ptr) @ #j & #j < #i\"",
+   "why": "old listing (Refunded without the refunded party); replaced by the red note at Lemma 25"
+  },
+  {
+   "page": 16,
+   "start": "706 lemma Loss_Requires_Inaction: 707 \"All P ptrIn",
+   "end": "==> not (Ex #l. Redeemed(ptrIn, y) @ #l)\"",
+   "why": "old listing (ForwardHTLC); replaced by the red note at Lemma 26"
+  },
+  {
+   "page": 16,
+   "start": "Lemma 27 (Honest_Intermediary_Refunds (\u2203)). Reach-",
+   "end": "& not (Ex P #l. LtkCompromised(P) @ #l)\"",
+   "why": "no csf_final counterpart; replaced by Refund_Possible (a different, weaker witness), red note at \"F. Refund and Griefing\""
+  },
+  {
+   "page": 16,
+   "start": "Reach- ability witness (attack). There exists a complete three-hop",
+   "end": "& not (Ex P #l. LtkCompromised(P) @ #l)\"",
+   "why": "describes the 3-hop, no-compromise trace of the older lineage; replaced by the 5-party csf_final witness in the red note at Lemma 28"
+  },
+  {
+   "page": 16,
+   "start": "Lemma 29 (Wormhole_Steals_Exactly_The_Fees (\u2203)). The same reachable",
+   "end": "& not (Ex P #k. LtkCompromised(P) @ #k)\"",
+   "why": "no csf_final counterpart: amounts are not chained along the path, so the loss cannot be quantified as the path fees"
+  },
+  {
+   "page": 16,
+   "start": "Equivalently, an honest (non-compromised)",
+   "end": "",
+   "why": "start of a sentence that overstates the lemma (continues on p. 17); replaced by the red note at Lemma 30 on p. 17"
+  },
+  {
+   "page": 17,
+   "start": "intermediary never loses funds: whenever its outgoing HTLC",
+   "end": "it also redeems its incoming HTLC.",
+   "why": "overstates the lemma (it does not force a redemption); replaced by the red note at Lemma 30"
+  },
+  {
+   "page": 17,
+   "start": "721 lemma Intermediary_Never_Loses_Under_Liveness: 722 \"All P ptrIn",
+   "end": "==> Ex #r. LtkCompromised(P) @ #r\"",
+   "why": "old listing (ForwardHTLC, Refunded without the refunded party); replaced by the red note at Lemma 30"
+  },
+  {
+   "page": 17,
+   "start": "There is no trace in which an intermediary's incoming",
+   "end": "in the honest model.",
+   "why": "wrong for csf_final: the lemma verifies with T2b removed (necessity runs); replaced by the red note at Lemma 31"
+  },
+  {
+   "page": 17,
+   "start": "740 lemma Timeout_Race_Blocked: 741 \"not (Ex P",
+   "end": "745 & Redeemed(ptrOut, y) @ #i 746 & #k < #i)\"",
+   "why": "old listing (ForwardHTLC, no compromise guard); replaced by the red note at Lemma 31"
+  }
+ ],
+ "notes": [
+  {
+   "page": 13,
+   "anchor": "Skipping Attacks in Message Forwarding Protocols",
+   "html": "<p>TODO: add these two entries, numbered by first citation: [23] is cited in the liveness-scope paragraph added after p. 11, [24] in the rewritten Sec. VII (Related Work):</p><p>[23] M. Backes, J. Dreier, S. Kremer, and R. K&#252;nnemann, &#8220;A Novel Approach for Reasoning about Liveness in Cryptographic Protocols and its Application to Fair Exchange,&#8221; in IEEE European Symposium on Security and Privacy (EuroS&amp;P), 2017.</p><p>[24] A. Kiayias and O. S. T. Litos, \u201cA Composable Security Treatment of the Lightning Network,\u201d in <i>2020 IEEE 33rd Computer Security Foundations Symposium (CSF)</i>, 2020.</p><p>TODO: complete these entries from the publishers\u2019 records: [9] has a broken author list (\u201cG. , R. Stefa\u0144ski, \u2026\u201d); [10] lacks the journal; [11] has a garbled page range (\u201c15 pp.\u2013154\u201d); [14] and [22] lack the venue.</p>"
+  },
+  {
+   "page": 13,
+   "anchor": "Unless stated otherwise, every lemma",
+   "html": "<p>Unless stated otherwise, every lemma below is verified in <code>lightning.spthy</code>, the main model (channel layer, multi-hop routing in which one generic rule <code>Forward_HTLC</code> serves every hop of a route of any length, and the wormhole rule <code>AttackerSkip</code>). Lemmas of the auxiliary models are verified in <code>lightning_aux.spthy</code>, one model per preprocessor flag (<code>-D=PTLC</code>, <code>-D=HTLC</code>, <code>-D=CLOCK</code>, <code>-D=CLTV</code>, <code>-D=TIMEOUT</code>). Every listing is copied verbatim from these files with the proof script omitted; listing line numbers refer to <code>lightning.spthy</code>. Sections A\u2013I follow groups 1\u20139 of Table II and Section K group 0; the lemmas not printed below are given at the end of this appendix (additions to Sections A\u2013H, and Sections I\u2013K).</p><p>All results were obtained with Tamarin 1.10 and are reproduced by <code>make all</code>: <code>make verify</code> proves all 55 lemmas of the full model, i.e. with all nine restrictions, including the liveness restrictions T1, T2b and T3, in place (32 all-traces safety lemmas, 13 hop-bypass lemmas, 9 exists-trace lemmas found automatically, and <code>Wormhole_Fee_Theft_Reachable</code>, replayed from a saved 116-step proof); <code>make general</code> proves the 24 lemmas of the any-length theorem in the model without the three liveness restrictions; <code>make aux</code> proves the 21 lemmas of <code>lightning_aux.spthy</code>; <code>make necessity</code> removes one liveness restriction at a time.</p>"
+  },
+  {
+   "page": 13,
+   "anchor": "Throughout, action facts carry their intended meaning",
+   "html": "<p>Throughout, action facts carry their intended meaning from Sec. III (y = h(x) is a payment hash, ptr a channel): <code>InvoiceCreated(R, S, y)</code> \u2014 receiver R issued an invoice for y to sender S (the invoice <code>&lt;'invoice', R, S, y&gt;</code> is signed by R and carries no amount); <code>SecretPreimage(R, x)</code> / <code>PreimageReleased(R, x)</code> \u2014 R generated / released the preimage x; <code>HTLCOffered(S, F1, ptr, y)</code> \u2014 the sender offered an HTLC on y to its first forwarder F1 on channel ptr; <code>OfferFor(S, R, ptr, y)</code> \u2014 annotation of the same step naming the invoice\u2019s receiver R; <code>HTLCAdded(ptr, y)</code> \u2014 an HTLC on y was added to channel ptr (by an offer or a forward); <code>HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y)</code> \u2014 forwarder Me, holding an incoming HTLC from Prev on ptrIn, added an outgoing HTLC to Next on ptrOut (one rule for every hop); <code>FeeCharged(Me, y, %fee)</code> \u2014 the fee Me charges at that forward; <code>HTLCFulfilled(R, Prev, ptr, y)</code> \u2014 the receiver redeemed its incoming HTLC; <code>IntermediaryClaimed(Me, Prev, ptrIn, x)</code> / <code>FeeEarned(Me, ptrIn, ptrOut, y, %fee)</code> \u2014 forwarder Me redeemed its incoming HTLC with x / earned its fee; <code>SenderSettled(S, F1, R, ptr, x)</code> \u2014 the sender settled its HTLC with x; <code>Redeemed(ptr, y)</code> / <code>Refunded(Up, ptr, y)</code> \u2014 the HTLC on ptr was redeemed / refunded, after its timeout, to Up, the party that had offered it; <code>TimedOut(ptr)</code> \u2014 the HTLC timeout of channel ptr was reached; <code>SettledHop(ptrIn, ptrOut, y)</code> / <code>RefundHop(ptrIn, ptrOut, y)</code> \u2014 annotations: the hop from ptrIn to ptrOut settled / had its outgoing HTLC refunded; <code>UsedFulfilled(ptr, x)</code> \u2014 annotation: a settlement consumed the fulfilment of the HTLC on ptr; <code>FulfilledProduced(ptr, x)</code> \u2014 a fulfilment for ptr was produced by an intermediary settlement or by a skip; <code>Skipped(ptr, x)</code> \u2014 annotation of <code>AttackerSkip</code>: compromised parties relayed x onto ptr (wormhole); <code>ChannelOpen(A, B, ptr)</code> \u2014 A and B opened channel ptr; <code>KeyGen(A, ltk)</code> \u2014 A generated its long-term key ltk; <code>LtkCompromised(A)</code> \u2014 A\u2019s long-term key was compromised; <i>K</i>(x) \u2014 the adversary knows the term x.</p>"
+  },
+  {
+   "page": 13,
+   "anchor": "Lemma 5 (Invoice_Authenticates_Settlement",
+   "html": "<p>Description unchanged; the invoice carries no amount.</p><p>csf_final (<code>lightning.spthy</code>, l. 592):</p><pre>lemma Invoice_Authenticates_Settlement:\n    \"All S F1 R ptr x #i.\n        SenderSettled(S, F1, R, ptr, x) @ #i\n     ==&gt; (Ex #j. InvoiceCreated(R, S, h(x)) @ #j &amp; #j &lt; #i)\n       | (Ex #r. LtkCompromised(R) @ #r &amp; #r &lt; #i)\"</pre>"
+  },
+  {
+   "page": 14,
+   "anchor": "Lemma 6 (Preimage_Secret_Until_Released",
+   "html": "<p>Statement unchanged; TODO: renumber the listing to <code>lightning.spthy</code> l. 542\u2013547. Add: <i>In this model the preimage is never sent to the network: fulfilments travel between hops as state facts, and <code>AttackerSkip</code> relays them without the adversary learning x. Hence <code>Preimage_Never_Known</code> (additions to Sec. A) holds, and this lemma holds trivially.</i></p>"
+  },
+  {
+   "page": 14,
+   "anchor": "Lemma 7 (Forged_Invoice_Requires_Key_Compromise",
+   "html": "<p><i>Reachability witness. There is a trace in which the sender settles an HTLC for receiver R although R never created an invoice for h(x); R\u2019s long-term key is compromised in this trace, and no forwarding takes place. Together with Lemma 5, which requires such a compromise to precede the settlement, this shows that the compromise case of Lemma 5 is not vacuous.</i></p><p>csf_final (<code>lightning.spthy</code>, l. 598):</p><pre>lemma Forged_Invoice_Requires_Key_Compromise:\n    exists-trace\n    \"Ex S F1 R ptr x #i #r.\n        SenderSettled(S, F1, R, ptr, x) @ #i\n      &amp; LtkCompromised(R) @ #r\n      &amp; not (Ex #j. InvoiceCreated(R, S, h(x)) @ #j)\n      &amp; not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u)\"</pre>"
+  },
+  {
+   "page": 14,
+   "anchor": "Lemma 8 (Invoice_Released_Once",
+   "html": "<p>Statement unchanged; TODO: renumber the listing to <code>lightning.spthy</code> l. 508\u2013512. New justification: <i>This holds because <code>Receiver_Fulfill_HTLC</code> consumes the linear fact <code>ReceiverInv(R, S, x)</code>, which <code>Receiver_Create_Invoice</code> creates once per fresh preimage x.</i></p>"
+  },
+  {
+   "page": 14,
+   "anchor": "B. Lock Causality",
+   "html": "<p><b>Lemma (Forward_Requires_Incoming (\u2200)).</b> <i>A forwarder adds an outgoing HTLC only if an HTLC on the same hash was added earlier to its incoming channel, either offered to it by a sender or forwarded to it by its predecessor. The lemma covers every hop of a route of any length and needs no honesty assumption.</i></p><p>Statement (<code>lightning.spthy</code>, l. 576):</p><pre>lemma Forward_Requires_Incoming [use_induction]:\n    \"All Me Prev Next ptrIn ptrOut y #i.\n        HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #i\n     ==&gt; (Ex S #j. HTLCOffered(S, Me, ptrIn, y) @ #j &amp; #j &lt; #i)\n       | (Ex P0 pin0 #j. HTLCForwarded(Prev, P0, Me, pin0, ptrIn, y) @ #j &amp; #j &lt; #i)\"</pre>"
+  },
+  {
+   "page": 14,
+   "anchor": "Lemma 11 (HTLC_On_Opened_Channel",
+   "html": "<p>Statement unchanged; TODO: renumber the listing to <code>lightning.spthy</code> l. 554\u2013557. <code>HTLCAdded</code> is emitted by <code>Sender_Offer_HTLC</code> and <code>Forward_HTLC</code>.</p>"
+  },
+  {
+   "page": 14,
+   "anchor": "Lemma 13 (Claim_Requires_Release",
+   "html": "<p>Statement unchanged; TODO: renumber the listing to <code>lightning.spthy</code> l. 570\u2013574 and write its first line as <code>lemma Claim_Requires_Release [use_induction]:</code>.</p>"
+  },
+  {
+   "page": 15,
+   "anchor": "a settlement never precedes the receiver's release",
+   "html": "<p>Lemma 14: description unchanged; the invoice carries no amount.</p><p>csf_final (<code>lightning.spthy</code>, l. 564):</p><pre>lemma Settle_Requires_Receiver_Release:\n    \"All S F1 R ptr x #i #j.\n        SenderSettled(S, F1, R, ptr, x) @ #i\n      &amp; InvoiceCreated(R, S, h(x)) @ #j\n     ==&gt; Ex #k. PreimageReleased(R, x) @ #k &amp; #k &lt; #i\"</pre>"
+  },
+  {
+   "page": 15,
+   "anchor": "Lemma 15 (Payment_Atomicity_Under_Liveness",
+   "html": "<p><i>If two forwarders F1 and F2 forward consecutive HTLCs on the same hash y (the outgoing channel of F1 is the incoming channel of F2), the HTLC on F2\u2019s outgoing channel is redeemed, and no party\u2019s long-term key is ever compromised, then the HTLC on F1\u2019s incoming channel is never refunded: in a run without any key compromise, once the payment is redeemed downstream of two forwarders, the party upstream of them cannot be refunded. The lemma is proved in the full model, i.e. under the liveness restrictions; it also verifies with T1 removed (Table III).</i></p><p>csf_final (<code>lightning.spthy</code>, l. 625):</p><pre>lemma Payment_Atomicity_Under_Liveness:\n    \"All F1 F2 Prev1 Next1 Prev2 Next2 ptrSF1 ptrF1F2 ptrF2R y #i #j #k.\n        HTLCForwarded(F1, Prev1, Next1, ptrSF1, ptrF1F2, y) @ #i\n      &amp; HTLCForwarded(F2, Prev2, Next2, ptrF1F2, ptrF2R, y) @ #j\n      &amp; Redeemed(ptrF2R, y) @ #k\n      &amp; (not Ex P #l. LtkCompromised(P) @ #l)\n     ==&gt; not (Ex Up #m. Refunded(Up, ptrSF1, y) @ #m)\"</pre>"
+  },
+  {
+   "page": 15,
+   "anchor": "Lemma 16 (Settle_Excludes_Sender_Refund",
+   "html": "<p>TODO: in the description replace \u201ccan never be refunded later\u201d by \u201cis never refunded\u201d (the statement excludes a refund at any time).</p><p>csf_final (<code>lightning.spthy</code>, l. 587):</p><pre>lemma Settle_Excludes_Sender_Refund [heuristic={sender_pending}]:\n    \"All S F1 R ptr x #i.\n        SenderSettled(S, F1, R, ptr, x) @ #i\n     ==&gt; not (Ex #j. Refunded(S, ptr, h(x)) @ #j)\"</pre>"
+  },
+  {
+   "page": 15,
+   "anchor": "Lemma 17 (Multihop_Payment_Possible",
+   "html": "<p>Replace Lemma 17 by two non-vacuity witnesses.</p><p><b>Lemma (Multihop_Routing_Reachable (\u2203)).</b> <i>The routing phase of a payment over two forwarders is reachable: the sender offers, both forwarders forward and the receiver fulfils, with no other offer or forward, at most one HTLC per channel, and no intermediary claim or sender settlement.</i></p><p>Statement (<code>lightning.spthy</code>, l. 644):</p><pre>lemma Multihop_Routing_Reachable:\n    exists-trace\n    \"Ex S F1 F2 R p0 p1 p2 x #t2 #t3 #t4 #t5.\n        HTLCOffered(S, F1, p0, h(x)) @ #t2\n      &amp; HTLCForwarded(F1, S, F2, p0, p1, h(x)) @ #t3\n      &amp; HTLCForwarded(F2, F1, R, p1, p2, h(x)) @ #t4\n      &amp; HTLCFulfilled(R, F2, p2, h(x)) @ #t5\n      &amp; #t2 &lt; #t3 &amp; #t3 &lt; #t4 &amp; #t4 &lt; #t5\n      &amp; not (Ex A B p y #u. HTLCOffered(A, B, p, y) @ #u &amp; not (A = S &amp; B = F1))\n      &amp; not (Ex Me Prev Next pi po y #u. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #u\n              &amp; not (Me = F1 &amp; Prev = S &amp; Next = F2)\n              &amp; not (Me = F2 &amp; Prev = F1 &amp; Next = R))\n      &amp; not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m &amp; HTLCAdded(ptr, y2) @ #n &amp; not (#m = #n))\n      &amp; not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)\n      &amp; not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)\"</pre><p><b>Lemma (Sanity_Atomic_Payment_Completes (\u2203)).</b> <i>An honest payment over two forwarders completes end to end: offer, both forwards, fulfilment, both intermediary claims and the sender\u2019s settlement occur, with no key compromise, at most one HTLC per channel, exactly these claims and this settlement, and no refund. It shows that the premise of Lemma 15 is satisfiable.</i></p><p>Statement (<code>lightning.spthy</code>, l. 1123):</p><pre>lemma Sanity_Atomic_Payment_Completes:\n  exists-trace\n  \"Ex S F1 F2 R p0 p1 p2 x #o #a #b #r #c1 #c2 #s.\n      HTLCOffered(S, F1, p0, h(x)) @ #o\n    &amp; HTLCForwarded(F1, S, F2, p0, p1, h(x)) @ #a\n    &amp; HTLCForwarded(F2, F1, R, p1, p2, h(x)) @ #b\n    &amp; HTLCFulfilled(R, F2, p2, h(x)) @ #r\n    &amp; IntermediaryClaimed(F2, F1, p1, x) @ #c2\n    &amp; IntermediaryClaimed(F1, S, p0, x) @ #c1\n    &amp; SenderSettled(S, F1, R, p0, x) @ #s\n    &amp; not (Ex P #k. LtkCompromised(P) @ #k)\n    &amp; not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m &amp; HTLCAdded(ptr, y2) @ #n &amp; not (#m = #n))\n    &amp; (All Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e ==&gt; (#e = #c1 | #e = #c2))\n    &amp; (All A B C q z #e. SenderSettled(A, B, C, q, z) @ #e ==&gt; #e = #s)\n    &amp; not (Ex U q z #e. Refunded(U, q, z) @ #e)\"</pre>"
+  },
+  {
+   "page": 15,
+   "anchor": "E. Value and Fee",
+   "html": "<p>TODO: retitle the subsection \u201cE. Fees\u201d and replace Lemmas 18\u201324 by the following text.</p><p>Amounts are local to a hop: <code>Forward_HTLC</code> receives the incoming amount, the fee and the outgoing amount as inputs and emits <code>Eq(%vIn,  %vOut %+ %fee)</code>, which the <code>Equality</code> restriction enforces, so per-hop value conservation holds by construction. The offer, the invoice and the route carry no amount, so amounts are not chained along the path and the model makes no end-to-end value statement. The fee guarantee is <code>Fee_Only_On_Successful_Forward</code> (Additions to E, end of this appendix): an uncompromised forwarder earns its fee only after its outgoing HTLC was redeemed.</p>"
+  },
+  {
+   "page": 16,
+   "anchor": "Lemma 25 (Refund_Requires_Timeout",
+   "html": "<p>Description unchanged.</p><p>csf_final (<code>lightning.spthy</code>, l. 613):</p><pre>lemma Refund_Requires_Timeout [reuse]:\n    \"All Up ptr y #i.\n        Refunded(Up, ptr, y) @ #i\n     ==&gt; Ex #j. TimedOut(ptr) @ #j &amp; #j &lt; #i\"</pre>"
+  },
+  {
+   "page": 16,
+   "anchor": "Lemma 26 (Loss_Requires_Inaction",
+   "html": "<p>TODO: in the description replace \u201cis never redeemed afterwards\u201d by \u201cis never redeemed\u201d (the statement excludes a redemption at any time).</p><p>csf_final (<code>lightning.spthy</code>, l. 606):</p><pre>lemma Loss_Requires_Inaction:\n    \"All P Prev Next Up ptrIn ptrOut y #i #j #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i\n      &amp; Redeemed(ptrOut, y) @ #j\n      &amp; Refunded(Up, ptrIn, y) @ #k\n     ==&gt; not (Ex #l. Redeemed(ptrIn, y) @ #l)\"</pre>"
+  },
+  {
+   "page": 16,
+   "anchor": "F. Refund and Griefing",
+   "html": "<p>TODO: keep the title \u201cF. Refund and Griefing\u201d (group 6 of the new Table II, \u201cRefund / griefing\u201d). <code>lightning.spthy</code> has no counterpart of Lemma 27 (an honest forwarder whose outgoing HTLC is refunded with no settlement anywhere). The refund witness of the model is the weaker Refund_Possible, which Sec. V-E reports as reachable griefing of the sender: its HTLC stays locked until the timeout (Refund_Requires_Timeout):</p><p><b>Lemma (Refund_Possible (\u2203)).</b> <i>A payment can be refunded: the receiver issues an invoice, the sender offers an HTLC on its hash, and the sender\u2019s HTLC is refunded after its timeout, with no settlement, no key compromise, no forwarding, and at most one HTLC per channel.</i></p><p>Statement (<code>lightning.spthy</code>, l. 530):</p><pre>lemma Refund_Possible:\n    exists-trace\n    \"Ex S F1 R p y #i #j #k.\n        InvoiceCreated(R, S, y) @ #j\n      &amp; HTLCOffered(S, F1, p, y) @ #k\n      &amp; Refunded(S, p, y) @ #i\n      &amp; #j &lt; #k &amp; #k &lt; #i\n      &amp; not (Ex A MidP B p2 x #l. SenderSettled(A, MidP, B, p2, x) @ #l)\n      &amp; not (Ex P #r. LtkCompromised(P) @ #r)\n      &amp; not (Ex Me Prev Next pi po y2 #t1. HTLCForwarded(Me, Prev, Next, pi, po, y2) @ #t1)\n      &amp; not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m &amp; HTLCAdded(ptr, y2) @ #n &amp; not (#m = #n))\"</pre>"
+  },
+  {
+   "page": 16,
+   "anchor": "Lemma 28 (Wormhole_Fee_Theft_Reachable",
+   "html": "<p><i>Reachability witness (attack). There is a trace on the route Alice \u2192 Att1 \u2192 Indiana \u2192 Att2 \u2192 Bob in which Bob issues the invoice and redeems his incoming HTLC and Alice settles her HTLC, yet the outgoing HTLC of the intermediary Indiana is refunded and Indiana earns no fee. Alice, Bob and Indiana are never compromised, and Att1 and Att2 are distinct parties. This is the wormhole [6]: the preimage is relayed around Indiana by rule <code>AttackerSkip</code>, which only two compromised parties on the same payment can apply. Tamarin does not find this trace automatically: <code>make verify</code> replays a saved 116-step proof. In the PTLC model of Section J the corresponding wormhole around an honest hop is unreachable (<code>No_Wormhole_Around_Honest_Hop</code>), while the HTLC baseline reaches it (<code>Wormhole_Around_Honest_Hop</code>).</i></p><p>csf_final (<code>lightning.spthy</code>, l. 660):</p><pre>lemma Wormhole_Fee_Theft_Reachable:\n  exists-trace\n  \"\u2203 Alice Bob Att1 Att2 Indiana ptrAliceAtt1 ptrAtt1Indiana\n     ptrIndianaAtt2 ptrAtt2Bob x #t1 #t2 #t3 #t4 #t5 #t6 #t7 #t8.\n    (((((((((((((((InvoiceCreated( Bob, Alice, h(x) ) @ #t1) \u2227\n                  (HTLCOffered( Alice, Att1, ptrAliceAtt1, h(x) ) @ #t2)) \u2227\n                 (HTLCForwarded( Att1, Alice, Indiana, ptrAliceAtt1, ptrAtt1Indiana,\n                                 h(x)\n                  ) @ #t3)) \u2227\n                (HTLCForwarded( Indiana, Att1, Att2, ptrAtt1Indiana,\n                                ptrIndianaAtt2, h(x)\n                 ) @ #t4)) \u2227\n               (HTLCForwarded( Att2, Indiana, Bob, ptrIndianaAtt2, ptrAtt2Bob,\n                               h(x)\n                ) @ #t5)) \u2227\n              (HTLCFulfilled( Bob, Att2, ptrAtt2Bob, h(x) ) @ #t6)) \u2227\n             (SenderSettled( Alice, Att1, Bob, ptrAliceAtt1, x ) @ #t7)) \u2227\n            (Refunded( Indiana, ptrIndianaAtt2, h(x) ) @ #t8)) \u2227\n           (\u00ac(Indiana = Alice))) \u2227\n          (\u00ac(Indiana = Bob))) \u2227\n         (\u00ac(Att1 = Att2))) \u2227\n        (\u00ac(\u2203 #c. LtkCompromised( Alice ) @ #c))) \u2227\n       (\u00ac(\u2203 #c. LtkCompromised( Bob ) @ #c))) \u2227\n      (\u00ac(\u2203 #c. LtkCompromised( Indiana ) @ #c))) \u2227\n     (\u00ac(\u2203 ptr1 ptr2 yy %fee #k.\n         FeeEarned( Indiana, ptr1, ptr2, yy, %fee ) @ #k))) \u2227\n    (\u00ac(\u2203 ptr y1 y2 #m #n.\n        ((HTLCAdded( ptr, y1 ) @ #m) \u2227 (HTLCAdded( ptr, y2 ) @ #n)) \u2227\n        (\u00ac(#m = #n))))\"</pre>"
+  },
+  {
+   "page": 17,
+   "anchor": "721 lemma Intermediary_Never_Loses_Under_Liveness",
+   "html": "<p>Lemma 30, replacement for the struck sentence: <i>Equivalently, an honest intermediary whose outgoing HTLC is redeemed never has its incoming HTLC refunded. The stronger <code>Intermediary_Never_Loses_Strong</code> (Additions to H) places the compromise before the incoming timeout.</i></p><p>csf_final (<code>lightning.spthy</code>, l. 618):</p><pre>lemma Intermediary_Never_Loses_Under_Liveness:\n    \"All P Prev Next Up ptrIn ptrOut y #i #j #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i\n      &amp; Redeemed(ptrOut, y) @ #j\n      &amp; Refunded(Up, ptrIn, y) @ #k\n     ==&gt; Ex #l. LtkCompromised(P) @ #l\"</pre>"
+  },
+  {
+   "page": 17,
+   "anchor": "Lemma 31 (Timeout_Race_Blocked",
+   "html": "<p><i>No intermediary that is not compromised before its incoming timeout has its incoming HTLC refunded when that timeout happens strictly before its outgoing HTLC is redeemed. The lemma also verifies with any one of T1, T2b and T3 removed (4 steps each, Table III), so it does not depend on any single liveness restriction. In the abstract TIMEOUT model of <code>lightning_aux.spthy</code>, where either channel may time out at any point and the outgoing HTLC may be redeemed at any time, the race is reachable (<code>Early_Timeout_Race</code>, \u2203, 6 steps).</i></p><p>csf_final (<code>lightning.spthy</code>, l. 633):</p><pre>lemma Timeout_Race_Blocked:\n    \"not (Ex P Prev Next Up ptrIn ptrOut y #l #i #j #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #l\n      &amp; TimedOut(ptrIn)     @ #k\n      &amp; Refunded(Up, ptrIn, y)  @ #j\n      &amp; Redeemed(ptrOut, y) @ #i\n      &amp; #k &lt; #i\n      &amp; not (Ex #c. LtkCompromised(P) @ #c &amp; #c &lt; #k))\"</pre>"
+  }
+ ],
+ "inserts": [
+  {
+   "after_page": 17,
+   "title": "Appendix A additions: csf_final lemmas missing from the catalogue",
+   "html": "<p>The following lemmas complete the catalogue; the section letters follow the groups of Table II. Statements are verbatim (proof scripts omitted); \u2200 = all-traces, \u2203 = exists-trace. Unless a flag is given they belong to <code>lightning.spthy</code> and are proved by <code>make verify</code>.</p><p><b>Additions to A (Invoice and Preimage)</b></p><p><b>Preimage_Never_Known (\u2200)</b> [<code>lightning.spthy</code>, l. 1141]. <i>The adversary never learns a receiver\u2019s preimage (x is never output in this model); Lemma 6 therefore holds trivially.</i></p><pre>lemma Preimage_Never_Known:\n    \"All R x #i. SecretPreimage(R, x) @ #i ==&gt; not (Ex #j. K(x) @ #j)\"</pre><p><b>Invoice_Has_Secret_Preimage (\u2200)</b> [<code>lightning.spthy</code>, l. 549]. <i>Every invoice is created together with the receiver\u2019s secret preimage of its hash.</i></p><pre>lemma Invoice_Has_Secret_Preimage [reuse]:\n    \"All R S x #i.\n        InvoiceCreated(R, S, h(x)) @ #i\n     ==&gt; SecretPreimage(R, x) @ #i\"</pre><p><b>Additions to B (Lock Causality)</b></p><p><b>Offer_Requires_Invoice (\u2200)</b> [<code>lightning.spthy</code>, l. 1115]. <i>An HTLC is offered for receiver R only against an invoice that R created earlier, or R\u2019s long-term key is compromised.</i></p><pre>lemma Offer_Requires_Invoice:\n    \"All S R ptr y #o.\n        OfferFor(S, R, ptr, y) @ #o\n     ==&gt; (Ex #j. InvoiceCreated(R, S, y) @ #j &amp; #j &lt; #o)\n       | (Ex #r. LtkCompromised(R) @ #r)\"</pre><p><b>Additions to C (Release Causality)</b></p><p><b>Fulfilled_Requires_Release (\u2200)</b> [<code>lightning.spthy</code>, l. 559]. <i>Every fulfilment produced by an intermediary settlement or a skip is preceded by a receiver\u2019s release of x.</i></p><pre>lemma Fulfilled_Requires_Release [reuse, use_induction, heuristic=S]:\n    \"All ptr x #i.\n        FulfilledProduced(ptr, x) @ #i\n     ==&gt; Ex R #k. PreimageReleased(R, x) @ #k &amp; #k &lt; #i\"</pre><p><b>Redeem_Requires_Receiver_Release (\u2200)</b> [<code>lightning.spthy</code>, l. 582]. <i>Every redeemed HTLC on y comes with a receiver\u2019s release of a preimage x with h(x) = y.</i></p><pre>lemma Redeem_Requires_Receiver_Release [use_induction]:\n    \"All ptr y #i.\n        Redeemed(ptr, y) @ #i\n     ==&gt; Ex R x #k. PreimageReleased(R, x) @ #k &amp; h(x) = y\"</pre><p><b>Fulfilled_Source (\u2200)</b> [<code>lightning.spthy</code>, l. 1148]. <i>A fulfilment consumed by a settlement stems from an earlier redemption of that HTLC or from an earlier skip.</i></p><pre>lemma Fulfilled_Source [reuse]:\n    \"All p x #i. UsedFulfilled(p, x) @ #i\n     ==&gt; (Ex #j. Redeemed(p, h(x)) @ #j &amp; #j &lt; #i)\n       | (Ex #j. Skipped(p, x) @ #j &amp; #j &lt; #i)\"</pre><p><b>Additions to D (Atomicity)</b></p><p><b>OneOutcomePerHTLC (\u2200)</b> [<code>lightning.spthy</code>, l. 498]. <i>No HTLC is both redeemed and refunded.</i></p><pre>lemma OneOutcomePerHTLC [reuse]:\n    \"All Up ptr y #i #j.\n       Redeemed(ptr, y) @ #i &amp; Refunded(Up, ptr, y) @ #j ==&gt; F\"</pre><p><b>Sanity_Honest_Payment_Completes (\u2203)</b> [<code>lightning.spthy</code>, l. 1075]. <i>An honest payment over one forwarder completes end to end, with no compromise and no refund.</i></p><pre>lemma Sanity_Honest_Payment_Completes:\n  exists-trace\n  \"Ex S F1 R p0 p1 x #o #a #r #c #s.\n      HTLCOffered(S, F1, p0, h(x)) @ #o\n    &amp; HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a\n    &amp; HTLCFulfilled(R, F1, p1, h(x)) @ #r\n    &amp; IntermediaryClaimed(F1, S, p0, x) @ #c\n    &amp; SenderSettled(S, F1, R, p0, x) @ #s\n    &amp; not (Ex P #k. LtkCompromised(P) @ #k)\n    &amp; not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m &amp; HTLCAdded(ptr, y2) @ #n &amp; not (#m = #n))\n    &amp; (All Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e ==&gt; #e = #c)\n    &amp; (All A B C q z #e. SenderSettled(A, B, C, q, z) @ #e ==&gt; #e = #s)\n    &amp; not (Ex U q z #e. Refunded(U, q, z) @ #e)\"</pre><p><b>Distinct_Parties_Configuration (\u2203)</b> [<code>lightning.spthy</code>, l. 514]. <i>Three channels among four distinct parties can be opened with no compromise, update, publication, close, cheat or forward.</i></p><pre>lemma Distinct_Parties_Configuration:\n    exists-trace\n    \"Ex S F1 F2 R ptrSF1 ptrF1F2 ptrF2R #t1 #t2 #t3.\n        ChannelOpen(S, F1, ptrSF1) @ #t1\n      &amp; ChannelOpen(F1, F2, ptrF1F2) @ #t2\n      &amp; ChannelOpen(F2, R, ptrF2R) @ #t3\n      &amp; not (S = F1) &amp; not (S = F2) &amp; not (S = R)\n      &amp; not (F1 = F2) &amp; not (F1 = R) &amp; not (F2 = R)\n      &amp; not (Ex P #i. LtkCompromised(P) @ #i)\n      &amp; not (Ex P Q p n #j. StateUpdate(P, Q, p, n) @ #j)\n      &amp; not (Ex P n #k. PublishState(P, n) @ #k)\n      &amp; not (Ex P Q p n #l. Close(P, Q, p, n) @ #l)\n      &amp; not (Ex P n #m. Cheat(P, n) @ #m)\n      &amp; not (Ex Me Prev Next pi po y #n. HTLCForwarded(Me, Prev, Next, pi, po, y) @ #n)\n      &amp; not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m &amp; HTLCAdded(ptr, y2) @ #n &amp; not (#m = #n))\"</pre><p><b>Additions to E (Fees)</b></p><p><b>Fee_Only_On_Successful_Forward (\u2200)</b> [<code>lightning.spthy</code>, l. 1066]. <i>An uncompromised forwarder earns its fee only after its outgoing HTLC was redeemed and after it forwarded on that hop.</i></p><pre>lemma Fee_Only_On_Successful_Forward [heuristic={route_info_first}]:\n    \"All Me ptrIn ptrOut y %fee #i.\n        FeeEarned(Me, ptrIn, ptrOut, y, %fee) @ #i\n      &amp; not (Ex #c. LtkCompromised(Me) @ #c)\n     ==&gt; (Ex #j. Redeemed(ptrOut, y) @ #j &amp; #j &lt; #i)\n       &amp; (Ex Prev Next #f. HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #f &amp; #f &lt; #i)\"</pre><p><b>Additions to G (Wormhole)</b></p><p><b>Skipped_Requires_Compromise (\u2200)</b> [<code>lightning.spthy</code>, l. 1154]. <i>Every wormhole skip happens after some compromise.</i></p><pre>lemma Skipped_Requires_Compromise [reuse]:\n    \"All p x #i. Skipped(p, x) @ #i ==&gt; Ex P #c. LtkCompromised(P) @ #c &amp; #c &lt; #i\"</pre><p><b>Additions to H (Intermediary Safety, Timing)</b></p><p><b>ForwardTimeGap (\u2200)</b> [<code>lightning.spthy</code>, l. 426]. <i>If both channels of a forward time out and the forwarder is not compromised before its incoming timeout, the outgoing HTLC times out strictly before the incoming one. T2a is not a restriction in this model: it is this lemma, derived from T2b. Under -D=NECESSITY it is declared without [reuse].</i></p><pre>lemma ForwardTimeGap [reuse]:\n    \"All P Prev Next ptrIn ptrOut y #f #j #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #f\n      &amp; TimedOut(ptrOut) @ #j\n      &amp; TimedOut(ptrIn)  @ #k\n      &amp; not (Ex #c. LtkCompromised(P) @ #c &amp; #c &lt; #k)\n     ==&gt; #j &lt; #k\"</pre><p><b>Intermediary_Never_Loses_Strong (\u2200)</b> [<code>lightning.spthy</code>, l. 1106]. <i>A forwarder whose outgoing HTLC is redeemed while its incoming HTLC is refunded was compromised before its incoming HTLC timed out.</i></p><pre>lemma Intermediary_Never_Loses_Strong:\n    \"All P Prev Next Up ptrIn ptrOut y #i #j #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i\n      &amp; Redeemed(ptrOut, y) @ #j\n      &amp; Refunded(Up, ptrIn, y) @ #k\n     ==&gt; Ex #l #t. LtkCompromised(P) @ #l &amp; TimedOut(ptrIn) @ #t &amp; #l &lt; #t\"</pre><p><b>Sanity_Compromised_Intermediary_Can_Lose (\u2203)</b> [<code>lightning.spthy</code>, l. 1091]. <i>Non-vacuity of Lemma 30: a compromised forwarder can lose (its outgoing HTLC is fulfilled while its incoming HTLC is refunded).</i></p><pre>lemma Sanity_Compromised_Intermediary_Can_Lose:\n  exists-trace\n  \"Ex S F1 R p0 p1 x #o #a #r #u #k.\n      HTLCOffered(S, F1, p0, h(x)) @ #o\n    &amp; HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a\n    &amp; HTLCFulfilled(R, F1, p1, h(x)) @ #r\n    &amp; Refunded(S, p0, h(x)) @ #u\n    &amp; LtkCompromised(F1) @ #k\n    &amp; not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m &amp; HTLCAdded(ptr, y2) @ #n &amp; not (#m = #n))\n    &amp; not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)\n    &amp; not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)\"</pre><p><b>Necessity_IMC_Honest_Intermediary_Loses (\u2203)</b> \u2014 <code>-D=NO_IMC -D=NECESSITY</code>, <code>make necessity</code>, 28 steps [<code>lightning.spthy</code>, l. 1847]. <i>Without T3 an honest forwarder loses: its outgoing HTLC is fulfilled by the receiver while its incoming HTLC is refunded to the sender, with no key compromise, no claim and no settlement. Hence T3 is necessary for intermediary safety.</i></p><pre>lemma Necessity_IMC_Honest_Intermediary_Loses:\n  exists-trace\n  \"Ex S F1 R p0 p1 x #o #a #r #u.\n      HTLCOffered(S, F1, p0, h(x)) @ #o\n    &amp; HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a\n    &amp; HTLCFulfilled(R, F1, p1, h(x)) @ #r\n    &amp; Refunded(S, p0, h(x)) @ #u\n    &amp; not (Ex P #k. LtkCompromised(P) @ #k)\n    &amp; not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m &amp; HTLCAdded(ptr, y2) @ #n &amp; not (#m = #n))\n    &amp; not (Ex Me P q z #e. IntermediaryClaimed(Me, P, q, z) @ #e)\n    &amp; not (Ex A B C q z #e. SenderSettled(A, B, C, q, z) @ #e)\"</pre><p>TODO: <code>Necessity_OTF_Timeout_Order_Broken</code> (<code>-D=NO_OTF</code>) is in the file but is not part of <code>make necessity</code> and has no result; report nothing for it.</p><p><b>I. Hop Bypass: Skipping a Forwarder Requires a Compromise</b></p><p>If the payment settles at the sender while a forwarder\u2019s own hop is refunded, some party\u2019s key was compromised. The conclusion does not say which party, or when. The lemmas for positions 1\u20136 need no single-offer premise; <code>Any_Hop_Skip_Requires_Compromise</code> covers any position on a route of any length under a single-offer premise (every offer on h(x) uses the sender\u2019s channel pSF).</p><p><b>First_Hop_Skip_Requires_Compromise (\u2200)</b> [<code>lightning.spthy</code>, l. 1208]. <i>The first forwarder cannot be bypassed without a compromise.</i></p><pre>lemma First_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:\n    \"All S F1 R pSF Next pOut x #s #f #r.\n        SenderSettled(S, F1, R, pSF, x) @ #s\n      &amp; HTLCForwarded(F1, S, Next, pSF, pOut, h(x)) @ #f\n      &amp; RefundHop(pSF, pOut, h(x)) @ #r\n     ==&gt; Ex P #c. LtkCompromised(P) @ #c\"</pre><p><b>Second_Hop_Skip_Requires_Compromise (\u2200)</b> [<code>lightning.spthy</code>, l. 1221]. <i>The second forwarder (Indiana\u2019s position in Lemma 28) cannot be bypassed without a compromise.</i></p><pre>lemma Second_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:\n    \"All S F1 R pSF x F2 p1 Next pOut #s #f1 #f2 #r.\n        SenderSettled(S, F1, R, pSF, x) @ #s\n      &amp; HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1\n      &amp; HTLCForwarded(F2, F1, Next, p1, pOut, h(x)) @ #f2\n      &amp; RefundHop(p1, pOut, h(x)) @ #r\n     ==&gt; Ex P #c. LtkCompromised(P) @ #c\"</pre><p><b>Hop3_Skip_Requires_Compromise (\u2200)</b> [<code>lightning.spthy</code>, l. 1231]. <i>The forwarder at position 3 cannot be bypassed without a compromise.</i></p><pre>lemma Hop3_Skip_Requires_Compromise [heuristic={lemmas_first}]:\n    \"All S R x pSF pOut Next F1 F2 F3 p1 p2 #s #r #f1 #f2 #f3.\n        SenderSettled(S, F1, R, pSF, x) @ #s\n      &amp; HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1\n      &amp; HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2\n      &amp; HTLCForwarded(F3, F2, Next, p2, pOut, h(x)) @ #f3\n      &amp; RefundHop(p2, pOut, h(x)) @ #r\n     ==&gt; Ex P #c. LtkCompromised(P) @ #c\"</pre><p><b>Hop4_Skip_Requires_Compromise (\u2200)</b> [<code>lightning.spthy</code>, l. 1242]. <i>The forwarder at position 4 cannot be bypassed without a compromise.</i></p><pre>lemma Hop4_Skip_Requires_Compromise [heuristic={lemmas_first}]:\n    \"All S R x pSF pOut Next F1 F2 F3 F4 p1 p2 p3 #s #r #f1 #f2 #f3 #f4.\n        SenderSettled(S, F1, R, pSF, x) @ #s\n      &amp; HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1\n      &amp; HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2\n      &amp; HTLCForwarded(F3, F2, F4, p2, p3, h(x)) @ #f3\n      &amp; HTLCForwarded(F4, F3, Next, p3, pOut, h(x)) @ #f4\n      &amp; RefundHop(p3, pOut, h(x)) @ #r\n     ==&gt; Ex P #c. LtkCompromised(P) @ #c\"</pre><p><b>Hop5_Skip_Requires_Compromise (\u2200)</b> [<code>lightning.spthy</code>, l. 1254]. <i>The forwarder at position 5 cannot be bypassed without a compromise.</i></p><pre>lemma Hop5_Skip_Requires_Compromise [heuristic={lemmas_first}]:\n    \"All S R x pSF pOut Next F1 F2 F3 F4 F5 p1 p2 p3 p4 #s #r #f1 #f2 #f3 #f4 #f5.\n        SenderSettled(S, F1, R, pSF, x) @ #s\n      &amp; HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1\n      &amp; HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2\n      &amp; HTLCForwarded(F3, F2, F4, p2, p3, h(x)) @ #f3\n      &amp; HTLCForwarded(F4, F3, F5, p3, p4, h(x)) @ #f4\n      &amp; HTLCForwarded(F5, F4, Next, p4, pOut, h(x)) @ #f5\n      &amp; RefundHop(p4, pOut, h(x)) @ #r\n     ==&gt; Ex P #c. LtkCompromised(P) @ #c\"</pre><p><b>Hop6_Skip_Requires_Compromise (\u2200)</b> [<code>lightning.spthy</code>, l. 1267]. <i>The forwarder at position 6 cannot be bypassed without a compromise.</i></p><pre>lemma Hop6_Skip_Requires_Compromise [heuristic={lemmas_first}]:\n    \"All S R x pSF pOut Next F1 F2 F3 F4 F5 F6 p1 p2 p3 p4 p5 #s #r #f1 #f2 #f3 #f4 #f5 #f6.\n        SenderSettled(S, F1, R, pSF, x) @ #s\n      &amp; HTLCForwarded(F1, S, F2, pSF, p1, h(x)) @ #f1\n      &amp; HTLCForwarded(F2, F1, F3, p1, p2, h(x)) @ #f2\n      &amp; HTLCForwarded(F3, F2, F4, p2, p3, h(x)) @ #f3\n      &amp; HTLCForwarded(F4, F3, F5, p3, p4, h(x)) @ #f4\n      &amp; HTLCForwarded(F5, F4, F6, p4, p5, h(x)) @ #f5\n      &amp; HTLCForwarded(F6, F5, Next, p5, pOut, h(x)) @ #f6\n      &amp; RefundHop(p5, pOut, h(x)) @ #r\n     ==&gt; Ex P #c. LtkCompromised(P) @ #c\"</pre><p>Helper lemmas of the hop-bypass family (all \u2200, <code>[reuse]</code>):</p><pre>lemma Forward_Unique_Per_Incoming [reuse, heuristic={route_first}]:\n    \"All M1 P1 N1 M2 P2 N2 pIn o1 o2 y #i #j.\n        HTLCForwarded(M1, P1, N1, pIn, o1, y) @ #i\n      &amp; HTLCForwarded(M2, P2, N2, pIn, o2, y) @ #j\n     ==&gt; #i = #j\"</pre><pre>lemma SettledHop_From_Forward [reuse, heuristic={route_first}]:\n    \"All pIn pOut y #i. SettledHop(pIn, pOut, y) @ #i\n     ==&gt; Ex M P N #j. HTLCForwarded(M, P, N, pIn, pOut, y) @ #j &amp; #j &lt; #i\"</pre><pre>lemma No_Settle_And_Refund_Same_Hop [reuse, heuristic={route_first}]:\n    \"All pIn pOut y #i #j. SettledHop(pIn, pOut, y) @ #i &amp; RefundHop(pIn, pOut, y) @ #j ==&gt; F\"</pre><pre>lemma No_Fulfill_On_Forwarded_Incoming [reuse, heuristic={route_first}]:\n    \"All R Q M P N p o y #i #j.\n        HTLCFulfilled(R, Q, p, y) @ #i &amp; HTLCForwarded(M, P, N, p, o, y) @ #j ==&gt; F\"</pre><pre>lemma Redeemed_Source [reuse]:\n    \"All p y #i. Redeemed(p, y) @ #i\n     ==&gt; (Ex o. SettledHop(p, o, y) @ #i)\n       | (Ex R Q. HTLCFulfilled(R, Q, p, y) @ #i)\"</pre><pre>lemma SenderSettled_Uses_Fulfilled [reuse]:\n    \"All S F1 R p x #i. SenderSettled(S, F1, R, p, x) @ #i ==&gt; UsedFulfilled(p, x) @ #i\"</pre><pre>lemma SettledHop_Uses_Outgoing [reuse]:\n    \"All pIn pOut y #i. SettledHop(pIn, pOut, y) @ #i\n     ==&gt; Ex x. UsedFulfilled(pOut, x) @ #i &amp; h(x) = y\"</pre><p><b>Any_Hop_Skip_Requires_Compromise (\u2200)</b> \u2014 <code>make general</code> (<code>-D=GENERAL -D=NO_IMC -D=NO_OTF -D=NO_RBT -D=NECESSITY</code>), 7 steps [<code>lightning.spthy</code>, l. 1803]. <i>A single-offer payment that settles while any forwarder\u2019s own hop is refunded requires a compromise. Proved in the model without the three liveness restrictions; removing restrictions only adds traces, so the statement also holds in the full model.</i></p><pre>lemma Any_Hop_Skip_Requires_Compromise [heuristic={lemmas_first}]:\n  all-traces\n  \"\u2200 S F1 R pSF x Me Prev Next pIn pOut #s #f #r.\n    ((((SenderSettled( S, F1, R, pSF, x ) @ #s) \u2227\n       (HTLCForwarded( Me, Prev, Next, pIn, pOut, h(x) ) @ #f)) \u2227\n      (RefundHop( pIn, pOut, h(x) ) @ #r)) \u2227\n     (\u2200 A B p #o. (HTLCOffered( A, B, p, h(x) ) @ #o) \u21d2 (p = pSF))) \u21d2\n    (\u2203 P #c. LtkCompromised( P ) @ #c)\"</pre><p>Helper chain of the general theorem (all \u2200, <code>-D=GENERAL</code>; listed by name only): <code>Forward_Parent</code>, <code>Hop_Redeem_Propagates</code>, <code>Sender_Channel_Redeemed</code>, <code>Root_First</code>, <code>Next_Is_Child</code>, <code>Route_Redeemed_Gen</code>, <code>Route_Redeemed_No_Compromise</code>. <code>make general</code> re-proves every lemma it reuses in the same mode (24/24 verified).</p><p><b>J. Auxiliary Models (lightning_aux.spthy, make aux, 21/21 verified)</b></p><p>PTLC (<code>-D=PTLC</code>): fixed route S \u2192 H1 \u2192 H2 \u2192 H3 \u2192 R; each channel has its own secret, derived from the next one by the hash chain <code>s_in = h(&lt;s_out, t&gt;)</code> with a per-hop fresh tweak t (a symbolic stand-in for the adaptor-signature points of [6]); locks are hashes of the secrets. HTLC baseline (<code>-D=HTLC</code>): the same route with one secret x for every channel.</p><table><tr><th>-D=</th><th>Lemma</th><th>Kind</th><th>Steps</th></tr><tr><td>PTLC</td><td><code>Honest_Payment_Completes</code></td><td>\u2203</td><td>10</td></tr><tr><td>PTLC</td><td><code>Colluders_Present_Payment_Completes</code></td><td>\u2203</td><td>14</td></tr><tr><td>PTLC</td><td><code>No_Wormhole_Around_Honest_Hop</code></td><td>\u2200</td><td>25</td></tr><tr><td>PTLC</td><td><code>Control_Refund_Of_H2_Outgoing</code></td><td>\u2203</td><td>6</td></tr><tr><td>PTLC</td><td><code>Control_Wormhole_If_H2_Compromised</code></td><td>\u2203</td><td>18</td></tr><tr><td>HTLC</td><td><code>Honest_Payment_Completes</code></td><td>\u2203</td><td>10</td></tr><tr><td>HTLC</td><td><code>Colluders_Present_Payment_Completes</code></td><td>\u2203</td><td>8</td></tr><tr><td>HTLC</td><td><code>Wormhole_Around_Honest_Hop</code></td><td>\u2203</td><td>12</td></tr><tr><td>CLOCK</td><td><code>HTLC_Needs_Open_Channel</code></td><td>\u2200</td><td>36</td></tr><tr><td>CLOCK</td><td><code>No_HTLC_After_Close</code></td><td>\u2200</td><td>367</td></tr><tr><td>CLOCK</td><td><code>Claim_Window_Exists</code></td><td>\u2200</td><td>79</td></tr><tr><td>CLOCK</td><td><code>Transitive_Preimage_Before_Upstream_Deadline</code></td><td>\u2200</td><td>187</td></tr><tr><td>CLOCK</td><td><code>Loss_Implies_Skipped_Claim</code></td><td>\u2200</td><td>861</td></tr><tr><td>CLOCK</td><td><code>Outcome_Exclusive</code></td><td>\u2200</td><td>2</td></tr><tr><td>CLOCK</td><td><code>Redeem_Reachable</code></td><td>\u2203</td><td>7</td></tr><tr><td>CLOCK</td><td><code>Refund_Reachable</code></td><td>\u2203</td><td>7</td></tr><tr><td>CLOCK</td><td><code>Honest_Flow_Possible</code></td><td>\u2203</td><td>14</td></tr><tr><td>CLTV</td><td><code>CLTV_Gap_Is_Positive</code></td><td>\u2200</td><td>2</td></tr><tr><td>CLTV</td><td><code>Claim_Window_Nonempty</code></td><td>\u2200</td><td>2</td></tr><tr><td>CLTV</td><td><code>Staggered_Path_Safe</code></td><td>\u2200</td><td>2</td></tr><tr><td>TIMEOUT</td><td><code>Early_Timeout_Race</code></td><td>\u2203</td><td>6</td></tr></table><p><b>No_Wormhole_Around_Honest_Hop (\u2200)</b> [<code>lightning_aux.spthy</code>, l. 122]. <i>In the PTLC model (fixed route, hash-chain locks), the sender\u2019s channel is never redeemed while the outgoing channel of an uncompromised H2 is refunded, unless the sender is compromised.</i></p><pre>lemma No_Wormhole_Around_Honest_Hop:\n  all-traces\n  \"not (\nEx S H1 H2 H3 R c0 c1 c2 c3 #p #a #b.\n      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p\n    &amp; Redeemed(c0) @ #a\n    &amp; Refunded(c2) @ #b\n    &amp; not (Ex #k. Compromised(H2) @ #k)\n    &amp; not (Ex #k. Compromised(S) @ #k))\"</pre><p><b>Wormhole_Around_Honest_Hop (\u2203)</b> [<code>lightning_aux.spthy</code>, l. 252]. <i>With HTLCs, that wormhole around an uncompromised H2 is reachable.</i></p><pre>lemma Wormhole_Around_Honest_Hop:\n  exists-trace\n  \"Ex S H1 H2 H3 R c0 c1 c2 c3 #p #a #b.\n      Pay(S, H1, H2, H3, R, c0, c1, c2, c3) @ #p\n    &amp; Redeemed(c0) @ #a\n    &amp; Refunded(c2) @ #b\n    &amp; not (Ex #k. Compromised(H2) @ #k)\n    &amp; not (Ex #k. Compromised(S) @ #k)\"</pre><p><b>K. Channel Layer and Keys (group 0 of Table II, make verify)</b></p><p><b>Ltk_Known_Implies_Compromised (\u2200)</b> [<code>lightning.spthy</code>, l. 502]. <i>The adversary knows a long-term key only if that key was compromised.</i></p><pre>lemma Ltk_Known_Implies_Compromised [reuse]:\n    \"All A ltk #i #j.\n        KeyGen(A, ltk) @ #i\n      &amp; !KU(ltk) @ #j\n     ==&gt; Ex #k. LtkCompromised(A) @ #k\"</pre><p>\u2200: <code>state_update</code>, <code>delayed_funds</code>, <code>instant_funds</code>, <code>settlement_is_traceable</code>, <code>No_Punishment_Without_Cheating</code>, <code>Funds_Locked_Before_Update</code>, <code>Update_Requires_Negotiation</code>. \u2203: <code>Protocol_execution</code>, <code>Cooperative_Close_Execution</code>. Together with Sections A\u2013I and the additions above, this covers all 55 lemmas of <code>make verify</code>.</p>"
+  }
+ ],
+ "open_questions": [
+  "SJ\u2019s TODO on Appendix A: keep the appendix (now re-anchored to csf_final, all listings verbatim) or drop it before submission?",
+  "Renumber the catalogue (Lemmas 9, 10, 12, 17\u201324, 27, 29 removed) and merge the additions into Sections A\u2013H, or keep them as a block at the end of the appendix?",
+  "Keep lightning.spthy line numbers in the listings, or drop line numbers altogether?"
+ ],
+ "changes": [
+  "Verifier: re-ran resolve.py on all 25 strikes and 21 anchors (all OK, spans exactly the intended text; headings E/F/G/H and still-correct descriptions untouched); all 46 quoted formulas verbatim (check_verbatim.py, 0 problems; line numbers match lightning.spthy / lightning_aux.spthy); HTML well-formed, allowed tags only; test build 0 unresolved.",
+  "References note: Kiayias-Litos entry aligned with agent D's new Sec. VII (same number [23], same venue string '2020 IEEE 33rd Computer Security Foundations Symposium (CSF)'); TODO on broken entries [9], [10], [11], [14], [22] kept (no data invented).",
+  "Insert restructured to follow the groups of the new Table II (agent C): Offer_Requires_Invoice moved to Additions to B, Fulfilled_Source to C, OneOutcomePerHTLC to D, Skipped_Requires_Compromise to new Additions to G, Sanity_Compromised_Intermediary_Can_Lose to H, Ltk_Known_Implies_Compromised to K (channel layer and keys = group 0). Appendix intro note says Sections A-I follow Table II groups 1-9.",
+  "Lemmas 6, 8, 11, 13 ('unchanged'): the printed listings still carry multihop_modified line numbers, which contradicts the new intro ('line numbers refer to lightning.spthy'); notes now give TODO renumbering ranges (l. 542-547, 508-512, 554-557, 570-574) and, for Lemma 13, the missing [use_induction] in the header.",
+  "Lemma 28 note: 'requires compromised parties' made precise (AttackerSkip can be applied only by two compromised parties on the same payment); 'Needs a saved proof script' reworded; 'The PTLC countermeasure removes this attack' (a claim about the main model) replaced by the aux-model facts No_Wormhole_Around_Honest_Hop (PTLC) vs Wormhole_Around_Honest_Hop (HTLC baseline).",
+  "Lemma 31 note: removed the self-contradictory 'Without timing restrictions the race is reachable' (the main model verifies it with each restriction removed); now: verifies with any one of T1/T2b/T3 removed (4 steps, Table III); the race is reachable only in the abstract TIMEOUT model of lightning_aux.spthy (Early_Timeout_Race, exists-trace, 6 steps), described per its rules.",
+  "Section F note: the absolute claim 'No csf_final lemma witnesses...' narrowed to lightning.spthy (lightning_aux's Control_Refund_Of_H2_Outgoing refunds an honest H2); retitle TODO also points at group 6 of Table II.",
+  "Lemma 15 note cites Table III for the T1-removed run; glossary adds KeyGen(A, ltk) (used by Ltk_Known_Implies_Compromised); general-theorem helper chain marked 'listed by name only'; section K sentence now counts all 55 make-verify lemmas correctly with Ltk_Known in K.",
+  "Checked and kept: all strikes of the draft (old listings, Lemmas 9/10/12/17-24/27/29, Remark 3 resolved by new Table II, wrong descriptions of 7/15/28/30/31, Lemma 8 justification), the action-fact glossary (every fact checked in lightning.spthy), the make verify/general/aux counts and the aux table (matches FACTS.md/results.txt)."
+ ]
+}

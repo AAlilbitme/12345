@@ -1,0 +1,27 @@
+MultiNhop_modified_compromised.spthy -- run in the cloud session
+(tamarin-prover 1.10, Maude 3.2, --derivcheck-timeout=0)
+
+Replay of the 5 saved exists-trace proofs (--lemma, as in Simon's Makefile),
+with the new compromised-endpoint rules in place:
+  Protocol_execution (exists-trace): verified (47 steps)
+  Cooperative_Close_Execution (exists-trace): verified (33 steps)
+  Distinct_Parties_Configuration (exists-trace): verified (89 steps)
+  Refund_Possible (exists-trace): verified (58 steps)
+  Multihop_Payment_Possible (exists-trace): verified (128 steps)
+  (other lemmas show "analysis incomplete (1 steps)" in that run only because
+   they were not selected and carry no saved proof)
+
+Automatic proofs, one lemma at a time, 300 s / 4 GB each:
+  Leak_Possible (exists-trace): verified (8 steps)
+  Intermediary_Never_Loses_Under_Liveness (all-traces): verified (4 steps)
+  Payment_Atomicity_Under_Liveness (all-traces): verified (6 steps)
+  Timeout_race_Blocked (all-traces): verified (2 steps)
+  Wormhole_Two_Colluders: no result in 300 s (not falsified)
+  state_update: no result in 300 s (honest-only T3 slows the channel lemmas,
+                as already seen in the main model)
+
+Further wormhole attempts (all: no result, not falsified):
+  Wormhole_Two_Colluders  default search 29 min, BFS 29 min, custom oracle 28 min
+  Wormhole_Pruned (extra 'not' conditions excluding wrong branches)
+                          default 29 min, oracle 29 min
+  Step-wise: WL1_Leak_In_Payment, WL2_Plus_Inject, WL3_Plus_Settle: 500 s each

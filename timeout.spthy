@@ -1,0 +1,42 @@
+// run with 
+// tamarin-prover timeout.spthy --derivcheck-timeout=0 --heuristic=c --stop-on-trace=seqdfs --prove
+
+//Honest Parties Act Before Incoming Timeout
+//If you forwarded an HTLC, you must claim your money before your incoming deadline expires
+theory timeout
+begin
+
+// An intermediary registers a forwarding relationship between two channels.
+rule Register_Forward:
+    [ Fr(~ptrIn), Fr(~ptrOut) ]
+    --[ ForwardHTLC($P, ~ptrIn, ~ptrOut, $y) ]->
+    [ !Chan(~ptrIn), !Chan(~ptrOut), !Link(~ptrIn, ~ptrOut, $y) ]
+
+// Either channel can time out at any point 
+rule Timeout:
+    [ !Chan(~ptr) ]
+    --[ TimedOut(~ptr) ]->
+    [ !Timed(~ptr) ]
+
+// After ptrIn times out, the incoming HTLC can be refunded.
+rule Refund:
+    [ !Timed(~ptrIn), !Link(~ptrIn, ~ptrOut, $y) ]
+    --[ Refunded(~ptrIn, $y) ]->
+    []
+
+// The outgoing HTLC can be redeemed at any time — independently of ptrIn.
+rule Redeem:
+    [ !Link(~ptrIn, ~ptrOut, $y) ]
+    --[ Redeemed(~ptrOut, $y) ]->
+    []
+
+lemma Early_Timeout_Race:
+    exists-trace
+    "Ex P ptrIn ptrOut y #f #k #j #i.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrIn)     @ #k
+      & Refunded(ptrIn, y)  @ #j
+      & Redeemed(ptrOut, y) @ #i
+      & #k < #i"
+
+end
