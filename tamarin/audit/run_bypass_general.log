@@ -1,0 +1,4311 @@
+maude tool: 'maude'
+ checking version: WARNING:
+
+ 'maude --version' returned unsupported version '3.2'
+ Please install one of the following versions of Maude: 2.7.1, 3.0, 3.1, 3.2.1, 3.2.2, 3.3, 3.3.1, 3.4, 3.5
+
+Detailed results from testing 'maude'
+ command: maude --version
+ stdin:   
+ stdout:  3.2
+
+ stderr:  
+ checking installation: OK.
+[Theory multihop_nhop] Theory loaded
+[Theory multihop_nhop] Theory translated
+[Theory multihop_nhop] Derivation checks started
+[Theory multihop_nhop] Derivation checks ended
+[Theory multihop_nhop] Theory closed
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( pOut, h(x) ) @ #j) ∧ #j < #i)  ∥ (∃ #j. (Skipped( pOut, x ) @ #j) ∧ #j < #i)
+1: IntermediaryPending( $Me, $Prev, $Next, pIn, pOut, h(x), %vIn,                     %vOut, %fee) ▶₀ #i
+2: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+3: Fulfilled( pOut, x ) ▶₁ #i
+4: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+1
+4
+0
+3
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: Route( $Prev, $Me, pIn, y ) ▶₀ #i
+5: Mutex( pOut ) ▶₂ #i
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+4
+0
+1
+2
+3
+5
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ S #j. (HTLCOffered( S, $Me, pin0, y ) @ #j) ∧ #j < #f)  ∥ (∃ P0 pin0.1 #j.   (HTLCForwarded( $Prev, P0, $Me, pin0.1, pin0, y ) @ #j) ∧ #j < #f)
+1:  (∃ o. (SettledHop( pin0, o, y ) @ #r))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, pin0, y ) @ #r))
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: Redeemed( pin0, y ) @ #r
+7: Route( $Prev, $Me, pin0, y ) ▶₀ #f
+8: Mutex( pIn ) ▶₂ #f
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+6
+2
+3
+4
+5
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: Route( $Prev, $Receiver, p, h(x) ) ▶₀ #i
+6: Route( $Prev.1, $Me, p, h(x) ) ▶₀ #j
+7: Mutex( o ) ▶₂ #j
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+5
+6
+0
+1
+2
+3
+4
+7
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: Route( $Prev, $Me, pIn, y ) ▶₀ #i
+10: Mutex( o1 ) ▶₂ #i
+11: Route( $Prev.1, $Me.1, pIn, y ) ▶₀ #j
+12: Mutex( o2 ) ▶₂ #j
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+9
+11
+0
+1
+2
+3
+4
+5
+6
+7
+8
+10
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( pOut, h(x) ) @ #j) ∧ #j < #i)  ∥ (∃ #j. (Skipped( pOut, x ) @ #j) ∧ #j < #i)
+1: IntermediaryPending( $Me, $Prev, $Next, pIn, pOut, h(x), %vIn,                     %vOut, %fee) ▶₀ #i
+2: IntermediaryPending( $Me.1, $Prev.1, $Next.1, pIn, pOut, h(x),                     %vIn.1, %vOut.1, %fee.1) ▶₀ #j
+3: !Timeout( pOut ) ▶₁ #j
+4: !ChannelConnect( pOut, $Me.2, $Next.2 ) ▶₁ #j.1
+5: !ChannelConnect( pOut, A, B ) ▶₀ #j.2
+6: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+7: ReadyToLock( $A.1, $B.1, pOut, sA0, sB0, commitA0, commitB0) ▶₀ #j.3
+8: Wallet( $A.1, ~fA ) ▶₁ #j.3
+9: Wallet( $B.1, ~fB ) ▶₂ #j.3
+10: Fulfilled( pOut, x ) ▶₁ #i
+11: Route( $Prev.2, $Me.2, pIn, h(x) ) ▶₀ #j.1
+12: Mutex( pOut ) ▶₂ #j.1
+13: Route( $Prev.3, $Receiver, ptrIn, h(x) ) ▶₀ #k
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+1
+2
+11
+13
+0
+10
+3
+4
+5
+6
+7
+8
+9
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( pSF, h(x) ) @ #j) ∧ #j < #s)  ∥ (∃ #j. (Skipped( pSF, x ) @ #j) ∧ #j < #s)
+1: SenderPending( $Sender, $Forward1, $Receiver, pSF, h(x) ) ▶₀ #s
+2: Fulfilled( pSF, x ) ▶₁ #s
+3: UsedFulfilled( pSF, x ) @ #s
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+3
+1
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( pSF, o, h(x) ) @ #j))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, pSF, h(x) ) @ #j))
+1: SenderPending( $Sender, $Forward1, $Receiver, pSF, h(x) ) ▶₀ #s
+2: Fulfilled( pSF, x ) ▶₁ #s
+3: UsedFulfilled( pSF, x ) @ #s
+4: Redeemed( pSF, h(x) ) @ #j
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+3
+4
+1
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+1: SenderPending( $Sender, $Forward1, $Receiver, pSF, h(x) ) ▶₀ #s
+2: Fulfilled( pSF, x ) ▶₁ #s
+3: !Compromised( ExitAtt ) ▶₃ #j
+4: !Compromised( EntryAtt ) ▶₄ #j
+5: !Ltk( $A, ltk ) ▶₀ #c
+6: ReceiverInv( $Receiver.1, $Sender.1, x ) ▶₁ #k
+7: UsedFulfilled( pSF, x ) @ #s
+8: !RouteInfo( ExitAtt, Next, ptrExit, h(x) )[-, no_precomp] ▶₁ #j
+9: !RouteInfo( EntryAtt, Skipped, pSF, h(x) )[-, no_precomp] ▶₂ #j
+10: Fulfilled( ptrExit, x ) ▶₀ #j
+11: Route( $Prev, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+7
+1
+2
+3
+4
+5
+6
+8
+9
+10
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( pin0, o, y ) @ #r))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, pin0, y ) @ #r))
+1: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+2: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: !Pk( $Receiver, pk(x) ) ▶₁ #j.1
+6: !Ltk( $Sender, ltkS ) ▶₂ #j.1
+7: !ChannelConnect( pin0, $Sender, $Me ) ▶₃ #j.1
+8: Mutex( pin0 ) ▶₄ #j.1
+9: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+10: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+11: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+12: Redeemed( pin0, y ) @ #r
+13: Route( $Prev, $Me, pin0, y ) ▶₀ #f
+14: Mutex( pIn ) ▶₂ #f
+15: !KU( sign(<'invoice', $Receiver, $Sender, y>, x) ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+12
+15
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+14
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr, h(x) ) @ #j) ∧ #j < #i)  ∥ (∃ #j. (Skipped( ~ptr, x ) @ #j) ∧ #j < #i)
+1: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+2: !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.2) ) @ #vk.15
+3: !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.4) ) @ #vk.17
+4: Fulfilled( ~ptr, x ) ▶₁ #i
+5: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+6: Route( $Prev, $Me, pIn, h(x) ) ▶₀ #vr
+7: Mutex( ~ptr ) ▶₂ #vr
+8: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+5
+6
+0
+4
+1
+2
+3
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr, h(x) ) @ #j) ∧ #j < #i)  ∥ (∃ #j. (Skipped( ~ptr, x ) @ #j) ∧ #j < #i)
+1: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+2: !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.2) ) @ #vk.15
+3: !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.4) ) @ #vk.17
+4: Fulfilled( ~ptr, x ) ▶₁ #i
+5: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+6: Route( $Prev, $Me, pIn, h(x) ) ▶₀ #vr
+7: Mutex( ~ptr ) ▶₂ #vr
+8: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+5
+6
+0
+4
+1
+2
+3
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr, h(x) ) @ #j) ∧ #j < #i)  ∥ (∃ #j. (Skipped( ~ptr, x ) @ #j) ∧ #j < #i)
+1: IntermediaryPending( $Me.1, $Prev.1, $Next.1, pIn, ~ptr, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #j
+2: !Timeout( ~ptr ) ▶₁ #j
+3: !ChannelConnect( ~ptr, A, B ) ▶₀ #j.2
+4: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+5: !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.2) ) @ #vk.15
+6: !KU( sign(<'proposal', $Me, $Next, ~ptr>, ~ltk.4) ) @ #vk.17
+7: Fulfilled( ~ptr, x ) ▶₁ #i
+8: Route( $Prev, $Me, pIn, h(x) ) ▶₀ #j.1
+9: Mutex( ~ptr ) ▶₂ #j.1
+10: Route( $Prev.2, $Receiver, ptrIn, h(x) ) ▶₀ #k
+11: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+1
+8
+10
+0
+7
+2
+3
+4
+5
+6
+9
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( pIn, h(x) ) @ #j) ∧ #j < #r)  ∥ (∃ #j. (Skipped( pIn, x ) @ #j) ∧ #j < #r)
+1:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: !Pk( $Receiver, pk(x.1) ) ▶₁ #j.1
+7: !Ltk( $Sender, ltkS ) ▶₂ #j.1
+8: !ChannelConnect( pin0, $Sender, $Me ) ▶₃ #j.1
+9: Mutex( pin0 ) ▶₄ #j.1
+10: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+11: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+12: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+13: IntermediaryPending( $Me.1, $Prev.1, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+14: ReceiverInv( $Receiver.1, $Sender.1, x ) ▶₁ #k
+15: Redeemed( pin0, h(x) ) @ #r
+16: UsedFulfilled( pIn, x ) @ #r
+17: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+18: Mutex( pIn ) ▶₂ #f
+19: Fulfilled( pIn, x ) ▶₁ #r
+20: Route( $Prev.2, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+21: !KU( sign(<'invoice', $Receiver, $Sender, h(x)>, x.1) ) @ #vk.13
+22: !KU( h(x) ) @ #vk.12
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+15
+16
+21
+22
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+17
+18
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr, h(x) ) @ #j) ∧ #j < #i)  ∥ (∃ #j. (Skipped( ~ptr, x ) @ #j) ∧ #j < #i)
+1: IntermediaryPending( $Me.1, $Prev.1, $Next.1, pIn, ~ptr, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #j
+2: !Timeout( ~ptr ) ▶₁ #j
+3: !ChannelConnect( ~ptr, A, B ) ▶₀ #j.2
+4: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+5: !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.2) ) @ #vk.15
+6: !KU( sign(<'proposal', $Next, $Me, ~ptr>, ~ltk.4) ) @ #vk.17
+7: Fulfilled( ~ptr, x ) ▶₁ #i
+8: Route( $Prev, $Me, pIn, h(x) ) ▶₀ #j.1
+9: Mutex( ~ptr ) ▶₂ #j.1
+10: Route( $Prev.2, $Receiver, ptrIn, h(x) ) ▶₀ #k
+11: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+1
+8
+10
+0
+7
+2
+3
+4
+5
+6
+9
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+1: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !Pk( $Receiver.1, pk(x.1) ) ▶₁ #j.1
+5: !Ltk( $Sender.1, ltkS ) ▶₂ #j.1
+6: !ChannelConnect( pin0, $Sender.1, $Me ) ▶₃ #j.1
+7: Mutex( pin0 ) ▶₄ #j.1
+8: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+9: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+10: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+11: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #r
+12: Redeemed( pin0, h(x) ) @ #r
+13: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+14: Mutex( pIn ) ▶₂ #f
+15: Route( $Prev.1, $Receiver, pin0, h(x) ) ▶₀ #r
+16: !KU( sign(<'invoice', $Receiver.1, $Sender.1, h(x)>, x.1)) @ #vk.13
+17: !KU( h(x) ) @ #vk.12
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+12
+16
+17
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+14
+15
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( pin0, o, y ) @ #r))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, pin0, y ) @ #r))
+1:  (∃ S #j.2.   (HTLCOffered( S, $Prev, pin0.1, y ) @ #j.2) ∧ #j.2 < #j.1)  ∥ (∃ P0 pin0.2 #j.2.   (HTLCForwarded( $Prev.1, P0, $Prev, pin0.2, pin0.1, y ) @ #j.2)  ∧   #j.2 < #j.1)
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+7: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: Redeemed( pin0, y ) @ #r
+11: Route( $Prev, $Me, pin0, y ) ▶₀ #f
+12: Mutex( pIn ) ▶₂ #f
+13: Route( $Prev.1, $Prev, pin0.1, y ) ▶₀ #j.1
+14: Mutex( pin0 ) ▶₂ #j.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
+11
+12
+13
+14
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ S #j.2.   (HTLCOffered( S, $Prev, pin0.1, h(x) ) @ #j.2) ∧ #j.2 < #j.1)  ∥ (∃ P0 pin0.2 #j.2.   (HTLCForwarded( $Prev.2, P0, $Prev, pin0.2, pin0.1, h(x) ) @ #j.2)  ∧   #j.2 < #j.1)
+1:  (∃ #j. (Redeemed( pIn, h(x) ) @ #j) ∧ #j < #r)  ∥ (∃ #j. (Skipped( pIn, x ) @ #j) ∧ #j < #r)
+2:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+3: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+4: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+8: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+9: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+10: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+11: IntermediaryPending( $Me.1, $Prev.1, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+12: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+13: Redeemed( pin0, h(x) ) @ #r
+14: UsedFulfilled( pIn, x ) @ #r
+15: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+16: Mutex( pIn ) ▶₂ #f
+17: Route( $Prev.2, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+18: Mutex( pin0 ) ▶₂ #j.1
+19: Fulfilled( pIn, x ) ▶₁ #r
+20: Route( $Prev.3, $Receiver, ptrIn, h(x) ) ▶₀ #k
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+13
+14
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+15
+16
+17
+18
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ S #j.2.   (HTLCOffered( S, $Prev, pin0.1, h(x) ) @ #j.2) ∧ #j.2 < #j.1)  ∥ (∃ P0 pin0.2 #j.2.   (HTLCForwarded( $Prev.2, P0, $Prev, pin0.2, pin0.1, h(x) ) @ #j.2)  ∧   #j.2 < #j.1)
+1: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+2: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+6: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #r
+10: Redeemed( pin0, h(x) ) @ #r
+11: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+12: Mutex( pIn ) ▶₂ #f
+13: Route( $Prev.2, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+14: Mutex( pin0 ) ▶₂ #j.1
+15: Route( $Prev.1, $Receiver, pin0, h(x) ) ▶₀ #r
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+10
+1
+2
+3
+4
+5
+6
+7
+8
+9
+11
+12
+13
+14
+15
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+1:  (∃ o. (SettledHop( pIn, o, h(x) ) @ #j.3))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, pIn, h(x) ) @ #j.3))
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: !Pk( $Receiver.1, pk(x.1) ) ▶₁ #j.1
+7: !Ltk( $Sender.1, ltkS ) ▶₂ #j.1
+8: !ChannelConnect( pin0, $Sender.1, $Me ) ▶₃ #j.1
+9: Mutex( pin0 ) ▶₄ #j.1
+10: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+11: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+12: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+13: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+14: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+15: Redeemed( pin0, h(x) ) @ #r
+16: UsedFulfilled( pIn, x ) @ #r
+17: Redeemed( pIn, h(x) ) @ #j.3
+18: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+19: Mutex( pIn ) ▶₂ #f
+20: Fulfilled( pIn, x ) ▶₁ #r
+21: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+22: !KU( sign(<'invoice', $Receiver.1, $Sender.1, h(x)>, x.1)) @ #vk.13
+23: !KU( h(x) ) @ #vk.12
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+15
+16
+17
+22
+23
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+18
+19
+20
+21
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+1:  (∃ o. (SettledHop( ptrIn.1, o, h(x) ) @ #k.1))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn.1, h(x) ) @ #k.1))
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: !Pk( $Receiver.1, pk(x.1) ) ▶₁ #j.1
+7: !Ltk( $Sender.1, ltkS ) ▶₂ #j.1
+8: !ChannelConnect( pin0, $Sender.1, $Me ) ▶₃ #j.1
+9: Mutex( pin0 ) ▶₄ #j.1
+10: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+11: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+12: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+13: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+14: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+15: !Compromised( ExitAtt ) ▶₃ #j.3
+16: !Compromised( EntryAtt ) ▶₄ #j.3
+17: !Ltk( $A.2, ltk ) ▶₀ #c
+18: ReceiverInv( $Receiver.2, $Sender.2, x ) ▶₁ #k.1
+19: Redeemed( pin0, h(x) ) @ #r
+20: UsedFulfilled( pIn, x ) @ #r
+21: !RouteInfo( ExitAtt, Next.2, ptrExit, h(x) )[-, no_precomp] ▶₁ #j.3
+22: !RouteInfo( EntryAtt, Skipped, pIn, h(x) )[-, no_precomp] ▶₂ #j.3
+23: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+24: Mutex( pIn ) ▶₂ #f
+25: Fulfilled( pIn, x ) ▶₁ #r
+26: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+27: Fulfilled( ptrExit, x ) ▶₀ #j.3
+28: Route( $Prev.3, $Receiver.2, ptrIn.1, h(x) ) ▶₀ #k.1
+29: !KU( sign(<'invoice', $Receiver.1, $Sender.1, h(x)>, x.1)) @ #vk.13
+30: !KU( h(x) ) @ #vk.12
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+19
+20
+29
+30
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+21
+22
+23
+24
+25
+26
+27
+28
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( pIn, h(x) ) @ #j) ∧ #j < #r)  ∥ (∃ #j. (Skipped( pIn, x ) @ #j) ∧ #j < #r)
+1:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+7: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+11: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+12: !Pk( $Receiver.1, pk(x.1) ) ▶₁ #j.3
+13: !Ltk( $Sender.1, ltkS ) ▶₂ #j.3
+14: !ChannelConnect( pin0.1, $Sender.1, $Prev ) ▶₃ #j.3
+15: Mutex( pin0.1 ) ▶₄ #j.3
+16: ReadyToLock( $A.2, $B.2, pin0.1, sA0.2, sB0.2, commitA0.2,             commitB0.2) ▶₀ #j.4
+17: Wallet( $A.2, ~fA.2 ) ▶₁ #j.4
+18: Wallet( $B.2, ~fB.2 ) ▶₂ #j.4
+19: Redeemed( pin0, h(x) ) @ #r
+20: UsedFulfilled( pIn, x ) @ #r
+21: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+22: Mutex( pIn ) ▶₂ #f
+23: Route( $Prev.3, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+24: Mutex( pin0 ) ▶₂ #j.1
+25: Fulfilled( pIn, x ) ▶₁ #r
+26: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+27: !KU( sign(<'invoice', $Receiver.1, $Sender.1, h(x)>, x.1)) @ #vk.16
+28: !KU( h(x) ) @ #vk.15
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+19
+20
+27
+28
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+21
+22
+23
+24
+25
+26
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+1:  (∃ o. (SettledHop( pIn, o, h(x) ) @ #j.5))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, pIn, h(x) ) @ #j.5))
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+7: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+11: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+12: !Pk( $Receiver.1, pk(x.1) ) ▶₁ #j.3
+13: !Ltk( $Sender.1, ltkS ) ▶₂ #j.3
+14: !ChannelConnect( pin0.1, $Sender.1, $Prev ) ▶₃ #j.3
+15: Mutex( pin0.1 ) ▶₄ #j.3
+16: ReadyToLock( $A.2, $B.2, pin0.1, sA0.2, sB0.2, commitA0.2,             commitB0.2) ▶₀ #j.4
+17: Wallet( $A.2, ~fA.2 ) ▶₁ #j.4
+18: Wallet( $B.2, ~fB.2 ) ▶₂ #j.4
+19: Redeemed( pin0, h(x) ) @ #r
+20: UsedFulfilled( pIn, x ) @ #r
+21: Redeemed( pIn, h(x) ) @ #j.5
+22: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+23: Mutex( pIn ) ▶₂ #f
+24: Route( $Prev.3, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+25: Mutex( pin0 ) ▶₂ #j.1
+26: Fulfilled( pIn, x ) ▶₁ #r
+27: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+28: !KU( sign(<'invoice', $Receiver.1, $Sender.1, h(x)>, x.1)) @ #vk.16
+29: !KU( h(x) ) @ #vk.15
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+19
+20
+21
+28
+29
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+22
+23
+24
+25
+26
+27
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+1:  (∃ o. (SettledHop( ptrIn.1, o, h(x) ) @ #k.1))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn.1, h(x) ) @ #k.1))
+2: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+7: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+11: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+12: !Pk( $Receiver.1, pk(x.1) ) ▶₁ #j.3
+13: !Ltk( $Sender.1, ltkS ) ▶₂ #j.3
+14: !ChannelConnect( pin0.1, $Sender.1, $Prev ) ▶₃ #j.3
+15: Mutex( pin0.1 ) ▶₄ #j.3
+16: ReadyToLock( $A.2, $B.2, pin0.1, sA0.2, sB0.2, commitA0.2,             commitB0.2) ▶₀ #j.4
+17: Wallet( $A.2, ~fA.2 ) ▶₁ #j.4
+18: Wallet( $B.2, ~fB.2 ) ▶₂ #j.4
+19: !Compromised( ExitAtt ) ▶₃ #j.5
+20: !Compromised( EntryAtt ) ▶₄ #j.5
+21: !Ltk( $A.3, ltk ) ▶₀ #c
+22: ReceiverInv( $Receiver.2, $Sender.2, x ) ▶₁ #k.1
+23: Redeemed( pin0, h(x) ) @ #r
+24: UsedFulfilled( pIn, x ) @ #r
+25: !RouteInfo( ExitAtt, Next.2, ptrExit, h(x) )[-, no_precomp] ▶₁ #j.5
+26: !RouteInfo( EntryAtt, Skipped, pIn, h(x) )[-, no_precomp] ▶₂ #j.5
+27: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+28: Mutex( pIn ) ▶₂ #f
+29: Route( $Prev.3, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+30: Mutex( pin0 ) ▶₂ #j.1
+31: Fulfilled( pIn, x ) ▶₁ #r
+32: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+33: Fulfilled( ptrExit, x ) ▶₀ #j.5
+34: Route( $Prev.4, $Receiver.2, ptrIn.1, h(x) ) ▶₀ #k.1
+35: !KU( sign(<'invoice', $Receiver.1, $Sender.1, h(x)>, x.1)) @ #vk.16
+36: !KU( h(x) ) @ #vk.15
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+23
+24
+35
+36
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( pIn, h(x) ) @ #j) ∧ #j < #r)  ∥ (∃ #j. (Skipped( pIn, x ) @ #j) ∧ #j < #r)
+1:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+2:  (∃ S #j.4.   (HTLCOffered( S, $Prev.3, pin0.2, h(x) ) @ #j.4) ∧ #j.4 < #j.3)  ∥ (∃ P0 pin0.3 #j.4.   (HTLCForwarded( $Prev.4, P0, $Prev.3, pin0.3, pin0.2, h(x)    ) @ #j.4)  ∧   #j.4 < #j.3)
+3: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+4: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+8: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+9: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+10: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+11: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+12: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+13: !ChannelConnect( pin0.1, $Prev.3, $Prev ) ▶₁ #j.3
+14: ReadyToLock( $A.2, $B.2, pin0.1, sA0.2, sB0.2, commitA0.2,             commitB0.2) ▶₀ #j.4
+15: Wallet( $A.2, ~fA.2 ) ▶₁ #j.4
+16: Wallet( $B.2, ~fB.2 ) ▶₂ #j.4
+17: Redeemed( pin0, h(x) ) @ #r
+18: UsedFulfilled( pIn, x ) @ #r
+19: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+20: Mutex( pIn ) ▶₂ #f
+21: Route( $Prev.3, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+22: Mutex( pin0 ) ▶₂ #j.1
+23: Fulfilled( pIn, x ) ▶₁ #r
+24: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+25: Route( $Prev.4, $Prev.3, pin0.2, h(x) ) ▶₀ #j.3
+26: Mutex( pin0.1 ) ▶₂ #j.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+17
+18
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+19
+20
+21
+22
+23
+24
+25
+26
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+1:  (∃ S #j.4.   (HTLCOffered( S, $Prev.3, pin0.2, h(x) ) @ #j.4) ∧ #j.4 < #j.3)  ∥ (∃ P0 pin0.3 #j.4.   (HTLCForwarded( $Prev.4, P0, $Prev.3, pin0.3, pin0.2, h(x)    ) @ #j.4)  ∧   #j.4 < #j.3)
+2:  (∃ o. (SettledHop( pIn, o, h(x) ) @ #j.5))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, pIn, h(x) ) @ #j.5))
+3: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+4: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+8: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+9: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+10: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+11: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+12: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+13: !ChannelConnect( pin0.1, $Prev.3, $Prev ) ▶₁ #j.3
+14: ReadyToLock( $A.2, $B.2, pin0.1, sA0.2, sB0.2, commitA0.2,             commitB0.2) ▶₀ #j.4
+15: Wallet( $A.2, ~fA.2 ) ▶₁ #j.4
+16: Wallet( $B.2, ~fB.2 ) ▶₂ #j.4
+17: Redeemed( pin0, h(x) ) @ #r
+18: UsedFulfilled( pIn, x ) @ #r
+19: Redeemed( pIn, h(x) ) @ #j.5
+20: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+21: Mutex( pIn ) ▶₂ #f
+22: Route( $Prev.3, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+23: Mutex( pin0 ) ▶₂ #j.1
+24: Fulfilled( pIn, x ) ▶₁ #r
+25: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+26: Route( $Prev.4, $Prev.3, pin0.2, h(x) ) ▶₀ #j.3
+27: Mutex( pin0.1 ) ▶₂ #j.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+17
+18
+19
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+20
+21
+22
+23
+24
+25
+26
+27
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+1:  (∃ S #j.4.   (HTLCOffered( S, $Prev.3, pin0.2, h(x) ) @ #j.4) ∧ #j.4 < #j.3)  ∥ (∃ P0 pin0.3 #j.4.   (HTLCForwarded( $Prev.4, P0, $Prev.3, pin0.3, pin0.2, h(x)    ) @ #j.4)  ∧   #j.4 < #j.3)
+2:  (∃ o. (SettledHop( ptrIn.1, o, h(x) ) @ #k.1))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn.1, h(x) ) @ #k.1))
+3: !ChannelConnect( pIn, $Me, $Next ) ▶₁ #f
+4: ReadyToLock( $A, $B, pIn, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: !ChannelConnect( pin0, $Prev, $Me ) ▶₁ #j.1
+8: ReadyToLock( $A.1, $B.1, pin0, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+9: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+10: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+11: IntermediaryPending( $Me.1, $Prev.2, $Next.1, pin0, pIn, h(x),                     %vIn, %vOut.1, %fee.1) ▶₀ #r
+12: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+13: !ChannelConnect( pin0.1, $Prev.3, $Prev ) ▶₁ #j.3
+14: ReadyToLock( $A.2, $B.2, pin0.1, sA0.2, sB0.2, commitA0.2,             commitB0.2) ▶₀ #j.4
+15: Wallet( $A.2, ~fA.2 ) ▶₁ #j.4
+16: Wallet( $B.2, ~fB.2 ) ▶₂ #j.4
+17: !Compromised( ExitAtt ) ▶₃ #j.5
+18: !Compromised( EntryAtt ) ▶₄ #j.5
+19: !Ltk( $A.3, ltk ) ▶₀ #c
+20: ReceiverInv( $Receiver.1, $Sender.1, x ) ▶₁ #k.1
+21: Redeemed( pin0, h(x) ) @ #r
+22: UsedFulfilled( pIn, x ) @ #r
+23: !RouteInfo( ExitAtt, Next.2, ptrExit, h(x) )[-, no_precomp] ▶₁ #j.5
+24: !RouteInfo( EntryAtt, Skipped, pIn, h(x) )[-, no_precomp] ▶₂ #j.5
+25: Route( $Prev, $Me, pin0, h(x) ) ▶₀ #f
+26: Mutex( pIn ) ▶₂ #f
+27: Route( $Prev.3, $Prev, pin0.1, h(x) ) ▶₀ #j.1
+28: Mutex( pin0 ) ▶₂ #j.1
+29: Fulfilled( pIn, x ) ▶₁ #r
+30: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+31: Route( $Prev.4, $Prev.3, pin0.2, h(x) ) ▶₀ #j.3
+32: Mutex( pin0.1 ) ▶₂ #j.3
+33: Fulfilled( ptrExit, x ) ▶₀ #j.5
+34: Route( $Prev.5, $Receiver.1, ptrIn.1, h(x) ) ▶₀ #k.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+21
+22
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.2) ) @ #vk.18
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.20
+7: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+8: Mutex( o ) ▶₂ #j
+9: Route( $Prev.2, $Prev, ptrIn, h(x) ) ▶₀ #vr
+10: Mutex( ~ptr ) ▶₂ #vr
+11: !KU( ~ptr ) @ #vk.16
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+9
+0
+1
+2
+3
+4
+5
+6
+8
+10
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.2) ) @ #vk.21
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.23
+11: Mutex( o1 ) ▶₂ #i
+12: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+13: Mutex( o2 ) ▶₂ #j
+14: Route( $Prev.2, $Prev, ptrIn, y ) ▶₀ #vr
+15: Mutex( ~ptr ) ▶₂ #vr
+16: !KU( ~ptr ) @ #vk.19
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+12
+14
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+15
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.2) ) @ #vk.18
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.20
+7: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+8: Mutex( o ) ▶₂ #j
+9: Route( $Prev.2, $Prev, ptrIn, h(x) ) ▶₀ #vr
+10: Mutex( ~ptr ) ▶₂ #vr
+11: !KU( ~ptr ) @ #vk.16
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+9
+0
+1
+2
+3
+4
+5
+6
+8
+10
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.2) ) @ #vk.21
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.23
+11: Mutex( o1 ) ▶₂ #i
+12: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+13: Mutex( o2 ) ▶₂ #j
+14: Route( $Prev.2, $Prev, ptrIn, y ) ▶₀ #vr
+15: Mutex( ~ptr ) ▶₂ #vr
+16: !KU( ~ptr ) @ #vk.19
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+12
+14
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+15
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.2) ) @ #vk.18
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.20
+6: Mutex( pOut ) ▶₂ #i
+7: Route( $Prev.1, $Prev, ptrIn, y ) ▶₀ #vr
+8: Mutex( ~ptr ) ▶₂ #vr
+9: !KU( ~ptr ) @ #vk.16
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+0
+1
+2
+3
+4
+5
+6
+8
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.2) ) @ #vk.18
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.20
+6: Mutex( pOut ) ▶₂ #i
+7: Route( $Prev.1, $Prev, ptrIn, y ) ▶₀ #vr
+8: Mutex( ~ptr ) ▶₂ #vr
+9: !KU( ~ptr ) @ #vk.16
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+0
+1
+2
+3
+4
+5
+6
+8
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( pOut ) ▶₂ #i
+8: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+4
+5
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ~ptr, o, h(~x) ) @ #vr.4))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ~ptr, h(~x) ) @ #vr.4))
+1: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+2: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.5) ) @ #vk.25
+7: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.7) ) @ #vk.27
+8: Mutex( pOut ) ▶₂ #i
+9: Route( $Prev.1, $Receiver.1, ~ptr, h(~x) ) ▶₀ #vr.4
+10: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+9
+0
+1
+2
+3
+4
+5
+6
+7
+8
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1:  (∃ o. (SettledHop( ~ptr, o, h(x) ) @ #vr.4))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ~ptr, h(x) ) @ #vr.4))
+2:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+3: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+4: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+8: UsedFulfilled( ~ptr.1, x ) @ #vr.4
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.29
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.32
+12: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+13: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+14: Mutex( pOut ) ▶₂ #i
+15: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+16: Route( $Prev.1, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+17: Mutex( ~ptr.1 ) ▶₂ #vr.8
+18: Route( $Prev.2, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+16
+18
+0
+1
+2
+8
+15
+3
+4
+5
+6
+7
+9
+10
+11
+12
+13
+14
+17
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1:  (∃ o. (SettledHop( ~ptr, o, h(x) ) @ #vr.4))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ~ptr, h(x) ) @ #vr.4))
+2:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+3: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+4: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+8: UsedFulfilled( ~ptr.1, x ) @ #vr.4
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.29
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.32
+12: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+13: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+14: Mutex( pOut ) ▶₂ #i
+15: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+16: Route( $Prev.1, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+17: Mutex( ~ptr.1 ) ▶₂ #vr.8
+18: Route( $Prev.2, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+16
+18
+0
+1
+2
+8
+15
+3
+4
+5
+6
+7
+9
+10
+11
+12
+13
+14
+17
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( pOut ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( pOut ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.25
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: !KU( h(x) ) @ #vk.16
+11: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( pOut ) ▶₂ #i
+8: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+4
+5
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ o. (SettledHop( ~ptr, o, h(~x) ) @ #vr.4))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ~ptr, h(~x) ) @ #vr.4))
+1: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+2: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.5) ) @ #vk.25
+7: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.7) ) @ #vk.27
+8: Mutex( pOut ) ▶₂ #i
+9: Route( $Prev.1, $Receiver.1, ~ptr, h(~x) ) ▶₀ #vr.4
+10: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+9
+0
+1
+2
+3
+4
+5
+6
+7
+8
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1:  (∃ o. (SettledHop( ~ptr, o, h(x) ) @ #vr.4))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ~ptr, h(x) ) @ #vr.4))
+2:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+3: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+4: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+8: UsedFulfilled( ~ptr.1, x ) @ #vr.4
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.29
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.32
+12: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+13: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+14: Mutex( pOut ) ▶₂ #i
+15: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+16: Route( $Prev.1, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+17: Mutex( ~ptr.1 ) ▶₂ #vr.8
+18: Route( $Prev.2, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+16
+18
+0
+1
+2
+8
+15
+3
+4
+5
+6
+7
+9
+10
+11
+12
+13
+14
+17
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+15
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1:  (∃ o. (SettledHop( ~ptr, o, h(x) ) @ #vr.4))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ~ptr, h(x) ) @ #vr.4))
+2:  (∃ o. (SettledHop( ptrIn, o, h(x) ) @ #k))  ∥ (∃ R Q. (HTLCFulfilled( R, Q, ptrIn, h(x) ) @ #k))
+3: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+4: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+8: UsedFulfilled( ~ptr.1, x ) @ #vr.4
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.29
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.32
+12: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+13: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+14: Mutex( pOut ) ▶₂ #i
+15: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+16: Route( $Prev.1, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+17: Mutex( ~ptr.1 ) ▶₂ #vr.8
+18: Route( $Prev.2, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+16
+18
+0
+1
+2
+8
+15
+3
+4
+5
+6
+7
+9
+10
+11
+12
+13
+14
+17
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( pOut ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( pOut ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pOut, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, pOut, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( pOut ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.5) ) @ #vk.28
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.7) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Receiver.1, ~ptr, h(~x) ) ▶₀ #vr.4
+16: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.2) ) @ #vk.18
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.20
+6: Mutex( o1 ) ▶₂ #i
+7: Route( $Prev.1, $Prev, ptrIn, y ) ▶₀ #vr
+8: Mutex( ~ptr ) ▶₂ #vr
+9: !KU( ~ptr ) @ #vk.16
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+0
+1
+2
+3
+4
+5
+6
+8
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.2) ) @ #vk.18
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.20
+6: Mutex( o1 ) ▶₂ #i
+7: Route( $Prev.1, $Prev, ptrIn, y ) ▶₀ #vr
+8: Mutex( ~ptr ) ▶₂ #vr
+9: !KU( ~ptr ) @ #vk.16
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+0
+1
+2
+3
+4
+5
+6
+8
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.5) ) @ #vk.25
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.7) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Receiver.2, ~ptr, h(~x.1) ) ▶₀ #vr.4
+11: !KU( h(x) ) @ #vk.16
+12: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+2: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+3: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+4: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+5: Wallet( $A, ~fA ) ▶₁ #j.1
+6: Wallet( $B, ~fB ) ▶₂ #j.1
+7: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+11: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+12: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.32
+13: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.35
+14: !KU( sign(<'proposal', $Me.2, $Next.2, ~ptr.1>, ~ltk.10) ) @ #vk.45
+15: !KU( sign(<'proposal', $Me.2, $Next.2, ~ptr.1>, ~ltk.12) ) @ #vk.46
+16: Mutex( o1 ) ▶₂ #i
+17: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+18: Mutex( o2 ) ▶₂ #j
+19: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+20: Route( $Prev.2, $Me.2, ~ptr, h(x) ) ▶₀ #vr.8
+21: Mutex( ~ptr.1 ) ▶₂ #vr.8
+22: Route( $Prev.3, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+23: !KU( ~ptr ) @ #vk.30
+24: !KU( ~ptr.1 ) @ #vk.43
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+17
+20
+22
+0
+1
+19
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+18
+21
+23
+24
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+4
+5
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+2: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+3: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+4: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+5: Wallet( $A, ~fA ) ▶₁ #j.1
+6: Wallet( $B, ~fB ) ▶₂ #j.1
+7: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+11: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+12: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.32
+13: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.35
+14: !KU( sign(<'proposal', $Next.2, $Me.2, ~ptr.1>, ~ltk.10) ) @ #vk.45
+15: !KU( sign(<'proposal', $Next.2, $Me.2, ~ptr.1>, ~ltk.12) ) @ #vk.46
+16: Mutex( o1 ) ▶₂ #i
+17: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+18: Mutex( o2 ) ▶₂ #j
+19: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+20: Route( $Prev.2, $Me.2, ~ptr, h(x) ) ▶₀ #vr.8
+21: Mutex( ~ptr.1 ) ▶₂ #vr.8
+22: Route( $Prev.3, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+23: !KU( ~ptr ) @ #vk.30
+24: !KU( ~ptr.1 ) @ #vk.43
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+17
+20
+22
+0
+1
+19
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+18
+21
+23
+24
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.5) ) @ #vk.25
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.7) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Receiver.1, ~ptr, h(~x) ) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+16: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x.1) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x.1 ) @ #j) ∧ #j < #vr.4)
+1: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+2: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+3: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReceiverInv( $Receiver.2, $Sender.1, x.1 ) ▶₁ #k
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+8: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+13: Mutex( o ) ▶₂ #j
+14: Fulfilled( ~ptr.1, x.1 ) ▶₁ #vr.4
+15: Route( $Prev.2, $Me.1, ~ptr, h(x.1) ) ▶₀ #vr.8
+16: Mutex( ~ptr.1 ) ▶₂ #vr.8
+17: Route( $Prev.3, $Receiver.2, ptrIn, h(x.1) ) ▶₀ #k
+18: !KU( h(x) ) @ #vk.16
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+12
+15
+17
+0
+14
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+16
+18
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+16: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x.1) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x.1 ) @ #j) ∧ #j < #vr.4)
+1: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+2: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+3: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReceiverInv( $Receiver.2, $Sender.1, x.1 ) ▶₁ #k
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+8: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+13: Mutex( o ) ▶₂ #j
+14: Fulfilled( ~ptr.1, x.1 ) ▶₁ #vr.4
+15: Route( $Prev.2, $Me.1, ~ptr, h(x.1) ) ▶₀ #vr.8
+16: Mutex( ~ptr.1 ) ▶₂ #vr.8
+17: Route( $Prev.3, $Receiver.2, ptrIn, h(x.1) ) ▶₀ #k
+18: !KU( h(x) ) @ #vk.16
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+12
+15
+17
+0
+14
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+16
+18
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+6: ReceiverInv( $Receiver.2, $Sender.1, x ) ▶₁ #k.1
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, y>, ~ltk) ) @ #vk.17
+8: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Mutex( o1 ) ▶₂ #i
+13: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+14: Route( $Prev.2, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+15: Mutex( ~ptr.1 ) ▶₂ #vr.8
+16: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+17: Route( $Prev.3, $Receiver.2, ptrIn.1, h(x) ) ▶₀ #k.1
+18: !KU( ~ptr ) @ #vk.27
+19: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+14
+16
+17
+0
+13
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+15
+18
+19
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+6: ReceiverInv( $Receiver.2, $Sender.1, x ) ▶₁ #k.1
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, y>, ~ltk) ) @ #vk.17
+8: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Mutex( o1 ) ▶₂ #i
+13: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+14: Route( $Prev.2, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+15: Mutex( ~ptr.1 ) ▶₂ #vr.8
+16: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+17: Route( $Prev.3, $Receiver.2, ptrIn.1, h(x) ) ▶₀ #k.1
+18: !KU( ~ptr ) @ #vk.27
+19: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+14
+16
+17
+0
+13
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+15
+18
+19
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.25
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: SenderPending( $Sender.1, $Forward1, $Receiver.2, ~ptr, y) ▶₀ #vr.4
+11: !KU( h(x) ) @ #vk.16
+12: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.25
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: SenderPending( $Sender.1, $Forward1, $Receiver.2, ~ptr, y) ▶₀ #vr.4
+11: !KU( h(x) ) @ #vk.16
+12: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+15
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.5) ) @ #vk.28
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.7) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Receiver.1, ~ptr, h(~x) ) ▶₀ #vr.4
+16: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Prev, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.17
+5: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Prev, $Me, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+2: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+3: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+4: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+5: Wallet( $A, ~fA ) ▶₁ #j.1
+6: Wallet( $B, ~fB ) ▶₂ #j.1
+7: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+11: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+12: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.32
+13: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.35
+14: !KU( sign(<'proposal', $Me.2, $Next.2, ~ptr.1>, ~ltk.10) ) @ #vk.45
+15: !KU( sign(<'proposal', $Me.2, $Next.2, ~ptr.1>, ~ltk.12) ) @ #vk.46
+16: Mutex( o1 ) ▶₂ #i
+17: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+18: Mutex( o2 ) ▶₂ #j
+19: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+20: Route( $Prev.2, $Me.2, ~ptr, h(x) ) ▶₀ #vr.8
+21: Mutex( ~ptr.1 ) ▶₂ #vr.8
+22: Route( $Prev.3, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+23: !KU( ~ptr ) @ #vk.30
+24: !KU( ~ptr.1 ) @ #vk.43
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+17
+20
+22
+0
+1
+19
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+18
+21
+23
+24
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+4
+5
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.5) ) @ #vk.25
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.7) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Receiver.1, ~ptr, h(~x) ) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+2: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+3: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+4: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+5: Wallet( $A, ~fA ) ▶₁ #j.1
+6: Wallet( $B, ~fB ) ▶₂ #j.1
+7: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+8: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+9: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+10: ReceiverInv( $Receiver.1, $Sender, x ) ▶₁ #k
+11: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+12: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.32
+13: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.35
+14: !KU( sign(<'proposal', $Next.2, $Me.2, ~ptr.1>, ~ltk.10) ) @ #vk.45
+15: !KU( sign(<'proposal', $Next.2, $Me.2, ~ptr.1>, ~ltk.12) ) @ #vk.46
+16: Mutex( o1 ) ▶₂ #i
+17: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+18: Mutex( o2 ) ▶₂ #j
+19: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+20: Route( $Prev.2, $Me.2, ~ptr, h(x) ) ▶₀ #vr.8
+21: Mutex( ~ptr.1 ) ▶₂ #vr.8
+22: Route( $Prev.3, $Receiver.1, ptrIn, h(x) ) ▶₀ #k
+23: !KU( ~ptr ) @ #vk.30
+24: !KU( ~ptr.1 ) @ #vk.43
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+17
+20
+22
+0
+1
+19
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+18
+21
+23
+24
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Prev, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+16: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+16: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Receiver, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+6: ReceiverInv( $Receiver.2, $Sender.1, x ) ▶₁ #k.1
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, y>, ~ltk) ) @ #vk.19
+8: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Mutex( o1 ) ▶₂ #i
+13: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+14: Route( $Prev.2, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+15: Mutex( ~ptr.1 ) ▶₂ #vr.8
+16: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+17: Route( $Prev.3, $Receiver.2, ptrIn.1, h(x) ) ▶₀ #k.1
+18: !KU( ~ptr ) @ #vk.27
+19: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+14
+16
+17
+0
+13
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+15
+18
+19
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Prev, $Receiver, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Receiver, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x ) @ #j) ∧ #j < #vr.4)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #k
+6: ReceiverInv( $Receiver.2, $Sender.1, x ) ▶₁ #k.1
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, y>, ~ltk) ) @ #vk.19
+8: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Mutex( o1 ) ▶₂ #i
+13: Fulfilled( ~ptr.1, x ) ▶₁ #vr.4
+14: Route( $Prev.2, $Me.1, ~ptr, h(x) ) ▶₀ #vr.8
+15: Mutex( ~ptr.1 ) ▶₂ #vr.8
+16: Route( $Prev.1, $Receiver, ptrIn, h(x) ) ▶₀ #k
+17: Route( $Prev.3, $Receiver.2, ptrIn.1, h(x) ) ▶₀ #k.1
+18: !KU( ~ptr ) @ #vk.27
+19: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+14
+16
+17
+0
+13
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+15
+18
+19
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+7: Mutex( o1 ) ▶₂ #i
+8: SenderPending( $Sender, $Forward1, $Receiver.1, ~ptr, y.1) ▶₀ #vr.4
+9: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#i < #j)  ∥ (#j < #i)
+1: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+2: !ChannelConnect( o2, $Me.1, $Next.1 ) ▶₁ #j
+3: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReadyToLock( $A.1, $B.1, o2, sA0.1, sB0.1, commitA0.1, commitB0.1) ▶₀ #j.2
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.2
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.2
+9: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.20
+10: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.31
+11: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.33
+12: Mutex( o1 ) ▶₂ #i
+13: Route( $Prev.1, $Me.1, ~ptr, y ) ▶₀ #j
+14: Mutex( o2 ) ▶₂ #j
+15: Route( $Prev.2, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+16: Mutex( ~ptr ) ▶₂ #vr.8
+17: !KU( ~ptr ) @ #vk.29
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+15
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+14
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: !KU( h(x) ) @ #vk.16
+11: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.5) ) @ #vk.25
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.7) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Receiver.2, ~ptr, h(~x.1) ) ▶₀ #vr.4
+11: !KU( h(x) ) @ #vk.16
+12: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Me, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x.1) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x.1 ) @ #j) ∧ #j < #vr.4)
+1: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+2: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+3: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReceiverInv( $Receiver.2, $Sender.1, x.1 ) ▶₁ #k
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+8: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Me.1, $Next.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+13: Mutex( o ) ▶₂ #j
+14: Fulfilled( ~ptr.1, x.1 ) ▶₁ #vr.4
+15: Route( $Prev.2, $Me.1, ~ptr, h(x.1) ) ▶₀ #vr.8
+16: Mutex( ~ptr.1 ) ▶₂ #vr.8
+17: Route( $Prev.3, $Receiver.2, ptrIn, h(x.1) ) ▶₀ #k
+18: !KU( h(x) ) @ #vk.16
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+12
+15
+17
+0
+14
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+16
+18
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #j. (Redeemed( ~ptr.1, h(x.1) ) @ #j) ∧ #j < #vr.4)  ∥ (∃ #j. (Skipped( ~ptr.1, x.1 ) @ #j) ∧ #j < #vr.4)
+1: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+2: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+3: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+4: Wallet( $A, ~fA ) ▶₁ #j.1
+5: Wallet( $B, ~fB ) ▶₂ #j.1
+6: ReceiverInv( $Receiver.2, $Sender.1, x.1 ) ▶₁ #k
+7: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+8: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.29
+9: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.32
+10: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.10) ) @ #vk.42
+11: !KU( sign(<'proposal', $Next.1, $Me.1, ~ptr.1>, ~ltk.12) ) @ #vk.43
+12: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+13: Mutex( o ) ▶₂ #j
+14: Fulfilled( ~ptr.1, x.1 ) ▶₁ #vr.4
+15: Route( $Prev.2, $Me.1, ~ptr, h(x.1) ) ▶₀ #vr.8
+16: Mutex( ~ptr.1 ) ▶₂ #vr.8
+17: Route( $Prev.3, $Receiver.2, ptrIn, h(x.1) ) ▶₀ #k
+18: !KU( h(x) ) @ #vk.16
+19: !KU( ~ptr ) @ #vk.27
+20: !KU( ~ptr.1 ) @ #vk.40
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+12
+15
+17
+0
+14
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+13
+16
+18
+19
+20
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: SenderPending( $Sender.1, $Forward1, $Receiver.2, ~ptr, y) ▶₀ #vr.4
+11: !KU( h(x) ) @ #vk.16
+12: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( o1, $Me, $Next ) ▶₁ #i
+1: ReadyToLock( $A, $B, o1, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: !KU( sign(<'invoice', $Receiver, $Prev, y>, ~ltk) ) @ #vk.19
+5: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+6: !KU( sign(<'proposal', $Me, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+7: Mutex( o1 ) ▶₂ #i
+8: Route( $Prev.1, $Prev, ptrIn, y.1 ) ▶₀ #vr.8
+9: Mutex( ~ptr ) ▶₂ #vr.8
+10: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.25
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.27
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: SenderPending( $Sender.1, $Forward1, $Receiver.2, ~ptr, y) ▶₀ #vr.4
+11: !KU( h(x) ) @ #vk.16
+12: !KU( ~ptr ) @ #vk.23
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Receiver, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Receiver, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Prev, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ReceiverInv( $Receiver, $Sender, x ) ▶₁ #i
+1: !ChannelConnect( o, $Me, $Next ) ▶₁ #j
+2: ReadyToLock( $A, $B, o, sA0, sB0, commitA0, commitB0 ) ▶₀ #j.1
+3: Wallet( $A, ~fA ) ▶₁ #j.1
+4: Wallet( $B, ~fB ) ▶₂ #j.1
+5: !KU( sign(<'invoice', $Receiver.1, $Prev, h(x)>, ~ltk) ) @ #vk.17
+6: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.4) ) @ #vk.28
+7: !KU( sign(<'proposal', $Receiver, $Prev, ~ptr>, ~ltk.6) ) @ #vk.30
+8: Route( $Prev.1, $Me, ~ptr, h(x) ) ▶₀ #j
+9: Mutex( o ) ▶₂ #j
+10: Route( $Prev.2, $Prev, ptrIn, y ) ▶₀ #vr.8
+11: Mutex( ~ptr ) ▶₂ #vr.8
+12: !KU( h(x) ) @ #vk.16
+13: !KU( ~ptr ) @ #vk.26
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+10
+0
+1
+2
+3
+4
+5
+6
+7
+9
+11
+12
+13
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+
+==============================================================================
+summary of summaries:
+
+analyzed: lightning.spthy
+
+  output:          /home/user/12345/tamarin/audit/proofs_bypass_general.spthy
+  processing time: 106.75s
+  
+  WARNING: 1 wellformedness check failed!
+           The analysis results might be wrong!
+  
+  ForwardTimeGap (all-traces): analysis incomplete (1 steps)
+  state_update (all-traces): analysis incomplete (1 steps)
+  delayed_funds (all-traces): analysis incomplete (1 steps)
+  instant_funds (all-traces): analysis incomplete (1 steps)
+  settlement_is_traceable (all-traces): analysis incomplete (1 steps)
+  Protocol_execution (exists-trace): analysis incomplete (1 steps)
+  No_Punishment_Without_Cheating (all-traces): analysis incomplete (1 steps)
+  Cooperative_Close_Execution (exists-trace): analysis incomplete (1 steps)
+  Funds_Locked_Before_Update (all-traces): analysis incomplete (1 steps)
+  Update_Requires_Negotiation (all-traces): analysis incomplete (1 steps)
+  OneOutcomePerHTLC (all-traces): verified (7 steps)
+  Ltk_Known_Implies_Compromised (all-traces): verified (3 steps)
+  Invoice_Released_Once (all-traces): verified (8 steps)
+  Distinct_Parties_Configuration (exists-trace): analysis incomplete (1 steps)
+  Refund_Possible (exists-trace): analysis incomplete (1 steps)
+  Preimage_Secret_Until_Released (all-traces): analysis incomplete (1 steps)
+  Invoice_Has_Secret_Preimage (all-traces): verified (2 steps)
+  HTLC_On_Opened_Channel (all-traces): verified (14 steps)
+  Fulfilled_Requires_Release (all-traces): verified (24 steps)
+  Settle_Requires_Receiver_Release (all-traces): analysis incomplete (1 steps)
+  Claim_Requires_Release (all-traces): analysis incomplete (1 steps)
+  Forward_Requires_Incoming (all-traces): analysis incomplete (1 steps)
+  Redeem_Requires_Receiver_Release (all-traces): analysis incomplete (1 steps)
+  Settle_Excludes_Sender_Refund (all-traces): analysis incomplete (1 steps)
+  Invoice_Authenticates_Settlement (all-traces): analysis incomplete (1 steps)
+  Forged_Invoice_Requires_Key_Compromise (exists-trace): analysis incomplete (1 steps)
+  Loss_Requires_Inaction (all-traces): analysis incomplete (1 steps)
+  Refund_Requires_Timeout (all-traces): verified (12 steps)
+  Intermediary_Never_Loses_Under_Liveness (all-traces): analysis incomplete (1 steps)
+  Payment_Atomicity_Under_Liveness (all-traces): analysis incomplete (1 steps)
+  Timeout_Race_Blocked (all-traces): analysis incomplete (1 steps)
+  Multihop_Routing_Reachable (exists-trace): analysis incomplete (1 steps)
+  Wormhole_Fee_Theft_Reachable (exists-trace): analysis incomplete (117 steps)
+  Fee_Only_On_Successful_Forward (all-traces): analysis incomplete (1 steps)
+  Sanity_Honest_Payment_Completes (exists-trace): analysis incomplete (1 steps)
+  Sanity_Compromised_Intermediary_Can_Lose (exists-trace): analysis incomplete (1 steps)
+  Intermediary_Never_Loses_Strong (all-traces): analysis incomplete (1 steps)
+  Offer_Requires_Invoice (all-traces): analysis incomplete (1 steps)
+  Sanity_Atomic_Payment_Completes (exists-trace): analysis incomplete (1 steps)
+  Preimage_Never_Known (all-traces): analysis incomplete (1 steps)
+  Fulfilled_Source (all-traces): verified (214 steps)
+  Skipped_Requires_Compromise (all-traces): verified (3 steps)
+  Forward_Unique_Per_Incoming (all-traces): verified (46 steps)
+  SettledHop_From_Forward (all-traces): verified (4 steps)
+  No_Settle_And_Refund_Same_Hop (all-traces): verified (4 steps)
+  No_Fulfill_On_Forwarded_Incoming (all-traces): verified (24 steps)
+  Redeemed_Source (all-traces): verified (4 steps)
+  SenderSettled_Uses_Fulfilled (all-traces): verified (2 steps)
+  First_Hop_Skip_Requires_Compromise (all-traces): analysis incomplete (1 steps)
+  SettledHop_Uses_Outgoing (all-traces): verified (2 steps)
+  Second_Hop_Skip_Requires_Compromise (all-traces): analysis incomplete (1 steps)
+  Hop3_Skip_Requires_Compromise (all-traces): analysis incomplete (1 steps)
+  Hop4_Skip_Requires_Compromise (all-traces): analysis incomplete (1 steps)
+  Hop5_Skip_Requires_Compromise (all-traces): analysis incomplete (1 steps)
+  Hop6_Skip_Requires_Compromise (all-traces): analysis incomplete (1 steps)
+  Forward_Parent (all-traces): verified (24 steps)
+  Hop_Redeem_Propagates (all-traces): verified (16 steps)
+  Sender_Channel_Redeemed (all-traces): verified (4 steps)
+  Root_First (all-traces): verified (8 steps)
+  Next_Is_Child (all-traces): verified (20 steps)
+  Route_Redeemed_Gen (all-traces): verified (42 steps)
+  Route_Redeemed_No_Compromise (all-traces): verified (12 steps)
+  Any_Hop_Skip_Requires_Compromise (all-traces): verified (7 steps)
+  Necessity_IMC_Honest_Intermediary_Loses (exists-trace): analysis incomplete (1 steps)
+  Necessity_OTF_Timeout_Order_Broken (exists-trace): analysis incomplete (1 steps)
+
+==============================================================================
