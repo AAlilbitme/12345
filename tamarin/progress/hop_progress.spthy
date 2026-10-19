@@ -31,18 +31,20 @@ let OutTimeout =
 let InTimeout =
   // CLTV delta: the incoming HTLC expires only after the outgoing one did
   lookup 'out_res' as r in
-  if r = 'timedout' then
-    lock 'in';
-    lookup 'in_res' as q in unlock 'in'
-    else (insert 'in_res', 'refunded'; event RefundIn(); unlock 'in')
+  (if r = 'timedout' then
+    (lock 'in';
+     lookup 'in_res' as q in unlock 'in'
+     else (insert 'in_res', 'refunded'; event RefundIn(); unlock 'in'))
+   else 0)
 
 let Forwarder =
   // F claims its incoming HTLC as soon as it sees the preimage on chain
   lookup 'preimage_seen' as v in
-  if h(v) = h(~x) then
-    lock 'in';
-    lookup 'in_res' as q in unlock 'in'
-    else (insert 'in_res', 'redeemed'; event RedeemIn(); unlock 'in')
+  (if h(v) = h(~x) then
+    (lock 'in';
+     lookup 'in_res' as q in unlock 'in'
+     else (insert 'in_res', 'redeemed'; event RedeemIn(); unlock 'in'))
+   else 0)
 
 process:
 new ~x; ( Receiver || OutTimeout || InTimeout || Forwarder )

@@ -1,0 +1,69 @@
+theory TwoHopProgress
+begin
+
+/*
+  Progress prototype, two forwarders: S -> F1 -> F2 -> R over channels c0, c1, c2.
+  No liveness restrictions.  Protocol structure only:
+    - each HTLC is resolved at most once (lock + result cell per channel);
+    - CLTV deltas: c1 can time out only after c2 did, c0 only after c1 did;
+    - a redeem is on chain: the next forwarder upstream can then claim without
+      waiting for anyone, so progress (translation-progress) forces it to.
+*/
+
+builtins: hashing
+options: translation-progress
+
+let Claim0 =            // F1 claims its incoming HTLC on c0
+  lock 'c0';
+  lookup 'c0_res' as q in unlock 'c0'
+  else (insert 'c0_res', 'redeemed'; event Redeem('c0'); unlock 'c0')
+
+let Claim1 =            // F2 claims its incoming HTLC on c1; F1 then claims on c0
+  lock 'c1';
+  lookup 'c1_res' as q in unlock 'c1'
+  else (insert 'c1_res', 'redeemed'; event Redeem('c1'); unlock 'c1'; Claim0)
+
+let Receiver =          // R may redeem c2 (it is not forced to)
+  lock 'c2';
+  lookup 'c2_res' as q in unlock 'c2'
+  else (insert 'c2_res', 'redeemed'; event Redeem('c2'); unlock 'c2'; Claim1)
+
+let Timeout2 =
+  lock 'c2';
+  lookup 'c2_res' as q in unlock 'c2'
+  else (insert 'c2_res', 'timedout'; event Refund('c2'); unlock 'c2')
+
+let Timeout1 =          // c1 expires only after c2 did
+  lookup 'c2_res' as r in
+  (if r = 'timedout' then
+    (lock 'c1';
+     lookup 'c1_res' as q in unlock 'c1'
+     else (insert 'c1_res', 'timedout'; event Refund('c1'); unlock 'c1'))
+   else 0)
+
+let Timeout0 =          // c0 expires only after c1 did
+  lookup 'c1_res' as r in
+  (if r = 'timedout' then
+    (lock 'c0';
+     lookup 'c0_res' as q in unlock 'c0'
+     else (insert 'c0_res', 'timedout'; event Refund('c0'); unlock 'c0'))
+   else 0)
+
+process:
+( Receiver || Timeout2 || Timeout1 || Timeout0 )
+
+lemma Payment_Completes: exists-trace "Ex #i. Redeem('c0') @ #i"
+lemma Payment_Refunded:  exists-trace "Ex #i. Refund('c0') @ #i"
+
+// Intermediary safety for both forwarders (outgoing redeemed => incoming not refunded)
+lemma F1_Safe: "All #i. Redeem('c1') @ #i ==> not (Ex #j. Refund('c0') @ #j)"
+lemma F2_Safe: "All #i. Redeem('c2') @ #i ==> not (Ex #j. Refund('c1') @ #j)"
+
+// Liveness from progress: both forwarders claim
+lemma F2_Claims: "All #i. Redeem('c2') @ #i ==> Ex #j. Redeem('c1') @ #j"
+lemma F1_Claims: "All #i. Redeem('c1') @ #i ==> Ex #j. Redeem('c0') @ #j"
+
+// End-to-end atomicity: if the receiver is paid, the sender's HTLC is redeemed
+lemma Atomicity: "All #i. Redeem('c2') @ #i ==> Ex #j. Redeem('c0') @ #j"
+
+end
