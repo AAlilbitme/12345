@@ -1,0 +1,36 @@
+lemma                                         steps #rules  verdict   rules touched
+Invoice_Has_Secret_Preimage                       2      0  RESTATE?  
+Loss_Requires_Inaction                            2      0  RESTATE?  
+Intermediary_Never_Loses_Under_Liveness           8      0  RESTATE?  
+Timeout_Race_Blocked                              8      0  RESTATE?  
+Intermediary_Never_Loses_Strong                   8      0  RESTATE?  
+ForwardTimeGap                                   14      0  RESTATE?  
+Payment_Atomicity_Under_Liveness                 26      0  RESTATE?  
+Ltk_Known_Implies_Compromised                     5      1  RESTATE?  Compromise_Ltk
+Preimage_Secret_Until_Released                    5      1  RESTATE?  Register_key
+Preimage_Never_Known                              5      1  RESTATE?  Register_key
+Skipped_Requires_Compromise                       5      1  RESTATE?  Compromise_Ltk
+Invoice_Released_Once                            20      1  RESTATE?  Receiver_Create_Invoice
+state_update                                     53      1  protocol  Register_key
+Funds_Locked_Before_Update                       53      1  protocol  Register_key
+Update_Requires_Negotiation                      53      1  protocol  Register_key
+settlement_is_traceable                           8      2  RESTATE?  Instant_Funds_A, Instant_Funds_B
+Refund_Requires_Timeout                          32      2  protocol  Intermediary_Timeout_Refund, Sender_Timeout_Refund
+Redeem_Requires_Receiver_Release                 41      2  protocol  Intermediary_Settle, Receiver_Fulfill_HTLC
+Claim_Requires_Release                           53      2  protocol  Receiver_Create_Invoice, Register_key
+No_Punishment_Without_Cheating                   56      2  protocol  Punish_A, Punish_B
+delayed_funds                                   128      2  protocol  Claim_Funds_A, Claim_Funds_B
+instant_funds                                   176      2  protocol  Instant_Funds_A, Instant_Funds_B
+Settle_Excludes_Sender_Refund                   350      2  protocol  Intermediary_Timeout_Refund, Sender_Timeout_Refund
+OneOutcomePerHTLC                                17      3  protocol  Intermediary_Settle, Receiver_Create_Invoice, Receiver_Fulfill_HTLC
+HTLC_On_Opened_Channel                           59      3  protocol  Forward_HTLC, Register_key, Sender_Offer_HTLC
+Fulfilled_Requires_Release                       89      4  protocol  AttackerSkip, Compromise_Ltk, Intermediary_Settle, Receiver_Fulfill_HTLC
+Offer_Requires_Invoice                          206      4  protocol  Lock_Funds_And_Open, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key
+Settle_Requires_Receiver_Release                986      4  protocol  AttackerSkip, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key
+Forward_Requires_Incoming                      1010      4  protocol  A_Send_Proposal, B_Recv_Proposal, Compromise_Ltk, Register_key
+Invoice_Authenticates_Settlement               2498      5  protocol  AttackerSkip, Compromise_Ltk, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key
+Fee_Only_On_Successful_Forward                  995      8  protocol  A_Send_Proposal, AttackerSkip, B_Recv_Proposal, Compromise_Ltk, Forward_HTLC, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key
+Fulfilled_Source                                638      9  protocol  A_Send_Proposal, AttackerSkip, B_Recv_Proposal, Compromise_Ltk, Intermediary_Settle, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key, Sender_Settle
+Wormhole_Fee_Theft_Reachable                    343     11  protocol  A_Send_Proposal, AttackerSkip, B_Recv_Proposal, Forward_HTLC, Intermediary_Timeout_Refund, Lock_Funds_And_Open, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key, Sender_Offer_HTLC, Sender_Timeout_Refund
+
+33 proofs; 13 restatement candidates
