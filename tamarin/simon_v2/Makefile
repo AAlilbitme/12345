@@ -1,6 +1,6 @@
 TAMARIN ?= tamarin-prover
 THEORY   = lightningfixb.spthy
-RTS      = +RTS -M8G -RTS
+RTS      = --derivcheck-timeout=600 +RTS -M8G -RTS
 
 .PHONY: all verify safety liveness lemma interactive clean
 
