@@ -14,3 +14,6 @@ Detailed results from testing 'maude'
 [Theory CheckFix3b] Theory loaded
 [Theory CheckFix3b] Theory translated
 [Theory CheckFix3b] Derivation checks started
+[Theory CheckFix3b] Derivation checks ended
+[Theory CheckFix3b] Theory closed
+[Saturating Sources] Step 1 (Max 5)
