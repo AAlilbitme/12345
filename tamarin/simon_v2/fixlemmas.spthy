@@ -1,0 +1,3 @@
+// ADDED: the funding output of a channel is spent at most once (linear FundingUnspent).
+lemma Funding_Spent_Once:
+    "All ptr #i #j. FundingSpent(ptr) @ #i & FundingSpent(ptr) @ #j ==> #i = #j"
