@@ -1,9 +1,0 @@
-theory lightning
-begin
-
-// Simon's model with the 'invoice' tag, his tactics and lemmas, plus two ADDED lemmas.
-#include "modeltagged.spthy"
-#include "tactics.spthy"
-#include "lemmas.spthy"
-
-end
