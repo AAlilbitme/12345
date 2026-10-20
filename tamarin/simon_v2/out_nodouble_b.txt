@@ -11,4 +11,6 @@ Detailed results from testing 'maude'
 
  stderr:  
  checking installation: OK.
-tamarin-prover: checkfix3b.spthy: openFile: does not exist (No such file or directory)
+[Theory CheckFix3b] Theory loaded
+[Theory CheckFix3b] Theory translated
+[Theory CheckFix3b] Derivation checks started
