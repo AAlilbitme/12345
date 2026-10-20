@@ -5,8 +5,8 @@
 | `model.spthy` | Simon's original model (reference) |
 | `modeltagged.spthy` | + `'invoice'` tag (fixes invoice confusion) |
 | `modelfixb.spthy` | + tag, linear `FundingUnspent`, pattern-matched publish rules (final) |
-| `tactics.spthy`, `lemmas.spthy` | Simon's tactics/lemmas + 2 invoice lemmas |
-| `fixlemmas.spthy` | `Funding_Spent_Once`, `No_Double_Publish` |
+| `tactics.spthy` | Simon's tactics + `offer_invoice` |
+| `lemmas.spthy` | Simon's lemmas + ADDED: 2 invoice lemmas, `Funding_Spent_Once`, `No_Double_Publish` |
 | `lightningfixb.spthy` | Full theory (final model + all lemmas) |
 | `bug_double_publish.spthy` | Bug on `modeltagged`: distinct parties double-publish (found, 12 steps) |
 | `check_fix.spthy` | On final model: no double publish (108 steps), publishing still reachable |

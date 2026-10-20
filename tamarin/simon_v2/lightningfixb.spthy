@@ -5,6 +5,5 @@ begin
 #include "modelfixb.spthy"
 #include "tactics.spthy"
 #include "lemmas.spthy"
-#include "fixlemmas.spthy"
 
 end
