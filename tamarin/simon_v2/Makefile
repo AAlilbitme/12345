@@ -2,9 +2,11 @@ TAMARIN ?= tamarin-prover
 THEORY   = lightningfixb.spthy
 RTS      = +RTS -M8G -RTS
 
-.PHONY: all safety liveness lemma interactive clean
+.PHONY: all verify safety liveness lemma interactive clean
 
 all: safety liveness
+
+verify: all
 
 # All lemmas without the liveness restrictions (50/50 verified).
 safety:
