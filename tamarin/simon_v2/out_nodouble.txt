@@ -1,0 +1,20 @@
+maude tool: 'maude'
+ checking version: WARNING:
+
+ 'maude --version' returned unsupported version '3.2'
+ Please install one of the following versions of Maude: 2.7.1, 3.0, 3.1, 3.2.1, 3.2.2, 3.3, 3.3.1, 3.4, 3.5
+
+Detailed results from testing 'maude'
+ command: maude --version
+ stdin:   
+ stdout:  3.2
+
+ stderr:  
+ checking installation: OK.
+[Theory CheckFix3] Theory loaded
+[Theory CheckFix3] Theory translated
+[Theory CheckFix3] Derivation checks started
+[Theory CheckFix3] Derivation checks ended
+[Theory CheckFix3] Theory closed
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
