@@ -1,0 +1,36 @@
+theory CheckAdditionsTagged
+begin
+
+// Simon's model (copied) + our proposed additions, adapted to his event names.
+#include "model_tagged.spthy"
+
+// Every Fulfilled fact that is used on hop p comes from a redeem of p or from a
+// wormhole skip onto p: the preimage reaches a hop only through the protocol
+// or the attacker's skip.
+lemma Fulfilled_Source [use_induction]:
+    "All p x #i. FulfilledUsed(p, x) @ #i
+     ==> (Ex #j. Redeemed(p, h(x)) @ #j & #j < #i)
+       | (Ex #j. Skipped(p, x) @ #j & #j < #i)"
+
+// A sender only offers an HTLC for an invoice the receiver created, unless the
+// receiver's key was compromised.
+lemma Offer_Requires_Invoice:
+    "All S R ptr y #o.
+        OfferFor(S, R, ptr, y) @ #o
+     ==> (Ex #j. InvoiceCreated(R, S, y) @ #j & #j < #o)
+       | (Ex #r. LtkCompromised(R) @ #r)"
+
+// Necessity of ForwarderCollectsInTime: without it (no -D=LIVENESS) an honest
+// forwarder whose outgoing HTLC is redeemed can still have its incoming HTLC
+// refunded.  With -D=LIVENESS this trace must disappear.
+lemma Necessity_Collect_Honest_Forwarder_Loses:
+  exists-trace
+  "Ex S F1 R p0 p1 x #o #a #r #u.
+      HTLCOffered(S, F1, p0, h(x)) @ #o
+    & HTLCForwarded(F1, S, R, p0, p1, h(x)) @ #a
+    & HTLCFulfilled(R, F1, p1, h(x)) @ #r
+    & Refunded(S, p0, h(x)) @ #u
+    & not (Ex P #k. LtkCompromised(P) @ #k)
+    & not (Ex ptr y1 y2 #m #n. HTLCAdded(ptr, y1) @ #m & HTLCAdded(ptr, y2) @ #n & not (#m = #n))"
+
+end
