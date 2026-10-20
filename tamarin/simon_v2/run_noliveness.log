@@ -14,3 +14,502 @@ Detailed results from testing 'maude'
 [Theory lightning] Theory loaded
 [Theory lightning] Theory translated
 [Theory lightning] Derivation checks started
+[Theory lightning] Derivation checks ended
+[Theory lightning] Theory closed
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: HTLCExpiry( ptr, y, %t1 ) @ #i
+1: HTLCExpiry( ptr, y, %t2 ) @ #j
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: SenderPending( $Sender, $Forward1, $Receiver, ptr, h(x), %t ) ▶₀ #i
+1: Fulfilled( ptr, x ) ▶₁ #i
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pout, $Me, $Next ) ▶₁ #f
+1: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: Route( $Prev, $Me, pin, y, %vIn, %tin ) ▶₀ #f
+5: Mutex( pout ) ▶₂ #f
+6: %tout ⊏ %tin
+7: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+4
+0
+1
+2
+3
+5
+6
+7
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: SenderPending( $Sender, $Forward1, $Receiver, ptr, h(x), %t ) ▶₀ #i
+1: Fulfilled( ptr, x ) ▶₁ #i
+2: Refunded( $Sender, ptr, h(x) ) @ #j
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+2
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pout, $Me, $Next ) ▶₁ #f
+1: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+2: Wallet( $A, ~fA ) ▶₁ #j
+3: Wallet( $B, ~fB ) ▶₂ #j
+4: HTLCExpiry( pin, y, %tIn )[-] @ #a
+5: Route( $Prev, $Me, pin, y, %vin, %tIn ) ▶₀ #f
+6: Mutex( pout ) ▶₂ #f
+7: %tOut ⊏ %tIn
+8: %vout ⊏ %vin
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+5
+0
+1
+2
+3
+4
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( pout, $Me, $Next ) ▶₁ #f
+1: ReceiverInv( $Receiver, $Sender, x, %amt ) ▶₁ #r
+2: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+3: Wallet( $A, ~fA ) ▶₁ #j
+4: Wallet( $B, ~fB ) ▶₂ #j
+5: HTLCExpiry( pin, h(x), %tIn )[-] @ #a
+6: Route( $Prev, $Me, pin, h(x), %vIn, %tIn ) ▶₀ #f
+7: Mutex( pout ) ▶₂ #f
+8: Route( $Prev.1, $Receiver, pin, h(x), %amt, %t ) ▶₀ #r
+9: %tOut ⊏ %tIn
+10: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+6
+8
+0
+1
+2
+3
+4
+5
+7
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ S F1 #o.1.   (HTLCOffered( S, F1, p1, h(x) ) @ #o.1) ∧ (#o.1 = #o))  ∥ (∃ S F1 p1 %v1.1 #o.1.   (HTLCOffered( S, F1, p1, h(x) ) @ #o.1) ∧   (HTLCAmount( p1, h(x), %v1.1 ) @ #o.1)  ∧   (%v1 ⊏ %v1.1) ∧ (#o.1 < #o))
+1: SenderPending( $Sender, $Forward1, $Receiver, p1, h(x), %t ) ▶₀ #s
+2: Fulfilled( p1, x ) ▶₁ #s
+3: HTLCAmount( p1, h(x), %v1 ) @ #o
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+1
+3
+2
+0
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (#f < #g)  ∥ (#g < #f)
+1: !ChannelConnect( pout, $Me, $Next ) ▶₁ #f
+2: !ChannelConnect( pout2, $Me.1, $Next.1 ) ▶₁ #g
+3: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: ReadyToLock( $A.1, $B.1, pout2, sA0.1, sB0.1, commitA0.1,             commitB0.1) ▶₀ #j.1
+7: Wallet( $A.1, ~fA.1 ) ▶₁ #j.1
+8: Wallet( $B.1, ~fB.1 ) ▶₂ #j.1
+9: HTLCExpiry( pin, y, %tIn )[-] @ #a
+10: HTLCExpiry( pin, y, %tIn )[-] @ #a.1
+11: Route( $Prev, $Me, pin, y, %vIn, %tIn ) ▶₀ #f
+12: Mutex( pout ) ▶₂ #f
+13: Route( $Prev.1, $Me.1, pin, y, %vIn.1, %tIn ) ▶₀ #g
+14: Mutex( pout2 ) ▶₂ #g
+15: %tOut ⊏ %tIn
+16: %vOut ⊏ %vIn
+17: %tOut.1 ⊏ %tIn
+18: %vOut.1 ⊏ %vIn.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+11
+13
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+12
+14
+15
+16
+17
+18
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: IntermediaryPending( $Me, $Prev, $Next, pin, pout, h(x), %vin,                     %vout, %tOut) ▶₀ #i
+1: !ChannelConnect( pout, $Me, $Next.1 ) ▶₁ #f
+2: ReceiverInv( $Receiver, $Sender, x, %amt ) ▶₁ #k
+3: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: HTLCExpiry( pin, h(x), %tIn )[-] @ #a
+7: HTLCExpiry( pin, h(x), %tIn )[-] @ #a.1
+8: Fulfilled( pout, x ) ▶₁ #i
+9: Route( $Prev.1, $Me, pin, h(x), %vIn, %tIn ) ▶₀ #f
+10: Mutex( pout ) ▶₂ #f
+11: Route( $Prev.2, $Receiver, ptrIn, h(x), %amt, %t ) ▶₀ #k
+12: %tOut.1 ⊏ %tIn
+13: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+8
+9
+12
+13
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∃ #c. (LtkCompromised( $Me ) @ #c) ∧ #c < #i)  ∥ (∃ #j. (Redeemed( pout, h(x) ) @ #j) ∧ #j < #i)
+1:  (∃ S F1 #o. (HTLCOffered( S, F1, pout, h(x) ) @ #o) ∧ (#o = #f))  ∥ (∃ S F1 p1 %v1 #o.   (HTLCOffered( S, F1, p1, h(x) ) @ #o) ∧   (HTLCAmount( p1, h(x), %v1 ) @ #o)  ∧   (%vOut ⊏ %v1) ∧ (#o < #f))
+2:  (∃ S F1 #o.   (HTLCOffered( S, F1, pin, h(x) ) @ #o) ∧ (#o = #a.1))  ∥ (∃ S F1 p1 %v1 #o.   (HTLCOffered( S, F1, p1, h(x) ) @ #o) ∧   (HTLCAmount( p1, h(x), %v1 ) @ #o)  ∧   (%vIn ⊏ %v1) ∧ (#o < #a.1))
+3:  (∃ S F1 #o.   (HTLCOffered( S, F1, pin, h(x) ) @ #o) ∧ (#o = #a.3))  ∥ (∃ S F1 p1 %v1 #o.   (HTLCOffered( S, F1, p1, h(x) ) @ #o) ∧   (HTLCAmount( p1, h(x), %v1 ) @ #o)  ∧   (%vIn ⊏ %v1) ∧ (#o < #a.3))
+4: IntermediaryPending( $Me, $Prev, $Next, pin, pout, h(x), %vin,                     %vout, %tOut) ▶₀ #i
+5: !ChannelConnect( pout, $Me, $Next.1 ) ▶₁ #f
+6: ReceiverInv( $Receiver, $Sender, x, %amt ) ▶₁ #k
+7: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+8: Wallet( $A, ~fA ) ▶₁ #j
+9: Wallet( $B, ~fB ) ▶₂ #j
+10: HTLCAmount( pin, h(x), %vIn ) @ #a.1
+11: HTLCAmount( pin, h(x), %vIn ) @ #a.3
+12: HTLCExpiry( pin, h(x), %tIn )[-] @ #a
+13: HTLCExpiry( pin, h(x), %tIn )[-] @ #a.2
+14: Fulfilled( pout, x ) ▶₁ #i
+15: Route( $Prev.1, $Me, pin, h(x), %vIn, %tIn ) ▶₀ #f
+16: Mutex( pout ) ▶₂ #f
+17: Route( $Prev.2, $Receiver, ptrIn, h(x), %amt, %t ) ▶₀ #k
+18: %tOut.1 ⊏ %tIn
+19: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+16
+18
+19
+0
+1
+2
+3
+15
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+[Saturating Sources] Step 1 (Max 5)
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (∀ D Pv Nx pin pout y #f.   (HTLCForwarded( D, Pv, Nx, pin, pout, y ) @ #f)  ⇒   ((last(#f)) ∨    (∃ S F1 p1 #o.      (HTLCOffered( S, F1, p1, y ) @ #o)     ∧      (¬(last(#o))) ∧ (#o < #f))))  ∥ (∃ ptr y %s %b #a #k.   (HTLCExpiry( ptr, y, %s ) @ #a) ∧ (Tick( %b ) @ #k)  ∧   (¬(last(#k))) ∧   (¬(last(#a))) ∧   (%s ⊏ %b) ∧   (∀ #i.     (Tick( %s ) @ #i) ⇒ ((last(#i)) ∨ (#i = #k) ∨ (#k < #i))))  ∥ (∃ P Prev Next pin pout y %tIn %tOut %b #f #e #k.   (HTLCForwarded( P, Prev, Next, pin, pout, y ) @ #f) ∧   (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧   (Tick( %b ) @ #k)  ∧   (¬(last(#k))) ∧   (¬(last(#e))) ∧   (¬(last(#f))) ∧   (%tIn ⊏ %b) ∧   (#k < #f) ∧   (∀ #c.     (LtkCompromised( P ) @ #c) ⇒ ((last(#c)) ∨ (#c = #f) ∨ (#f < #c))))
+1:  (∃ S F1 #o. (HTLCOffered( S, F1, pout, y ) @ #o) ∧ (#o = #f))  ∥ (∃ S F1 p1 %v1 #o.   (HTLCOffered( S, F1, p1, y ) @ #o) ∧   (HTLCAmount( p1, y, %v1 ) @ #o)  ∧   (%vOut ⊏ %v1) ∧ (#o < #f))
+2:  (∃ S F1 #o. (HTLCOffered( S, F1, pin, y ) @ #o) ∧ (#o = #a.1))  ∥ (∃ S F1 p1 %v1 #o.   (HTLCOffered( S, F1, p1, y ) @ #o) ∧   (HTLCAmount( p1, y, %v1 ) @ #o)  ∧   (%vIn ⊏ %v1) ∧ (#o < #a.1))
+3: !ChannelConnect( pout, $Me, $Next ) ▶₁ #f
+4: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+5: Wallet( $A, ~fA ) ▶₁ #j
+6: Wallet( $B, ~fB ) ▶₂ #j
+7: HTLCAmount( pin, y, %vIn ) @ #a.1
+8: HTLCExpiry( pin, y, %tIn )[-] @ #a
+9: Route( $Prev, $Me, pin, y, %vIn, %tIn ) ▶₀ #f
+10: Mutex( pout ) ▶₂ #f
+11: %tOut ⊏ %tIn
+12: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+8
+1
+2
+7
+11
+12
+3
+4
+5
+6
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  (¬(%tIn ⊏ %b))  ∥ (¬(#k < #f))  ∥ (∃ #c. (LtkCompromised( $Me ) @ #c) ∧ #c < #f)
+1:  (¬(%tIn ⊏ %b))  ∥ (∃ #i. (Tick( %tIn ) @ #i) ∧ #i < #k)
+2: !ChannelConnect( pout, $Me, $Next ) ▶₁ #f
+3: ReadyToLock( $A, $B, pout, sA0, sB0, commitA0, commitB0 ) ▶₀ #j
+4: Wallet( $A, ~fA ) ▶₁ #j
+5: Wallet( $B, ~fB ) ▶₂ #j
+6: Redeemed( pin, y ) @ #r
+7: Refunded( $Me, pout, y ) @ #u
+8: HTLCExpiry( pout, y, %t ) @ #a.1
+9: HTLCExpiry( pin, y, %tIn )[-] @ #a
+10: Route( $Prev, $Me, pin, y, %vIn, %tIn ) ▶₀ #f
+11: Mutex( pout ) ▶₂ #f
+12: %t ⊏ %b
+13: %t ⊏ %tIn
+14: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+6
+7
+10
+12
+13
+14
+0
+1
+2
+3
+4
+5
+8
+9
+11
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: SenderPending( $Sender, $Forward1, $Receiver, ptr, h(~x), %t) ▶₀ #i
+1: Fulfilled( ptr, ~x ) ▶₁ #i
+2: !Ltk( $Receiver, ltkR ) ▶₁ #j
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: RevokedDelayed( P, n, c, tx, %m )[no_precomp] ▶₀ #j
+1: !Block( %b.1 ) ▶₁ #j
+2: CheatMaturity( P, Q, tx, %m.1 ) @ #c.1
+3: %m.1 ⊏ %b
+4: %m ⊏ %b.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+4
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
