@@ -1,0 +1,16 @@
+theory CheckDoublePublish
+begin
+
+#include "modeltagged.spthy"
+
+// Can BOTH parties of one channel publish a commitment of that channel?
+// (In reality the funding output can be spent only once.)
+lemma Double_Publish_Same_Channel:
+  exists-trace
+  "Ex A B ptr n1 n2 s1 s2 #i #j.
+      Publish(A, n1, <'commit', ptr, A, B, n1, s1>) @ #i
+    & Publish(B, n2, <'commit', ptr, B, A, n2, s2>) @ #j
+    & not (Ex X #c. LtkCompromised(X) @ #c)
+    & not (Ex ptr2 y #m. HTLCAdded(ptr2, y) @ #m)"
+
+end
