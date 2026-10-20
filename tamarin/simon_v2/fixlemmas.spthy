@@ -1,3 +1,10 @@
 // ADDED: the funding output of a channel is spent at most once (linear FundingUnspent).
-lemma Funding_Spent_Once:
+lemma Funding_Spent_Once [reuse]:
     "All ptr #i #j. FundingSpent(ptr) @ #i & FundingSpent(ptr) @ #j ==> #i = #j"
+
+// ADDED: at most one commitment of a channel ever reaches the chain (needs modelfixb).
+lemma No_Double_Publish:
+    "All A B C D ptr n1 n2 s1 s2 #i #j.
+        Publish(A, n1, <'commit', ptr, A, B, n1, s1>) @ #i
+      & Publish(C, n2, <'commit', ptr, C, D, n2, s2>) @ #j
+      ==> #i = #j"
