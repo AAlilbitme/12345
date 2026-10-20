@@ -1,0 +1,39 @@
+theory CheckTaggedOffer
+begin
+
+#include "model.spthy"
+
+// Search strategy (as Simon's invoice_signature): first ask where the signed,
+// tagged invoice the sender verified came from.
+tactic: offer_invoice
+presort: s
+prio:
+    regex "^\s*!KU[(] sign[(]<'invoice'"
+prio:
+    regex "^\s*!KU[(] ~ltk"
+prio:
+    regex "^\s*!Ltk[(]"
+prio:
+    regex "InvoiceCreated"
+prio:
+    regex "LtkCompromised"
+deprio:
+    regex "RouteInfo"
+    regex "∥"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"
+    regex "^\s*Route[(]"
+    regex "SenderPending"
+    regex "IntermediaryPending"
+    regex "Fulfilled"
+    regex "KU[(]"
+
+lemma Offer_Requires_Invoice [heuristic={offer_invoice}]:
+    "All S R ptr y #o.
+        OfferFor(S, R, ptr, y) @ #o
+     ==> (Ex #j. InvoiceCreated(R, S, y) @ #j & #j < #o)
+       | (Ex #r. LtkCompromised(R) @ #r)"
+
+end

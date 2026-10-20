@@ -2,7 +2,7 @@ theory CheckAdditionsTagged
 begin
 
 // Simon's model (copied) + our proposed additions, adapted to his event names.
-#include "model_tagged.spthy"
+#include "modeltagged.spthy"
 
 // Every Fulfilled fact that is used on hop p comes from a redeem of p or from a
 // wormhole skip onto p: the preimage reaches a hop only through the protocol
