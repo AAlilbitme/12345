@@ -30,4 +30,14 @@ lemma Settle_Is_Channel_Update [heuristic={upd}]:
    ==> (Ex n #c. HTLCCommitted(ptr, <'settle', h(x)>, n) @ #c & #c < #s)
      | (Ex X #k. LtkCompromised(X) @ #k)"
 
+lemma Add_Commit_Reachable [heuristic={upd}]:
+  exists-trace
+  "Ex ptr y n #c. HTLCCommitted(ptr, <'add', y>, n) @ #c
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Forward_Reachable [heuristic={upd}]:
+  exists-trace
+  "Ex F S R p0 p1 y #f. HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
 end
