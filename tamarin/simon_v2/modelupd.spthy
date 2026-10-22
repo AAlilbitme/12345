@@ -408,11 +408,11 @@ rule Add_Committed:
 
 rule Settle_Committed:
     [ AwaitFulfilled(ptr, x), Committed(ptr, <'settle', h(x)>) ]
-    --> [ Fulfilled(ptr, x), Mutex(ptr) ]
+    --[ MutexReleased(ptr) ]-> [ Fulfilled(ptr, x), Mutex(ptr) ]
 
 rule Fail_Committed:
     [ Committed(ptr, <'fail', y>) ]
-    --> [ Mutex(ptr) ]
+    --[ MutexReleased(ptr) ]-> [ Mutex(ptr) ]
 
 rule Clock_Tick:
     [ In(%t) ] --[ Tick(%t) ]-> [ !Block(%t) ]
