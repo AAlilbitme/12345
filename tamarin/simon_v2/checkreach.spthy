@@ -96,4 +96,18 @@ lemma Fulfill_Reachable [heuristic={chain}]:
     & (All p op m m2 #u #v. ChannelUpdateFor(p, op, m) @ #u & ChannelUpdateFor(p, op, m2) @ #v ==> #u = #v)
     & (All p op m #u. ChannelUpdateFor(p, op, m) @ #u ==> op = <'add', h(x)>)"
 
+lemma Payment_Upd:
+  exists-trace
+  "Ex S F R p0 p1 x #o #f #s.
+      HTLCOffered(S, F, p0, h(x)) @ #o
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & SenderSettled(S, F, R, p0, x) @ #s
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & (All p z #u. Old(p, z) @ #u ==> z = h(x))
+    & not (Ex P p z #u. Refunded(P, p, z) @ #u)
+    & not (Ex t #u. Tick(t) @ #u)
+    & (All a b p m #u. StateUpdate(a, b, p, m) @ #u ==> Ex op #w. ChannelUpdateFor(p, op, m) @ #w)
+    & (All p op m #u. ChannelUpdateFor(p, op, m) @ #u ==> (op = <'add', h(x)>) | (op = <'settle', h(x)>))
+    & (All p op m m2 #u #v. ChannelUpdateFor(p, op, m) @ #u & ChannelUpdateFor(p, op, m2) @ #v ==> #u = #v)"
+
 end
