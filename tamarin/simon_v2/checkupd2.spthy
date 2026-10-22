@@ -1,0 +1,25 @@
+theory CheckUpd2
+begin
+
+#include "modelupd2.spthy"
+
+// Honest two-hop payment where every channel update carries this payment's HTLC.
+lemma Payment_Upd2:
+  exists-trace
+  "Ex S F R p0 p1 x #o #f #s.
+      HTLCOffered(S, F, p0, h(x)) @ #o
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & SenderSettled(S, F, R, p0, x) @ #s
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & (All p z #u. Old(p, z) @ #u ==> z = h(x))
+    & not (Ex P p z #u. Refunded(P, p, z) @ #u)
+    & not (Ex t #u. Tick(t) @ #u)
+    & (All a b p m #u. StateUpdate(a, b, p, m) @ #u ==> Ex op #w. HTLCCommitted(p, op, m) @ #w)"
+
+// Settlement is a real channel update.
+lemma Settle_Is_Channel_Update:
+  "All S F R ptr x #s. SenderSettled(S, F, R, ptr, x) @ #s
+   ==> (Ex n #c. HTLCCommitted(ptr, <'settle', x>, n) @ #c & #c < #s)
+     | (Ex X #k. LtkCompromised(X) @ #k)"
+
+end
