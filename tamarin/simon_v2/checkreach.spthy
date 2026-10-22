@@ -125,4 +125,15 @@ lemma Payment_Upd2:
     & (All p op m #u. ChannelUpdateFor(p, op, m) @ #u ==> (op = <'add', h(x)>) | (op = <'settle', h(x)>))
     & (All p op m m2 #u #v. ChannelUpdateFor(p, op, m) @ #u & ChannelUpdateFor(p, op, m2) @ #v ==> #u = #v)"
 
+lemma Forward_Upd3:
+  exists-trace
+  "Ex S F R p0 p1 y #f. HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex p z #u. Old(p, z) @ #u)
+    & not (Ex t #u. Tick(t) @ #u)
+    & not (Ex p #u. MutexReleased(p) @ #u)
+    & (All a b p m #u. StateUpdate(a, b, p, m) @ #u ==> Ex op #w. ChannelUpdateFor(p, op, m) @ #w)
+    & (All p op m #u. ChannelUpdateFor(p, op, m) @ #u ==> op = <'add', y>)
+    & (All p op m m2 #u #v. ChannelUpdateFor(p, op, m) @ #u & ChannelUpdateFor(p, op, m2) @ #v ==> #u = #v)"
+
 end
