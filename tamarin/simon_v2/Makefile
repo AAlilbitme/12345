@@ -8,12 +8,12 @@ all: safety liveness
 
 verify: all
 
-# All lemmas without the liveness restrictions (50/50 verified).
+# All lemmas without the liveness restrictions (51/51 verified).
 safety:
 	LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove $(RTS) > safety.log 2>&1
 	@grep -E "^  [A-Za-z_]+ \(" safety.log | grep -E "verified|falsified|incomplete"
 
-# All lemmas with -D=LIVENESS (51/51 verified).
+# All lemmas with -D=LIVENESS (52/52 verified).
 liveness:
 	LANG=C.UTF-8 $(TAMARIN) $(THEORY) -D=LIVENESS --prove $(RTS) > liveness.log 2>&1
 	@grep -E "^  [A-Za-z_]+ \(" liveness.log | grep -E "verified|falsified|incomplete"

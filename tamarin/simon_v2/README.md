@@ -10,4 +10,4 @@
 | `lightningfixb.spthy` | Full theory (final model + all lemmas) |
 | `bug_double_publish.spthy` | Bug on `modeltagged`: distinct parties double-publish (found, 12 steps) |
 | `check_fix.spthy` | On final model: no double publish (108 steps), publishing still reachable |
-| `run_fixb.sh`, `runfixb_*.log` | Full run: 50/50 verified, 51/51 with `-D=LIVENESS` |
+| `run_fixb.sh`, `runfixb_*.log` | Full run: 51/51 verified, 52/52 with `-D=LIVENESS` |
