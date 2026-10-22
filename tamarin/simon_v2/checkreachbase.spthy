@@ -1,0 +1,18 @@
+theory CheckReachBase
+begin
+
+#include "modelfixb.spthy"
+
+lemma Open_Reachable:
+  exists-trace
+  "Ex A B ptr #i. ChannelOpen(A, B, ptr) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Update_Reachable:
+  exists-trace
+  "Ex A B ptr n #i. StateUpdate(A, B, ptr, n) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Offer_Reachable:
+  exists-trace
+  "Ex S F ptr y #i. HTLCOffered(S, F, ptr, y) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+end

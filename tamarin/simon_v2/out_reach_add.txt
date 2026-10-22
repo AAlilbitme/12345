@@ -14,3 +14,7 @@ Detailed results from testing 'maude'
 [Theory CheckUpd] Theory loaded
 [Theory CheckUpd] Theory translated
 [Theory CheckUpd] Derivation checks started
+[Theory CheckUpd] Derivation checks ended
+[Theory CheckUpd] Theory closed
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
