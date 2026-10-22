@@ -3,6 +3,15 @@ begin
 
 #include "modelupd2.spthy"
 
+tactic: upd2
+presort: s
+prio:
+    regex "^\s*Fulfilled[(]" | regex "^\s*InFlight[(]" | regex "^\s*UpdateFor[(]"
+prio:
+    regex "SenderPending" | regex "LtkCompromised" | regex "Compromised"
+deprio:
+    regex "KU[(]" | regex "State[AB][(]" | regex "Pending[AB][(]" | regex "RouteInfo" | regex "Route[(]" | regex "Mutex" | regex "ChannelConnect" | regex "Ltk" | regex "Pk"
+
 // Honest two-hop payment where every channel update carries this payment's HTLC.
 lemma Payment_Upd2:
   exists-trace
@@ -17,9 +26,18 @@ lemma Payment_Upd2:
     & (All a b p m #u. StateUpdate(a, b, p, m) @ #u ==> Ex op #w. HTLCCommitted(p, op, m) @ #w)"
 
 // Settlement is a real channel update.
-lemma Settle_Is_Channel_Update:
+lemma Settle_Is_Channel_Update [heuristic={upd2}]:
   "All S F R ptr x #s. SenderSettled(S, F, R, ptr, x) @ #s
    ==> (Ex n #c. HTLCCommitted(ptr, <'settle', x>, n) @ #c & #c < #s)
      | (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Forward_Upd2:
+  exists-trace
+  "Ex S F R p0 p1 y #f. HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex p z #u. Old(p, z) @ #u)
+    & not (Ex t #u. Tick(t) @ #u)
+    & (All a b p m #u. StateUpdate(a, b, p, m) @ #u ==> Ex op #w. HTLCCommitted(p, op, m) @ #w)
+    & (All a b p m m2 #u #v. StateUpdate(a, b, p, m) @ #u & StateUpdate(a, b, p, m2) @ #v ==> #u = #v)"
 
 end
