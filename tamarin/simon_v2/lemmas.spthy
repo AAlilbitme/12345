@@ -1,6 +1,20 @@
 // All-traces lemmas (copied from Simon's lemmas.spthy).  At the end: two ADDED
 // lemmas for the tagged invoice.
 
+// ADDED: sanity check - an honest two-hop payment can complete (offer, forward,
+// fulfil, settle back), so the lemmas above are not vacuous.
+lemma Payment_Base:
+  exists-trace
+  "Ex S F R p0 p1 x #o #f #s.
+      HTLCOffered(S, F, p0, h(x)) @ #o
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & SenderSettled(S, F, R, p0, x) @ #s
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex a b p m #u. StateUpdate(a, b, p, m) @ #u)
+    & (All p z #u. Old(p, z) @ #u ==> z = h(x))
+    & not (Ex P p z #u. Refunded(P, p, z) @ #u)
+    & not (Ex t #u. Tick(t) @ #u)"
+
 lemma ForwardTimeGap [reuse]:
     "All pin pout y %tin %tout #f.
         ForwardExpiries(pin, pout, y, %tin, %tout) @ #f
