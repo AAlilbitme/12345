@@ -77,4 +77,23 @@ lemma Payment_Reachable [heuristic={chain}]:
     & (All p op m #u. ChannelUpdateFor(p, op, m) @ #u ==> (op = <'add', h(x)>) | (op = <'settle', h(x)>))
     & (All p op m m2 #u #v. ChannelUpdateFor(p, op, m) @ #u & ChannelUpdateFor(p, op, m2) @ #v ==> #u = #v)"
 
+lemma Forward_Reachable2 [heuristic={chain}]:
+  exists-trace
+  "Ex S F R p0 p1 y #f.
+      HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & (All a b p m #u. StateUpdate(a, b, p, m) @ #u ==> Ex op #w. ChannelUpdateFor(p, op, m) @ #w)
+    & (All p op m m2 #u #v. ChannelUpdateFor(p, op, m) @ #u & ChannelUpdateFor(p, op, m2) @ #v ==> #u = #v)
+    & (All p op m #u. ChannelUpdateFor(p, op, m) @ #u ==> op = <'add', y>)"
+
+lemma Fulfill_Reachable [heuristic={chain}]:
+  exists-trace
+  "Ex S F R p0 p1 x #f #r.
+      HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & HTLCFulfilled(R, F, p1, h(x)) @ #r
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & (All a b p m #u. StateUpdate(a, b, p, m) @ #u ==> Ex op #w. ChannelUpdateFor(p, op, m) @ #w)
+    & (All p op m m2 #u #v. ChannelUpdateFor(p, op, m) @ #u & ChannelUpdateFor(p, op, m2) @ #v ==> #u = #v)
+    & (All p op m #u. ChannelUpdateFor(p, op, m) @ #u ==> op = <'add', h(x)>)"
+
 end

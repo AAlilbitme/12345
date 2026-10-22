@@ -15,4 +15,10 @@ lemma Offer_Reachable:
   exists-trace
   "Ex S F ptr y #i. HTLCOffered(S, F, ptr, y) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
 
+lemma Forward_Base:
+  exists-trace
+  "Ex S F R p0 p1 y #f. HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex a b p m #u. StateUpdate(a, b, p, m) @ #u)"
+
 end
