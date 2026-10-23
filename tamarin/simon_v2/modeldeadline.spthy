@@ -504,33 +504,20 @@ restriction CheatMaturityInFuture:
         CheatMaturity(P, Q, tx, %m) @ #c & Tick(%b) @ #k & (%b = %m | %m << %b)
      ==> #c < #k"
 
-#ifdef LIVENESS
+// Flags (flat, one per assumption; Tamarin does not nest #ifdef reliably):
+//   LIVENESS : punishment liveness, receipt and forwarder promptness
+//   BOUND    : bounded responsiveness (D = 2)
+//   GAP2     : CLTV gap tOut + D <= tIn      GAP1 : weaker gap tOut + 1 <= tIn
+// Theorem:   -D=LIVENESS -D=BOUND -D=GAP2
+// Ablation:  -D=LIVENESS -D=GAP2           Gap control: -D=LIVENESS -D=BOUND -D=GAP1
 
+#ifdef LIVENESS
 restriction PunishmentLiveness:
     "All P Q tx %m %b #c #k.
         CheatMaturity(P, Q, tx, %m) @ #c
       & Tick(%b) @ #k & %m << %b
       & not (Ex #x. LtkCompromised(Q) @ #x & #x < #k)
      ==> Ex #l. PunishRevoked(Q, P, tx) @ #l & #l < #k"
-
-#ifdef NOBOUND
-#else
-// ASSUMPTION (bounded responsiveness, D = 2 blocks): an update requested in
-// block b on a channel with honest endpoints commits before Tick(b + D + 1).
-restriction BoundedResponsivenessSettle:
-    "All Q ptr y rid %b %c #r #k.
-        SettleRequested(Q, ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
-      & (%b %+ %1 %+ %1) << %c
-      & not (Ex X #x. LtkCompromised(X) @ #x)
-     ==> Ex n #l. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #l & #r < #l & #l < #k"
-
-restriction BoundedResponsivenessFail:
-    "All Q ptr y rid %b %c #r #k.
-        FailRequested(Q, ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
-      & (%b %+ %1 %+ %1) << %c
-      & not (Ex X #x. LtkCompromised(X) @ #x)
-     ==> Ex n #l. HTLCCommitted(ptr, <'fail', y, rid>, n) @ #l & #r < #l & #l < #k"
-#endif
 
 // ASSUMPTION (receipt promptness): a committed settle makes the preimage
 // available to the upstream party in the same block, before the next tick.
@@ -551,17 +538,38 @@ restriction ForwarderPromptness:
      ==> Ex rid2 #q. SettleRequested(P, pin, y, rid2, %b) @ #q & #a < #q
            & (All %c #t. Tick(%c) @ #t & %b << %c ==> #q < #t)"
 
+#endif
+
+#ifdef BOUND
+// ASSUMPTION (bounded responsiveness, D = 2 blocks): an update requested in
+// block b on a channel with honest endpoints commits before Tick(b + D + 1).
+restriction BoundedResponsivenessSettle:
+    "All Q ptr y rid %b %c #r #k.
+        SettleRequested(Q, ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
+      & (%b %+ %1 %+ %1) << %c
+      & not (Ex X #x. LtkCompromised(X) @ #x)
+     ==> Ex n #l. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #l & #r < #l & #l < #k"
+
+restriction BoundedResponsivenessFail:
+    "All Q ptr y rid %b %c #r #k.
+        FailRequested(Q, ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
+      & (%b %+ %1 %+ %1) << %c
+      & not (Ex X #x. LtkCompromised(X) @ #x)
+     ==> Ex n #l. HTLCCommitted(ptr, <'fail', y, rid>, n) @ #l & #r < #l & #l < #k"
+#endif
+
+#ifdef GAP2
 // ASSUMPTION (CLTV gap): tOut + D <= tIn on every forward.
-#ifdef SMALLGAP
-restriction CLTVGap:
-    "All pin pout y %tIn %tOut #e.
-        ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
-     ==> (%tOut %+ %1 = %tIn) | ((%tOut %+ %1) << %tIn)"
-#else
 restriction CLTVGap:
     "All pin pout y %tIn %tOut #e.
         ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
      ==> (%tOut %+ %1 %+ %1 = %tIn) | ((%tOut %+ %1 %+ %1) << %tIn)"
 #endif
 
+#ifdef GAP1
+// CONTROL: weaker gap tOut + 1 <= tIn.
+restriction CLTVGap:
+    "All pin pout y %tIn %tOut #e.
+        ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+     ==> (%tOut %+ %1 = %tIn) | ((%tOut %+ %1) << %tIn)"
 #endif
