@@ -71,19 +71,33 @@ lemma Request_Without_Commit:
     & not (Ex n #l. HTLCCommitted(pin, <'settle', y, rid>, n) @ #l)
     & not (Ex X #x. LtkCompromised(X) @ #x)"
 
-// Satisfiability witness (run with -D=LIVENESS): all deadline assumptions are
-// jointly satisfiable on one hop. An honest forwarder's downstream settle
-// commits in a block b <= tOut, its upstream settle commits, and the clock
-// then reaches Tick(tIn + 1).
+// Satisfiability witness (run with -D=LIVENESS): bounded responsiveness,
+// receipt/forwarder promptness and the CLTV gap are jointly satisfiable on one
+// hop, along the full chain with matching request ids and update numbers.
 lemma Deadline_Witness:
   exists-trace
-  "Ex P Prev Next pin pout y rid rid2 n n2 %b %tIn %tOut #f #e #i #l #k.
+  "Ex P Prev Next pin pout y rid rid2 n n2 a1 b1 a2 b2 %c0 %c %c2 %tIn %tOut
+      #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2 #l #k.
       HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
     & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
-    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
-    & (%b = %tOut | %b << %tOut)
+    & SettleRequested(Next, pout, y, rid, %c0) @ #q1
+    & ChannelUpdateFor(pout, <'settle', y, rid>, n) @ #u1
+    & StateUpdate(a1, b1, pout, n) @ #s1
+    & HTLCCommitted(pout, <'settle', y, rid>, n) @ #i
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %c) @ #i
+    & PreimageAvailable(pout, y, %c) @ #a
+    & SettleRequested(P, pin, y, rid2, %c) @ #q2
+    & ChannelUpdateFor(pin, <'settle', y, rid2>, n2) @ #u2
+    & StateUpdate(a2, b2, pin, n2) @ #s2
     & HTLCCommitted(pin, <'settle', y, rid2>, n2) @ #l
-    & Tick(%tIn %+ %1) @ #k & #i < #l & #l < #k
-    & not (Ex X #x. LtkCompromised(X) @ #x)"
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %c2) @ #l
+    & Tick(%tIn %+ %1) @ #k
+    & #f < #q1 & #q1 < #u1 & #u1 < #s1 & #s1 < #i & #i < #a & #a < #q2
+    & #q2 < #u2 & #u2 < #s2 & #s2 < #l & #l < #k
+    & (%c = %tOut | %c << %tOut)
+    & (%c2 = %c | %c2 << (%c %+ %1 %+ %1 %+ %1))
+    & (%tOut %+ %1 %+ %1 = %tIn | (%tOut %+ %1 %+ %1) << %tIn)
+    & not (Ex X #x. LtkCompromised(X) @ #x)
+    & not (Ex Q p z #x. Refunded(Q, p, z) @ #x)"
 
 end
