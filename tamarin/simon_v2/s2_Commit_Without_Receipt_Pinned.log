@@ -14,3 +14,9 @@ Detailed results from testing 'maude'
 [Theory Deadline2] Theory loaded
 [Theory Deadline2] Theory translated
 [Theory Deadline2] Derivation checks started
+[Theory Deadline2] Derivation checks ended
+[Theory Deadline2] Theory closed
+[Saturating Sources] Step 1 (Max 5)
+tamarin-prover: Heap exhausted;
+tamarin-prover: Current maximum heap size is 6442450944 bytes (6144 MB).
+tamarin-prover: Use `+RTS -M<size>' to increase it.

@@ -103,6 +103,8 @@ lemma Commit_Without_Receipt_Pinned:
     & not (Ex P p z #i. Refunded(P, p, z) @ #i)
     & HTLCExpiry(p1, h(x), %t) @ #e
     & Tick(%t %+ %1) @ #k & #c2 < #k
+    & %t = %1 & %b = %1
+    & (All %c #j. Tick(%c) @ #j ==> (%c = %1 | (%c = %1 %+ %1 & #j = #k)))
     & not (Ex %d #a. PreimageAvailable(p1, h(x), %d) @ #a)"
 
 // Request-versus-commit control, pinned (safety config): the forwarder
@@ -138,6 +140,8 @@ lemma Request_Without_Commit_Pinned:
     & PreimageAvailable(p1, h(x), %d) @ #a
     & SettleRequested(F, p0, h(x), rid2, %d) @ #q2
     & #c2 < #a & #a < #q2
+    & %b = %1 & %d = %1
+    & (All %c #j. Tick(%c) @ #j ==> %c = %1)
     & not (Ex n #l. HTLCCommitted(p0, <'settle', h(x), rid2>, n) @ #l)"
 
 // Satisfiability witness (run with -D=LIVENESS): bounded responsiveness,
