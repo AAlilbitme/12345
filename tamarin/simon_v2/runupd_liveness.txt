@@ -1,0 +1,18 @@
+  ForwardTimeGap (all-traces): verified (2 steps)
+  state_update: timeout/not in config
+  delayed_funds: timeout/not in config
+  instant_funds: timeout/not in config
+  settlement_is_traceable: timeout/not in config
+  No_Punishment_Without_Cheating: timeout/not in config
+  Cheating_Never_Pays: timeout/not in config
+  Funds_Locked_Before_Update: timeout/not in config
+  Update_Requires_Negotiation: timeout/not in config
+  OneOutcomePerHTLC: timeout/not in config
+  Ltk_Known_Implies_Compromised: timeout/not in config
+  Invoice_Released_Once: timeout/not in config
+  Preimage_Secret_Until_Released: timeout/not in config
+  Invoice_Has_Secret_Preimage (all-traces): verified (2 steps)
+  HTLC_On_Opened_Channel: timeout/not in config
+  Fulfilled_Requires_Release: timeout/not in config
+  Settle_Requires_Receiver_Release: timeout/not in config
+  Claim_Requires_Release: timeout/not in config
