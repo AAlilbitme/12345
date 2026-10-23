@@ -13,3 +13,10 @@ Request_Stamp_Is_Current: TIMEOUT during proof search
 Receipt_Stamp_Is_Current: TIMEOUT during proof search
     cmd: tamarin-prover deadline.spthy --prove=Receipt_Stamp_Is_Current --derivcheck-timeout=600 +RTS -M12G -RTS (timeout 900s)
     elapsed: 901s
+Commit_Without_Receipt: TIMEOUT during proof search
+    cmd: tamarin-prover deadline.spthy --prove=Commit_Without_Receipt --derivcheck-timeout=600 +RTS -M12G -RTS (timeout 900s)
+    elapsed: 900s
+Request_Without_Commit: TIMEOUT during proof search
+    cmd: tamarin-prover deadline.spthy --prove=Request_Without_Commit --derivcheck-timeout=600 +RTS -M12G -RTS (timeout 900s)
+    elapsed: 901s
+done
