@@ -1,0 +1,69 @@
+theory lightningupd
+begin
+
+// Goal 2: Simon's model with HTLC steps routed through channel updates.
+#include "modelupd.spthy"
+#include "tactics.spthy"
+#include "lemmasupd.spthy"
+
+tactic: upd
+presort: s
+prio:
+    regex "^\s*Fulfilled[(]" | regex "^\s*Committed[(]" | regex "^\s*InFlight[(]" | regex "^\s*AwaitFulfilled[(]"
+prio:
+    regex "UpdateDone" | regex "SenderPending"
+prio:
+    regex "LtkCompromised" | regex "Compromised"
+deprio:
+    regex "KU[(]" | regex "State[AB][(]" | regex "Pending[AB][(]" | regex "RouteInfo" | regex "Route[(]" | regex "Mutex" | regex "ChannelConnect" | regex "Ltk" | regex "Pk"
+
+
+// Settlement is a real channel update: the sender only settles after a
+// completed update of its channel that commits the preimage.
+lemma Settle_Is_Channel_Update [heuristic={upd}]:
+  "All S F R ptr x #s. SenderSettled(S, F, R, ptr, x) @ #s
+   ==> (Ex n #c. HTLCCommitted(ptr, <'settle', h(x)>, n) @ #c & #c < #s)
+     | (Ex X #k. LtkCompromised(X) @ #k)"
+
+
+// Hand-built trace, full payment: S -> F -> R, every HTLC step through a
+// completed channel update (update, revoke, commit), then settled back.
+lemma Hand_Payment:
+  exists-trace
+  "Ex S F R p0 p1 x n0 n1 n2 n3 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 s3 t3
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu #u2 #r2 #c2 #cl #u3 #r3 #c3 #s.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & HTLCFulfilled(R, F, p1, h(x)) @ #fu
+    & ChannelUpdateFor(p1, <'settle', h(x)>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'settle', h(x)>, n2) @ #c2
+    & IntermediaryClaimed(F, S, p0, x) @ #cl
+    & ChannelUpdateFor(p0, <'settle', h(x)>, n3) @ #u3
+    & StateUpdate(s3, t3, p0, n3) @ #r3
+    & HTLCCommitted(p0, <'settle', h(x)>, n3) @ #c3
+    & SenderSettled(S, F, R, p0, x) @ #s
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #fu
+    & #fu < #u2 & #u2 < #r2 & #r2 < #c2 & #c2 < #cl
+    & #cl < #u3 & #u3 < #r3 & #r3 < #c3 & #c3 < #s
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2 | #i = #r3))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2 | #i = #u3))
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2 | #i = #c3))
+    & (All p #i. MutexReleased(p) @ #i ==> #c2 < #i)
+    & (All p z #i. Old(p, z) @ #i ==> z = h(x))
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex P p z #i. Refunded(P, p, z) @ #i)
+    & not (Ex t #i. Tick(t) @ #i)"
+
+
+end
