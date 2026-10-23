@@ -22,3 +22,7 @@
   Offer_Precedes_Forwards: NO RESULT (batch timed out)
   Expiry_Below_First_Hop: NO RESULT (batch timed out)
   Redeem_Reveals: NO RESULT (batch timed out)
+  No_Double_Publish: NO RESULT (batch timed out)
+  Settle_Is_Channel_Update: NO RESULT (batch timed out)
+  Hand_Payment: NO RESULT (batch timed out)
+done
