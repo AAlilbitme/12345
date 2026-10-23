@@ -208,4 +208,57 @@ lemma Ablation_Counterexample:
     & Tick(%cx) @ #k & %tIn << %cx & #i < #k
     & not (Ex rid2 n #l. HTLCCommitted(pin, <'settle', y, rid2>, n) @ #l)"
 
+// Witness with concrete blocks (with -D=LIVENESS -D=BOUND -D=GAP2):
+// tOut = b = 1, tIn = 3, ticks exactly 1 (start), 3 = tIn, 4 > tIn.
+lemma Deadline_Witness_Concrete:
+  exists-trace
+  "Ex pin pout y rid rid2 n n2 %c2
+      #k0 #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2 #l #k1 #k.
+      Tick(%1) @ #k0
+    & HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %1 %+ %1 %+ %1, %1) @ #e
+    & SettleRequested('R', pout, y, rid, %1) @ #q1
+    & ChannelUpdateFor(pout, <'settle', y, rid>, n) @ #u1
+    & StateUpdate(pout, n) @ #s1
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %1) @ #i
+    & PreimageAvailable(pout, y, %1) @ #a
+    & SettleRequested('F', pin, y, rid2, %1) @ #q2
+    & ChannelUpdateFor(pin, <'settle', y, rid2>, n2) @ #u2
+    & StateUpdate(pin, n2) @ #s2
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %c2) @ #l
+    & Tick(%1 %+ %1 %+ %1) @ #k1
+    & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k
+    & #k0 < #f & #f < #q1 & #q1 < #u1 & #u1 < #s1 & #s1 < #i & #i < #a
+    & #a < #q2 & #q2 < #u2 & #u2 < #s2 & #s2 < #l & #l < #k1 & #k1 < #k
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k))"
+
+// Ablation with concrete blocks (with -D=LIVENESS -D=GAP2).
+lemma Ablation_Concrete:
+  exists-trace
+  "Ex pin pout y rid #k0 #f #e #i #k1 #k.
+      Tick(%1) @ #k0
+    & HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %1 %+ %1 %+ %1, %1) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %1) @ #i
+    & Tick(%1 %+ %1 %+ %1) @ #k1 & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k
+    & #k0 < #f & #i < #k1 & #k1 < #k
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k))
+    & not (Ex rid2 n #l. HTLCCommitted(pin, <'settle', y, rid2>, n) @ #l)"
+
+// Gap control with concrete blocks (with -D=LIVENESS -D=BOUND -D=GAP1):
+// tOut = b = 1, tIn = 2; the upstream settle commits in block 3, after the
+// tick past tIn.
+lemma Gap_Concrete:
+  exists-trace
+  "Ex pin pout y rid rid2 n2 #k0 #f #e #i #k1 #k #l.
+      Tick(%1) @ #k0
+    & HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %1 %+ %1, %1) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %1) @ #i
+    & Tick(%1 %+ %1) @ #k1 & Tick(%1 %+ %1 %+ %1) @ #k
+    & HTLCCommitted(pin, <'settle', y, rid2>, n2) @ #l
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %1 %+ %1 %+ %1) @ #l
+    & #k0 < #f & #i < #k1 & #k1 < #k & #k < #l
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k))"
+
 end
