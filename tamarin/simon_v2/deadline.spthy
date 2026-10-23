@@ -53,7 +53,9 @@ lemma Receipt_Stamp_Is_Current:
 // delivered upstream, so receipt promptness is a real assumption.
 lemma Commit_Without_Receipt:
   exists-trace
-  "Ex ptr y rid n %t %c #i #e #k. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #i
+  "Ex Q ptr y rid n %b %t %c #q #i #e #k.
+      SettleRequested(Q, ptr, y, rid, %b) @ #q & #q < #i
+    & HTLCCommitted(ptr, <'settle', y, rid>, n) @ #i
     & HTLCExpiry(ptr, y, %t) @ #e
     & Tick(%c) @ #k & %t << %c & #i < #k
     & not (Ex %b #a. PreimageAvailable(ptr, y, %b) @ #a)
@@ -67,6 +69,21 @@ lemma Request_Without_Commit:
       HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
     & SettleRequested(P, pin, y, rid, %b) @ #q
     & not (Ex n #l. HTLCCommitted(pin, <'settle', y, rid>, n) @ #l)
+    & not (Ex X #x. LtkCompromised(X) @ #x)"
+
+// Satisfiability witness (run with -D=LIVENESS): all deadline assumptions are
+// jointly satisfiable on one hop. An honest forwarder's downstream settle
+// commits in a block b <= tOut, its upstream settle commits, and the clock
+// then reaches Tick(tIn + 1).
+lemma Deadline_Witness:
+  exists-trace
+  "Ex P Prev Next pin pout y rid rid2 n n2 %b %tIn %tOut #f #e #i #l #k.
+      HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+    & (%b = %tOut | %b << %tOut)
+    & HTLCCommitted(pin, <'settle', y, rid2>, n2) @ #l
+    & Tick(%tIn %+ %1) @ #k & #i < #l & #l < #k
     & not (Ex X #x. LtkCompromised(X) @ #x)"
 
 end
