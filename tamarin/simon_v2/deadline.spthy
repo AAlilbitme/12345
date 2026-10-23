@@ -53,7 +53,9 @@ lemma Receipt_Stamp_Is_Current:
 // delivered upstream, so receipt promptness is a real assumption.
 lemma Commit_Without_Receipt:
   exists-trace
-  "Ex ptr y rid n #i. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #i
+  "Ex ptr y rid n %t %c #i #e #k. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #i
+    & HTLCExpiry(ptr, y, %t) @ #e
+    & Tick(%c) @ #k & %t << %c & #i < #k
     & not (Ex %b #a. PreimageAvailable(ptr, y, %b) @ #a)
     & not (Ex X #x. LtkCompromised(X) @ #x)"
 
