@@ -75,22 +75,22 @@ restriction NowIsLatest:
     "All %b %c #q #t. Now(%b) @ #q & Tick(%c) @ #t & %b << %c ==> #q < #t"
 
 #ifdef LIVENESS
-// ASSUMPTION (receipt promptness): a committed settle is delivered upstream
-// in the same block, before the next tick.
+// ASSUMPTION (receipt promptness): a settle committed in block b is delivered
+// upstream before any later tick (same block).
 restriction ReceiptPromptness:
-    "All ptr y rid %b #i.
+    "All ptr y rid %b %c #i #t.
         HTLCCommittedAt(ptr, <'settle', y, rid>, %b) @ #i
-     ==> Ex #a. PreimageAvailable(ptr, y, %b) @ #a & #i < #a
-           & (All %c #t. Tick(%c) @ #t & %b << %c ==> #a < #t)"
+      & Tick(%c) @ #t & %b << %c & #i < #t
+     ==> Ex #a. PreimageAvailable(ptr, y, %b) @ #a & #i < #a & #a < #t"
 
-// ASSUMPTION (forwarder promptness): the forwarder requests the upstream
-// settle in the block in which the downstream preimage becomes available.
+// ASSUMPTION (forwarder promptness): once the downstream preimage is available
+// in block b, the forwarder requests the upstream settle before any later tick.
 restriction ForwarderPromptness:
-    "All P Prev Next pin pout y %b #f #a.
+    "All P Prev Next pin pout y %b %c #f #a #t.
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
       & PreimageAvailable(pout, y, %b) @ #a
-     ==> Ex rid2 #q. SettleRequested(P, pin, y, rid2, %b) @ #q & #a < #q
-           & (All %c #t. Tick(%c) @ #t & %b << %c ==> #q < #t)"
+      & Tick(%c) @ #t & %b << %c & #a < #t
+     ==> Ex rid2 #q. SettleRequested(P, pin, y, rid2, %b) @ #q & #a < #q & #q < #t"
 #endif
 
 #ifdef BOUND
