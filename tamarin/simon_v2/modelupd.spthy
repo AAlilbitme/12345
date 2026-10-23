@@ -497,22 +497,27 @@ restriction PunishmentLiveness:
       & not (Ex #x. LtkCompromised(Q) @ #x & #x < #k)
      ==> Ex #l. PunishRevoked(Q, P, tx) @ #l & #l < #k"
 
+// FAIRNESS ASSUMPTION (not a proof that updates complete): an honest
+// forwarder whose downstream settle has been committed gets the matching
+// upstream settle committed before the incoming HTLC expires.
 restriction ForwarderCollectsInTime:
-    "All P Prev Next pin pout y %tIn %tOut %b #f #e #i #k.
+    "All P Prev Next pin pout y %tIn %tOut %b nOut #f #e #i #k.
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
       & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
-      & Redeemed(pout, y) @ #i & #i < #k
+      & HTLCCommitted(pout, <'settle', y>, nOut) @ #i & #i < #k
       & Tick(%b) @ #k & %tIn << %b & #f < #k
       & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
-     ==> Ex #l. Redeemed(pin, y) @ #l & #l < #k"
+     ==> Ex nIn #l. HTLCCommitted(pin, <'settle', y>, nIn) @ #l & #l < #k"
 
+// FAIRNESS ASSUMPTION: if the downstream settle is not committed, the
+// honest forwarder gets its outgoing HTLC failed (committed) in time.
 restriction ForwarderRefundsInTime:
     "All P Prev Next pin pout y %tIn %tOut %b #f #e #k.
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
       & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
       & Tick(%b) @ #k & %tIn << %b & #f < #k
       & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
-      & not (Ex #i. Redeemed(pout, y) @ #i & #i < #k)
-     ==> Ex #r. Refunded(P, pout, y) @ #r & #r < #k"
+      & not (Ex nOut #i. HTLCCommitted(pout, <'settle', y>, nOut) @ #i & #i < #k)
+     ==> Ex nF #r. HTLCCommitted(pout, <'fail', y>, nF) @ #r & #r < #k"
 
 #endif
