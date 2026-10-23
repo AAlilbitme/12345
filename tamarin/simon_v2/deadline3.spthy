@@ -121,6 +121,52 @@ lemma Request_Without_Commit_Pinned:
     & (All %c #j. Tick(%c) @ #j ==> %c = %b)
     & not (Ex n #l. HTLCCommitted(p0, <'settle', h(x), rid2>, n) @ #l)"
 
+// Satisfiability witness, pinned (run with -D=LIVENESS -D=BOUND -D=GAP2):
+// full chain on one hop, every stamp in block b = tOut, upstream settle and
+// its receipt complete before Tick(tIn = b + 2), then Tick(tIn + 1).
+lemma Deadline_Witness_Pinned:
+  exists-trace
+  "Ex S F R p0 p1 x rid rid2 n0 n1 n2 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 %b %d n3 s3 t3 %tIn %tOut %cx
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #q #u2 #r2 #c2 #a #q2 #u3 #r3 #c3 #a2 #e #k0 #k1 #k.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & SettleRequested(R, p1, h(x), rid, %b) @ #q
+    & ChannelUpdateFor(p1, <'settle', h(x), rid>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'settle', h(x), rid>, n2) @ #c2
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #q
+    & #q < #u2 & #u2 < #r2 & #r2 < #c2
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2 | #i = #u3))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2 | #i = #r3))
+    & (All p z #i. Old(p, z) @ #i ==> z = h(x))
+    & not (Ex X #k2. LtkCompromised(X) @ #k2)
+    & not (Ex P p z #i. Refunded(P, p, z) @ #i)
+    & PreimageAvailable(p1, h(x), %d) @ #a
+    & SettleRequested(F, p0, h(x), rid2, %d) @ #q2
+    & #c2 < #a & #a < #q2
+    & %d = %b
+    & (All %c #j. Tick(%c) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k))
+    & ChannelUpdateFor(p0, <'settle', h(x), rid2>, n3) @ #u3
+    & StateUpdate(s3, t3, p0, n3) @ #r3
+    & HTLCCommitted(p0, <'settle', h(x), rid2>, n3) @ #c3
+    & HTLCCommittedAt(p0, <'settle', h(x), rid2>, %b) @ #c3
+    & PreimageAvailable(p0, h(x), %b) @ #a2
+    & ForwardExpiries(p0, p1, h(x), %tIn, %tOut) @ #e
+    & Tick(%b) @ #k0 & #k0 < #o0
+    & Tick(%tIn) @ #k1 & Tick(%cx) @ #k
+    & #q2 < #u3 & #u3 < #r3 & #r3 < #c3 & #c3 < #a2 & #a2 < #k1 & #k1 < #k
+    & %tOut = %b & %tIn = %b %+ %1 %+ %1 & %cx = %tIn %+ %1"
+
 // Satisfiability witness (run with -D=LIVENESS): bounded responsiveness,
 // receipt/forwarder promptness and the CLTV gap are jointly satisfiable on one
 // hop, along the full chain with matching request ids and update numbers.
