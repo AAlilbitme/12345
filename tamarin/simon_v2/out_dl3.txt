@@ -4,3 +4,5 @@ Settle_Commit_Correspondence [flags: none]: TIMEOUT/exit 124 during proof search
 Deadline_Witness [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 during proof search | -M13G, 1800s | elapsed 1800s
 Deadline_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Per_Hop (all-traces): verified (56 steps) | -M13G, 1800s | elapsed 242s
 done
+Deadline_Per_Hop [flags: -D=LIVENESS -D=GAP2]: TIMEOUT/exit 124 | elapsed 1800s
+Deadline_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | elapsed 1801s
