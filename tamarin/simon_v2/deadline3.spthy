@@ -1,0 +1,153 @@
+theory Deadline3
+begin
+
+#include "modeldeadline3.spthy"
+
+// THEOREM (derived, per hop; run with -D=LIVENESS). Under bounded
+// responsiveness (D = 2), forwarder promptness and the CLTV gap
+// (tOut + D <= tIn), with honest endpoints: if an honest forwarder's
+// downstream settle commits in a block b <= tOut, the matching upstream
+// settle commits before the incoming HTLC expires, i.e. before Tick(tIn + 1).
+lemma Deadline_Per_Hop:
+  "All P Prev Next pin pout y rid %b %cx %tIn %tOut #f #e #i #k.
+      HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+    & (%b = %tOut | %b << %tOut)
+    & Tick(%cx) @ #k & %tIn << %cx & #i < #k
+    & not (Ex X #x. LtkCompromised(X) @ #x)
+   ==> Ex rid2 n #l. HTLCCommitted(pin, <'settle', y, rid2>, n) @ #l & #l < #k"
+
+// Correspondence (safety): every committed settle has a matching request,
+// update for the same operation, and completed state update, in order.
+lemma Settle_Commit_Correspondence:
+  "All ptr y rid n #c. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #c
+   ==> Ex Q %b A B #q #u #s. SettleRequested(Q, ptr, y, rid, %b) @ #q
+         & ChannelUpdateFor(ptr, <'settle', y, rid>, n) @ #u
+         & StateUpdate(A, B, ptr, n) @ #s
+         & #q < #u & #u < #s & #s < #c"
+
+// Receipt control (safety): a settle can commit while the preimage is never
+// delivered upstream, so receipt promptness is a real assumption.
+lemma Commit_Without_Receipt:
+  exists-trace
+  "Ex Q ptr y rid n %b %t %c #q #i #e #k.
+      SettleRequested(Q, ptr, y, rid, %b) @ #q & #q < #i
+    & HTLCCommitted(ptr, <'settle', y, rid>, n) @ #i
+    & HTLCExpiry(ptr, y, %t) @ #e
+    & Tick(%c) @ #k & %t << %c & #i < #k
+    & not (Ex %b #a. PreimageAvailable(ptr, y, %b) @ #a)
+    & not (Ex X #x. LtkCompromised(X) @ #x)"
+
+// Request-versus-commit control (safety): an upstream settle can be requested
+// (the old Redeemed event fires) while the update never commits.
+lemma Request_Without_Commit:
+  exists-trace
+  "Ex P Prev Next pin pout y rid %b #f #q.
+      HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+    & SettleRequested(P, pin, y, rid, %b) @ #q
+    & not (Ex n #l. HTLCCommitted(pin, <'settle', y, rid>, n) @ #l)
+    & not (Ex X #x. LtkCompromised(X) @ #x)"
+
+// Receipt control, pinned (safety config): the downstream settle on p1
+// commits, the clock passes the HTLC expiry on p1, and the preimage is never
+// delivered upstream.
+lemma Commit_Without_Receipt_Pinned:
+  exists-trace
+  "Ex S F R p0 p1 x rid n0 n1 n2 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 %b %t %cx
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #q #u2 #r2 #c2 #e #k.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & SettleRequested(R, p1, h(x), rid, %b) @ #q
+    & ChannelUpdateFor(p1, <'settle', h(x), rid>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'settle', h(x), rid>, n2) @ #c2
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #q
+    & #q < #u2 & #u2 < #r2 & #r2 < #c2
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2 ))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2 ))
+    & (All p z #i. Old(p, z) @ #i ==> z = h(x))
+    & not (Ex X #k2. LtkCompromised(X) @ #k2)
+    & not (Ex P p z #i. Refunded(P, p, z) @ #i)
+    & HTLCExpiry(p1, h(x), %t) @ #e
+    & Tick(%cx) @ #k & %t << %cx & #c2 < #k
+    & (All %c #j. Tick(%c) @ #j ==> (%c = %b | #j = #k))
+    & not (Ex %d #a. PreimageAvailable(p1, h(x), %d) @ #a)"
+
+// Request-versus-commit control, pinned (safety config): the forwarder
+// receives the preimage and requests the upstream settle on p0, but that
+// update never commits.
+lemma Request_Without_Commit_Pinned:
+  exists-trace
+  "Ex S F R p0 p1 x rid rid2 n0 n1 n2 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 %b %d
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #q #u2 #r2 #c2 #a #q2.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & SettleRequested(R, p1, h(x), rid, %b) @ #q
+    & ChannelUpdateFor(p1, <'settle', h(x), rid>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'settle', h(x), rid>, n2) @ #c2
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #q
+    & #q < #u2 & #u2 < #r2 & #r2 < #c2
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2 ))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2 ))
+    & (All p z #i. Old(p, z) @ #i ==> z = h(x))
+    & not (Ex X #k2. LtkCompromised(X) @ #k2)
+    & not (Ex P p z #i. Refunded(P, p, z) @ #i)
+    & PreimageAvailable(p1, h(x), %d) @ #a
+    & SettleRequested(F, p0, h(x), rid2, %d) @ #q2
+    & #c2 < #a & #a < #q2
+    & %d = %b
+    & (All %c #j. Tick(%c) @ #j ==> %c = %b)
+    & not (Ex n #l. HTLCCommitted(p0, <'settle', h(x), rid2>, n) @ #l)"
+
+// Satisfiability witness (run with -D=LIVENESS): bounded responsiveness,
+// receipt/forwarder promptness and the CLTV gap are jointly satisfiable on one
+// hop, along the full chain with matching request ids and update numbers.
+lemma Deadline_Witness:
+  exists-trace
+  "Ex P Prev Next pin pout y rid rid2 n n2 a1 b1 a2 b2 %c0 %c %c2 %cx %tIn %tOut
+      #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2 #l #k.
+      HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & SettleRequested(Next, pout, y, rid, %c0) @ #q1
+    & ChannelUpdateFor(pout, <'settle', y, rid>, n) @ #u1
+    & StateUpdate(a1, b1, pout, n) @ #s1
+    & HTLCCommitted(pout, <'settle', y, rid>, n) @ #i
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %c) @ #i
+    & PreimageAvailable(pout, y, %c) @ #a
+    & SettleRequested(P, pin, y, rid2, %c) @ #q2
+    & ChannelUpdateFor(pin, <'settle', y, rid2>, n2) @ #u2
+    & StateUpdate(a2, b2, pin, n2) @ #s2
+    & HTLCCommitted(pin, <'settle', y, rid2>, n2) @ #l
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %c2) @ #l
+    & Tick(%cx) @ #k & %tIn << %cx
+    & #f < #q1 & #q1 < #u1 & #u1 < #s1 & #s1 < #i & #i < #a & #a < #q2
+    & #q2 < #u2 & #u2 < #s2 & #s2 < #l & #l < #k
+    & (%c = %tOut | %c << %tOut)
+    & (%c2 = %c | %c2 << (%c %+ %1 %+ %1 %+ %1))
+    & (%tOut %+ %1 %+ %1 = %tIn | (%tOut %+ %1 %+ %1) << %tIn)
+    & not (Ex X #x. LtkCompromised(X) @ #x)
+    & not (Ex Q p z #x. Refunded(Q, p, z) @ #x)"
+
+end
