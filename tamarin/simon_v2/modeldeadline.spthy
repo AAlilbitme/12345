@@ -366,7 +366,7 @@ rule Receiver_Fulfill_HTLC:
       ReceiverInv($Receiver, $Sender, x, %amt),
       CurrentBlock(%b), Fr(~rid) ]
     --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y),
-        SettleRequested(ptrIn, h(x), ~rid, %b),
+        SettleRequested($Receiver, ptrIn, h(x), ~rid, %b),
         ReceiverPaid($Receiver, y, %v),
         Eq(%v, %amt),
         PreimageReleased($Receiver, x),
@@ -381,7 +381,7 @@ rule Intermediary_Settle:
       Fulfilled(ptrOut, x),
       CurrentBlock(%b), Fr(~rid) ]
     --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
-        SettleRequested(ptrIn, h(x), ~rid, %b),
+        SettleRequested($Me, ptrIn, h(x), ~rid, %b),
         FeeEarned($Me, ptrIn, ptrOut, y, %vIn, %vOut),
         Redeemed(ptrIn, y),
         Old(ptrIn, y),
@@ -431,7 +431,7 @@ rule Sender_Timeout_Refund:
     [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, %t), !Block(%b),
       CurrentBlock(%c), Fr(~rid) ]
     --[ Refunded($Sender, ptrSF, y),
-        FailRequested(ptrSF, y, ~rid, %c),
+        FailRequested($Sender, ptrSF, y, ~rid, %c),
         Lt(%t, %b),
         Old(ptrSF, y) ]->
     [ UpdateFor(ptrSF, <'fail', y, ~rid>), CurrentBlock(%c) ]   // CHANGED
@@ -440,7 +440,7 @@ rule Intermediary_Timeout_Refund:
     [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %tOut),
       !Block(%b), CurrentBlock(%c), Fr(~rid) ]
     --[ Refunded($Me, ptrOut, y),
-        FailRequested(ptrOut, y, ~rid, %c),
+        FailRequested($Me, ptrOut, y, ~rid, %c),
         Lt(%tOut, %b),
         Old(ptrOut, y),
         PendingUsed($Me, ptrIn, ptrOut, y) ]->
@@ -518,18 +518,18 @@ restriction PunishmentLiveness:
 // ASSUMPTION (bounded responsiveness, D = 2 blocks): an update requested in
 // block b on a channel with honest endpoints commits before Tick(b + D + 1).
 restriction BoundedResponsivenessSettle:
-    "All ptr y rid %b %c #r #k.
-        SettleRequested(ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
+    "All Q ptr y rid %b %c #r #k.
+        SettleRequested(Q, ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
       & (%b %+ %1 %+ %1) << %c
       & not (Ex X #x. LtkCompromised(X) @ #x)
-     ==> Ex n #l. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #l & #l < #k"
+     ==> Ex n #l. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #l & #r < #l & #l < #k"
 
 restriction BoundedResponsivenessFail:
-    "All ptr y rid %b %c #r #k.
-        FailRequested(ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
+    "All Q ptr y rid %b %c #r #k.
+        FailRequested(Q, ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
       & (%b %+ %1 %+ %1) << %c
       & not (Ex X #x. LtkCompromised(X) @ #x)
-     ==> Ex n #l. HTLCCommitted(ptr, <'fail', y, rid>, n) @ #l & #l < #k"
+     ==> Ex n #l. HTLCCommitted(ptr, <'fail', y, rid>, n) @ #l & #r < #l & #l < #k"
 #endif
 
 // ASSUMPTION (receipt promptness): a committed settle makes the preimage
@@ -548,7 +548,7 @@ restriction ForwarderPromptness:
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
       & PreimageAvailable(pout, y, %b) @ #a
       & not (Ex X #x. LtkCompromised(X) @ #x)
-     ==> Ex rid2 #q. SettleRequested(pin, y, rid2, %b) @ #q & #a < #q
+     ==> Ex rid2 #q. SettleRequested(P, pin, y, rid2, %b) @ #q & #a < #q
            & (All %c #t. Tick(%c) @ #t & %b << %c ==> #q < #t)"
 
 // ASSUMPTION (CLTV gap): tOut + D <= tIn on every forward.

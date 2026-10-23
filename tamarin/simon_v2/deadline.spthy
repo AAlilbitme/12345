@@ -22,7 +22,7 @@ lemma Deadline_Per_Hop:
 // update for the same operation, and completed state update, in order.
 lemma Settle_Commit_Correspondence:
   "All ptr y rid n #c. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #c
-   ==> Ex %b A B #q #u #s. SettleRequested(ptr, y, rid, %b) @ #q
+   ==> Ex Q %b A B #q #u #s. SettleRequested(Q, ptr, y, rid, %b) @ #q
          & ChannelUpdateFor(ptr, <'settle', y, rid>, n) @ #u
          & StateUpdate(A, B, ptr, n) @ #s
          & #q < #u & #u < #s & #s < #c"
@@ -32,13 +32,38 @@ lemma Settle_Commit_Correspondence:
 lemma Ticks_Consecutive:
   "All %c #k. Tick(%c %+ %1) @ #k ==> Ex #j. Tick(%c) @ #j & #j < #k"
 
+// CurrentBlock invariant (safety): every stamp b is taken after Tick(b) and
+// before Tick(b + 1).
+lemma Request_Stamp_Is_Current:
+  "All Q ptr y rid %b #q. SettleRequested(Q, ptr, y, rid, %b) @ #q
+   ==> (Ex #t. Tick(%b) @ #t & #t < #q)
+     & not (Ex #t2. Tick(%b %+ %1) @ #t2 & #t2 < #q)"
+
+lemma Commit_Stamp_Is_Current:
+  "All ptr op %b #i. HTLCCommittedAt(ptr, op, %b) @ #i
+   ==> (Ex #t. Tick(%b) @ #t & #t < #i)
+     & not (Ex #t2. Tick(%b %+ %1) @ #t2 & #t2 < #i)"
+
+lemma Receipt_Stamp_Is_Current:
+  "All ptr y %b #a. PreimageAvailable(ptr, y, %b) @ #a
+   ==> (Ex #t. Tick(%b) @ #t & #t < #a)
+     & not (Ex #t2. Tick(%b %+ %1) @ #t2 & #t2 < #a)"
+
+// Receipt control (safety): a settle can commit while the preimage is never
+// delivered upstream, so receipt promptness is a real assumption.
+lemma Commit_Without_Receipt:
+  exists-trace
+  "Ex ptr y rid n #i. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #i
+    & not (Ex %b #a. PreimageAvailable(ptr, y, %b) @ #a)
+    & not (Ex X #x. LtkCompromised(X) @ #x)"
+
 // Request-versus-commit control (safety): an upstream settle can be requested
 // (the old Redeemed event fires) while the update never commits.
 lemma Request_Without_Commit:
   exists-trace
   "Ex P Prev Next pin pout y rid %b #f #q.
       HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
-    & SettleRequested(pin, y, rid, %b) @ #q
+    & SettleRequested(P, pin, y, rid, %b) @ #q
     & not (Ex n #l. HTLCCommitted(pin, <'settle', y, rid>, n) @ #l)
     & not (Ex X #x. LtkCompromised(X) @ #x)"
 
