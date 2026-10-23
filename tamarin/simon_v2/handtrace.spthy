@@ -1,0 +1,28 @@
+theory HandTrace
+begin
+
+#include "modelupd.spthy"
+
+// Hand-built trace, step 1: open two channels, offer an HTLC, commit it on p0
+// through a real channel update, and forward it. Nothing else happens.
+lemma Hand_Forward:
+  exists-trace
+  "Ex S F R p0 p1 y n0 a0 b0 a1 b1 sa sb #o0 #o1 #o #u0 #r0 #c0 #f.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, y) @ #o
+    & ChannelUpdateFor(p0, <'add', y>, n0) @ #u0
+    & StateUpdate(sa, sb, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', y>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> #i = #r0)
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> #i = #u0)
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> #i = #c0)
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex p z #i. Old(p, z) @ #i)
+    & not (Ex t #i. Tick(t) @ #i)
+    & not (Ex p #i. MutexReleased(p) @ #i)"
+
+end
