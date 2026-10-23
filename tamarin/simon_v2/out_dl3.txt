@@ -1,2 +1,6 @@
 Commit_Without_Receipt_Pinned [flags: none]: TIMEOUT/exit 124 during proof search | -M13G, 1800s | elapsed 1800s
 Request_Without_Commit_Pinned [flags: none]:   Request_Without_Commit_Pinned (exists-trace): verified (80 steps) | -M13G, 1800s | elapsed 411s
+Settle_Commit_Correspondence [flags: none]: TIMEOUT/exit 124 during proof search | -M13G, 1800s | elapsed 1801s
+Deadline_Witness [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 during proof search | -M13G, 1800s | elapsed 1800s
+Deadline_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Per_Hop (all-traces): verified (56 steps) | -M13G, 1800s | elapsed 242s
+done
