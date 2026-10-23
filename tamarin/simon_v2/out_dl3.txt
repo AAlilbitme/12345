@@ -8,3 +8,4 @@ Deadline_Per_Hop [flags: -D=LIVENESS -D=GAP2]: TIMEOUT/exit 124 | elapsed 1800s
 Deadline_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | elapsed 1801s
 Deadline_Witness_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 | -M13G, 2400s | elapsed 2400s
 Gap_Counterexample_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | -M13G, 2400s | elapsed 2400s
+Ablation_Counterexample_Pinned [flags: -D=LIVENESS -D=GAP2]:   Ablation_Counterexample_Pinned (exists-trace): verified (89 steps) | -M13G, 2400s | elapsed 2054s
