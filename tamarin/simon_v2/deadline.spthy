@@ -27,6 +27,11 @@ lemma Settle_Commit_Correspondence:
          & StateUpdate(A, B, ptr, n) @ #s
          & #q < #u & #u < #s & #s < #c"
 
+// Clock consistency (safety): every !Block value comes with a Tick, and ticks
+// are consecutive, so a block-stamped event reflects the current block.
+lemma Ticks_Consecutive:
+  "All %c #k. Tick(%c %+ %1) @ #k ==> Ex #j. Tick(%c) @ #j & #j < #k"
+
 // Request-versus-commit control (safety): an upstream settle can be requested
 // (the old Redeemed event fires) while the update never commits.
 lemma Request_Without_Commit:

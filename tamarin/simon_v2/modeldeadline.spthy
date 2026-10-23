@@ -411,8 +411,9 @@ rule Add_Committed:
     --> [ Route(P, N, ptr, y, %v, %t) ]
 
 rule Settle_Committed:
-    [ AwaitFulfilled(ptr, x), Committed(ptr, <'settle', h(x), rid>) ]
-    --[ MutexReleased(ptr) ]-> [ Fulfilled(ptr, x), Mutex(ptr) ]
+    [ AwaitFulfilled(ptr, x), Committed(ptr, <'settle', h(x), rid>), CurrentBlock(%b) ]
+    --[ MutexReleased(ptr), PreimageAvailable(ptr, h(x), %b) ]->
+    [ Fulfilled(ptr, x), Mutex(ptr), CurrentBlock(%b) ]
 
 rule Fail_Committed:
     [ Committed(ptr, <'fail', y, rid>) ]
@@ -420,10 +421,11 @@ rule Fail_Committed:
 
 // Linear clock: CurrentBlock always holds the latest tick.
 rule Init_Clock:
-    [ ] --[ ClockInit() ]-> [ CurrentBlock(%1), !Block(%1) ]
+    [ ] --[ ClockInit(), Tick(%1) ]-> [ CurrentBlock(%1), !Block(%1) ]
 
+// Ticks advance exactly one block.
 rule Clock_Tick:
-    [ CurrentBlock(%c), In(%t) ] --[ Tick(%t), Lt(%c, %t) ]-> [ CurrentBlock(%t), !Block(%t) ]
+    [ CurrentBlock(%c) ] --[ Tick(%c %+ %1) ]-> [ CurrentBlock(%c %+ %1), !Block(%c %+ %1) ]
 
 rule Sender_Timeout_Refund:
     [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, %t), !Block(%b),
@@ -530,14 +532,23 @@ restriction BoundedResponsivenessFail:
      ==> Ex n #l. HTLCCommitted(ptr, <'fail', y, rid>, n) @ #l & #l < #k"
 #endif
 
-// ASSUMPTION (forwarder promptness): an honest forwarder requests the upstream
-// settle in the same block in which its downstream settle commits.
-restriction ForwarderPromptness:
-    "All P Prev Next pin pout y rid %b #f #i.
-        HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
-      & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+// ASSUMPTION (receipt promptness): a committed settle makes the preimage
+// available to the upstream party in the same block, before the next tick.
+restriction ReceiptPromptness:
+    "All ptr y rid %b #i.
+        HTLCCommittedAt(ptr, <'settle', y, rid>, %b) @ #i
       & not (Ex X #x. LtkCompromised(X) @ #x)
-     ==> Ex rid2 #q. SettleRequested(pin, y, rid2, %b) @ #q & #i < #q
+     ==> Ex #a. PreimageAvailable(ptr, y, %b) @ #a & #i < #a
+           & (All %c #t. Tick(%c) @ #t & %b << %c ==> #a < #t)"
+
+// ASSUMPTION (forwarder promptness): an honest forwarder requests the upstream
+// settle in the same block in which the downstream preimage becomes available.
+restriction ForwarderPromptness:
+    "All P Prev Next pin pout y %b #f #a.
+        HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+      & PreimageAvailable(pout, y, %b) @ #a
+      & not (Ex X #x. LtkCompromised(X) @ #x)
+     ==> Ex rid2 #q. SettleRequested(pin, y, rid2, %b) @ #q & #a < #q
            & (All %c #t. Tick(%c) @ #t & %b << %c ==> #q < #t)"
 
 // ASSUMPTION (CLTV gap): tOut + D <= tIn on every forward.
