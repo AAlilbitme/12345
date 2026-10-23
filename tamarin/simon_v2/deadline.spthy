@@ -1,0 +1,40 @@
+theory Deadline
+begin
+
+#include "modeldeadline.spthy"
+
+// THEOREM (derived, per hop; run with -D=LIVENESS). Under bounded
+// responsiveness (D = 2), forwarder promptness and the CLTV gap
+// (tOut + D <= tIn), with honest endpoints: if an honest forwarder's
+// downstream settle commits in a block b <= tOut, the matching upstream
+// settle commits before the incoming HTLC expires, i.e. before Tick(tIn + 1).
+lemma Deadline_Per_Hop:
+  "All P Prev Next pin pout y rid %b %tIn %tOut #f #e #i #k.
+      HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+    & (%b = %tOut | %b << %tOut)
+    & Tick(%tIn %+ %1) @ #k & #i < #k
+    & not (Ex X #x. LtkCompromised(X) @ #x)
+   ==> Ex rid2 n #l. HTLCCommitted(pin, <'settle', y, rid2>, n) @ #l & #l < #k"
+
+// Correspondence (safety): every committed settle has a matching request,
+// update for the same operation, and completed state update, in order.
+lemma Settle_Commit_Correspondence:
+  "All ptr y rid n #c. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #c
+   ==> Ex %b A B #q #u #s. SettleRequested(ptr, y, rid, %b) @ #q
+         & ChannelUpdateFor(ptr, <'settle', y, rid>, n) @ #u
+         & StateUpdate(A, B, ptr, n) @ #s
+         & #q < #u & #u < #s & #s < #c"
+
+// Request-versus-commit control (safety): an upstream settle can be requested
+// (the old Redeemed event fires) while the update never commits.
+lemma Request_Without_Commit:
+  exists-trace
+  "Ex P Prev Next pin pout y rid %b #f #q.
+      HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+    & SettleRequested(pin, y, rid, %b) @ #q
+    & not (Ex n #l. HTLCCommitted(pin, <'settle', y, rid>, n) @ #l)
+    & not (Ex X #x. LtkCompromised(X) @ #x)"
+
+end
