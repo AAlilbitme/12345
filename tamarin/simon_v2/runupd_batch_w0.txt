@@ -22,3 +22,12 @@
   Intermediary_Recovers_Funds: NO RESULT (batch timed out)
   Redeem_Excludes_Refund (all-traces): verified (2 steps)
   Receiver_Paid_Invoice_Amount (all-traces): verified (10 steps)
+  Outgoing_Preimage_Kept: NO RESULT (batch timed out)
+  Incoming_Resolved_By_Claim_Or_Timeout: NO RESULT (batch timed out)
+  Refund_Enabled: NO RESULT (batch timed out)
+  Collect_Enabled: NO RESULT (batch timed out)
+  Punish_Enabled: NO RESULT (batch timed out)
+  Invoice_Signature_Origin: NO RESULT (batch timed out)
+  Offer_Requires_Invoice: NO RESULT (batch timed out)
+  Funding_Spent_Once: NO RESULT (batch timed out)
+done
