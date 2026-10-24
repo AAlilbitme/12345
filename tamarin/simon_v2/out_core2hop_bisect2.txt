@@ -1,0 +1,1 @@
+Two_Hop_Witness_Pinned [flags: -D=RECEIPT]:   Two_Hop_Witness_Pinned (exists-trace): verified (34 steps) | 8s
