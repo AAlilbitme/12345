@@ -1,1 +1,4 @@
 Two_Hop_Witness_Pinned [flags: -D=BOUND -D=RECEIPT]:   Two_Hop_Witness_Pinned (exists-trace): verified (34 steps) | 9s
+Two_Hop_Witness_Pinned [flags: -D=BOUND -D=FWDPROMPT]: TIMEOUT/exit 124 | 600s
+Two_Hop_Witness_Pinned [flags: -D=RECEIPT -D=FWDPROMPT]:   Two_Hop_Witness_Pinned (exists-trace): verified (40 steps) | 9s
+Two_Hop_Witness_Pinned [flags: -D=BOUND -D=GAP2]:   Two_Hop_Witness_Pinned (exists-trace): verified (36 steps) | 19s
