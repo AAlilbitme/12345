@@ -138,6 +138,11 @@ lemma Delivery_Unique [reuse]:
   "All ptr y %b %d #a #a2. PreimageAvailable(ptr, y, %b) @ #a & PreimageAvailable(ptr, y, %d) @ #a2
    ==> #a = #a2"
 
+lemma Commit_Unique [reuse]:
+  "All ptr y rid n n2 #c #c2.
+      HTLCCommitted(ptr, <'settle', y, rid>, n) @ #c & HTLCCommitted(ptr, <'settle', y, rid>, n2) @ #c2
+   ==> #c = #c2"
+
 lemma Request_Unique [reuse]:
   "All Q ptr y rid rid2 %b %d #q #q2.
       SettleRequested(Q, ptr, y, rid, %b) @ #q & SettleRequested(Q, ptr, y, rid2, %d) @ #q2
