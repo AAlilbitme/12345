@@ -6,3 +6,4 @@ deadline_core.spthy  Request_Unique_Channel (all-traces): verified (751 steps)
 deadline_core.spthy  Commit_Unique_Channel (all-traces): verified (251 steps)
 deadline_core.spthy  Commit_Unique (all-traces): verified (2 steps)
 deadline_core.spthy Deadline_Witness_Consecutive [flags: -D=LIVENESS -D=BOUND -D=GAP2] (+helpers, 45min):   Deadline_Witness_Consecutive (exists-trace): verified (20 steps) | 2s
+deadline_core2.spthy Two_Hop_Witness_Consecutive [flags: -D=LIVENESS -D=BOUND -D=GAP2] (+helpers, 45min): TIMEOUT/exit 124 | 2700s

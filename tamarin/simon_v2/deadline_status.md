@@ -67,3 +67,22 @@ follow by induction on route length because Deadline_Stamp_Per_Hop has the same
 premise/conclusion form at every hop (paper argument, not a Tamarin proof).
 Not done: a two-hop ablation (the one-hop ablation already shows the bound is
 needed), the deadline result on the full model, the literature comparison.
+
+## Review P1 (clock abstraction) - results
+- Stamp_Between_Ticks (Now(b) is emitted by every request, receipt and commit
+  rule, and by no other rule): verified in deadline_core (23) and
+  deadline_core2 (27). Every stamped event lies after Tick(b) and before any
+  tick with a larger value.
+- One hop: Deadline_Witness_Consecutive (ticks 1,2,3,4, no tick skipped or
+  added; -D=LIVENESS -D=BOUND -D=GAP2) verified (20), after adding the
+  channel-level helpers (Request_Unique_Channel 751, Commit_Unique_Channel 251,
+  Commit_Unique 2) to deadline_core.
+- Two hops: Two_Hop_Witness_Consecutive (ticks 1..6) TIMEOUT (45 min). Only the
+  skipping-clock witness Two_Hop_Witness_Pinned (ticks 1,3,5,6) is verified.
+
+Agreed wording: the theorem holds for every trace satisfying the clock and
+liveness restrictions, including traces with skipped ticks. For one hop, a
+consecutive-tick witness shows the restrictions are satisfiable under ordinary
+unit-step block progression; for two hops, satisfiability is shown only with a
+skipping clock. The theorem stays conditional on NowIsLatest and the three
+assumptions. Novelty: "to our knowledge" (see related_work.md).
