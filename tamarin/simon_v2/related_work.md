@@ -24,3 +24,36 @@ and tightness counterexamples (gap D-1 fails; no bound fails).
 
 Suggested framing: a mechanized, tight, completion-aware verification of the
 known CLTV-delta design condition, not a new protocol insight.
+
+## Update: Grundmann & Hartenstein (arXiv 2505.15568) checked by the author
+- They model blockchain time and HTLC timelocks; time may advance by arbitrary
+  amounts, justified by a time-abstract bisimulation (Sec. VI-A) that preserves
+  which actions become enabled at timelock boundaries.
+- They model multi-hop fulfillment and timeout, including a grace period.
+- Verified property: honest users eventually recover the correct balance
+  (balance security), by finite-state model checking up to four hops.
+- Not proved: that a forwarder's channel update completes before the incoming
+  CLTV deadline. "Assuming honest and cooperating users and timely delivery of
+  messages, payments are guaranteed to succeed" is listed as future work
+  (Sec. V, VIII-B).
+
+Differences to our work:
+| | Grundmann & Hartenstein | Ours |
+|---|---|---|
+| Property | balance security | conditional deadline liveness |
+| Channel transitions | idealized steps | request, update, state update, commit, receipt |
+| Method | finite-state model checking (<= 4 hops) | symbolic Tamarin; 2-hop mechanized composition + induction argument |
+| Time | skipping justified by bisimulation | NowIsLatest clock abstraction (stamp invariant proven; consecutive-tick witnesses) |
+
+Safe claim: a symbolic, completion-aware verification of the known CLTV-delta
+condition, where completion means the required channel update actually commits,
+with explicit receipt and forwarding assumptions, satisfiability witnesses and
+tight counterexamples.
+Strongest wording: "To our knowledge, this is the first symbolic proof that
+relates a forwarder's CLTV gap to the completion of channel updates, rather than
+merely to a requested or abstract payment action." Keep "to our knowledge"
+until their timelock section and artifacts are compared in detail.
+
+Do NOT claim: first formal treatment of Lightning timelocks; first multi-hop
+timing model; first use of time abstraction; a proof that the complete Lightning
+protocol guarantees liveness.
