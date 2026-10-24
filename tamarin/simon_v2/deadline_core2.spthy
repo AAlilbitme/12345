@@ -202,4 +202,70 @@ lemma Two_Hop_Gap_Counterexample:
     & HTLCCommitted(p0, <'settle', y, r0>, n0) @ #l
     & HTLCCommittedAt(p0, <'settle', y, r0>, %c) @ #l & #k < #l"
 
+// Witness, full chain pinned (with -D=LIVENESS -D=BOUND -D=GAP2): t2 = 1,
+// t1 = 3, t0 = 5; R, F2 and F1 settle in block 1, each delivery before the
+// next request; then ticks 3, 5 and 6.
+lemma Two_Hop_Witness_Pinned:
+  exists-trace
+  "Ex p0 p1 p2 y r0 r1 r2 n0 n1 n2
+      #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1 #i1 #a1 #q0 #u0 #s0 #i0 #a0 #k1 #k2 #k.
+      Tick(%1) @ #k0
+    & ForwardExpiries(p0, p1, y, %1 %+ %1 %+ %1 %+ %1 %+ %1, %1 %+ %1 %+ %1) @ #e
+    & ForwardExpiries(p1, p2, y, %1 %+ %1 %+ %1, %1) @ #e
+    & SettleRequested('R', p2, y, r2, %1) @ #q2
+    & ChannelUpdateFor(p2, <'settle', y, r2>, n2) @ #u2
+    & StateUpdate(p2, n2) @ #s2
+    & HTLCCommittedAt(p2, <'settle', y, r2>, %1) @ #i2
+    & PreimageAvailable(p2, y, %1) @ #a2
+    & SettleRequested('F2', p1, y, r1, %1) @ #q1
+    & ChannelUpdateFor(p1, <'settle', y, r1>, n1) @ #u1
+    & StateUpdate(p1, n1) @ #s1
+    & HTLCCommittedAt(p1, <'settle', y, r1>, %1) @ #i1
+    & PreimageAvailable(p1, y, %1) @ #a1
+    & SettleRequested('F1', p0, y, r0, %1) @ #q0
+    & ChannelUpdateFor(p0, <'settle', y, r0>, n0) @ #u0
+    & StateUpdate(p0, n0) @ #s0
+    & HTLCCommittedAt(p0, <'settle', y, r0>, %1) @ #i0
+    & PreimageAvailable(p0, y, %1) @ #a0
+    & Tick(%1 %+ %1 %+ %1) @ #k1
+    & Tick(%1 %+ %1 %+ %1 %+ %1 %+ %1) @ #k2
+    & Tick(%1 %+ %1 %+ %1 %+ %1 %+ %1 %+ %1) @ #k
+    & #k0 < #e & #e < #q2 & #q2 < #u2 & #u2 < #s2 & #s2 < #i2 & #i2 < #a2
+    & #a2 < #q1 & #q1 < #u1 & #u1 < #s1 & #s1 < #i1 & #i1 < #a1
+    & #a1 < #q0 & #q0 < #u0 & #u0 < #s0 & #s0 < #i0 & #i0 < #a0
+    & #a0 < #k1 & #k1 < #k2 & #k2 < #k
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k2 | #j = #k))"
+
+// Gap control, full chain pinned (with -D=LIVENESS -D=BOUND -D=GAP1): t2 = 1,
+// t1 = 2, t0 = 3. R settles in block 1; F2's settle commits in block 3 (allowed
+// by D = 2), F1's in block 3; the tick 4 past t0 comes before F1's commit.
+lemma Two_Hop_Gap_Pinned:
+  exists-trace
+  "Ex p0 p1 p2 y r0 r1 r2 n0 n1 n2
+      #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #k1 #k2 #u1 #s1 #i1 #a1 #q0 #u0 #s0 #k #i0.
+      Tick(%1) @ #k0
+    & ForwardExpiries(p0, p1, y, %1 %+ %1 %+ %1, %1 %+ %1) @ #e
+    & ForwardExpiries(p1, p2, y, %1 %+ %1, %1) @ #e
+    & SettleRequested('R', p2, y, r2, %1) @ #q2
+    & ChannelUpdateFor(p2, <'settle', y, r2>, n2) @ #u2
+    & StateUpdate(p2, n2) @ #s2
+    & HTLCCommittedAt(p2, <'settle', y, r2>, %1) @ #i2
+    & PreimageAvailable(p2, y, %1) @ #a2
+    & SettleRequested('F2', p1, y, r1, %1) @ #q1
+    & Tick(%1 %+ %1) @ #k1
+    & Tick(%1 %+ %1 %+ %1) @ #k2
+    & ChannelUpdateFor(p1, <'settle', y, r1>, n1) @ #u1
+    & StateUpdate(p1, n1) @ #s1
+    & HTLCCommittedAt(p1, <'settle', y, r1>, %1 %+ %1 %+ %1) @ #i1
+    & PreimageAvailable(p1, y, %1 %+ %1 %+ %1) @ #a1
+    & SettleRequested('F1', p0, y, r0, %1 %+ %1 %+ %1) @ #q0
+    & ChannelUpdateFor(p0, <'settle', y, r0>, n0) @ #u0
+    & StateUpdate(p0, n0) @ #s0
+    & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k
+    & HTLCCommittedAt(p0, <'settle', y, r0>, %1 %+ %1 %+ %1 %+ %1) @ #i0
+    & #k0 < #e & #e < #q2 & #q2 < #u2 & #u2 < #s2 & #s2 < #i2 & #i2 < #a2
+    & #a2 < #q1 & #q1 < #k1 & #k1 < #k2 & #k2 < #u1 & #u1 < #s1 & #s1 < #i1 & #i1 < #a1
+    & #a1 < #q0 & #q0 < #u0 & #u0 < #s0 & #s0 < #k & #k < #i0
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k2 | #j = #k))"
+
 end
