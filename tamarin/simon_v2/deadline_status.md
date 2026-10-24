@@ -44,3 +44,26 @@ one-hop core model (honest parties, settle path), under bounded responsiveness
 modelling restriction. Not claimed: arbitrary routes (composition not done),
 the full model (modeldeadline3: witness/controls inconclusive), novelty
 (literature comparison pending).
+
+## Composition on the two-forwarder core model (deadline_core2.spthy)
+Route S -p0-> F1 -p1-> F2 -p2-> R, expiries t0 > t1 > t2.
+Helpers (safety config, [reuse], valid in every config): Delivery_Unique,
+  Request_Unique, Commit_Unique, Request_Unique_Channel, Commit_Unique_Channel.
+Under -D=LIVENESS -D=BOUND -D=GAP2:
+  Deadline_Stamp_Per_Hop (composable: downstream commit stamp <= tOut and a tick
+    past tIn => upstream commit stamp <= tIn, before that tick): verified (124).
+  End_To_End_Two_Hops (receiver settle on p2 by t2, tick past t0 => settle on
+    p0 by t0): verified (80).
+  Two_Hop_Witness_Pinned: verified (48) - assumptions jointly satisfiable.
+Under -D=LIVENESS -D=BOUND -D=GAP1:
+  Two_Hop_Gap_Pinned: verified (37) - with gaps of 1 the settle on p0 commits
+    only after a tick past t0.
+Lemma-setup bug found and fixed on the way: Deadline_Stamp_Per_Hop was marked
+[reuse] in every configuration; it is now only present under GAP2 and after the
+existence lemmas (a reused lemma applies only to later ones).
+
+Claim allowed: two-hop composition mechanically checked. Arbitrary finite routes
+follow by induction on route length because Deadline_Stamp_Per_Hop has the same
+premise/conclusion form at every hop (paper argument, not a Tamarin proof).
+Not done: a two-hop ablation (the one-hop ablation already shows the bound is
+needed), the deadline result on the full model, the literature comparison.
