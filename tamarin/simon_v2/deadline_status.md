@@ -24,3 +24,23 @@
 
 The theorem only counts together with a verified Deadline_Witness.
 No liveness claim until categories 1-4 complete.
+
+## Result on the one-hop core model (deadline_core.spthy) - all gates met
+Gate 1 (safety config): Settle_Commit_Correspondence verified (6);
+  Delivery_Unique (8027) and Request_Unique (693) verified [reuse helpers];
+  Request_Without_Commit verified (13); Commit_Without_Receipt verified (12).
+Gate 2 (-D=LIVENESS -D=BOUND -D=GAP2): Deadline_Witness_Concrete verified (49).
+  (General Deadline_Witness: timeout; a concrete trace suffices for existence.)
+Gate 3 (-D=LIVENESS -D=BOUND -D=GAP2): Deadline_Per_Hop verified (30).
+Gate 4: Ablation (-D=LIVENESS -D=GAP2): trace found, concrete (14) and general (27).
+        Gap control (-D=LIVENESS -D=BOUND -D=GAP1): trace found, concrete (17)
+        and general (31); in Gap_Concrete the upstream settle commits in block 3,
+        after the tick past tIn = 2.
+No wellformedness warnings. Results in out_core2.txt, out_core3.txt, out_core_bisect.txt.
+
+Claim allowed: conditional, completion-aware per-hop deadline theorem for the
+one-hop core model (honest parties, settle path), under bounded responsiveness
+(D = 2), receipt/forwarder promptness and the CLTV gap; NowIsLatest is a
+modelling restriction. Not claimed: arbitrary routes (composition not done),
+the full model (modeldeadline3: witness/controls inconclusive), novelty
+(literature comparison pending).
