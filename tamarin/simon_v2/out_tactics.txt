@@ -1,1 +1,2 @@
 Two_Hop_Witness_Consecutive_A:   Two_Hop_Witness_Consecutive_A (exists-trace): verified (35 steps) | 10s
+Two_Hop_Witness_Consecutive_B: TIMEOUT/exit 143 | 23s

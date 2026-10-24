@@ -86,3 +86,15 @@ consecutive-tick witness shows the restrictions are satisfiable under ordinary
 unit-step block progression; for two hops, satisfiability is shown only with a
 skipping clock. The theorem stays conditional on NowIsLatest and the three
 assumptions. Novelty: "to our knowledge" (see related_work.md).
+
+## Update: two-hop consecutive witness
+Two_Hop_Witness_Consecutive_A (ticks 1..6, no tick skipped or added;
+-D=LIVENESS -D=BOUND -D=GAP2) verified (35 steps, 10 s) with the tactic
+facts_first (solve protocol facts first; assumption case splits and KU goals
+last). Without the tactic: timeout at 45 min. (Variant B, splits_first, was
+stopped after A succeeded; no result.)
+
+Updated wording: the theorem holds for every trace satisfying the clock and
+liveness restrictions, including traces with skipped ticks. Consecutive-tick
+witnesses for one hop and for two hops show that the restrictions are
+satisfiable under ordinary unit-step block progression.
