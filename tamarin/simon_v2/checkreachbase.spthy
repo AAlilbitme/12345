@@ -1,0 +1,44 @@
+theory CheckReachBase
+begin
+
+#include "modelfixb.spthy"
+
+lemma Open_Reachable:
+  exists-trace
+  "Ex A B ptr #i. ChannelOpen(A, B, ptr) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Update_Reachable:
+  exists-trace
+  "Ex A B ptr n #i. StateUpdate(A, B, ptr, n) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Offer_Reachable:
+  exists-trace
+  "Ex S F ptr y #i. HTLCOffered(S, F, ptr, y) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Forward_Base:
+  exists-trace
+  "Ex S F R p0 p1 y #f. HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex a b p m #u. StateUpdate(a, b, p, m) @ #u)"
+
+lemma Forward_Base2:
+  exists-trace
+  "Ex S F R p0 p1 y #f. HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex a b p m #u. StateUpdate(a, b, p, m) @ #u)
+    & not (Ex p z #u. Old(p, z) @ #u)
+    & not (Ex t #u. Tick(t) @ #u)"
+
+lemma Payment_Base:
+  exists-trace
+  "Ex S F R p0 p1 x #o #f #s.
+      HTLCOffered(S, F, p0, h(x)) @ #o
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & SenderSettled(S, F, R, p0, x) @ #s
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex a b p m #u. StateUpdate(a, b, p, m) @ #u)
+    & (All p z #u. Old(p, z) @ #u ==> z = h(x))
+    & not (Ex P p z #u. Refunded(P, p, z) @ #u)
+    & not (Ex t #u. Tick(t) @ #u)"
+
+end

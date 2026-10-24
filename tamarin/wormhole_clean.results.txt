@@ -1,0 +1,18 @@
+wormhole_clean.spthy (no #ifdef; bounds as plain restrictions; T3 omitted) -- tamarin-prover --prove=<lemma>
+
+W0_Chain_Only | no result | 1200s
+WL1_Leak_In_Payment | verified (22 steps) | 38s
+WL2_Plus_Inject | verified (26 steps) | 28s
+WL3_Plus_Settle | verified (28 steps) | 56s
+R2_Fulfil_Then_Refund23 | verified (23 steps) | 330s
+R3_Leak_Then_Refund23 | verified (26 steps) | 171s
+R4_Full_Wormhole | verified (32 steps) | 331s
+R6_Wormhole_P12_Unpaid | verified (32 steps) | 369s
+R7_Wormhole_F2_Honest | verified (32 steps) | 390s
+R8_Wormhole_F2_Honest_Unpaid | no result | 104s
+R9_Wormhole_Colluders_F1_F3 | no result | 1200s
+
+
+Separate reruns (one lemma at a time, 4 GB):
+R8_Wormhole_F2_Honest_Unpaid | verified (32 steps) | 395s
+R9_Wormhole_Colluders_F1_F3 | no result | 1800s

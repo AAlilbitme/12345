@@ -1,0 +1,283 @@
+theory DeadlineCore
+begin
+
+// Minimal one-hop model for the deadline theorem. Only the parts the theorem
+// talks about: the clock, one forward p0 -> p1, and for each settle the chain
+// request -> channel update -> state update -> commit -> receipt. Keys,
+// channel opening, revocation and punishment are left to the full model.
+// All parties are honest. Settle path only (no refunds).
+//
+// Flags (flat): LIVENESS = receipt and forwarder promptness, BOUND = bounded
+// responsiveness (D = 2), GAP2 = tOut + D <= tIn, GAP1 = tOut + 1 <= tIn.
+// Theorem: -D=LIVENESS -D=BOUND -D=GAP2   Ablation: -D=LIVENESS -D=GAP2
+// Gap control: -D=LIVENESS -D=BOUND -D=GAP1
+
+builtins: hashing, natural-numbers
+
+// Clock (Simon's): increasing ticks, may jump.
+rule Clock_Tick:
+    [ In(%t) ] --[ Tick(%t) ]-> [ !Block(%t) ]
+
+// One forward from p0 (sender S to forwarder F) to p1 (F to receiver R).
+rule Setup_Route:
+    [ Fr(~x), Fr(~p0), Fr(~p1), In(%tIn), In(%tOut) ]
+    --[ SetupOnce(),
+        HTLCForwarded('F', 'S', 'R', ~p0, ~p1, h(~x)),
+        ForwardExpiries(~p0, ~p1, h(~x), %tIn, %tOut) ]->
+    [ ReceiverHas(~p1, ~x), FwdPending(~p0, ~p1) ]
+
+// Receiver requests the downstream settle on p1.
+rule Receiver_Request_Settle:
+    [ ReceiverHas(p1, x), !Block(%b), Fr(~rid) ]
+    --[ SettleRequested('R', p1, h(x), ~rid, %b), Now(%b) ]->
+    [ UpdateFor(p1, <'settle', h(x), ~rid>), AwaitFulfilled(p1, x) ]
+
+// Channel update for a requested operation: new state, then revocation of the
+// old one (StateUpdate), then the operation commits.
+rule Update_For_Op:
+    [ UpdateFor(ptr, op), Fr(~n) ]
+    --[ ChannelUpdateFor(ptr, op, ~n) ]->
+    [ InFlight(ptr, ~n, op) ]
+
+rule Revoke_Old_State:
+    [ InFlight(ptr, n, op) ]
+    --[ StateUpdate(ptr, n) ]->
+    [ UpdateDone(ptr, n, op) ]
+
+rule Commit_Op:
+    [ UpdateDone(ptr, n, op), !Block(%b) ]
+    --[ HTLCCommitted(ptr, op, n), HTLCCommittedAt(ptr, op, %b), Now(%b) ]->
+    [ Committed(ptr, op) ]
+
+// The committed settle delivers the preimage to the upstream party.
+rule Deliver_Preimage:
+    [ AwaitFulfilled(ptr, x), Committed(ptr, <'settle', h(x), rid>), !Block(%b) ]
+    --[ PreimageAvailable(ptr, h(x), %b), Now(%b) ]->
+    [ Fulfilled(ptr, x) ]
+
+// The forwarder, holding the preimage from p1, requests the settle on p0.
+rule Forwarder_Request_Settle:
+    [ Fulfilled(p1, x), FwdPending(p0, p1), !Block(%b), Fr(~rid) ]
+    --[ SettleRequested('F', p0, h(x), ~rid, %b), Now(%b) ]->
+    [ UpdateFor(p0, <'settle', h(x), ~rid>), AwaitFulfilled(p0, x) ]
+
+restriction SetupOnce:
+    "All #i #j. SetupOnce() @ #i & SetupOnce() @ #j ==> #i = #j"
+
+restriction TickOnce:
+    "All %t #i #j. Tick(%t) @ #i & Tick(%t) @ #j ==> #i = #j"
+
+restriction TicksInOrder:
+    "All %s %t #i #j. Tick(%s) @ #i & Tick(%t) @ #j & %s << %t ==> #i < #j"
+
+// MODELLING RESTRICTION: a stamped event uses the latest tick.
+restriction NowIsLatest:
+    "All %b %c #q #t. Now(%b) @ #q & Tick(%c) @ #t & %b << %c ==> #q < #t"
+
+#ifdef LIVENESS
+#define RECEIPT
+#define FWDPROMPT
+#endif
+
+#ifdef RECEIPT
+// ASSUMPTION (receipt promptness): a settle committed in block b is delivered
+// upstream before any later tick (same block).
+restriction ReceiptPromptness:
+    "All ptr y rid %b %c #i #t.
+        HTLCCommittedAt(ptr, <'settle', y, rid>, %b) @ #i
+      & Tick(%c) @ #t & %b << %c & #i < #t
+     ==> Ex #a. PreimageAvailable(ptr, y, %b) @ #a & #i < #a & #a < #t"
+
+#endif
+
+#ifdef FWDPROMPT
+// ASSUMPTION (forwarder promptness): once the downstream preimage is available
+// in block b, the forwarder requests the upstream settle before any later tick.
+restriction ForwarderPromptness:
+    "All P Prev Next pin pout y %b %c #f #a #t.
+        HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+      & PreimageAvailable(pout, y, %b) @ #a
+      & Tick(%c) @ #t & %b << %c & #a < #t
+     ==> Ex rid2 #q. SettleRequested(P, pin, y, rid2, %b) @ #q & #a < #q & #q < #t"
+#endif
+
+#ifdef BOUND
+// ASSUMPTION (bounded responsiveness, D = 2): a settle requested in block b
+// commits before any tick c > b + D.
+restriction BoundedResponsiveness:
+    "All Q ptr y rid %b %c #r #k.
+        SettleRequested(Q, ptr, y, rid, %b) @ #r & Tick(%c) @ #k & #r < #k
+      & (%b %+ %1 %+ %1) << %c
+     ==> Ex n #l. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #l & #r < #l & #l < #k"
+#endif
+
+#ifdef GAP2
+// ASSUMPTION (CLTV gap): tOut + D <= tIn.
+restriction CLTVGap:
+    "All pin pout y %tIn %tOut #e.
+        ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+     ==> (%tOut %+ %1 %+ %1 = %tIn) | ((%tOut %+ %1 %+ %1) << %tIn)"
+#endif
+
+#ifdef GAP1
+// CONTROL: weaker gap tOut + 1 <= tIn.
+restriction CLTVGap:
+    "All pin pout y %tIn %tOut #e.
+        ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+     ==> (%tOut %+ %1 = %tIn) | ((%tOut %+ %1) << %tIn)"
+#endif
+
+// Helper (safety, reused): each channel delivers a given preimage at most
+// once, and each party requests a given settle at most once per channel.
+lemma Delivery_Unique [reuse]:
+  "All ptr y %b %d #a #a2. PreimageAvailable(ptr, y, %b) @ #a & PreimageAvailable(ptr, y, %d) @ #a2
+   ==> #a = #a2"
+
+lemma Request_Unique [reuse]:
+  "All Q ptr y rid rid2 %b %d #q #q2.
+      SettleRequested(Q, ptr, y, rid, %b) @ #q & SettleRequested(Q, ptr, y, rid2, %d) @ #q2
+   ==> #q = #q2"
+
+// THEOREM (derived, per hop): if the downstream settle commits in a block
+// b <= tOut, the upstream settle commits before any tick past tIn.
+lemma Deadline_Per_Hop:
+  "All P Prev Next pin pout y rid %b %cx %tIn %tOut #f #e #i #k.
+      HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+    & (%b = %tOut | %b << %tOut)
+    & Tick(%cx) @ #k & %tIn << %cx & #i < #k
+   ==> Ex rid2 n #l. HTLCCommitted(pin, <'settle', y, rid2>, n) @ #l & #l < #k"
+
+// Correspondence (safety): every committed settle has a matching request,
+// update and state update for the same request id and update number, in order.
+lemma Settle_Commit_Correspondence:
+  "All ptr y rid n #c. HTLCCommitted(ptr, <'settle', y, rid>, n) @ #c
+   ==> Ex Q %b #q #u #s. SettleRequested(Q, ptr, y, rid, %b) @ #q
+         & ChannelUpdateFor(ptr, <'settle', y, rid>, n) @ #u
+         & StateUpdate(ptr, n) @ #s
+         & #q < #u & #u < #s & #s < #c"
+
+// Control (safety): the forwarder requests the upstream settle, which never
+// commits.
+lemma Request_Without_Commit:
+  exists-trace
+  "Ex pin pout y rid %b #f #q.
+      HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & SettleRequested('F', pin, y, rid, %b) @ #q
+    & not (Ex n #l. HTLCCommitted(pin, <'settle', y, rid>, n) @ #l)"
+
+// Control (safety): a settle commits, the clock passes the HTLC expiry, and
+// the preimage is never delivered.
+lemma Commit_Without_Receipt:
+  exists-trace
+  "Ex pin pout y rid n %b %tIn %tOut %cx #e #q #i #k.
+      ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & SettleRequested('R', pout, y, rid, %b) @ #q
+    & HTLCCommitted(pout, <'settle', y, rid>, n) @ #i
+    & Tick(%cx) @ #k & %tOut << %cx & #q < #i & #i < #k
+    & not (Ex %d #a. PreimageAvailable(pout, y, %d) @ #a)"
+
+// Witness (with -D=LIVENESS -D=BOUND -D=GAP2): all assumptions hold together
+// on a full trace where the clock passes tIn.
+lemma Deadline_Witness:
+  exists-trace
+  "Ex pin pout y rid rid2 n n2 %b %c2 %tIn %tOut %cx
+      #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2 #l #k.
+      HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & SettleRequested('R', pout, y, rid, %b) @ #q1
+    & ChannelUpdateFor(pout, <'settle', y, rid>, n) @ #u1
+    & StateUpdate(pout, n) @ #s1
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+    & PreimageAvailable(pout, y, %b) @ #a
+    & SettleRequested('F', pin, y, rid2, %b) @ #q2
+    & ChannelUpdateFor(pin, <'settle', y, rid2>, n2) @ #u2
+    & StateUpdate(pin, n2) @ #s2
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %c2) @ #l
+    & Tick(%cx) @ #k & %tIn << %cx
+    & #f < #q1 & #q1 < #u1 & #u1 < #s1 & #s1 < #i & #i < #a & #a < #q2
+    & #q2 < #u2 & #u2 < #s2 & #s2 < #l & #l < #k
+    & (%b = %tOut | %b << %tOut)"
+
+// Gap control (with -D=LIVENESS -D=BOUND -D=GAP1): the downstream settle
+// commits in block tOut, and the upstream settle commits only after a tick
+// past tIn (in block tOut + 2, allowed by D = 2).
+lemma Gap_Counterexample:
+  exists-trace
+  "Ex pin pout y rid rid2 n2 %b %c2 %tIn %tOut %cx #f #e #i #k #l.
+      HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+    & %b = %tOut
+    & Tick(%cx) @ #k & %tIn << %cx & #i < #k
+    & HTLCCommitted(pin, <'settle', y, rid2>, n2) @ #l
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %c2) @ #l
+    & #k < #l"
+
+// Ablation (with -D=LIVENESS -D=GAP2): without bounded responsiveness the
+// upstream settle may never commit while the clock passes tIn.
+lemma Ablation_Counterexample:
+  exists-trace
+  "Ex pin pout y rid %b %tIn %tOut %cx #f #e #i #k.
+      HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %b) @ #i
+    & (%b = %tOut | %b << %tOut)
+    & Tick(%cx) @ #k & %tIn << %cx & #i < #k
+    & not (Ex rid2 n #l. HTLCCommitted(pin, <'settle', y, rid2>, n) @ #l)"
+
+// Witness with concrete blocks (with -D=LIVENESS -D=BOUND -D=GAP2):
+// tOut = b = 1, tIn = 3, ticks exactly 1 (start), 3 = tIn, 4 > tIn.
+lemma Deadline_Witness_Concrete:
+  exists-trace
+  "Ex pin pout y rid rid2 n n2 %c2
+      #k0 #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2 #l #k1 #k.
+      Tick(%1) @ #k0
+    & HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %1 %+ %1 %+ %1, %1) @ #e
+    & SettleRequested('R', pout, y, rid, %1) @ #q1
+    & ChannelUpdateFor(pout, <'settle', y, rid>, n) @ #u1
+    & StateUpdate(pout, n) @ #s1
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %1) @ #i
+    & PreimageAvailable(pout, y, %1) @ #a
+    & SettleRequested('F', pin, y, rid2, %1) @ #q2
+    & ChannelUpdateFor(pin, <'settle', y, rid2>, n2) @ #u2
+    & StateUpdate(pin, n2) @ #s2
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %c2) @ #l
+    & Tick(%1 %+ %1 %+ %1) @ #k1
+    & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k
+    & #k0 < #f & #f < #q1 & #q1 < #u1 & #u1 < #s1 & #s1 < #i & #i < #a
+    & #a < #q2 & #q2 < #u2 & #u2 < #s2 & #s2 < #l & #l < #k1 & #k1 < #k
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k))"
+
+// Ablation with concrete blocks (with -D=LIVENESS -D=GAP2).
+lemma Ablation_Concrete:
+  exists-trace
+  "Ex pin pout y rid #k0 #f #e #i #k1 #k.
+      Tick(%1) @ #k0
+    & HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %1 %+ %1 %+ %1, %1) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %1) @ #i
+    & Tick(%1 %+ %1 %+ %1) @ #k1 & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k
+    & #k0 < #f & #i < #k1 & #k1 < #k
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k))
+    & not (Ex rid2 n #l. HTLCCommitted(pin, <'settle', y, rid2>, n) @ #l)"
+
+// Gap control with concrete blocks (with -D=LIVENESS -D=BOUND -D=GAP1):
+// tOut = b = 1, tIn = 2; the upstream settle commits in block 3, after the
+// tick past tIn.
+lemma Gap_Concrete:
+  exists-trace
+  "Ex pin pout y rid rid2 n2 #k0 #f #e #i #k1 #k #l.
+      Tick(%1) @ #k0
+    & HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %1 %+ %1, %1) @ #e
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %1) @ #i
+    & Tick(%1 %+ %1) @ #k1 & Tick(%1 %+ %1 %+ %1) @ #k
+    & HTLCCommitted(pin, <'settle', y, rid2>, n2) @ #l
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %1 %+ %1 %+ %1) @ #l
+    & #k0 < #f & #i < #k1 & #k1 < #k & #k < #l
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k0 | #j = #k1 | #j = #k))"
+
+end

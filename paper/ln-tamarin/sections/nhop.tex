@@ -1,0 +1,115 @@
+\section{Scaling to \texorpdfstring{$N$}{N} Hops}
+\label{sec:nhop}
+
+The concrete theory fixes the path at three hops. Whether the same guarantees
+hold for paths of arbitrary length is the obvious next question, and it is not
+answerable by simply adding rules: each additional hop in the signed-message
+encoding multiplies the adversary's options, and \mtamarin's backward search
+does not terminate.
+
+\subsection{Abstracting the Routing Layer}
+
+The obstruction is the signed HTLC offer. Resolving where a forwarded message
+came from requires \mtamarin\ to consider every party as a possible origin, and
+with an unbounded number of hops that analysis recurses without bound. We
+therefore replace the network-level message with an internal linear fact handed
+directly from one hop to the next:
+
+\begin{lstlisting}
+rule Forward_HTLC:
+    [ Route($Prev, $Me, ptrIn, y, amtOut + fee),
+      !ChannelConnect(ptrOut, $Me, $Next),
+      Free(ptrOut) ]
+    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                      amtOut + fee, amtOut),
+        FeeExpected($Me, ptrIn, ptrOut, y, fee),
+        Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]->
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtOut + fee, amtOut, fee),
+      Route($Me, $Next, ptrOut, y, amtOut) ]
+\end{lstlisting}
+
+This single rule fires at every hop, for any $N$. Because the HTLC is no longer
+a self-referential signed term, \mtamarin's origin analysis no longer recurses.
+The price is that per-hop authentication is no longer machine-checked at this
+layer; \Cref{sec:refinement} discharges that obligation separately.
+
+\subsection{Amount Chaining and the Choice of Builtin}
+
+The rule above is worth reading closely for one detail. The incoming amount is
+matched against the pattern \code{amtOut + fee}, where \code{+} is the
+associative-commutative operator of the \code{multiset} builtin. AC unification
+lets this pattern \emph{split} the incoming amount nondeterministically: $\$Me$
+keeps \code{fee} and locks \code{amtOut} downstream. The outgoing \code{Route}
+fact then carries \code{amtOut}, which becomes the next hop's incoming amount.
+Value therefore chains along a path of any length.
+
+This is why the two theories use different builtins. The
+\code{natural-numbers} builtin used in \code{multihop.spthy} provides
+\code{\%+}, which can \emph{check} a sum --- \code{Eq(\%vIn, \%vOut \%+ \%fee)}
+--- but cannot destructure one in a premise, because \code{\%+} is not
+AC-unifiable. At three fixed hops, checking suffices, and
+\code{natural-numbers} keeps the arithmetic lemmas cheap. At unbounded $N$,
+splitting is required, so \code{multiset} is the only workable choice. The
+selection is driven by what each builtin can unify, not by preference.
+
+Five properties are new at this layer and could not be stated at all without
+the chaining: \code{Forward\_Requires\_Incoming} (279 steps), which requires
+every forward to be preceded by an offer or a predecessor forward \emph{with
+agreeing amounts}; \code{Amount\_Strictly\_Decreases\_Per\_Hop};
+\code{Fee\_Only\_On\_Successful\_Forward};
+\code{Redeem\_Requires\_Receiver\_Release}; and the witness
+\code{Multihop\_Payment\_With\_Fees\_Possible}.
+
+\subsection{Soundness of the Abstraction}
+\label{sec:refinement}
+
+The abstraction transfers safety from the concrete model to the abstract one
+only if the concrete model's authentication guarantees justify it. We make this
+precise. Let $C$ be the concrete theory and $A$ the abstract one, and let $\pi$
+project a concrete trace onto the shared alphabet $\Sigma$ of routing events:
+\[
+\small
+\Sigma = \left\{
+\begin{array}{l}
+\mathit{HTLCOffered},\ \mathit{HTLCForwarded},\\
+\mathit{HTLCFulfilled},\ \mathit{Redeemed},\ \mathit{Refunded}
+\end{array}
+\right\}.
+\]
+
+\begin{thrm}[Refinement]
+\label{thm:refinement}
+Under the per-hop authentication guarantees of \Cref{thm:causality}, for every
+honest trace $t$ of $C$ there is a trace $t'$ of $A$ with $\pi(t) = \pi(t')$.
+Consequently every $\Sigma$-property proved of $A$ holds of $C$ restricted to
+honest executions.
+\end{thrm}
+
+The argument is by induction on the length of the concrete trace and is given
+in full in the artifact. The essential step is that \Cref{thm:causality} lets a
+concrete \code{Forward1\_HTLC} step be matched by an abstract
+\code{Forward\_HTLC} step consuming the corresponding \code{Route} fact: the
+signed message's authenticity is exactly what the linear fact assumes.
+
+\Cref{thm:refinement} is a pen-and-paper result, not a machine-checked one, and
+we flag it as the principal soundness caveat of the $N$-hop extension.
+
+\medbfparagraph{Why the wormhole disappears}
+One consequence deserves comment. The wormhole is not reachable in the abstract
+model, and this is structural rather than accidental. In $C$ the preimage
+travels as a network message that the adversary can relay out of band. In $A$
+the settlement chain is carried by linear \code{Fulfill(ptr, x)} facts, each
+consumed by exactly one downstream hop, so no party can be skipped. The
+abstraction that buys unbounded path length also removes the collusion side
+channel. Attacks that exist at the message layer must therefore be established
+in $C$; only $A$ carries them to arbitrary $N$. This is a limitation of the
+layering, and we state it rather than leaving it implicit.
+
+\medbfparagraph{Tractability boundary}
+One lemma, \code{Settle\_Requires\_Receiver\_Release}, remains open at the
+abstract layer. Resolving \code{SenderSettled} backwards walks the entire
+generic settle chain, whose length is unbounded, and the search does not
+terminate. It verifies without difficulty in the fixed-hop theory. We report it
+as the single genuine tractability boundary of this layer rather than removing
+it from the file.

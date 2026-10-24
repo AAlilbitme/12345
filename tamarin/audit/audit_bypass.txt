@@ -1,0 +1,46 @@
+lemma                                         steps #rules  verdict   rules touched
+SenderSettled_Uses_Fulfilled                      2      0  RESTATE?  
+SettledHop_Uses_Outgoing                          2      0  RESTATE?  
+SettledHop_From_Forward                           8      0  RESTATE?  
+No_Settle_And_Refund_Same_Hop                     8      0  RESTATE?  
+First_Hop_Skip_Requires_Compromise               14      0  RESTATE?  
+Second_Hop_Skip_Requires_Compromise              29      0  RESTATE?  
+Hop3_Skip_Requires_Compromise                    44      0  protocol  
+Hop4_Skip_Requires_Compromise                    59      0  protocol  
+No_Fulfill_On_Forwarded_Incoming                 68      0  protocol  
+Hop5_Skip_Requires_Compromise                    74      0  protocol  
+Hop6_Skip_Requires_Compromise                    89      0  protocol  
+Redeemed_Source                                   8      2  RESTATE?  Intermediary_Settle, Receiver_Fulfill_HTLC
+Forward_Unique_Per_Incoming                     134      2  protocol  Forward_HTLC, Sender_Offer_HTLC
+Wormhole_Fee_Theft_Reachable                    343     11  protocol  A_Send_Proposal, AttackerSkip, B_Recv_Proposal, Forward_HTLC, Intermediary_Timeout_Refund, Lock_Funds_And_Open, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key, Sender_Offer_HTLC, Sender_Timeout_Refund
+
+14 proofs; 7 restatement candidates
+
+lemma                                         steps #rules  verdict   rules touched
+Invoice_Has_Secret_Preimage                       2      0  RESTATE?  
+SenderSettled_Uses_Fulfilled                      2      0  RESTATE?  
+SettledHop_Uses_Outgoing                          2      0  RESTATE?  
+SettledHop_From_Forward                           8      0  RESTATE?  
+No_Settle_And_Refund_Same_Hop                     8      0  RESTATE?  
+Sender_Channel_Redeemed                           8      0  RESTATE?  
+Any_Hop_Skip_Requires_Compromise                 17      0  RESTATE?  
+Root_First                                       20      0  RESTATE?  
+Route_Redeemed_No_Compromise                     32      0  protocol  
+Hop_Redeem_Propagates                            44      0  protocol  
+Next_Is_Child                                    56      0  protocol  
+No_Fulfill_On_Forwarded_Incoming                 68      0  protocol  
+Forward_Parent                                   68      0  protocol  
+Ltk_Known_Implies_Compromised                     5      1  RESTATE?  Compromise_Ltk
+Skipped_Requires_Compromise                       5      1  RESTATE?  Compromise_Ltk
+Invoice_Released_Once                            20      1  RESTATE?  Receiver_Create_Invoice
+Redeemed_Source                                   8      2  RESTATE?  Intermediary_Settle, Receiver_Fulfill_HTLC
+Refund_Requires_Timeout                          32      2  protocol  Intermediary_Timeout_Refund, Sender_Timeout_Refund
+Route_Redeemed_Gen                              122      2  protocol  Intermediary_Settle, Receiver_Fulfill_HTLC
+Forward_Unique_Per_Incoming                     134      2  protocol  Forward_HTLC, Sender_Offer_HTLC
+OneOutcomePerHTLC                                17      3  protocol  Intermediary_Settle, Receiver_Create_Invoice, Receiver_Fulfill_HTLC
+HTLC_On_Opened_Channel                           38      3  protocol  Forward_HTLC, Register_key, Sender_Offer_HTLC
+Fulfilled_Requires_Release                       68      4  protocol  AttackerSkip, Compromise_Ltk, Intermediary_Settle, Receiver_Fulfill_HTLC
+Fulfilled_Source                                638      9  protocol  A_Send_Proposal, AttackerSkip, B_Recv_Proposal, Compromise_Ltk, Intermediary_Settle, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key, Sender_Settle
+Wormhole_Fee_Theft_Reachable                    343     11  protocol  A_Send_Proposal, AttackerSkip, B_Recv_Proposal, Forward_HTLC, Intermediary_Timeout_Refund, Lock_Funds_And_Open, Receiver_Create_Invoice, Receiver_Fulfill_HTLC, Register_key, Sender_Offer_HTLC, Sender_Timeout_Refund
+
+25 proofs; 12 restatement candidates

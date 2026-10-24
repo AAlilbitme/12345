@@ -1,0 +1,30 @@
+\section{Symbolic Model and Notation}
+\label{sec:notation}
+
+We model the protocol in \mtamarin~\cite{meier2013tamarin}, a symbolic tool for
+security-protocol analysis. A system state $S$ is a finite multiset of facts.
+Rules are transitions, enabled when their premises are present in the state. A
+rule consists of three sets of facts:
+\begin{equation}
+    [L] \; \text{--}\!\!\text{--}[A] \rightarrow [R]
+\end{equation}
+where $L$ are the premises, $A$ the action facts, and $R$ the conclusions.
+Firing a rule removes the linear premises from the state and adds the
+conclusions; action facts are not part of the state but are recorded on the
+trace.
+
+\mtamarin\ provides built-in fact symbols \code{In()} and \code{Out()}
+representing the adversary-controlled network under
+Dolev--Yao~\cite{dolev1983security}, and \code{Fr()} for generating fresh,
+unique values. Facts are either \emph{linear} or \emph{persistent}. A linear
+fact is consumed when a rule fires; a persistent fact, written with a leading
+bang as \code{!F(t)}, is checked but never removed, and may license unboundedly
+many rule firings. This distinction is the subject of
+\Cref{sec:discipline} and the source of our main modelling finding.
+
+We use the \code{hashing}, \code{signing}, \code{natural-numbers} and
+\code{multiset} built-ins; \Cref{sec:nhop} explains why two different
+arithmetic builtins are needed. An execution produces a trace of action facts,
+and security goals are stated as first-order formulas over traces, proved
+either for all traces (safety) or for a single witnessing trace
+(exists-trace).

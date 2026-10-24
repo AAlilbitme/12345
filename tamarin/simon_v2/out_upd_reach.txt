@@ -1,0 +1,1616 @@
+maude tool: 'maude'
+ checking version: WARNING:
+
+ 'maude --version' returned unsupported version '3.2'
+ Please install one of the following versions of Maude: 2.7.1, 3.0, 3.1, 3.2.1, 3.2.2, 3.3, 3.3.1, 3.4, 3.5
+
+Detailed results from testing 'maude'
+ command: maude --version
+ stdin:   
+ stdout:  3.2
+
+ stderr:  
+ checking installation: OK.
+[Theory CheckUpd] Theory loaded
+[Theory CheckUpd] Theory translated
+[Theory CheckUpd] Derivation checks started
+[Theory CheckUpd] Derivation checks ended
+[Theory CheckUpd] Theory closed
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: InFlight( ptr, n, <'add', y> ) ▶₀ #c
+1: !UpdateDone( ptr, n ) ▶₁ #c
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: Route( $Prev, $Me, p0, y, %vIn, %tIn ) ▶₀ #f
+1: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+2: Mutex( p1 ) ▶₂ #f
+3: %tOut ⊏ %tIn
+4: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+3
+4
+0
+1
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: Route( $Prev, $Me, p0, y, %vIn, (%newVar%+%tOut) ) ▶₀ #f
+1: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+2: Mutex( p1 ) ▶₂ #f
+3: %vOut ⊏ %vIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+3
+0
+1
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: Route( $Prev, $Me, p0, y, (%newVar%+%vOut), (%tOut%+%newVar.1)) ▶₀ #f
+1: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+2: Mutex( p1 ) ▶₂ #f
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !UpdateDone( ~ptr, ~n_new ) ▶₁ #c
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.15
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.17
+3: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr
+4: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+3
+1
+2
+4
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !UpdateDone( ~ptr, ~n_new ) ▶₁ #c
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.15
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.17
+3: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr
+4: PendingA( $A, $B, ~ptr, n_old, sAold, oldCommitA, '0', sAnew.1,          newCommitA, sign(newCommitA, ~ltk.2), ~fA, ~fB) ▶₀ #vr.4
+5: PendingB( $A, $B, ~ptr, n_old, sBold.1, oldCommitB.1, '0', sBold,          oldCommitB, sign(oldCommitB, ~ltk.3), ~fA, ~fB) ▶₁ #vr.4
+6: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+3
+1
+2
+4
+5
+6
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !UpdateDone( ~ptr, ~n_new ) ▶₁ #c
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.15
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.17
+3: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr
+4: PendingA( $A, $B, ~ptr, n_old, sAold.1, oldCommitA.1, '0', sAold,          oldCommitA, sign(oldCommitA, ~ltk.2), ~fA, ~fB) ▶₀ #vr.3
+5: PendingB( $A, $B, ~ptr, n_old, sBold, oldCommitB, '0', sBnew.1,          newCommitB, sign(newCommitB, ~ltk.3), ~fA, ~fB) ▶₁ #vr.3
+6: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+3
+1
+2
+4
+5
+6
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.15
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.17
+2: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr
+3: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+4: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+5: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+0
+1
+3
+4
+5
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !UpdateDone( ptr, ~n_new ) ▶₁ #c
+1: UpdateFor( ptr, <'add', y> ) ▶₈ #vr
+2: PendingA( $A, $B, ptr, n_old.1, sAold.1, oldCommitA.1, n_old,          sAold, oldCommitA, sign(oldCommitA, ~ltk.2), fA, fB) ▶₀ #vr.3
+3: PendingB( $A, $B, ptr, n_old.1, sBold.1, oldCommitB.1, n_old,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA, fB) ▶₁ #vr.3
+4: PendingA( $A, $B, ptr, n_old.2, sAold.2, oldCommitA.2, n_old,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.4), fA, fB) ▶₀ #vr.4
+5: PendingB( $A, $B, ptr, n_old.2, sBold.2, oldCommitB.2, n_old,          sBold, oldCommitB, sign(oldCommitB, ~ltk.5), fA, fB) ▶₁ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+4
+5
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.17
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.19
+3: Mutex( p1 ) ▶₂ #f
+4: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+5: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr.2
+6: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+7: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+8: !KU( ~ptr ) @ #vk.15
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+5
+0
+1
+2
+3
+4
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.17
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.10) ) @ #vk.19
+3: Mutex( p1 ) ▶₂ #f
+4: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+5: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr.2
+6: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+7: PendingB( $A.1, $B.1, ~ptr, n_old, sBold.1, oldCommitB.1, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+8: PendingA( $A, $B, ~ptr, n_old.1, sAold.1, oldCommitA.1, '0',          sAnew.2, newCommitA.1, sign(newCommitA.1, ~ltk.4), ~fA, ~fB) ▶₀ #vr.7
+9: PendingB( $A, $B, ~ptr, n_old.1, sBold.2, oldCommitB.2, '0', sBold,          oldCommitB, sign(oldCommitB, ~ltk.5), ~fA, ~fB) ▶₁ #vr.7
+10: !KU( ~ptr ) @ #vk.15
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+5
+0
+1
+2
+3
+4
+6
+7
+8
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.8) ) @ #vk.17
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.10) ) @ #vk.19
+3: Mutex( p1 ) ▶₂ #f
+4: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+5: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr.2
+6: PendingA( $A.1, $B.1, ~ptr, n_old, sAold.1, oldCommitA.1, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+7: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+8: PendingA( $A, $B, ~ptr, n_old.1, sAold.2, oldCommitA.2, '0', sAold,          oldCommitA, sign(oldCommitA, ~ltk.4), ~fA, ~fB) ▶₀ #vr.6
+9: PendingB( $A, $B, ~ptr, n_old.1, sBold.1, oldCommitB.1, '0',          sBnew.2, newCommitB.1, sign(newCommitB.1, ~ltk.5), ~fA, ~fB) ▶₁ #vr.6
+10: !KU( ~ptr ) @ #vk.15
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+5
+0
+1
+2
+3
+4
+6
+7
+8
+9
+10
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: Mutex( p1 ) ▶₂ #f
+2: AwaitRoute( $Prev, $Me, p0, y, (%newVar%+%vOut), (%tOut%+%newVar.1)) ▶₀ #vr
+3: UpdateFor( p0, <'add', y> ) ▶₈ #vr.2
+4: PendingA( $A.1, $B.1, p0, n_old.1, sAold.1, oldCommitA.1, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+5: PendingB( $A.1, $B.1, p0, n_old.1, sBold.1, oldCommitB.1, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+6: PendingA( $A, $B, p0, n_old.2, sAold.2, oldCommitA.2, n_old, sAold,          oldCommitA, sign(oldCommitA, ~ltk.4), fA, fB) ▶₀ #vr.6
+7: PendingB( $A, $B, p0, n_old.2, sBold.2, oldCommitB.2, n_old,          sBnew.2, newCommitB.1, sign(newCommitB.1, ~ltk.5), fA, fB) ▶₁ #vr.6
+8: PendingA( $A, $B, p0, n_old.3, sAold.3, oldCommitA.3, n_old,          sAnew.2, newCommitA.1, sign(newCommitA.1, ~ltk.6), fA, fB) ▶₀ #vr.7
+9: PendingB( $A, $B, p0, n_old.3, sBold.3, oldCommitB.3, n_old, sBold,          oldCommitB, sign(oldCommitB, ~ltk.7), fA, fB) ▶₁ #vr.7
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+3
+0
+1
+2
+4
+5
+6
+7
+8
+9
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.15
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.17
+2: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr
+3: PendingA( $A, $B, ~ptr, n_old, sAold, oldCommitA, '0', sAnew.1,          newCommitA, sign(newCommitA, ~ltk.2), ~fA, ~fB) ▶₀ #vr.4
+4: PendingB( $A, $B, ~ptr, n_old, sBold.1, oldCommitB.1, '0', sBold,          oldCommitB, sign(oldCommitB, ~ltk.3), ~fA, ~fB) ▶₁ #vr.4
+5: PendingA( $A.1, $B.1, ~ptr, n_old.1, sAold.1, oldCommitA.1, ~n_new,          sAnew.2, newCommitA.1, sign(newCommitA.1, ~ltk.10), fA_new.1,          fB_new.1) ▶₀ #vr.21
+6: PendingB( $A.1, $B.1, ~ptr, n_old.1, sBold.2, oldCommitB.2, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.11), fA_new.1, fB_new.1) ▶₁ #vr.21
+7: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+0
+1
+3
+4
+5
+6
+7
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.18
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.21
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.36
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.18) ) @ #vk.37
+5: Mutex( p1 ) ▶₂ #f
+6: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+7: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+8: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+9: Mutex( ~ptr ) ▶₂ #vr.23
+10: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+11: UpdateFor( ~ptr.1, <'add', y> ) ▶₈ #vr.26
+12: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+13: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+14: !KU( ~ptr ) @ #vk.16
+15: !KU( ~ptr.1 ) @ #vk.34
+16: %vOut.1 ⊏ %vIn
+17: %tOut.1 ⊏ %tIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+11
+16
+17
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+12
+13
+14
+15
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.18
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.21
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.18) ) @ #vk.36
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.20) ) @ #vk.37
+5: Mutex( p1 ) ▶₂ #f
+6: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+7: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+8: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+9: Mutex( ~ptr ) ▶₂ #vr.23
+10: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+11: UpdateFor( ~ptr.1, <'add', y> ) ▶₈ #vr.26
+12: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+13: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.2, oldCommitB.2,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+14: PendingA( $A.2, $B.2, ~ptr.1, n_old.2, sAold.2, oldCommitA.2, '0',          sAnew.4, newCommitA.2, sign(newCommitA.2, ~ltk.14), ~fA.1, ~fB.1) ▶₀ #vr.31
+15: PendingB( $A.2, $B.2, ~ptr.1, n_old.2, sBold.3, oldCommitB.3, '0',          sBold.1, oldCommitB.1, sign(oldCommitB.1, ~ltk.15), ~fA.1, ~fB.1) ▶₁ #vr.31
+16: !KU( ~ptr ) @ #vk.16
+17: !KU( ~ptr.1 ) @ #vk.34
+18: %vOut.1 ⊏ %vIn
+19: %tOut.1 ⊏ %tIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+11
+18
+19
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+12
+13
+14
+15
+16
+17
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.15
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.17
+2: UpdateFor( ~ptr, <'add', y> ) ▶₈ #vr
+3: PendingA( $A, $B, ~ptr, n_old, sAold.1, oldCommitA.1, '0', sAold,          oldCommitA, sign(oldCommitA, ~ltk.2), ~fA, ~fB) ▶₀ #vr.3
+4: PendingB( $A, $B, ~ptr, n_old, sBold, oldCommitB, '0', sBnew.1,          newCommitB, sign(newCommitB, ~ltk.3), ~fA, ~fB) ▶₁ #vr.3
+5: PendingA( $A.1, $B.1, ~ptr, n_old.1, sAold.2, oldCommitA.2, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.10), fA_new.1, fB_new.1) ▶₀ #vr.21
+6: PendingB( $A.1, $B.1, ~ptr, n_old.1, sBold.1, oldCommitB.1, ~n_new,          sBnew.2, newCommitB.1, sign(newCommitB.1, ~ltk.11), fA_new.1,          fB_new.1) ▶₁ #vr.21
+7: !KU( ~ptr ) @ #vk.13
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+0
+1
+3
+4
+5
+6
+7
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.19
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.23
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.38
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.39
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.54
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.28) ) @ #vk.55
+7: Mutex( p1 ) ▶₂ #f
+8: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+9: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+10: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+11: Mutex( ~ptr ) ▶₂ #vr.23
+12: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+13: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+14: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+15: Mutex( ~ptr.1 ) ▶₂ #vr.47
+16: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+17: UpdateFor( ~ptr.2, <'add', y> ) ▶₈ #vr.50
+18: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+19: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+20: !KU( ~ptr ) @ #vk.17
+21: !KU( ~ptr.1 ) @ #vk.36
+22: !KU( ~ptr.2 ) @ #vk.52
+23: %vOut.1 ⊏ %vIn
+24: %tOut.1 ⊏ %tIn
+25: %vOut.2 ⊏ %vIn.1
+26: %tOut.2 ⊏ %tIn.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+17
+23
+24
+25
+26
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+18
+19
+20
+21
+22
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.19
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.23
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.38
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.39
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.28) ) @ #vk.54
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.30) ) @ #vk.55
+7: Mutex( p1 ) ▶₂ #f
+8: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+9: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+10: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+11: Mutex( ~ptr ) ▶₂ #vr.23
+12: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+13: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+14: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+15: Mutex( ~ptr.1 ) ▶₂ #vr.47
+16: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+17: UpdateFor( ~ptr.2, <'add', y> ) ▶₈ #vr.50
+18: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+19: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.3, oldCommitB.3,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+20: PendingA( $A.4, $B.4, ~ptr.2, n_old.3, sAold.3, oldCommitA.3, '0',          sAnew.6, newCommitA.3, sign(newCommitA.3, ~ltk.24), ~fA.2, ~fB.2) ▶₀ #vr.55
+21: PendingB( $A.4, $B.4, ~ptr.2, n_old.3, sBold.4, oldCommitB.4, '0',          sBold.2, oldCommitB.2, sign(oldCommitB.2, ~ltk.25), ~fA.2, ~fB.2) ▶₁ #vr.55
+22: !KU( ~ptr ) @ #vk.17
+23: !KU( ~ptr.1 ) @ #vk.36
+24: !KU( ~ptr.2 ) @ #vk.52
+25: %vOut.1 ⊏ %vIn
+26: %tOut.1 ⊏ %tIn
+27: %vOut.2 ⊏ %vIn.1
+28: %tOut.2 ⊏ %tIn.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+17
+25
+26
+27
+28
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+18
+19
+20
+21
+22
+23
+24
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.19
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.23
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.38
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.39
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.28) ) @ #vk.54
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.30) ) @ #vk.55
+7: Mutex( p1 ) ▶₂ #f
+8: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+9: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+10: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+11: Mutex( ~ptr ) ▶₂ #vr.23
+12: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+13: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+14: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+15: Mutex( ~ptr.1 ) ▶₂ #vr.47
+16: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+17: UpdateFor( ~ptr.2, <'add', y> ) ▶₈ #vr.50
+18: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.3, oldCommitA.3,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+19: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+20: PendingA( $A.4, $B.4, ~ptr.2, n_old.3, sAold.4, oldCommitA.4, '0',          sAold.2, oldCommitA.2, sign(oldCommitA.2, ~ltk.24), ~fA.2, ~fB.2) ▶₀ #vr.54
+21: PendingB( $A.4, $B.4, ~ptr.2, n_old.3, sBold.3, oldCommitB.3, '0',          sBnew.6, newCommitB.3, sign(newCommitB.3, ~ltk.25), ~fA.2, ~fB.2) ▶₁ #vr.54
+22: !KU( ~ptr ) @ #vk.17
+23: !KU( ~ptr.1 ) @ #vk.36
+24: !KU( ~ptr.2 ) @ #vk.52
+25: %vOut.1 ⊏ %vIn
+26: %tOut.1 ⊏ %tIn
+27: %vOut.2 ⊏ %vIn.1
+28: %tOut.2 ⊏ %tIn.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+17
+25
+26
+27
+28
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+18
+19
+20
+21
+22
+23
+24
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: UpdateFor( ptr, <'add', y> ) ▶₈ #vr
+1: PendingA( $A, $B, ptr, n_old.1, sAold.1, oldCommitA.1, n_old,          sAold, oldCommitA, sign(oldCommitA, ~ltk.2), fA, fB) ▶₀ #vr.3
+2: PendingB( $A, $B, ptr, n_old.1, sBold.1, oldCommitB.1, n_old,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA, fB) ▶₁ #vr.3
+3: PendingA( $A, $B, ptr, n_old.2, sAold.2, oldCommitA.2, n_old,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.4), fA, fB) ▶₀ #vr.4
+4: PendingB( $A, $B, ptr, n_old.2, sBold.2, oldCommitB.2, n_old,          sBold, oldCommitB, sign(oldCommitB, ~ltk.5), fA, fB) ▶₁ #vr.4
+5: PendingA( $A.1, $B.1, ptr, n_old.3, sAold.3, oldCommitA.3, ~n_new,          sAnew.2, newCommitA.1, sign(newCommitA.1, ~ltk.6), fA_new.1,          fB_new.1) ▶₀ #vr.9
+6: PendingB( $A.1, $B.1, ptr, n_old.3, sBold.3, oldCommitB.3, ~n_new,          sBnew.2, newCommitB.1, sign(newCommitB.1, ~ltk.7), fA_new.1,          fB_new.1) ▶₁ #vr.9
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+4
+5
+6
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.16
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.19
+2: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.34
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.18) ) @ #vk.35
+4: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+5: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+6: Mutex( ~ptr ) ▶₂ #vr.21
+7: AwaitRoute( $Prev, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.22
+8: UpdateFor( ~ptr.1, <'add', y> ) ▶₈ #vr.24
+9: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.25
+10: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.25
+11: !KU( ~ptr ) @ #vk.14
+12: !KU( ~ptr.1 ) @ #vk.32
+13: %vOut ⊏ %vIn
+14: %tOut ⊏ %tIn
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+13
+14
+0
+1
+2
+3
+4
+5
+6
+7
+9
+10
+11
+12
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.20
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.25
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.40
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.41
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.56
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.57
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.36) ) @ #vk.72
+8: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.38) ) @ #vk.73
+9: Mutex( p1 ) ▶₂ #f
+10: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+11: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+12: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+13: Mutex( ~ptr ) ▶₂ #vr.23
+14: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+15: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+16: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+17: Mutex( ~ptr.1 ) ▶₂ #vr.47
+18: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+19: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+20: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+21: Mutex( ~ptr.2 ) ▶₂ #vr.71
+22: AwaitRoute( $Prev.3, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.72
+23: UpdateFor( ~ptr.3, <'add', y> ) ▶₈ #vr.74
+24: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.75
+25: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.75
+26: !KU( ~ptr ) @ #vk.18
+27: !KU( ~ptr.1 ) @ #vk.38
+28: !KU( ~ptr.2 ) @ #vk.54
+29: !KU( ~ptr.3 ) @ #vk.70
+30: %vOut.1 ⊏ %vIn
+31: %tOut.1 ⊏ %tIn
+32: %vOut.2 ⊏ %vIn.1
+33: %tOut.2 ⊏ %tIn.1
+34: %vOut.3 ⊏ %vIn.2
+35: %tOut.3 ⊏ %tIn.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+23
+30
+31
+32
+33
+34
+35
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+24
+25
+26
+27
+28
+29
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.20
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.25
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.40
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.41
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.56
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.57
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.38) ) @ #vk.72
+8: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.40) ) @ #vk.73
+9: Mutex( p1 ) ▶₂ #f
+10: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+11: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+12: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+13: Mutex( ~ptr ) ▶₂ #vr.23
+14: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+15: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+16: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+17: Mutex( ~ptr.1 ) ▶₂ #vr.47
+18: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+19: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+20: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+21: Mutex( ~ptr.2 ) ▶₂ #vr.71
+22: AwaitRoute( $Prev.3, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.72
+23: UpdateFor( ~ptr.3, <'add', y> ) ▶₈ #vr.74
+24: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.75
+25: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.4, oldCommitB.4,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.75
+26: PendingA( $A.6, $B.6, ~ptr.3, n_old.4, sAold.4, oldCommitA.4, '0',          sAnew.8, newCommitA.4, sign(newCommitA.4, ~ltk.34), ~fA.3, ~fB.3) ▶₀ #vr.79
+27: PendingB( $A.6, $B.6, ~ptr.3, n_old.4, sBold.5, oldCommitB.5, '0',          sBold.3, oldCommitB.3, sign(oldCommitB.3, ~ltk.35), ~fA.3, ~fB.3) ▶₁ #vr.79
+28: !KU( ~ptr ) @ #vk.18
+29: !KU( ~ptr.1 ) @ #vk.38
+30: !KU( ~ptr.2 ) @ #vk.54
+31: !KU( ~ptr.3 ) @ #vk.70
+32: %vOut.1 ⊏ %vIn
+33: %tOut.1 ⊏ %tIn
+34: %vOut.2 ⊏ %vIn.1
+35: %tOut.2 ⊏ %tIn.1
+36: %vOut.3 ⊏ %vIn.2
+37: %tOut.3 ⊏ %tIn.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+23
+32
+33
+34
+35
+36
+37
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+24
+25
+26
+27
+28
+29
+30
+31
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.17
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.21
+2: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.36
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.37
+4: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.52
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.28) ) @ #vk.53
+6: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+7: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+8: Mutex( ~ptr ) ▶₂ #vr.21
+9: AwaitRoute( $Prev, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.22
+10: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.25
+11: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.25
+12: Mutex( ~ptr.1 ) ▶₂ #vr.45
+13: AwaitRoute( $Prev.1, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.46
+14: UpdateFor( ~ptr.2, <'add', y> ) ▶₈ #vr.48
+15: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.49
+16: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.49
+17: !KU( ~ptr ) @ #vk.15
+18: !KU( ~ptr.1 ) @ #vk.34
+19: !KU( ~ptr.2 ) @ #vk.50
+20: %vOut ⊏ %vIn
+21: %tOut ⊏ %tIn
+22: %vOut.1 ⊏ %vIn.1
+23: %tOut.1 ⊏ %tIn.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+14
+20
+21
+22
+23
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+15
+16
+17
+18
+19
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.17
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.21
+2: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.36
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.37
+4: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.28) ) @ #vk.52
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.30) ) @ #vk.53
+6: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+7: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+8: Mutex( ~ptr ) ▶₂ #vr.21
+9: AwaitRoute( $Prev, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.22
+10: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.25
+11: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.25
+12: Mutex( ~ptr.1 ) ▶₂ #vr.45
+13: AwaitRoute( $Prev.1, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.46
+14: UpdateFor( ~ptr.2, <'add', y> ) ▶₈ #vr.48
+15: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.49
+16: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.3, oldCommitB.3,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.49
+17: PendingA( $A.4, $B.4, ~ptr.2, n_old.3, sAold.3, oldCommitA.3, '0',          sAnew.6, newCommitA.3, sign(newCommitA.3, ~ltk.24), ~fA.2, ~fB.2) ▶₀ #vr.53
+18: PendingB( $A.4, $B.4, ~ptr.2, n_old.3, sBold.4, oldCommitB.4, '0',          sBold.2, oldCommitB.2, sign(oldCommitB.2, ~ltk.25), ~fA.2, ~fB.2) ▶₁ #vr.53
+19: !KU( ~ptr ) @ #vk.15
+20: !KU( ~ptr.1 ) @ #vk.34
+21: !KU( ~ptr.2 ) @ #vk.50
+22: %vOut ⊏ %vIn
+23: %tOut ⊏ %tIn
+24: %vOut.1 ⊏ %vIn.1
+25: %tOut.1 ⊏ %tIn.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+14
+22
+23
+24
+25
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+15
+16
+17
+18
+19
+20
+21
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.21
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.27
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.42
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.43
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.58
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.59
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.36) ) @ #vk.74
+8: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.37) ) @ #vk.75
+9: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.46) ) @ #vk.90
+10: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.48) ) @ #vk.91
+11: Mutex( p1 ) ▶₂ #f
+12: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+13: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+14: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+15: Mutex( ~ptr ) ▶₂ #vr.23
+16: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+17: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+18: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+19: Mutex( ~ptr.1 ) ▶₂ #vr.47
+20: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+21: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+22: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+23: Mutex( ~ptr.2 ) ▶₂ #vr.71
+24: AwaitRoute( $Prev.3, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.72
+25: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.75
+26: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.75
+27: Mutex( ~ptr.3 ) ▶₂ #vr.95
+28: AwaitRoute( $Prev.4, $A.6, ~ptr.4, y, %vIn.3, %tIn.3 ) ▶₀ #vr.96
+29: UpdateFor( ~ptr.4, <'add', y> ) ▶₈ #vr.98
+30: PendingA( $A.9, $B.9, ~ptr.4, n_old.4, sAold.4, oldCommitA.4,          ~n_new.4, sAnew.9, newCommitA.4, sign(newCommitA.4, ~ltk.42),          fA_new.9, fB_new.9) ▶₀ #vr.99
+31: PendingB( $A.9, $B.9, ~ptr.4, n_old.4, sBold.4, oldCommitB.4,          ~n_new.4, sBnew.9, newCommitB.4, sign(newCommitB.4, ~ltk.43),          fA_new.9, fB_new.9) ▶₁ #vr.99
+32: !KU( ~ptr ) @ #vk.19
+33: !KU( ~ptr.1 ) @ #vk.40
+34: !KU( ~ptr.2 ) @ #vk.56
+35: !KU( ~ptr.3 ) @ #vk.72
+36: !KU( ~ptr.4 ) @ #vk.88
+37: %vOut.1 ⊏ %vIn
+38: %tOut.1 ⊏ %tIn
+39: %vOut.2 ⊏ %vIn.1
+40: %tOut.2 ⊏ %tIn.1
+41: %vOut.3 ⊏ %vIn.2
+42: %tOut.3 ⊏ %tIn.2
+43: %vOut.4 ⊏ %vIn.3
+44: %tOut.4 ⊏ %tIn.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+29
+37
+38
+39
+40
+41
+42
+43
+44
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+30
+31
+32
+33
+34
+35
+36
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.20
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.25
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.40
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.41
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.56
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.57
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.38) ) @ #vk.72
+8: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.40) ) @ #vk.73
+9: Mutex( p1 ) ▶₂ #f
+10: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+11: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+12: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+13: Mutex( ~ptr ) ▶₂ #vr.23
+14: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+15: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+16: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+17: Mutex( ~ptr.1 ) ▶₂ #vr.47
+18: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+19: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+20: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+21: Mutex( ~ptr.2 ) ▶₂ #vr.71
+22: AwaitRoute( $Prev.3, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.72
+23: UpdateFor( ~ptr.3, <'add', y> ) ▶₈ #vr.74
+24: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.4, oldCommitA.4,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.75
+25: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.75
+26: PendingA( $A.6, $B.6, ~ptr.3, n_old.4, sAold.5, oldCommitA.5, '0',          sAold.3, oldCommitA.3, sign(oldCommitA.3, ~ltk.34), ~fA.3, ~fB.3) ▶₀ #vr.78
+27: PendingB( $A.6, $B.6, ~ptr.3, n_old.4, sBold.4, oldCommitB.4, '0',          sBnew.8, newCommitB.4, sign(newCommitB.4, ~ltk.35), ~fA.3, ~fB.3) ▶₁ #vr.78
+28: !KU( ~ptr ) @ #vk.18
+29: !KU( ~ptr.1 ) @ #vk.38
+30: !KU( ~ptr.2 ) @ #vk.54
+31: !KU( ~ptr.3 ) @ #vk.70
+32: %vOut.1 ⊏ %vIn
+33: %tOut.1 ⊏ %tIn
+34: %vOut.2 ⊏ %vIn.1
+35: %tOut.2 ⊏ %tIn.1
+36: %vOut.3 ⊏ %vIn.2
+37: %tOut.3 ⊏ %tIn.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+23
+32
+33
+34
+35
+36
+37
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+24
+25
+26
+27
+28
+29
+30
+31
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.18
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.23
+2: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.38
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.39
+4: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.54
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.55
+6: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.36) ) @ #vk.70
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.38) ) @ #vk.71
+8: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+9: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+10: Mutex( ~ptr ) ▶₂ #vr.21
+11: AwaitRoute( $Prev, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.22
+12: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.25
+13: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.25
+14: Mutex( ~ptr.1 ) ▶₂ #vr.45
+15: AwaitRoute( $Prev.1, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.46
+16: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.49
+17: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.49
+18: Mutex( ~ptr.2 ) ▶₂ #vr.69
+19: AwaitRoute( $Prev.2, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.70
+20: UpdateFor( ~ptr.3, <'add', y> ) ▶₈ #vr.72
+21: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.73
+22: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.73
+23: !KU( ~ptr ) @ #vk.16
+24: !KU( ~ptr.1 ) @ #vk.36
+25: !KU( ~ptr.2 ) @ #vk.52
+26: !KU( ~ptr.3 ) @ #vk.68
+27: %vOut ⊏ %vIn
+28: %tOut ⊏ %tIn
+29: %vOut.1 ⊏ %vIn.1
+30: %tOut.1 ⊏ %tIn.1
+31: %vOut.2 ⊏ %vIn.2
+32: %tOut.2 ⊏ %tIn.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+20
+27
+28
+29
+30
+31
+32
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+21
+22
+23
+24
+25
+26
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.19
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.25
+2: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.40
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.41
+4: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.56
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.57
+6: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.36) ) @ #vk.72
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.37) ) @ #vk.73
+8: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.48) ) @ #vk.88
+9: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.50) ) @ #vk.89
+10: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+11: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+12: Mutex( ~ptr ) ▶₂ #vr.21
+13: AwaitRoute( $Prev, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.22
+14: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.25
+15: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.25
+16: Mutex( ~ptr.1 ) ▶₂ #vr.45
+17: AwaitRoute( $Prev.1, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.46
+18: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.49
+19: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.49
+20: Mutex( ~ptr.2 ) ▶₂ #vr.69
+21: AwaitRoute( $Prev.2, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.70
+22: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.73
+23: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.73
+24: Mutex( ~ptr.3 ) ▶₂ #vr.93
+25: AwaitRoute( $Prev.3, $A.6, ~ptr.4, y, %vIn.3, %tIn.3 ) ▶₀ #vr.94
+26: UpdateFor( ~ptr.4, <'add', y> ) ▶₈ #vr.96
+27: PendingA( $A.9, $B.9, ~ptr.4, n_old.4, sAold.4, oldCommitA.4,          ~n_new.4, sAnew.9, newCommitA.4, sign(newCommitA.4, ~ltk.42),          fA_new.9, fB_new.9) ▶₀ #vr.97
+28: PendingB( $A.9, $B.9, ~ptr.4, n_old.4, sBold.5, oldCommitB.5,          ~n_new.4, sBnew.9, newCommitB.4, sign(newCommitB.4, ~ltk.43),          fA_new.9, fB_new.9) ▶₁ #vr.97
+29: PendingA( $A.8, $B.8, ~ptr.4, n_old.5, sAold.5, oldCommitA.5, '0',          sAnew.10, newCommitA.5, sign(newCommitA.5, ~ltk.44), ~fA.4, ~fB.4) ▶₀ #vr.101
+30: PendingB( $A.8, $B.8, ~ptr.4, n_old.5, sBold.6, oldCommitB.6, '0',          sBold.4, oldCommitB.4, sign(oldCommitB.4, ~ltk.45), ~fA.4, ~fB.4) ▶₁ #vr.101
+31: !KU( ~ptr ) @ #vk.17
+32: !KU( ~ptr.1 ) @ #vk.38
+33: !KU( ~ptr.2 ) @ #vk.54
+34: !KU( ~ptr.3 ) @ #vk.70
+35: !KU( ~ptr.4 ) @ #vk.86
+36: %vOut ⊏ %vIn
+37: %tOut ⊏ %tIn
+38: %vOut.1 ⊏ %vIn.1
+39: %tOut.1 ⊏ %tIn.1
+40: %vOut.2 ⊏ %vIn.2
+41: %tOut.2 ⊏ %tIn.2
+42: %vOut.3 ⊏ %vIn.3
+43: %tOut.3 ⊏ %tIn.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+26
+36
+37
+38
+39
+40
+41
+42
+43
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+27
+28
+29
+30
+31
+32
+33
+34
+35
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.19
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.25
+2: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.40
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.41
+4: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.56
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.57
+6: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.36) ) @ #vk.72
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.37) ) @ #vk.73
+8: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.46) ) @ #vk.88
+9: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.48) ) @ #vk.89
+10: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+11: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+12: Mutex( ~ptr ) ▶₂ #vr.21
+13: AwaitRoute( $Prev, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.22
+14: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.25
+15: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.25
+16: Mutex( ~ptr.1 ) ▶₂ #vr.45
+17: AwaitRoute( $Prev.1, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.46
+18: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.49
+19: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.49
+20: Mutex( ~ptr.2 ) ▶₂ #vr.69
+21: AwaitRoute( $Prev.2, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.70
+22: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.73
+23: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.73
+24: Mutex( ~ptr.3 ) ▶₂ #vr.93
+25: AwaitRoute( $Prev.3, $A.6, ~ptr.4, y, %vIn.3, %tIn.3 ) ▶₀ #vr.94
+26: UpdateFor( ~ptr.4, <'add', y> ) ▶₈ #vr.96
+27: PendingA( $A.9, $B.9, ~ptr.4, n_old.4, sAold.4, oldCommitA.4,          ~n_new.4, sAnew.9, newCommitA.4, sign(newCommitA.4, ~ltk.42),          fA_new.9, fB_new.9) ▶₀ #vr.97
+28: PendingB( $A.9, $B.9, ~ptr.4, n_old.4, sBold.4, oldCommitB.4,          ~n_new.4, sBnew.9, newCommitB.4, sign(newCommitB.4, ~ltk.43),          fA_new.9, fB_new.9) ▶₁ #vr.97
+29: !KU( ~ptr ) @ #vk.17
+30: !KU( ~ptr.1 ) @ #vk.38
+31: !KU( ~ptr.2 ) @ #vk.54
+32: !KU( ~ptr.3 ) @ #vk.70
+33: !KU( ~ptr.4 ) @ #vk.86
+34: %vOut ⊏ %vIn
+35: %tOut ⊏ %tIn
+36: %vOut.1 ⊏ %vIn.1
+37: %tOut.1 ⊏ %tIn.1
+38: %vOut.2 ⊏ %vIn.2
+39: %tOut.2 ⊏ %tIn.2
+40: %vOut.3 ⊏ %vIn.3
+41: %tOut.3 ⊏ %tIn.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+26
+34
+35
+36
+37
+38
+39
+40
+41
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+27
+28
+29
+30
+31
+32
+33
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.4) ) @ #vk.19
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.25
+2: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.40
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.41
+4: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.56
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.57
+6: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.36) ) @ #vk.72
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.37) ) @ #vk.73
+8: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.48) ) @ #vk.88
+9: !KU( sign(<'proposal', $A.8, $B.8, ~ptr.4>, ~ltk.50) ) @ #vk.89
+10: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.8), fA_new.1, fB_new.1) ▶₀ #vr.18
+11: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.9), fA_new.1, fB_new.1) ▶₁ #vr.18
+12: Mutex( ~ptr ) ▶₂ #vr.21
+13: AwaitRoute( $Prev, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.22
+14: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.25
+15: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.25
+16: Mutex( ~ptr.1 ) ▶₂ #vr.45
+17: AwaitRoute( $Prev.1, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.46
+18: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.49
+19: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.49
+20: Mutex( ~ptr.2 ) ▶₂ #vr.69
+21: AwaitRoute( $Prev.2, $A.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.70
+22: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.73
+23: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.73
+24: Mutex( ~ptr.3 ) ▶₂ #vr.93
+25: AwaitRoute( $Prev.3, $A.6, ~ptr.4, y, %vIn.3, %tIn.3 ) ▶₀ #vr.94
+26: UpdateFor( ~ptr.4, <'add', y> ) ▶₈ #vr.96
+27: PendingA( $A.9, $B.9, ~ptr.4, n_old.4, sAold.5, oldCommitA.5,          ~n_new.4, sAnew.9, newCommitA.4, sign(newCommitA.4, ~ltk.42),          fA_new.9, fB_new.9) ▶₀ #vr.97
+28: PendingB( $A.9, $B.9, ~ptr.4, n_old.4, sBold.4, oldCommitB.4,          ~n_new.4, sBnew.9, newCommitB.4, sign(newCommitB.4, ~ltk.43),          fA_new.9, fB_new.9) ▶₁ #vr.97
+29: PendingA( $A.8, $B.8, ~ptr.4, n_old.5, sAold.6, oldCommitA.6, '0',          sAold.4, oldCommitA.4, sign(oldCommitA.4, ~ltk.44), ~fA.4, ~fB.4) ▶₀ #vr.100
+30: PendingB( $A.8, $B.8, ~ptr.4, n_old.5, sBold.5, oldCommitB.5, '0',          sBnew.10, newCommitB.5, sign(newCommitB.5, ~ltk.45), ~fA.4, ~fB.4) ▶₁ #vr.100
+31: !KU( ~ptr ) @ #vk.17
+32: !KU( ~ptr.1 ) @ #vk.38
+33: !KU( ~ptr.2 ) @ #vk.54
+34: !KU( ~ptr.3 ) @ #vk.70
+35: !KU( ~ptr.4 ) @ #vk.86
+36: %vOut ⊏ %vIn
+37: %tOut ⊏ %tIn
+38: %vOut.1 ⊏ %vIn.1
+39: %tOut.1 ⊏ %tIn.1
+40: %vOut.2 ⊏ %vIn.2
+41: %tOut.2 ⊏ %tIn.2
+42: %vOut.3 ⊏ %vIn.3
+43: %tOut.3 ⊏ %tIn.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+26
+36
+37
+38
+39
+40
+41
+42
+43
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+27
+28
+29
+30
+31
+32
+33
+34
+35
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.19
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.23
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.38
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.39
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.54
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.55
+7: Mutex( p1 ) ▶₂ #f
+8: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+9: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+10: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+11: Mutex( ~ptr ) ▶₂ #vr.23
+12: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+13: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+14: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+15: Mutex( ~ptr.1 ) ▶₂ #vr.47
+16: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+17: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+18: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+19: Mutex( ~ptr.2 ) ▶₂ #vr.71
+20: AwaitRoute( $Prev.3, $A.4, ptrIn, y, %vIn.2, %tIn.2 ) ▶₀ #vr.72
+21: UpdateFor( ptrIn, <'add', y> ) ▶₈ #vr.74
+22: PendingA( $A.7, $B.7, ptrIn, n_old.4, sAold.4, oldCommitA.4,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.75
+23: PendingB( $A.7, $B.7, ptrIn, n_old.4, sBold.4, oldCommitB.4,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.75
+24: PendingA( $A.6, $B.6, ptrIn, n_old.5, sAold.5, oldCommitA.5,          n_old.3, sAold.3, oldCommitA.3, sign(oldCommitA.3, ~ltk.34), fA.3,          fB.3) ▶₀ #vr.78
+25: PendingB( $A.6, $B.6, ptrIn, n_old.5, sBold.5, oldCommitB.5,          n_old.3, sBnew.8, newCommitB.4, sign(newCommitB.4, ~ltk.35), fA.3,          fB.3) ▶₁ #vr.78
+26: PendingA( $A.6, $B.6, ptrIn, n_old.6, sAold.6, oldCommitA.6,          n_old.3, sAnew.8, newCommitA.4, sign(newCommitA.4, ~ltk.36), fA.3,          fB.3) ▶₀ #vr.79
+27: PendingB( $A.6, $B.6, ptrIn, n_old.6, sBold.6, oldCommitB.6,          n_old.3, sBold.3, oldCommitB.3, sign(oldCommitB.3, ~ltk.37), fA.3,          fB.3) ▶₁ #vr.79
+28: !KU( ~ptr ) @ #vk.17
+29: !KU( ~ptr.1 ) @ #vk.36
+30: !KU( ~ptr.2 ) @ #vk.52
+31: %vOut.1 ⊏ %vIn
+32: %tOut.1 ⊏ %tIn
+33: %vOut.2 ⊏ %vIn.1
+34: %tOut.2 ⊏ %tIn.1
+35: %vOut.3 ⊏ %vIn.2
+36: %tOut.3 ⊏ %tIn.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+21
+31
+32
+33
+34
+35
+36
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+22
+23
+24
+25
+26
+27
+28
+29
+30
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: !ChannelConnect( p1, $Me, $Next ) ▶₁ #f
+1: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.6) ) @ #vk.20
+2: !KU( sign(<'proposal', $A, $B, ~ptr>, ~ltk.7) ) @ #vk.25
+3: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.16) ) @ #vk.40
+4: !KU( sign(<'proposal', $A.2, $B.2, ~ptr.1>, ~ltk.17) ) @ #vk.41
+5: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.26) ) @ #vk.56
+6: !KU( sign(<'proposal', $A.4, $B.4, ~ptr.2>, ~ltk.27) ) @ #vk.57
+7: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.36) ) @ #vk.72
+8: !KU( sign(<'proposal', $A.6, $B.6, ~ptr.3>, ~ltk.38) ) @ #vk.73
+9: Mutex( p1 ) ▶₂ #f
+10: AwaitRoute( $Prev, $Me, ~ptr, y, (%newVar%+%vOut),            (%tOut%+%newVar.1)) ▶₀ #vr
+11: PendingA( $A.1, $B.1, ~ptr, n_old, sAold, oldCommitA, ~n_new,          sAnew.1, newCommitA, sign(newCommitA, ~ltk.2), fA_new.1, fB_new.1) ▶₀ #vr.3
+12: PendingB( $A.1, $B.1, ~ptr, n_old, sBold, oldCommitB, ~n_new,          sBnew.1, newCommitB, sign(newCommitB, ~ltk.3), fA_new.1, fB_new.1) ▶₁ #vr.3
+13: Mutex( ~ptr ) ▶₂ #vr.23
+14: AwaitRoute( $Prev.1, $A, ~ptr.1, y, %vIn, %tIn ) ▶₀ #vr.24
+15: PendingA( $A.3, $B.3, ~ptr.1, n_old.1, sAold.1, oldCommitA.1,          ~n_new.1, sAnew.3, newCommitA.1, sign(newCommitA.1, ~ltk.12),          fA_new.3, fB_new.3) ▶₀ #vr.27
+16: PendingB( $A.3, $B.3, ~ptr.1, n_old.1, sBold.1, oldCommitB.1,          ~n_new.1, sBnew.3, newCommitB.1, sign(newCommitB.1, ~ltk.13),          fA_new.3, fB_new.3) ▶₁ #vr.27
+17: Mutex( ~ptr.1 ) ▶₂ #vr.47
+18: AwaitRoute( $Prev.2, $A.2, ~ptr.2, y, %vIn.1, %tIn.1 ) ▶₀ #vr.48
+19: PendingA( $A.5, $B.5, ~ptr.2, n_old.2, sAold.2, oldCommitA.2,          ~n_new.2, sAnew.5, newCommitA.2, sign(newCommitA.2, ~ltk.22),          fA_new.5, fB_new.5) ▶₀ #vr.51
+20: PendingB( $A.5, $B.5, ~ptr.2, n_old.2, sBold.2, oldCommitB.2,          ~n_new.2, sBnew.5, newCommitB.2, sign(newCommitB.2, ~ltk.23),          fA_new.5, fB_new.5) ▶₁ #vr.51
+21: Mutex( ~ptr.2 ) ▶₂ #vr.71
+22: AwaitRoute( $Prev.3, $B.4, ~ptr.3, y, %vIn.2, %tIn.2 ) ▶₀ #vr.72
+23: UpdateFor( ~ptr.3, <'add', y> ) ▶₈ #vr.74
+24: PendingA( $A.7, $B.7, ~ptr.3, n_old.3, sAold.3, oldCommitA.3,          ~n_new.3, sAnew.7, newCommitA.3, sign(newCommitA.3, ~ltk.32),          fA_new.7, fB_new.7) ▶₀ #vr.75
+25: PendingB( $A.7, $B.7, ~ptr.3, n_old.3, sBold.3, oldCommitB.3,          ~n_new.3, sBnew.7, newCommitB.3, sign(newCommitB.3, ~ltk.33),          fA_new.7, fB_new.7) ▶₁ #vr.75
+26: !KU( ~ptr ) @ #vk.18
+27: !KU( ~ptr.1 ) @ #vk.38
+28: !KU( ~ptr.2 ) @ #vk.54
+29: !KU( ~ptr.3 ) @ #vk.70
+30: %vOut.1 ⊏ %vIn
+31: %tOut.1 ⊏ %tIn
+32: %vOut.2 ⊏ %vIn.1
+33: %tOut.2 ⊏ %tIn.1
+34: %vOut.3 ⊏ %vIn.2
+35: %tOut.3 ⊏ %tIn.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+23
+30
+31
+32
+33
+34
+35
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+24
+25
+26
+27
+28
+29
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+

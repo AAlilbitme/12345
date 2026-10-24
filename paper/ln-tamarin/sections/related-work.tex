@@ -1,0 +1,40 @@
+\section{Related Work}
+
+\itparagraph{Formal verification of payment channels}
+Litos \etal~\cite{litos2026formally} give a formally verified Lightning
+implementation in \mwhy, proving functional correctness of a single channel.
+Their treatment is deeper than ours at the channel layer and absent at the
+routing layer: there is no multi-hop path, no fee arithmetic, and no
+adversarial network model. Symbolic analyses in \mtamarin\ have targeted
+two-party HTLC constructions such as cross-chain swaps and contingent payments;
+these lack multi-hop routing, lifecycle revocation, and staggered CLTV
+arithmetic.
+
+\itparagraph{Model checking}
+Grundmann and Hartenstein~\cite{grundmann2026security} verify balance security
+for Lightning channels with TLA$^+$, using a stepwise refinement. Model
+checking buys them a faithful treatment of concurrency that a symbolic prover
+does not naturally provide; the cost is that their analysis is bounded --- in
+the number of sessions, the depth of the state space, and the path length. Our
+analysis is unbounded in sessions and in adversary derivation, and, at the
+abstract layer, in path length. The two approaches are complementary rather
+than competing.
+
+\itparagraph{Agent skipping and path integrity}
+Generic symbolic frameworks have studied path integrity and agent-skipping in
+message-forwarding protocols~\cite{smith2022modelling}. That line of work
+establishes that an intermediary can be bypassed, and does so at a level of
+generality that covers Lightning as an instance. Their formalism, however,
+carries no numeric sort: it can express \emph{that} an agent was skipped but
+not \emph{what} the skip cost. Our contribution at this point is not the
+attack, which is known~\cite{malavolta2019anonymous}, but its quantification
+(\Cref{thm:wormhole}).
+
+\itparagraph{Attacks on Lightning}
+Malavolta \etal~\cite{malavolta2019anonymous} introduced the wormhole attack
+and proposed anonymous multi-hop locks as a countermeasure. Tikhomirov
+\etal~\cite{tikhomirov2020quantitative} give a quantitative analysis of
+security, anonymity and scalability. Aumayr
+\etal~\cite{aumayr2021generalized} construct generalised channels from limited
+scripts. We reproduce the wormhole as a fidelity check on our model rather than
+as a new finding.

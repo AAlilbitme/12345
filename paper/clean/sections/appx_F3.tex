@@ -1,0 +1,230 @@
+% Listings moved out of the main text by the fit pass (F3): rules of Sec. V-A.
+\subsection{Channel Opening and Update}\label{lst:update}
+
+These are the opening rule and the two rules of the update dance of
+Sec.~\ref{sec:core-channels}.
+\code{Lock_Funds_And_Open} creates the two mirrors \code{StateA} and \code{StateB} of state
+\texttt{'0'}, the persistent facts that the other rules check, and the per-channel slot
+\code{Mutex(ptr)} (Sec.~\ref{par:single-spend}).
+\begin{spthy}
+rule Lock_Funds_And_Open:
+    [ ReadyToLock($A, $B, ptr, sA0, sB0, commitA0, commitB0),
+      Wallet($A, ~fA), Wallet($B, ~fB) ]
+    --[ ChannelOpen($A, $B, ptr), FundsLocked($A, $B, ptr),
+        NewStateBuilt($A, $B, ptr, '0', ~fA, ~fB) ]->
+    [ StateA($A, $B, ptr, '0', sA0, commitA0, ~fA, ~fB),
+      StateB($A, $B, ptr, '0', sB0, commitB0, ~fA, ~fB),
+      !ValidOnChain(ptr),
+      !ChannelRecord(ptr, $A, $B),
+      !ChannelConnect(ptr, $A, $B),
+      !ChannelConnect(ptr, $B, $A),
+      Mutex(ptr) ]
+\end{spthy}
+\code{Update_State} commits a new state: it samples the next state index and both fresh
+revocation secrets, reads the two current mirrors and the new balances from the environment, and
+produces two pending mirrors, each keeping the old state next to the new, signed one.
+\begin{spthy}
+rule Update_State:
+    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
+        newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
+        sigAnew    = sign(newCommitA, ltkA)
+        sigBnew    = sign(newCommitB, ltkB)
+    in
+    [ Fr(~n_new), Fr(~sAnew), Fr(~sBnew),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
+      StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
+      In(<fA_new, fB_new>) ]
+    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new) ]
+\end{spthy}
+Only afterwards does \code{Revoke_Old_Secret} supersede the old state: it consumes the two
+pending mirrors, installs them as the new state, and records, for both parties, the old
+revocation secret as the persistent \code{!RevokedSecret} and the old commitment as the linear
+token \code{RevokedCommitmentUnspent}. The signature checks of Sec.~\ref{sec:channel} become the
+two \code{Eq} action facts: a \tamarin{} rule cannot fail, so restriction \code{Equality} turns
+these action facts into hard prerequisites. The order (commit, then revoke) is what protects a
+party that aborts mid-update: the old state is never revoked until a fully signed new one
+exists.
+\begin{spthy}
+rule Revoke_Old_Secret:
+    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+               n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new),
+      PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+               n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !Pk($A, pkA), !Pk($B, pkB) ]
+    --[ StateUpdate($A, $B, ptr, n_new),
+        Revoke($A, n_old, sAold),
+        Revoke($B, n_old, sBold),
+        Eq(verify(sigAnew, newCommitA, pkA), true),
+        Eq(verify(sigBnew, newCommitB, pkB), true) ]->
+    [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
+      StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB) ]
+\end{spthy}
+
+\subsection{Channel Closing and Punishment}\label{lst:close}
+
+The closing and punishment rules of Sec.~\ref{sec:core-channels}; the rules for party $B$
+(\code{Publish_Current_B}, \code{Claim_Funds_B}, \code{Publish_Revoked_B}, \code{Punish_B}) are
+symmetric. A unilateral close spends the current mirror: \code{Publish_Current_A} turns
+\code{StateA} into an \code{OnChainDelayed} and an \code{OnChainInstant} output, and
+\code{Claim_Funds_A} later releases the delayed output to its owner; its \code{CSVPassed} action
+captures that time has passed.
+\begin{spthy}
+rule Publish_Current_A:
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB), !ValidOnChain(ptr) ]
+    --[ Publish($A, n, commitA),
+        PublishState($A, n),
+        OnChainDelayedProduce($A, n),
+        OnChainInstantProduce($B, n) ]->
+    [ OnChainDelayed($A, n, commitA),
+      OnChainInstant($B, n, commitA) ]
+\end{spthy}
+\begin{spthy}
+rule Claim_Funds_A:
+    [ OnChainDelayed($A, n, txContent) ]
+    --[ ClaimFunds($A, n), CSVPassed($A, n), SettledTx($A, txContent) ]->
+    [ FundsTo($A, n) ]
+\end{spthy}
+A cooperative close signs one shared settlement transaction instead.
+\begin{spthy}
+rule Honest_Close:
+    let closetx = <'commit', ptr, $A, $B, n, fA, fB>
+        signA   = sign(closetx, ltkA)
+        signB   = sign(closetx, ltkB)
+    in
+    [ StateA($A, $B, ptr, n, sA, commitA, fA, fB),
+      StateB($A, $B, ptr, n, sB, commitB, fA, fB),
+      !ValidOnChain(ptr),
+      !Ltk($A, ltkA), !Ltk($B, ltkB),
+      !Pk($A, pkA),   !Pk($B, pkB) ]
+    --[ Close($A, $B, ptr, n),
+        OnChainInstantProduce($A, n),
+        OnChainInstantProduce($B, n),
+        Eq(verify(signA, closetx, pkA), true),
+        Eq(verify(signB, closetx, pkB), true) ]->
+    [ OnChainInstant($A, n, closetx),
+      OnChainInstant($B, n, closetx) ]
+\end{spthy}
+Punishment publishes a revoked state, which consumes the linear token
+\code{RevokedCommitmentUnspent} (the single-spend fix of Sec.~\ref{par:single-spend}: our first
+version of \code{Publish_Revoked_A} had all of the premises below except this one), and then
+transfers the whole channel to the honest party. Persistent knowledge of the revocation secret is
+retained via \code{!RevokedSecret}; only spending the funds is linear.
+\begin{spthy}
+rule Publish_Revoked_A:
+    [ !ChannelRecord(ptr, $A, $B),
+      !ValidOnChain(ptr),
+      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA) ]
+    --[ PublishRevoked($A, n_old, oldCommitA),
+        Cheat($A, n_old) ]->
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
+\end{spthy}
+\begin{spthy}
+rule Punish_A:
+    [ OnChainCheat($A, $B, n_old, oldCommitA),
+      RevealedSecret($A, n_old, sAold, oldCommitA) ]
+    --[ Punish($B, $A, n_old) ]->
+    [ AllFundsTo($B) ]
+\end{spthy}
+
+\subsection{Invoice, Settlement and Refund}\label{lst:settle}
+
+The routing rules of Sec.~\ref{sec:core-routing} besides \code{Forward_HTLC} and
+\code{AttackerSkip}, which are printed there. The invoice is tagged and names the receiver, the
+sender and the payment hash; the sender checks the receiver's signature before it offers the
+first HTLC.
+\begin{spthy}
+rule Receiver_Create_Invoice:
+    let y = h(~x)
+        invoice = <'invoice', $Receiver, $Sender, y>
+        sigR    = sign(invoice, ltkR)
+    in
+    [ Fr(~x), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y),
+        SecretPreimage($Receiver, ~x) ]->
+    [ ReceiverInv($Receiver, $Sender, ~x),
+      Out(<'SecretRS', invoice, sigR>) ]
+
+rule Sender_Offer_HTLC:
+    let invoice = <'invoice', $Receiver, $Sender, y>
+    in
+    [ In(<'SecretRS', invoice, sigR>),
+      !Pk($Receiver, pkR),
+      !Ltk($Sender, ltkS),
+      !ChannelConnect(ptrSF, $Sender, $Forward1),
+      Mutex(ptrSF) ]
+    --[ HTLCOffered($Sender, $Forward1, ptrSF, y),
+        OfferFor($Sender, $Receiver, ptrSF, y),
+        HTLCAdded(ptrSF, y),
+        Neq($Sender, $Forward1),
+        Neq($Sender, $Receiver),
+        Neq($Forward1, $Receiver),
+        Eq(verify(sigR, invoice, pkR), true) ]->
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
+      Route($Sender, $Forward1, ptrSF, y),
+      !RouteInfo($Sender, $Forward1, ptrSF, y) ]
+\end{spthy}
+The settle round runs backwards on \code{Fulfilled} facts. The receiver's and the intermediary's
+settlement give the slot of the incoming channel back.
+\begin{spthy}
+rule Receiver_Fulfill_HTLC:
+    [ Route($Prev, $Receiver, ptrIn, y),
+      ReceiverInv($Receiver, $Sender, x) ]
+    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y),
+        PreimageReleased($Receiver, x),
+        Redeemed(ptrIn, y),
+        Old(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Fulfilled(ptrIn, x), Mutex(ptrIn) ]
+
+rule Intermediary_Settle:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+      Fulfilled(ptrOut, x) ]
+    --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
+        UsedFulfilled(ptrOut, x),
+        SettledHop(ptrIn, ptrOut, y),
+        FeeEarned($Me, ptrIn, ptrOut, y, %fee),
+        Redeemed(ptrIn, y),
+        Old(ptrIn, y),
+        FulfilledProduced(ptrIn, x),
+        Eq(h(x), y) ]->
+    [ Fulfilled(ptrIn, x), Mutex(ptrIn) ]
+
+rule Sender_Settle:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y),
+      Fulfilled(ptrSF, x) ]
+    --[ SenderSettled($Sender, $Forward1, $Receiver, ptrSF, x),
+        UsedFulfilled(ptrSF, x),
+        Eq(h(x), y) ]->
+    [ ]
+\end{spthy}
+A timeout is an untimed event; after it, the pending HTLC on that channel is refunded to the
+party that offered it, and the slot is given back.
+\begin{spthy}
+rule Open_Timeout:
+    [ !ChannelConnect(ptr, A, B) ] --[ TimedOut(ptr) ]-> [ !Timeout(ptr) ]
+
+rule Sender_Timeout_Refund:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y), !Timeout(ptrSF) ]
+    --[ Refunded($Sender, ptrSF, y),
+        Old(ptrSF, y) ]->
+    [ Mutex(ptrSF) ]
+
+rule Intermediary_Timeout_Refund:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),
+      !Timeout(ptrOut) ]
+    --[ Refunded($Me, ptrOut, y),
+        RefundHop(ptrIn, ptrOut, y),
+        Old(ptrOut, y) ]->
+    [ Mutex(ptrOut) ]
+\end{spthy}

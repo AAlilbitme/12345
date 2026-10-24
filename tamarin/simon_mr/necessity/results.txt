@@ -1,0 +1,17 @@
+no_IntermediaryMustClaim.spthy | ForwardTimeGap |   ForwardTimeGap (all-traces): verified (6 steps) | 97s
+no_IntermediaryMustClaim.spthy | Timeout_Race_Blocked |   Timeout_Race_Blocked (all-traces): verified (4 steps) | 91s
+no_IntermediaryMustClaim.spthy | Intermediary_Never_Loses_Under_Liveness | no result | 601s
+no_IntermediaryMustClaim.spthy | Intermediary_Never_Loses_Strong | no result | 600s
+no_IntermediaryMustClaim.spthy | Payment_Atomicity_Under_Liveness | no result | 600s
+no_OutgoingTimesOutFirst.spthy | ForwardTimeGap | no result | 601s
+no_OutgoingTimesOutFirst.spthy | Timeout_Race_Blocked |   Timeout_Race_Blocked (all-traces): verified (4 steps) | 94s
+no_OutgoingTimesOutFirst.spthy | Intermediary_Never_Loses_Under_Liveness |   Intermediary_Never_Loses_Under_Liveness (all-traces): verified (4 steps) | 93s
+no_OutgoingTimesOutFirst.spthy | Intermediary_Never_Loses_Strong |   Intermediary_Never_Loses_Strong (all-traces): verified (4 steps) | 93s
+no_OutgoingTimesOutFirst.spthy | Payment_Atomicity_Under_Liveness | no result | 600s
+no_RedeemBeforeTimeout.spthy | ForwardTimeGap |   ForwardTimeGap (all-traces): verified (6 steps) | 268s
+no_RedeemBeforeTimeout.spthy | Timeout_Race_Blocked |   Timeout_Race_Blocked (all-traces): verified (4 steps) | 260s
+no_RedeemBeforeTimeout.spthy | Intermediary_Never_Loses_Under_Liveness |   Intermediary_Never_Loses_Under_Liveness (all-traces): verified (4 steps) | 261s
+no_RedeemBeforeTimeout.spthy | Intermediary_Never_Loses_Strong |   Intermediary_Never_Loses_Strong (all-traces): verified (4 steps) | 258s
+no_RedeemBeforeTimeout.spthy | Payment_Atomicity_Under_Liveness |   Payment_Atomicity_Under_Liveness (all-traces): verified (10 steps) | 263s
+no_IntermediaryMustClaim.spthy | Necessity_IMC_Honest_Intermediary_Loses |   Necessity_IMC_Honest_Intermediary_Loses (exists-trace): verified (27 steps) | 145s
+no_OutgoingTimesOutFirst.spthy | Necessity_OTF_Timeout_Order_Broken | no result in 1800 s | 1801s

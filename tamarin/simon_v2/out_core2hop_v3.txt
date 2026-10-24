@@ -1,0 +1,4 @@
+Two_Hop_Witness_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 | 1500s | wf-warnings: 0
+Two_Hop_Gap_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | 1500s | wf-warnings: 0
+End_To_End_Two_Hops [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   End_To_End_Two_Hops (all-traces): verified (80 steps) | 2s | wf-warnings: 0
+Deadline_Stamp_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Stamp_Per_Hop (all-traces): verified (270 steps) | 6s | wf-warnings: 0

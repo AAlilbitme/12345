@@ -1,0 +1,10 @@
+Settle_Commit_Correspondence [flags: none]:   Settle_Commit_Correspondence (all-traces): verified (6 steps) | elapsed 0s | wf-warnings: 0
+Request_Without_Commit [flags: none]:   Request_Without_Commit (exists-trace): verified (13 steps) | elapsed 1s | wf-warnings: 0
+Commit_Without_Receipt [flags: none]:   Commit_Without_Receipt (exists-trace): verified (12 steps) | elapsed 1s | wf-warnings: 0
+Deadline_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Per_Hop (all-traces): verified (30 steps) | elapsed 1s | wf-warnings: 0
+Deadline_Witness [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 | elapsed 900s | wf-warnings: 0
+Deadline_Witness_Concrete [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 | elapsed 900s | wf-warnings: 0
+Ablation_Concrete [flags: -D=LIVENESS -D=GAP2]: TIMEOUT/exit 124 | elapsed 900s | wf-warnings: 0
+Ablation_Counterexample [flags: -D=LIVENESS -D=GAP2]: TIMEOUT/exit 124 | elapsed 900s | wf-warnings: 0
+Gap_Concrete [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | elapsed 900s | wf-warnings: 0
+Gap_Counterexample [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | elapsed 901s | wf-warnings: 0

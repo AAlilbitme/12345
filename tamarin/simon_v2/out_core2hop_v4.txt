@@ -1,0 +1,4 @@
+Two_Hop_Gap_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP1]:   Two_Hop_Gap_Pinned (exists-trace): verified (37 steps) | 170s | wf-warnings: 0
+Two_Hop_Witness_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Two_Hop_Witness_Pinned (exists-trace): verified (48 steps) | 481s | wf-warnings: 0
+End_To_End_Two_Hops [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   End_To_End_Two_Hops (all-traces): verified (80 steps) | 3s | wf-warnings: 0
+Deadline_Stamp_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Stamp_Per_Hop (all-traces): verified (124 steps) | 3s | wf-warnings: 0

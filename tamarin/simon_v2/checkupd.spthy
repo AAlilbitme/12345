@@ -1,0 +1,43 @@
+theory CheckUpd
+begin
+
+#include "modelupd.spthy"
+
+tactic: upd
+presort: s
+prio:
+    regex "^\s*Fulfilled[(]" | regex "^\s*Committed[(]" | regex "^\s*InFlight[(]" | regex "^\s*AwaitFulfilled[(]"
+prio:
+    regex "UpdateDone" | regex "SenderPending"
+prio:
+    regex "LtkCompromised" | regex "Compromised"
+deprio:
+    regex "KU[(]" | regex "State[AB][(]" | regex "Pending[AB][(]" | regex "RouteInfo" | regex "Route[(]" | regex "Mutex" | regex "ChannelConnect" | regex "Ltk" | regex "Pk"
+
+// Sanity: an honest two-hop payment still completes end to end.
+lemma Payment_Still_Possible [heuristic={upd}]:
+  exists-trace
+  "Ex S F R p0 p1 x #o #f #s.
+      HTLCOffered(S, F, p0, h(x)) @ #o
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & SenderSettled(S, F, R, p0, x) @ #s
+    & not (Ex X #c. LtkCompromised(X) @ #c)"
+
+// Settlement is a real channel update: the sender only settles after a
+// completed update of its channel that commits the preimage.
+lemma Settle_Is_Channel_Update [heuristic={upd}]:
+  "All S F R ptr x #s. SenderSettled(S, F, R, ptr, x) @ #s
+   ==> (Ex n #c. HTLCCommitted(ptr, <'settle', h(x)>, n) @ #c & #c < #s)
+     | (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Add_Commit_Reachable:
+  exists-trace
+  "Ex ptr y n #c. HTLCCommitted(ptr, <'add', y>, n) @ #c
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+lemma Forward_Reachable:
+  exists-trace
+  "Ex F S R p0 p1 y #f. HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+end

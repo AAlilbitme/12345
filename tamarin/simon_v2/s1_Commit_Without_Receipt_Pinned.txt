@@ -1,0 +1,1 @@
+Commit_Without_Receipt_Pinned: OUT OF MEMORY | cmd: deadline.spthy --prove=Commit_Without_Receipt_Pinned (no flags) -M6G timeout 1800s | elapsed 868s
