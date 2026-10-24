@@ -18,3 +18,604 @@ Detailed results from testing 'maude'
 [Theory DeadlineCore] Theory closed
 [Saturating Sources] Step 1 (Max 5)
 [Saturating Sources] Done
+theory DeadlineCore begin
+
+// Function signature and definition of the equational theory E
+
+builtins: natural-numbers
+functions: fst/1, h/1, pair/2, snd/1
+equations: fst(<x.1, x.2>) = x.1, snd(<x.1, x.2>) = x.2
+
+
+
+
+
+
+
+
+
+rule (modulo E) Clock_Tick:
+   [ In( %t ) ] --[ Tick( %t ) ]-> [ !Block( %t ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Setup_Route:
+   [ Fr( ~x ), Fr( ~p0 ), Fr( ~p1 ), In( %tIn ), In( %tOut ) ]
+  --[
+  SetupOnce( ), HTLCForwarded( 'F', 'S', 'R', ~p0, ~p1, h(~x) ),
+  ForwardExpiries( ~p0, ~p1, h(~x), %tIn, %tOut )
+  ]->
+   [ ReceiverHas( ~p1, ~x ), FwdPending( ~p0, ~p1 ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Receiver_Request_Settle:
+   [ ReceiverHas( p1, x ), !Block( %b ), Fr( ~rid ) ]
+  --[ SettleRequested( 'R', p1, h(x), ~rid, %b ), Now( %b ) ]->
+   [ UpdateFor( p1, <'settle', h(x), ~rid> ), AwaitFulfilled( p1, x ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Update_For_Op:
+   [ UpdateFor( ptr, op ), Fr( ~n ) ]
+  --[ ChannelUpdateFor( ptr, op, ~n ) ]->
+   [ InFlight( ptr, ~n, op ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Revoke_Old_State:
+   [ InFlight( ptr, n, op ) ]
+  --[ StateUpdate( ptr, n ) ]->
+   [ UpdateDone( ptr, n, op ) ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Commit_Op:
+   [ UpdateDone( ptr, n, op ), !Block( %b ) ]
+  --[
+  HTLCCommitted( ptr, op, n ), HTLCCommittedAt( ptr, op, %b ), Now( %b )
+  ]->
+   [ Committed( ptr, op ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Deliver_Preimage:
+   [
+   AwaitFulfilled( ptr, x ), Committed( ptr, <'settle', h(x), rid> ),
+   !Block( %b )
+   ]
+  --[ PreimageAvailable( ptr, h(x), %b ), Now( %b ) ]->
+   [ Fulfilled( ptr, x ) ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Forwarder_Request_Settle:
+   [ Fulfilled( p1, x ), FwdPending( p0, p1 ), !Block( %b ), Fr( ~rid ) ]
+  --[ SettleRequested( 'F', p0, h(x), ~rid, %b ), Now( %b ) ]->
+   [ UpdateFor( p0, <'settle', h(x), ~rid> ), AwaitFulfilled( p0, x ) ]
+
+  /* has exactly the trivial AC variant */
+
+restriction SetupOnce:
+  "∀ #i #j. ((SetupOnce( ) @ #i) ∧ (SetupOnce( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+restriction TickOnce:
+  "∀ %t #i #j. ((Tick( %t ) @ #i) ∧ (Tick( %t ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+restriction TicksInOrder:
+  "∀ %s %t #i #j.
+    (((Tick( %s ) @ #i) ∧ (Tick( %t ) @ #j)) ∧ (%s ⊏ %t)) ⇒ (#i < #j)"
+  // safety formula
+
+restriction NowIsLatest:
+  "∀ %b %c #q #t.
+    (((Now( %b ) @ #q) ∧ (Tick( %c ) @ #t)) ∧ (%b ⊏ %c)) ⇒ (#q < #t)"
+  // safety formula
+
+restriction BoundedResponsiveness:
+  "∀ Q ptr y rid %b %c #r #k.
+    ((((SettleRequested( Q, ptr, y, rid, %b ) @ #r) ∧ (Tick( %c ) @ #k)) ∧
+      (#r < #k)) ∧
+     ((%b%+%1%+%1) ⊏ %c)) ⇒
+    (∃ n #l.
+      ((HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #l) ∧ (#r < #l)) ∧
+      (#l < #k))"
+
+lemma Deadline_Per_Hop:
+  all-traces
+  "∀ P Prev Next pin pout y rid %b %cx %tIn %tOut #f #e #i #k.
+    (((((((HTLCForwarded( P, Prev, Next, pin, pout, y ) @ #f) ∧
+          (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e)) ∧
+         (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i)) ∧
+        ((%b = %tOut) ∨ (%b ⊏ %tOut))) ∧
+       (Tick( %cx ) @ #k)) ∧
+      (%tIn ⊏ %cx)) ∧
+     (#i < #k)) ⇒
+    (∃ rid2 n #l.
+      (HTLCCommitted( pin, <'settle', y, rid2>, n ) @ #l) ∧ (#l < #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ P Prev Next pin pout y rid %b %cx %tIn %tOut #f #e #i #k.
+  (HTLCForwarded( P, Prev, Next, pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i) ∧
+  (Tick( %cx ) @ #k)
+ ∧
+  (((%b = %tOut) ∨ (%b ⊏ %tOut))) ∧
+  (%tIn ⊏ %cx) ∧
+  (#i < #k) ∧
+  (∀ rid2 n #l.
+    (HTLCCommitted( pin, <'settle', y, rid2>, n ) @ #l) ⇒ ¬(#l < #k))"
+*/
+by sorry
+
+lemma Settle_Commit_Correspondence:
+  all-traces
+  "∀ ptr y rid n #c.
+    (HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #c) ⇒
+    (∃ Q %b #q #u #s.
+      (((((SettleRequested( Q, ptr, y, rid, %b ) @ #q) ∧
+          (ChannelUpdateFor( ptr, <'settle', y, rid>, n ) @ #u)) ∧
+         (StateUpdate( ptr, n ) @ #s)) ∧
+        (#q < #u)) ∧
+       (#u < #s)) ∧
+      (#s < #c))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ ptr y rid n #c.
+  (HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #c)
+ ∧
+  ∀ Q %b #q #u #s.
+   (SettleRequested( Q, ptr, y, rid, %b ) @ #q) ∧
+   (ChannelUpdateFor( ptr, <'settle', y, rid>, n ) @ #u) ∧
+   (StateUpdate( ptr, n ) @ #s)
+  ⇒
+   ((¬(#q < #u)) ∨ (¬(#u < #s)) ∨ (¬(#s < #c)))"
+*/
+by sorry
+
+lemma Request_Without_Commit:
+  exists-trace
+  "∃ pin pout y rid %b #f #q.
+    ((HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+     (SettleRequested( 'F', pin, y, rid, %b ) @ #q)) ∧
+    (¬(∃ n #l. HTLCCommitted( pin, <'settle', y, rid>, n ) @ #l))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid %b #f #q.
+  (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+  (SettleRequested( 'F', pin, y, rid, %b ) @ #q)
+ ∧
+  ∀ n #l. (HTLCCommitted( pin, <'settle', y, rid>, n ) @ #l) ⇒ ⊥"
+*/
+by sorry
+
+lemma Commit_Without_Receipt:
+  exists-trace
+  "∃ pin pout y rid n %b %tIn %tOut %cx #e #q #i #k.
+    (((((((ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧
+          (SettleRequested( 'R', pout, y, rid, %b ) @ #q)) ∧
+         (HTLCCommitted( pout, <'settle', y, rid>, n ) @ #i)) ∧
+        (Tick( %cx ) @ #k)) ∧
+       (%tOut ⊏ %cx)) ∧
+      (#q < #i)) ∧
+     (#i < #k)) ∧
+    (¬(∃ %d #a. PreimageAvailable( pout, y, %d ) @ #a))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid n %b %tIn %tOut %cx #e #q #i #k.
+  (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧
+  (SettleRequested( 'R', pout, y, rid, %b ) @ #q) ∧
+  (HTLCCommitted( pout, <'settle', y, rid>, n ) @ #i) ∧
+  (Tick( %cx ) @ #k)
+ ∧
+  (%tOut ⊏ %cx) ∧
+  (#q < #i) ∧
+  (#i < #k) ∧
+  (∀ %d #a. (PreimageAvailable( pout, y, %d ) @ #a) ⇒ ⊥)"
+*/
+by sorry
+
+lemma Deadline_Witness:
+  exists-trace
+  "∃ pin pout y rid rid2 n n2 %b %c2 %tIn %tOut %cx #f #e #q1 #u1 #s1 #i #a
+     #q2 #u2 #s2 #l #k.
+    (((((((((((((((((((((((HTLCForwarded( 'F', 'S', 'R', pin, pout, y
+                           ) @ #f) ∧
+                          (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e)) ∧
+                         (SettleRequested( 'R', pout, y, rid, %b ) @ #q1)) ∧
+                        (ChannelUpdateFor( pout, <'settle', y, rid>, n ) @ #u1)) ∧
+                       (StateUpdate( pout, n ) @ #s1)) ∧
+                      (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i)) ∧
+                     (PreimageAvailable( pout, y, %b ) @ #a)) ∧
+                    (SettleRequested( 'F', pin, y, rid2, %b ) @ #q2)) ∧
+                   (ChannelUpdateFor( pin, <'settle', y, rid2>, n2 ) @ #u2)) ∧
+                  (StateUpdate( pin, n2 ) @ #s2)) ∧
+                 (HTLCCommittedAt( pin, <'settle', y, rid2>, %c2 ) @ #l)) ∧
+                (Tick( %cx ) @ #k)) ∧
+               (%tIn ⊏ %cx)) ∧
+              (#f < #q1)) ∧
+             (#q1 < #u1)) ∧
+            (#u1 < #s1)) ∧
+           (#s1 < #i)) ∧
+          (#i < #a)) ∧
+         (#a < #q2)) ∧
+        (#q2 < #u2)) ∧
+       (#u2 < #s2)) ∧
+      (#s2 < #l)) ∧
+     (#l < #k)) ∧
+    ((%b = %tOut) ∨ (%b ⊏ %tOut))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid rid2 n n2 %b %c2 %tIn %tOut %cx #f #e #q1 #u1 #s1 #i #a
+   #q2 #u2 #s2 #l #k.
+  (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧
+  (SettleRequested( 'R', pout, y, rid, %b ) @ #q1) ∧
+  (ChannelUpdateFor( pout, <'settle', y, rid>, n ) @ #u1) ∧
+  (StateUpdate( pout, n ) @ #s1) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i) ∧
+  (PreimageAvailable( pout, y, %b ) @ #a) ∧
+  (SettleRequested( 'F', pin, y, rid2, %b ) @ #q2) ∧
+  (ChannelUpdateFor( pin, <'settle', y, rid2>, n2 ) @ #u2) ∧
+  (StateUpdate( pin, n2 ) @ #s2) ∧
+  (HTLCCommittedAt( pin, <'settle', y, rid2>, %c2 ) @ #l) ∧
+  (Tick( %cx ) @ #k)
+ ∧
+  (%tIn ⊏ %cx) ∧
+  (#f < #q1) ∧
+  (#q1 < #u1) ∧
+  (#u1 < #s1) ∧
+  (#s1 < #i) ∧
+  (#i < #a) ∧
+  (#a < #q2) ∧
+  (#q2 < #u2) ∧
+  (#u2 < #s2) ∧
+  (#s2 < #l) ∧
+  (#l < #k) ∧
+  (((%b = %tOut) ∨ (%b ⊏ %tOut)))"
+*/
+by sorry
+
+lemma Gap_Counterexample:
+  exists-trace
+  "∃ pin pout y rid rid2 n2 %b %c2 %tIn %tOut %cx #f #e #i #k #l.
+    (((((((((HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+            (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e)) ∧
+           (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i)) ∧
+          (%b = %tOut)) ∧
+         (Tick( %cx ) @ #k)) ∧
+        (%tIn ⊏ %cx)) ∧
+       (#i < #k)) ∧
+      (HTLCCommitted( pin, <'settle', y, rid2>, n2 ) @ #l)) ∧
+     (HTLCCommittedAt( pin, <'settle', y, rid2>, %c2 ) @ #l)) ∧
+    (#k < #l)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid rid2 n2 %b %c2 %tIn %tOut %cx #f #e #i #k #l.
+  (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i) ∧
+  (%b = %tOut) ∧
+  (Tick( %cx ) @ #k) ∧
+  (HTLCCommitted( pin, <'settle', y, rid2>, n2 ) @ #l) ∧
+  (HTLCCommittedAt( pin, <'settle', y, rid2>, %c2 ) @ #l)
+ ∧
+  (%tIn ⊏ %cx) ∧ (#i < #k) ∧ (#k < #l)"
+*/
+by sorry
+
+lemma Ablation_Counterexample:
+  exists-trace
+  "∃ pin pout y rid %b %tIn %tOut %cx #f #e #i #k.
+    (((((((HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+          (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e)) ∧
+         (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i)) ∧
+        ((%b = %tOut) ∨ (%b ⊏ %tOut))) ∧
+       (Tick( %cx ) @ #k)) ∧
+      (%tIn ⊏ %cx)) ∧
+     (#i < #k)) ∧
+    (¬(∃ rid2 n #l. HTLCCommitted( pin, <'settle', y, rid2>, n ) @ #l))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid %b %tIn %tOut %cx #f #e #i #k.
+  (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i) ∧
+  (Tick( %cx ) @ #k)
+ ∧
+  (((%b = %tOut) ∨ (%b ⊏ %tOut))) ∧
+  (%tIn ⊏ %cx) ∧
+  (#i < #k) ∧
+  (∀ rid2 n #l. (HTLCCommitted( pin, <'settle', y, rid2>, n ) @ #l) ⇒ ⊥)"
+*/
+by sorry
+
+lemma Deadline_Witness_Concrete:
+  exists-trace
+  "∃ pin pout y rid rid2 n n2 %c2 #k0 #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2
+     #l #k1 #k.
+    ((((((((((((((((((((((((((Tick( %1 ) @ #k0) ∧
+                             (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f)) ∧
+                            (ForwardExpiries( pin, pout, y, (%1%+%1%+%1), %1 ) @ #e)) ∧
+                           (SettleRequested( 'R', pout, y, rid, %1 ) @ #q1)) ∧
+                          (ChannelUpdateFor( pout, <'settle', y, rid>, n ) @ #u1)) ∧
+                         (StateUpdate( pout, n ) @ #s1)) ∧
+                        (HTLCCommittedAt( pout, <'settle', y, rid>, %1 ) @ #i)) ∧
+                       (PreimageAvailable( pout, y, %1 ) @ #a)) ∧
+                      (SettleRequested( 'F', pin, y, rid2, %1 ) @ #q2)) ∧
+                     (ChannelUpdateFor( pin, <'settle', y, rid2>, n2 ) @ #u2)) ∧
+                    (StateUpdate( pin, n2 ) @ #s2)) ∧
+                   (HTLCCommittedAt( pin, <'settle', y, rid2>, %c2 ) @ #l)) ∧
+                  (Tick( (%1%+%1%+%1) ) @ #k1)) ∧
+                 (Tick( (%1%+%1%+%1%+%1) ) @ #k)) ∧
+                (#k0 < #f)) ∧
+               (#f < #q1)) ∧
+              (#q1 < #u1)) ∧
+             (#u1 < #s1)) ∧
+            (#s1 < #i)) ∧
+           (#i < #a)) ∧
+          (#a < #q2)) ∧
+         (#q2 < #u2)) ∧
+        (#u2 < #s2)) ∧
+       (#s2 < #l)) ∧
+      (#l < #k1)) ∧
+     (#k1 < #k)) ∧
+    (∀ %t #j. (Tick( %t ) @ #j) ⇒ (((#j = #k0) ∨ (#j = #k1)) ∨ (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid rid2 n n2 %c2 #k0 #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2
+   #l #k1 #k.
+  (Tick( %1 ) @ #k0) ∧
+  (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, (%1%+%1%+%1), %1 ) @ #e) ∧
+  (SettleRequested( 'R', pout, y, rid, %1 ) @ #q1) ∧
+  (ChannelUpdateFor( pout, <'settle', y, rid>, n ) @ #u1) ∧
+  (StateUpdate( pout, n ) @ #s1) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %1 ) @ #i) ∧
+  (PreimageAvailable( pout, y, %1 ) @ #a) ∧
+  (SettleRequested( 'F', pin, y, rid2, %1 ) @ #q2) ∧
+  (ChannelUpdateFor( pin, <'settle', y, rid2>, n2 ) @ #u2) ∧
+  (StateUpdate( pin, n2 ) @ #s2) ∧
+  (HTLCCommittedAt( pin, <'settle', y, rid2>, %c2 ) @ #l) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1%+%1) ) @ #k)
+ ∧
+  (#k0 < #f) ∧
+  (#f < #q1) ∧
+  (#q1 < #u1) ∧
+  (#u1 < #s1) ∧
+  (#s1 < #i) ∧
+  (#i < #a) ∧
+  (#a < #q2) ∧
+  (#q2 < #u2) ∧
+  (#u2 < #s2) ∧
+  (#s2 < #l) ∧
+  (#l < #k1) ∧
+  (#k1 < #k) ∧
+  (∀ %t #j. (Tick( %t ) @ #j) ⇒ ((#j = #k0) ∨ (#j = #k1) ∨ (#j = #k)))"
+*/
+simplify
+solve( (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l.1 < #k1) )
+  case case_2
+  solve( (¬(%b.1 ⊏ (%1%+%1%+%1)))  ∥ (#l.2 < #k1) )
+    case case_2
+    solve( UpdateFor( ~p1, <'settle', h(~x), rid.1> ) ▶₀ #u1 )
+      case Receiver_Request_Settle
+      solve( (¬(%b.2 ⊏ (%1%+%1%+%1)))  ∥ (#l.3 < #k1) )
+        case case_2
+        solve( UpdateDone( ~p1, n, <'settle', h(~x), ~rid.1> ) ▶₀ #i )
+          case Revoke_Old_State
+          solve( !Block( %1 ) ▶₁ #i )
+            case Clock_Tick
+            solve( Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a )
+              case Commit_Op
+              solve( !Block( %1 ) ▶₂ #a )
+                case Clock_Tick
+                solve( UpdateFor( ~p0, <'settle', h(~x), rid2> ) ▶₀ #u2 )
+                  case Forwarder_Request_Settle
+                  solve( (¬(%b.3 ⊏ (%1%+%1%+%1)))  ∥ (#l.4 < #k1) )
+                    case case_2
+                    solve( UpdateDone( ~p0, n.1, <'settle', h(~x), ~rid.2> ) ▶₀ #l )
+                      case Revoke_Old_State
+                      solve( !Block( %c2 ) ▶₁ #l )
+                        case Clock_Tick
+                        solve( UpdateDone( ~p1, n.4, <'settle', h(~x), ~rid.1> ) ▶₀ #l.1 )
+                          case Revoke_Old_State
+                          solve( !Block( %b ) ▶₁ #l.1 )
+                            case Clock_Tick
+                            simplify
+                            solve( UpdateDone( ~p0, n.5, <'settle', h(~x), ~rid.2> ) ▶₀ #l.2 )
+                              case Revoke_Old_State
+                              solve( !Block( %b ) ▶₁ #l.2 )
+                                case Clock_Tick
+                                solve( UpdateDone( ~p1, n.7, <'settle', h(~x), ~rid.1> ) ▶₀ #l.3 )
+                                  case Revoke_Old_State
+                                  solve( !Block( %b ) ▶₁ #l.3 )
+                                    case Clock_Tick
+                                    solve( UpdateDone( ~p0, n.8, <'settle', h(~x), ~rid.2> ) ▶₀ #l.4 )
+                                      case Revoke_Old_State
+                                      solve( !Block( %b ) ▶₁ #l.4 )
+                                        case Clock_Tick
+                                        solve( SettleRequested( 'R', ~p1, h(~x), ~rid.1, %1 ) @ #q1 )
+                                          case Receiver_Request_Settle
+                                          solve( SettleRequested( 'F', ~p0, h(~x), ~rid.2, %1 ) @ #q2 )
+                                            case Forwarder_Request_Settle
+                                            solve( InFlight( ~p1, ~n.2, op ) ▶₀ #s1 )
+                                              case Update_For_Op
+                                              solve( AwaitFulfilled( ~p1, ~x ) ▶₀ #a )
+                                                case Receiver_Request_Settle
+                                                solve( InFlight( ~p0, ~n.3, op ) ▶₀ #s2 )
+                                                  case Update_For_Op
+                                                  solve( InFlight( ~p1, n, <'settle', h(~x), ~rid.1>
+                                                         ) ▶₀ #vr )
+                                                    case Update_For_Op
+                                                    solve( InFlight( ~p1, n.4, <'settle', h(~x), rid>
+                                                           ) ▶₀ #vr.1 )
+                                                      case Update_For_Op
+                                                      solve( AwaitFulfilled( ~p1, ~x ) ▶₀ #vr )
+                                                        case Receiver_Request_Settle
+                                                        solve( InFlight( ~p0, n.1, <'settle', h(~x), ~rid.1>
+                                                               ) ▶₀ #vr )
+                                                          case Update_For_Op
+                                                          solve( InFlight( ~p1, n.2, <'settle', h(~x), ~rid>
+                                                                 ) ▶₀ #vr )
+                                                            case Update_For_Op
+                                                            solve( InFlight( ~p0, n.2,
+                                                                             <'settle', h(~x), ~rid.1>
+                                                                   ) ▶₀ #vr )
+                                                              case Update_For_Op
+                                                              solve( InFlight( ~p1, n.2,
+                                                                               <'settle', h(~x), ~rid>
+                                                                     ) ▶₀ #vr )
+                                                                case Update_For_Op
+                                                                solve( InFlight( ~p0, n.2,
+                                                                                 <'settle', h(~x), ~rid.1>
+                                                                       ) ▶₀ #vr )
+                                                                  case Update_For_Op
+                                                                  SOLVED // trace found
+                                                                qed
+                                                              qed
+                                                            qed
+                                                          qed
+                                                        qed
+                                                      qed
+                                                    qed
+                                                  qed
+                                                qed
+                                              qed
+                                            qed
+                                          qed
+                                        qed
+                                      qed
+                                    qed
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Ablation_Concrete:
+  exists-trace
+  "∃ pin pout y rid #k0 #f #e #i #k1 #k.
+    ((((((((((Tick( %1 ) @ #k0) ∧
+             (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f)) ∧
+            (ForwardExpiries( pin, pout, y, (%1%+%1%+%1), %1 ) @ #e)) ∧
+           (HTLCCommittedAt( pout, <'settle', y, rid>, %1 ) @ #i)) ∧
+          (Tick( (%1%+%1%+%1) ) @ #k1)) ∧
+         (Tick( (%1%+%1%+%1%+%1) ) @ #k)) ∧
+        (#k0 < #f)) ∧
+       (#i < #k1)) ∧
+      (#k1 < #k)) ∧
+     (∀ %t #j. (Tick( %t ) @ #j) ⇒ (((#j = #k0) ∨ (#j = #k1)) ∨ (#j = #k)))) ∧
+    (¬(∃ rid2 n #l. HTLCCommitted( pin, <'settle', y, rid2>, n ) @ #l))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid #k0 #f #e #i #k1 #k.
+  (Tick( %1 ) @ #k0) ∧
+  (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, (%1%+%1%+%1), %1 ) @ #e) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %1 ) @ #i) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1%+%1) ) @ #k)
+ ∧
+  (#k0 < #f) ∧
+  (#i < #k1) ∧
+  (#k1 < #k) ∧
+  (∀ %t #j. (Tick( %t ) @ #j) ⇒ ((#j = #k0) ∨ (#j = #k1) ∨ (#j = #k))) ∧
+  (∀ rid2 n #l. (HTLCCommitted( pin, <'settle', y, rid2>, n ) @ #l) ⇒ ⊥)"
+*/
+by sorry
+
+lemma Gap_Concrete:
+  exists-trace
+  "∃ pin pout y rid rid2 n2 #k0 #f #e #i #k1 #k #l.
+    ((((((((((((Tick( %1 ) @ #k0) ∧
+               (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f)) ∧
+              (ForwardExpiries( pin, pout, y, (%1%+%1), %1 ) @ #e)) ∧
+             (HTLCCommittedAt( pout, <'settle', y, rid>, %1 ) @ #i)) ∧
+            (Tick( (%1%+%1) ) @ #k1)) ∧
+           (Tick( (%1%+%1%+%1) ) @ #k)) ∧
+          (HTLCCommitted( pin, <'settle', y, rid2>, n2 ) @ #l)) ∧
+         (HTLCCommittedAt( pin, <'settle', y, rid2>, (%1%+%1%+%1) ) @ #l)) ∧
+        (#k0 < #f)) ∧
+       (#i < #k1)) ∧
+      (#k1 < #k)) ∧
+     (#k < #l)) ∧
+    (∀ %t #j. (Tick( %t ) @ #j) ⇒ (((#j = #k0) ∨ (#j = #k1)) ∨ (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pin pout y rid rid2 n2 #k0 #f #e #i #k1 #k #l.
+  (Tick( %1 ) @ #k0) ∧
+  (HTLCForwarded( 'F', 'S', 'R', pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, (%1%+%1), %1 ) @ #e) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %1 ) @ #i) ∧
+  (Tick( (%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k) ∧
+  (HTLCCommitted( pin, <'settle', y, rid2>, n2 ) @ #l) ∧
+  (HTLCCommittedAt( pin, <'settle', y, rid2>, (%1%+%1%+%1) ) @ #l)
+ ∧
+  (#k0 < #f) ∧
+  (#i < #k1) ∧
+  (#k1 < #k) ∧
+  (#k < #l) ∧
+  (∀ %t #j. (Tick( %t ) @ #j) ⇒ ((#j = #k0) ∨ (#j = #k1) ∨ (#j = #k)))"
+*/
+by sorry
+
+
+
+
+
+
+
+
+
+/* All wellformedness checks were successful. */
+
+/*
+Generated from:
+Tamarin version 1.10.0
+Maude version 3.2 (unsupported)
+Git revision: cb62c305f8c8b8c1e664152aa33c95b7b8d5ef32, branch: master
+Compiled at: 2024-10-30 11:11:02.432289291 UTC
+*/
+
+end
+
+==============================================================================
+summary of summaries:
+
+analyzed: deadline_core.spthy
+
+  processing time: 116.80s
+  
+  Deadline_Per_Hop (all-traces): analysis incomplete (1 steps)
+  Settle_Commit_Correspondence (all-traces): analysis incomplete (1 steps)
+  Request_Without_Commit (exists-trace): analysis incomplete (1 steps)
+  Commit_Without_Receipt (exists-trace): analysis incomplete (1 steps)
+  Deadline_Witness (exists-trace): analysis incomplete (1 steps)
+  Gap_Counterexample (exists-trace): analysis incomplete (1 steps)
+  Ablation_Counterexample (exists-trace): analysis incomplete (1 steps)
+  Deadline_Witness_Concrete (exists-trace): verified (36 steps)
+  Ablation_Concrete (exists-trace): analysis incomplete (1 steps)
+  Gap_Concrete (exists-trace): analysis incomplete (1 steps)
+
+==============================================================================

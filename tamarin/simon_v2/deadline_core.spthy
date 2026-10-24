@@ -75,6 +75,11 @@ restriction NowIsLatest:
     "All %b %c #q #t. Now(%b) @ #q & Tick(%c) @ #t & %b << %c ==> #q < #t"
 
 #ifdef LIVENESS
+#define RECEIPT
+#define FWDPROMPT
+#endif
+
+#ifdef RECEIPT
 // ASSUMPTION (receipt promptness): a settle committed in block b is delivered
 // upstream before any later tick (same block).
 restriction ReceiptPromptness:
@@ -83,6 +88,9 @@ restriction ReceiptPromptness:
       & Tick(%c) @ #t & %b << %c & #i < #t
      ==> Ex #a. PreimageAvailable(ptr, y, %b) @ #a & #i < #a & #a < #t"
 
+#endif
+
+#ifdef FWDPROMPT
 // ASSUMPTION (forwarder promptness): once the downstream preimage is available
 // in block b, the forwarder requests the upstream settle before any later tick.
 restriction ForwarderPromptness:
