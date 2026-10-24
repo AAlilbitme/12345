@@ -127,6 +127,17 @@ restriction CLTVGap:
      ==> (%tOut %+ %1 = %tIn) | ((%tOut %+ %1) << %tIn)"
 #endif
 
+// Helper (safety, reused): each channel delivers a given preimage at most
+// once, and each party requests a given settle at most once per channel.
+lemma Delivery_Unique [reuse]:
+  "All ptr y %b %d #a #a2. PreimageAvailable(ptr, y, %b) @ #a & PreimageAvailable(ptr, y, %d) @ #a2
+   ==> #a = #a2"
+
+lemma Request_Unique [reuse]:
+  "All Q ptr y rid rid2 %b %d #q #q2.
+      SettleRequested(Q, ptr, y, rid, %b) @ #q & SettleRequested(Q, ptr, y, rid2, %d) @ #q2
+   ==> #q = #q2"
+
 // THEOREM (derived, per hop): if the downstream settle commits in a block
 // b <= tOut, the upstream settle commits before any tick past tIn.
 lemma Deadline_Per_Hop:

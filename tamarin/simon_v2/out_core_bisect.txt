@@ -2,3 +2,5 @@ Witness_Concrete [flags: none]:   Deadline_Witness_Concrete (exists-trace): veri
 Witness_Concrete [flags: -D=GAP2]:   Deadline_Witness_Concrete (exists-trace): verified (19 steps) | 1s
 Witness_Concrete [flags: -D=BOUND]:   Deadline_Witness_Concrete (exists-trace): verified (36 steps) | 117s
 Witness_Concrete [flags: -D=LIVENESS]: TIMEOUT/exit 124 | 601s
+Witness_Concrete [flags: -D=FWDPROMPT]: TIMEOUT/exit 124 | 600s
+Witness_Concrete [flags: -D=RECEIPT]: TIMEOUT/exit 124 | 600s
