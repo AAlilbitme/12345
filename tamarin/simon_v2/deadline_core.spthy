@@ -138,6 +138,36 @@ lemma Request_Unique [reuse]:
       SettleRequested(Q, ptr, y, rid, %b) @ #q & SettleRequested(Q, ptr, y, rid2, %d) @ #q2
    ==> #q = #q2"
 
+// CLOCK INVARIANT (safety): a stamped event lies between Tick(b) and the next
+// tick: Tick(b) happened before it, and no tick with a larger value did.
+lemma Stamp_Between_Ticks:
+  "All %b #q. Now(%b) @ #q
+   ==> (Ex #t. Tick(%b) @ #t & #t < #q)
+     & not (Ex %c #t2. Tick(%c) @ #t2 & %b << %c & #t2 < #q)"
+
+// Witness with a consecutive clock (with -D=LIVENESS -D=BOUND -D=GAP2): every
+// block ticks (1, 2, 3, 4); tOut = 1, tIn = 3; both settles commit in block 1.
+lemma Deadline_Witness_Consecutive:
+  exists-trace
+  "Ex pin pout y rid rid2 n n2
+      #k1 #f #e #q1 #u1 #s1 #i #a #q2 #u2 #s2 #l #k2 #k3 #k4.
+      Tick(%1) @ #k1
+    & HTLCForwarded('F', 'S', 'R', pin, pout, y) @ #f
+    & ForwardExpiries(pin, pout, y, %1 %+ %1 %+ %1, %1) @ #e
+    & SettleRequested('R', pout, y, rid, %1) @ #q1
+    & ChannelUpdateFor(pout, <'settle', y, rid>, n) @ #u1
+    & StateUpdate(pout, n) @ #s1
+    & HTLCCommittedAt(pout, <'settle', y, rid>, %1) @ #i
+    & PreimageAvailable(pout, y, %1) @ #a
+    & SettleRequested('F', pin, y, rid2, %1) @ #q2
+    & ChannelUpdateFor(pin, <'settle', y, rid2>, n2) @ #u2
+    & StateUpdate(pin, n2) @ #s2
+    & HTLCCommittedAt(pin, <'settle', y, rid2>, %1) @ #l
+    & Tick(%1 %+ %1) @ #k2 & Tick(%1 %+ %1 %+ %1) @ #k3 & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k4
+    & #k1 < #f & #f < #q1 & #q1 < #u1 & #u1 < #s1 & #s1 < #i & #i < #a
+    & #a < #q2 & #q2 < #u2 & #u2 < #s2 & #s2 < #l & #l < #k2 & #k2 < #k3 & #k3 < #k4
+    & (All %t #j. Tick(%t) @ #j ==> (#j = #k1 | #j = #k2 | #j = #k3 | #j = #k4))"
+
 // THEOREM (derived, per hop): if the downstream settle commits in a block
 // b <= tOut, the upstream settle commits before any tick past tIn.
 lemma Deadline_Per_Hop:

@@ -1,0 +1,1 @@
+deadline_core.spthy Stamp_Between_Ticks [flags: none]:   Stamp_Between_Ticks (all-traces): verified (23 steps) | 1s
