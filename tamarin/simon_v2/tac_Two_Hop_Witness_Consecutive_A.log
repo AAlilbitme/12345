@@ -560,3 +560,3946 @@ Detailed results from testing 'maude'
 
 >>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
 
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: Committed( ~p0.1, <'settle', h(x), rid.2> ) ▶₁ #a2
+3: UpdateFor( p1, <'settle', h(x), r1> ) ▶₀ #u1
+4: UpdateDone( p1, n.1, <'settle', h(x), r1> ) ▶₀ #i1
+5: Committed( p1, <'settle', h(x), rid.1> ) ▶₁ #a1
+6: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+7: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+8: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+9: ForwardExpiries( p0, p1, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+10: ForwardExpiries( p1, ~p0.1, h(x), (%1%+%1%+%1), %1 ) @ #e
+11: SettleRequested( 'R', ~p0.1, h(x), ~rid.3, %1 ) @ #q2
+12: SettleRequested( 'F2', p1, h(x), r1, %1 ) @ #q1
+13: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+14: InFlight( ~p0.1, ~n.5, op.2 ) ▶₀ #s2
+15: AwaitFulfilled( ~p0.1, x ) ▶₀ #a2
+16: InFlight( p1, ~n.4, op.1 ) ▶₀ #s1
+17: AwaitFulfilled( p1, x ) ▶₀ #a1
+18: InFlight( p0, ~n.3, op ) ▶₀ #s0
+19: AwaitFulfilled( p0, x ) ▶₀ #a0
+20: AwaitFulfilled( ~p1.1, x ) ▶₀ #vr
+21: InFlight( ~p1.1, n.6, <'settle', h(x), rid.4> ) ▶₀ #vr.3
+22: InFlight( ~p0.1, n.2, <'settle', h(x), ~rid.3> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+7
+8
+14
+15
+16
+17
+18
+19
+20
+21
+22
+9
+10
+11
+12
+13
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateFor( p1, <'settle', h(x), r1> ) ▶₀ #u1
+3: UpdateDone( p1, n.1, <'settle', h(x), r1> ) ▶₀ #i1
+4: Committed( p1, <'settle', h(x), rid.1> ) ▶₁ #a1
+5: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+6: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+7: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+8: ForwardExpiries( p0, p1, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+9: ForwardExpiries( p1, ~p0.1, h(x), (%1%+%1%+%1), %1 ) @ #e
+10: SettleRequested( 'R', ~p0.1, h(x), ~rid.2, %1 ) @ #q2
+11: SettleRequested( 'F2', p1, h(x), r1, %1 ) @ #q1
+12: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+13: InFlight( ~p0.1, ~n.5, op.2 ) ▶₀ #s2
+14: AwaitFulfilled( ~p0.1, x ) ▶₀ #a2
+15: InFlight( p1, ~n.4, op.1 ) ▶₀ #s1
+16: AwaitFulfilled( p1, x ) ▶₀ #a1
+17: InFlight( p0, ~n.3, op ) ▶₀ #s0
+18: AwaitFulfilled( p0, x ) ▶₀ #a0
+19: AwaitFulfilled( ~p1.1, x ) ▶₀ #vr
+20: InFlight( ~p1.1, n.6, <'settle', h(x), rid.3> ) ▶₀ #vr.3
+21: InFlight( ~p0.1, n.2, <'settle', h(x), ~rid.2> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+7
+13
+14
+15
+16
+17
+18
+19
+20
+21
+8
+9
+10
+11
+12
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+3: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+4: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+5: ForwardExpiries( p0, ~p0.1, h(x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+6: ForwardExpiries( ~p0.1, ~p0.1, h(x), (%1%+%1%+%1), %1 ) @ #e
+7: SettleRequested( 'R', ~p0.1, h(x), ~rid.1, %1 ) @ #q1
+8: SettleRequested( 'F2', ~p0.1, h(x), ~rid.1, %1 ) @ #q1
+9: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+10: InFlight( ~p0.1, ~n.3, op.2 ) ▶₀ #s2
+11: AwaitFulfilled( ~p0.1, x ) ▶₀ #a1
+12: InFlight( ~p0.1, ~n.3, op.1 ) ▶₀ #s1
+13: InFlight( p0, ~n.2, op ) ▶₀ #s0
+14: AwaitFulfilled( p0, x ) ▶₀ #a0
+15: AwaitFulfilled( ~p1, x ) ▶₀ #vr
+16: InFlight( ~p1, n.4, <'settle', h(x), rid.2> ) ▶₀ #vr.3
+17: InFlight( ~p0.1, n.1, <'settle', h(x), ~rid.1> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+10
+11
+12
+13
+14
+15
+16
+17
+5
+6
+7
+8
+9
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+3: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+4: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+5: ForwardExpiries( p0, ~p1, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+6: ForwardExpiries( ~p1, ~p0.1, h(x), (%1%+%1%+%1), %1 ) @ #e
+7: SettleRequested( 'R', ~p0.1, h(x), ~rid.2, %1 ) @ #q2
+8: SettleRequested( 'F2', ~p1, h(x), ~rid.1, %1 ) @ #q1
+9: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+10: InFlight( ~p0.1, ~n.5, op.2 ) ▶₀ #s2
+11: AwaitFulfilled( ~p0.1, x ) ▶₀ #a2
+12: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+13: AwaitFulfilled( ~p1, x ) ▶₀ #a1
+14: InFlight( p0, ~n.3, op ) ▶₀ #s0
+15: AwaitFulfilled( p0, x ) ▶₀ #a0
+16: InFlight( ~p1, n.1, <'settle', h(x), ~rid.1> ) ▶₀ #vr.1
+17: InFlight( ~p0.1, n.2, <'settle', h(x), ~rid.2> ) ▶₀ #vr.2
+18: AwaitFulfilled( ~p2, x ) ▶₀ #vr.3
+19: InFlight( ~p2, n.6, <'settle', h(x), rid.3> ) ▶₀ #vr.5
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+5
+6
+7
+8
+9
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateDone( ~p2, n.1, <'settle', h(~x), ~rid.3> ) ▶₀ #i1
+3: Committed( ~p2, <'settle', h(~x), rid.1> ) ▶₁ #a1
+4: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+5: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+6: Committed( p0, <'settle', h(~x), rid> ) ▶₁ #a0
+7: ForwardExpiries( p0, ~p2, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+8: ForwardExpiries( ~p2, ~p0.1, h(~x), (%1%+%1%+%1), %1 ) @ #e
+9: SettleRequested( 'R', ~p0.1, h(~x), ~rid.2, %1 ) @ #q2
+10: SettleRequested( 'F2', ~p2, h(~x), ~rid.3, %1 ) @ #q1
+11: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+12: SettleRequested( 'F2', ~p1, h(~x), rid.4, %1 ) @ #q
+13: SettleRequested( 'F1', ~p0.1, h(~x), ~rid.2, %1 ) @ #q2
+14: InFlight( ~p0.1, ~n.5, op.2 ) ▶₀ #s2
+15: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a2
+16: InFlight( ~p2, ~n.4, op.1 ) ▶₀ #s1
+17: AwaitFulfilled( ~p2, ~x ) ▶₀ #a1
+18: InFlight( p0, ~n.3, op ) ▶₀ #s0
+19: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+20: AwaitFulfilled( ~p1, ~x ) ▶₀ #vr
+21: InFlight( ~p1, n.6, <'settle', h(~x), rid.4> ) ▶₀ #vr.3
+22: InFlight( ~p0.1, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+14
+15
+16
+17
+18
+19
+20
+21
+22
+7
+8
+9
+10
+11
+12
+13
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: Committed( ~p1.1, <'settle', h(x), rid.2> ) ▶₁ #a2
+3: UpdateFor( p1, <'settle', h(x), r1> ) ▶₀ #u1
+4: UpdateDone( p1, n.1, <'settle', h(x), r1> ) ▶₀ #i1
+5: Committed( p1, <'settle', h(x), rid.1> ) ▶₁ #a1
+6: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+7: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+8: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+9: ForwardExpiries( p0, p1, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+10: ForwardExpiries( p1, ~p1.1, h(x), (%1%+%1%+%1), %1 ) @ #e
+11: SettleRequested( 'R', ~p1.1, h(x), ~rid.3, %1 ) @ #q2
+12: SettleRequested( 'F2', p1, h(x), r1, %1 ) @ #q1
+13: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+14: InFlight( ~p1.1, ~n.5, op.2 ) ▶₀ #s2
+15: AwaitFulfilled( ~p1.1, x ) ▶₀ #a2
+16: InFlight( p1, ~n.4, op.1 ) ▶₀ #s1
+17: AwaitFulfilled( p1, x ) ▶₀ #a1
+18: InFlight( p0, ~n.3, op ) ▶₀ #s0
+19: AwaitFulfilled( p0, x ) ▶₀ #a0
+20: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+21: InFlight( ~p2, n.6, <'settle', h(x), rid.4> ) ▶₀ #vr.3
+22: InFlight( ~p1.1, n.2, <'settle', h(x), ~rid.3> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+7
+8
+14
+15
+16
+17
+18
+19
+20
+21
+22
+9
+10
+11
+12
+13
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateFor( p1, <'settle', h(x), r1> ) ▶₀ #u1
+3: UpdateDone( p1, n.1, <'settle', h(x), r1> ) ▶₀ #i1
+4: Committed( p1, <'settle', h(x), rid.1> ) ▶₁ #a1
+5: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+6: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+7: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+8: ForwardExpiries( p0, p1, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+9: ForwardExpiries( p1, ~p1.1, h(x), (%1%+%1%+%1), %1 ) @ #e
+10: SettleRequested( 'R', ~p1.1, h(x), ~rid.2, %1 ) @ #q2
+11: SettleRequested( 'F2', p1, h(x), r1, %1 ) @ #q1
+12: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+13: InFlight( ~p1.1, ~n.5, op.2 ) ▶₀ #s2
+14: AwaitFulfilled( ~p1.1, x ) ▶₀ #a2
+15: InFlight( p1, ~n.4, op.1 ) ▶₀ #s1
+16: AwaitFulfilled( p1, x ) ▶₀ #a1
+17: InFlight( p0, ~n.3, op ) ▶₀ #s0
+18: AwaitFulfilled( p0, x ) ▶₀ #a0
+19: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+20: InFlight( ~p2, n.6, <'settle', h(x), rid.3> ) ▶₀ #vr.3
+21: InFlight( ~p1.1, n.2, <'settle', h(x), ~rid.2> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+7
+13
+14
+15
+16
+17
+18
+19
+20
+21
+8
+9
+10
+11
+12
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+3: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+4: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+5: ForwardExpiries( p0, ~p1, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+6: ForwardExpiries( ~p1, ~p1, h(x), (%1%+%1%+%1), %1 ) @ #e
+7: SettleRequested( 'R', ~p1, h(x), ~rid.1, %1 ) @ #q1
+8: SettleRequested( 'F2', ~p1, h(x), ~rid.1, %1 ) @ #q1
+9: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+10: InFlight( ~p1, ~n.3, op.2 ) ▶₀ #s2
+11: AwaitFulfilled( ~p1, x ) ▶₀ #a1
+12: InFlight( ~p1, ~n.3, op.1 ) ▶₀ #s1
+13: InFlight( p0, ~n.2, op ) ▶₀ #s0
+14: AwaitFulfilled( p0, x ) ▶₀ #a0
+15: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+16: InFlight( ~p2, n.4, <'settle', h(x), rid.2> ) ▶₀ #vr.3
+17: InFlight( ~p1, n.1, <'settle', h(x), ~rid.1> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+10
+11
+12
+13
+14
+15
+16
+17
+5
+6
+7
+8
+9
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%b ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k2))
+8:  (¬(%b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k))
+9: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+10: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+11: Committed( p0, <'settle', h(~x), rid> ) ▶₁ #a0
+12: UpdateDone( ~p0.1, n.6, <'settle', h(~x), rid2> ) ▶₀ #l
+13: !Block( %b ) ▶₁ #l
+14: ForwardExpiries( p0, ~p2, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+15: ForwardExpiries( ~p2, ~p1, h(~x), (%1%+%1%+%1), %1 ) @ #e
+16: SettleRequested( 'R', ~p1, h(~x), ~rid.2, %1 ) @ #q2
+17: SettleRequested( 'F2', ~p2, h(~x), ~rid.1, %1 ) @ #q1
+18: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+19: SettleRequested( 'F2', ~p1, h(~x), ~rid.2, %1 ) @ #q2
+20: SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q
+21: InFlight( ~p1, ~n.5, op.2 ) ▶₀ #s2
+22: AwaitFulfilled( ~p1, ~x ) ▶₀ #a2
+23: InFlight( ~p2, ~n.4, op.1 ) ▶₀ #s1
+24: AwaitFulfilled( ~p2, ~x ) ▶₀ #a1
+25: InFlight( p0, ~n.3, op ) ▶₀ #s0
+26: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+27: InFlight( ~p2, n.1, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.1
+28: InFlight( ~p1, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+13
+9
+10
+11
+12
+21
+22
+23
+24
+25
+26
+27
+28
+14
+15
+16
+17
+18
+19
+20
+0
+1
+2
+3
+4
+5
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateDone( ~p0.1, n.1, <'settle', h(x), ~rid.3> ) ▶₀ #i1
+3: Committed( ~p0.1, <'settle', h(x), rid.1> ) ▶₁ #a1
+4: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+5: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+6: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+7: ForwardExpiries( p0, ~p0.1, h(x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+8: ForwardExpiries( ~p0.1, ~p1, h(x), (%1%+%1%+%1), %1 ) @ #e
+9: SettleRequested( 'R', ~p1, h(x), ~rid.2, %1 ) @ #q2
+10: SettleRequested( 'F2', ~p0.1, h(x), ~rid.3, %1 ) @ #q1
+11: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+12: InFlight( ~p1, ~n.5, op.2 ) ▶₀ #s2
+13: AwaitFulfilled( ~p1, x ) ▶₀ #a2
+14: InFlight( ~p0.1, ~n.4, op.1 ) ▶₀ #s1
+15: AwaitFulfilled( ~p0.1, x ) ▶₀ #a1
+16: InFlight( p0, ~n.3, op ) ▶₀ #s0
+17: AwaitFulfilled( p0, x ) ▶₀ #a0
+18: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+19: InFlight( ~p2, n.6, <'settle', h(x), rid.4> ) ▶₀ #vr.3
+20: InFlight( ~p1, n.2, <'settle', h(x), ~rid.2> ) ▶₀ #vr.4
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+12
+13
+14
+15
+16
+17
+18
+19
+20
+7
+8
+9
+10
+11
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: Committed( ~p0.1, <'settle', h(x), rid.1> ) ▶₁ #a1
+3: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+4: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+5: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+6: ForwardExpiries( p0, ~p0.1, h(x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+7: ForwardExpiries( ~p0.1, ~p1, h(x), (%1%+%1%+%1), %1 ) @ #e
+8: SettleRequested( 'R', ~p1, h(x), ~rid.2, %1 ) @ #q2
+9: SettleRequested( 'F2', ~p0.1, h(x), ~rid.3, %1 ) @ #q1
+10: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+11: InFlight( ~p1, ~n.5, op.2 ) ▶₀ #s2
+12: AwaitFulfilled( ~p1, x ) ▶₀ #a2
+13: InFlight( ~p0.1, ~n.4, op.1 ) ▶₀ #s1
+14: AwaitFulfilled( ~p0.1, x ) ▶₀ #a1
+15: InFlight( p0, ~n.3, op ) ▶₀ #s0
+16: AwaitFulfilled( p0, x ) ▶₀ #a0
+17: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+18: InFlight( ~p2, n.6, <'settle', h(x), rid.4> ) ▶₀ #vr.3
+19: InFlight( ~p1, n.2, <'settle', h(x), ~rid.2> ) ▶₀ #vr.4
+20: InFlight( ~p0.1, n.1, <'settle', h(x), ~rid.3> ) ▶₀ #vr.5
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+6
+7
+8
+9
+10
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateFor( p0, <'settle', h(x), r0> ) ▶₀ #u0
+3: UpdateDone( p0, n, <'settle', h(x), r0> ) ▶₀ #i0
+4: Committed( p0, <'settle', h(x), rid> ) ▶₁ #a0
+5: ForwardExpiries( p0, ~p0.1, h(x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+6: ForwardExpiries( ~p0.1, ~p1, h(x), (%1%+%1%+%1), %1 ) @ #e
+7: SettleRequested( 'R', ~p1, h(x), ~rid.2, %1 ) @ #q2
+8: SettleRequested( 'F2', ~p0.1, h(x), ~rid.1, %1 ) @ #q1
+9: SettleRequested( 'F1', p0, h(x), r0, %1 ) @ #q0
+10: InFlight( ~p1, ~n.5, op.2 ) ▶₀ #s2
+11: AwaitFulfilled( ~p1, x ) ▶₀ #a2
+12: InFlight( ~p0.1, ~n.4, op.1 ) ▶₀ #s1
+13: AwaitFulfilled( ~p0.1, x ) ▶₀ #a1
+14: InFlight( p0, ~n.3, op ) ▶₀ #s0
+15: AwaitFulfilled( p0, x ) ▶₀ #a0
+16: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+17: InFlight( ~p2, n.6, <'settle', h(x), rid.3> ) ▶₀ #vr.3
+18: InFlight( ~p1, n.2, <'settle', h(x), ~rid.2> ) ▶₀ #vr.4
+19: InFlight( ~p0.1, n.1, <'settle', h(x), ~rid.1> ) ▶₀ #vr.5
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+5
+6
+7
+8
+9
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p1, ~p0, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p0, ~p1, h(x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p1, h(x), ~rid, %1 ) @ #q0
+5: SettleRequested( 'F2', ~p0, h(x), ~rid.1, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p1, h(x), ~rid, %1 ) @ #q0
+7: InFlight( ~p1, ~n.2, op.2 ) ▶₀ #s2
+8: AwaitFulfilled( ~p1, x ) ▶₀ #a0
+9: InFlight( ~p0, ~n.3, op.1 ) ▶₀ #s1
+10: AwaitFulfilled( ~p0, x ) ▶₀ #a1
+11: InFlight( ~p1, ~n.2, op ) ▶₀ #s0
+12: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+13: InFlight( ~p2, n.4, <'settle', h(x), rid.2> ) ▶₀ #vr.3
+14: InFlight( ~p1, n, <'settle', h(x), ~rid> ) ▶₀ #vr.4
+15: InFlight( ~p0, n.1, <'settle', h(x), ~rid.1> ) ▶₀ #vr.5
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+11
+12
+13
+14
+15
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p2, ~p0, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p1, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p0, h(~x), ~rid.1, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p2, h(~x), ~rid, %1 ) @ #q0
+7: SettleRequested( 'F2', ~p1, h(~x), ~rid.2, %1 ) @ #q2
+8: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q1
+9: InFlight( ~p1, ~n.5, op.2 ) ▶₀ #s2
+10: AwaitFulfilled( ~p1, ~x ) ▶₀ #a2
+11: InFlight( ~p0, ~n.4, op.1 ) ▶₀ #s1
+12: AwaitFulfilled( ~p0, ~x ) ▶₀ #a1
+13: InFlight( ~p2, ~n.3, op ) ▶₀ #s0
+14: AwaitFulfilled( ~p2, ~x ) ▶₀ #a0
+15: InFlight( ~p2, n, <'settle', h(~x), ~rid> ) ▶₀ #vr.1
+16: InFlight( ~p1, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.2
+17: InFlight( ~p0, n.1, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+9
+10
+11
+12
+13
+14
+15
+16
+17
+2
+3
+4
+5
+6
+7
+8
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p0, h(x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p0, ~p1, h(x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p1, h(x), ~rid.1, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p0, h(x), ~rid, %1 ) @ #q0
+6: SettleRequested( 'F1', ~p0, h(x), ~rid, %1 ) @ #q0
+7: InFlight( ~p1, ~n.3, op.2 ) ▶₀ #s2
+8: AwaitFulfilled( ~p1, x ) ▶₀ #a2
+9: InFlight( ~p0, ~n.2, op.1 ) ▶₀ #s1
+10: AwaitFulfilled( ~p0, x ) ▶₀ #a0
+11: InFlight( ~p0, ~n.2, op ) ▶₀ #s0
+12: AwaitFulfilled( ~p2, x ) ▶₀ #vr
+13: InFlight( ~p2, n.4, <'settle', h(x), rid.2> ) ▶₀ #vr.3
+14: InFlight( ~p1, n.1, <'settle', h(x), ~rid.1> ) ▶₀ #vr.4
+15: InFlight( ~p0, n, <'settle', h(x), ~rid> ) ▶₀ #vr.5
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+11
+12
+13
+14
+15
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p1.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p1.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p1.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1.1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.1))
+8:  (¬(#q < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1.1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #vr.1))
+9:  (¬(#q0 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.1))
+10:  (¬(#q1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p1, <'settle', h(~x), r1>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.1))
+11:  (¬(#q2 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.3>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.1))
+12:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.1))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.1))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.1))
+15:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.1)
+16:  (¬(%1 ⊏ %b))  ∥ (#a1 < #vr.1)
+17:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.1)
+18:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.1)
+19:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.1)
+20:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.1)
+21:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.1)
+22:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.1)
+23:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.1)
+24:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.1)
+25:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.1 < #j2)
+26:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.1 < #k1)
+27:  (#vr.1 = #k0)  ∥ (#vr.1 = #j2)  ∥ (#vr.1 = #k1)
+28:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#a < #j2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j2))
+29:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (¬(#a < #j4))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j4))
+30:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#a < #k1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #k1))
+31:  (¬(#q.1 < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #j4))
+32:  (¬(#q.1 < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #j4))
+33:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a < #j2)
+34:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a < #j4)
+35:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a < #k1)
+36:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #k))
+37:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #k))
+38:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #k2))
+39:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #k2))
+40: UpdateDone( ~p2, n.2, <'settle', h(~x), ~rid.3> ) ▶₀ #i2
+41: Committed( ~p2, <'settle', h(~x), rid.2> ) ▶₁ #a2
+42: UpdateFor( p1, <'settle', h(~x), r1> ) ▶₀ #u1
+43: UpdateDone( p1, n.1, <'settle', h(~x), r1> ) ▶₀ #i1
+44: Committed( p1, <'settle', h(~x), rid.1> ) ▶₁ #a1
+45: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+46: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+47: Committed( p0, <'settle', h(~x), rid> ) ▶₁ #a0
+48: UpdateDone( ~p1.1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+49: Committed( ~p1.1, <'settle', h(~x), rid.4> ) ▶₁ #a
+50: !Block( %b ) ▶₂ #a
+51: ForwardExpiries( p0, p1, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+52: ForwardExpiries( p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+53: SettleRequested( 'R', ~p2, h(~x), ~rid.3, %1 ) @ #q2
+54: SettleRequested( 'F2', p1, h(~x), r1, %1 ) @ #q1
+55: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+56: SettleRequested( 'F2', ~p1.1, h(~x), rid2, %1 ) @ #q
+57: SettleRequested( 'F1', ~p0.1, h(~x), rid2.1, %b ) @ #q.1
+58: SettleRequested( 'F1', ~p0.1, h(~x), rid2.2, %b ) @ #q.1
+59: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+60: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+61: InFlight( p1, ~n.5, op.1 ) ▶₀ #s1
+62: AwaitFulfilled( p1, ~x ) ▶₀ #a1
+63: InFlight( p0, ~n.4, op ) ▶₀ #s0
+64: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+65: AwaitFulfilled( ~p1.1, ~x ) ▶₀ #a
+66: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+67: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+68: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+50
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+59
+60
+61
+62
+63
+64
+65
+51
+52
+53
+54
+55
+56
+57
+58
+66
+67
+68
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.1))
+8:  (¬(#q.1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #vr.1))
+9:  (¬(#q0 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.1))
+10:  (¬(#q1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p1.1, <'settle', h(~x), r1>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.1))
+11:  (¬(#q2 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.4>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.1))
+12:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.1))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p1.1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.1))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.1))
+15:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.1)
+16:  (¬(%1 ⊏ %b))  ∥ (#a1 < #vr.1)
+17:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.1)
+18:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.1)
+19:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.1)
+20:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.1)
+21:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.1)
+22:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.1)
+23:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.1)
+24:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.1)
+25:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.1 < #j2)
+26:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.1 < #k1)
+27:  (#vr.1 = #k0)  ∥ (#vr.1 = #j2)  ∥ (#vr.1 = #k1)
+28:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#a < #j2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j2))
+29:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (¬(#a < #j4))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j4))
+30:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#a < #k1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #k1))
+31:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+32:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+33:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a < #j2)
+34:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a < #j4)
+35:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a < #k1)
+36:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+37:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+38:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+39:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+40: UpdateDone( ~p2, n.2, <'settle', h(~x), ~rid.4> ) ▶₀ #i2
+41: Committed( ~p2, <'settle', h(~x), rid.3> ) ▶₁ #a2
+42: UpdateFor( p1.1, <'settle', h(~x), r1> ) ▶₀ #u1
+43: UpdateDone( p1.1, n.1, <'settle', h(~x), r1> ) ▶₀ #i1
+44: Committed( p1.1, <'settle', h(~x), rid.2> ) ▶₁ #a1
+45: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+46: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+47: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+48: UpdateDone( ~p1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+49: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+50: ForwardExpiries( p0, p1.1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+51: ForwardExpiries( p1.1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+52: SettleRequested( 'R', ~p2, h(~x), ~rid.4, %1 ) @ #q2
+53: SettleRequested( 'F2', p1.1, h(~x), r1, %1 ) @ #q1
+54: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+55: SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q.1
+56: SettleRequested( 'F1', ~p0.1, h(~x), rid2.1, %b ) @ #q
+57: SettleRequested( 'F1', ~p0.1, h(~x), rid2.2, %b ) @ #q
+58: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+59: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+60: InFlight( p1.1, ~n.5, op.1 ) ▶₀ #s1
+61: AwaitFulfilled( p1.1, ~x ) ▶₀ #a1
+62: InFlight( p0, ~n.4, op ) ▶₀ #s0
+63: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+64: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+65: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+66: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+67: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+58
+59
+60
+61
+62
+63
+64
+50
+51
+52
+53
+54
+55
+56
+57
+65
+66
+67
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.1))
+8:  (¬(#q.1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #vr.1))
+9:  (¬(#q0 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.1))
+10:  (¬(#q1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p1.1, <'settle', h(~x), r1>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.1))
+11:  (¬(#q2 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.4>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.1))
+12:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.1))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p1.1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.1))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.1))
+15:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.1)
+16:  (¬(%1 ⊏ %b))  ∥ (#a1 < #vr.1)
+17:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.1)
+18:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.1)
+19:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.1)
+20:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.1)
+21:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.1)
+22:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.1)
+23:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.1)
+24:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.1)
+25:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.1 < #j2)
+26:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.1 < #k1)
+27:  (#vr.1 = #k0)  ∥ (#vr.1 = #j2)  ∥ (#vr.1 = #k1)
+28:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#a < #j2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j2))
+29:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (¬(#a < #j4))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j4))
+30:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#a < #k1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #k1))
+31:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+32:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+33:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a < #j2)
+34:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a < #j4)
+35:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a < #k1)
+36:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+37:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+38:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+39:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+40: Committed( ~p2, <'settle', h(~x), rid.3> ) ▶₁ #a2
+41: UpdateFor( p1.1, <'settle', h(~x), r1> ) ▶₀ #u1
+42: UpdateDone( p1.1, n.1, <'settle', h(~x), r1> ) ▶₀ #i1
+43: Committed( p1.1, <'settle', h(~x), rid.2> ) ▶₁ #a1
+44: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+45: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+46: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+47: UpdateDone( ~p1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+48: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+49: ForwardExpiries( p0, p1.1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+50: ForwardExpiries( p1.1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+51: SettleRequested( 'R', ~p2, h(~x), ~rid.4, %1 ) @ #q2
+52: SettleRequested( 'F2', p1.1, h(~x), r1, %1 ) @ #q1
+53: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+54: SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q.1
+55: SettleRequested( 'F1', ~p0.1, h(~x), rid2.1, %b ) @ #q
+56: SettleRequested( 'F1', ~p0.1, h(~x), rid2.2, %b ) @ #q
+57: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+58: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+59: InFlight( p1.1, ~n.5, op.1 ) ▶₀ #s1
+60: AwaitFulfilled( p1.1, ~x ) ▶₀ #a1
+61: InFlight( p0, ~n.4, op ) ▶₀ #s0
+62: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+63: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+64: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.4> ) ▶₀ #vr.2
+65: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+66: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+67: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+40
+41
+42
+43
+44
+45
+46
+47
+48
+57
+58
+59
+60
+61
+62
+63
+64
+49
+50
+51
+52
+53
+54
+55
+56
+65
+66
+67
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.1))
+8:  (¬(#q.1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #vr.1))
+9:  (¬(#q0 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.1))
+10:  (¬(#q1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p1.1, <'settle', h(~x), r1>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.1))
+11:  (¬(#q2 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.3>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.1))
+12:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.1))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p1.1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.1))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.1))
+15:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.1)
+16:  (¬(%1 ⊏ %b))  ∥ (#a1 < #vr.1)
+17:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.1)
+18:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.1)
+19:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.1)
+20:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.1)
+21:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.1)
+22:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.1)
+23:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.1)
+24:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.1)
+25:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.1 < #j2)
+26:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.1 < #k1)
+27:  (#vr.1 = #k0)  ∥ (#vr.1 = #j2)  ∥ (#vr.1 = #k1)
+28:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#a < #j2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j2))
+29:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (¬(#a < #j4))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j4))
+30:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#a < #k1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #k1))
+31:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+32:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+33:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a < #j2)
+34:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a < #j4)
+35:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a < #k1)
+36:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+37:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+38:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+39:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+40: UpdateFor( p1.1, <'settle', h(~x), r1> ) ▶₀ #u1
+41: UpdateDone( p1.1, n.1, <'settle', h(~x), r1> ) ▶₀ #i1
+42: Committed( p1.1, <'settle', h(~x), rid.2> ) ▶₁ #a1
+43: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+44: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+45: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+46: UpdateDone( ~p1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+47: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+48: ForwardExpiries( p0, p1.1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+49: ForwardExpiries( p1.1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+50: SettleRequested( 'R', ~p2, h(~x), ~rid.3, %1 ) @ #q2
+51: SettleRequested( 'F2', p1.1, h(~x), r1, %1 ) @ #q1
+52: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+53: SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q.1
+54: SettleRequested( 'F1', ~p0.1, h(~x), rid2.1, %b ) @ #q
+55: SettleRequested( 'F1', ~p0.1, h(~x), rid2.2, %b ) @ #q
+56: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+57: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+58: InFlight( p1.1, ~n.5, op.1 ) ▶₀ #s1
+59: AwaitFulfilled( p1.1, ~x ) ▶₀ #a1
+60: InFlight( p0, ~n.4, op ) ▶₀ #s0
+61: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+62: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+63: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.3> ) ▶₀ #vr.2
+64: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+65: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+66: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+40
+41
+42
+43
+44
+45
+46
+47
+56
+57
+58
+59
+60
+61
+62
+63
+48
+49
+50
+51
+52
+53
+54
+55
+64
+65
+66
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateDone( ~p0.1, n.1, <'settle', h(~x), ~rid.4> ) ▶₀ #i1
+3: Committed( ~p0.1, <'settle', h(~x), rid.2> ) ▶₁ #a1
+4: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+5: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+6: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+7: ForwardExpiries( p0, ~p0.1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+8: ForwardExpiries( ~p0.1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+9: SettleRequested( 'R', ~p2, h(~x), ~rid.3, %1 ) @ #q2
+10: SettleRequested( 'F2', ~p0.1, h(~x), ~rid.4, %1 ) @ #q
+11: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+12: SettleRequested( 'F2', ~p1, h(~x), rid, %1 ) @ #q.1
+13: SettleRequested( 'F1', ~p0.1, h(~x), ~rid.4, %1 ) @ #q
+14: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+15: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+16: InFlight( ~p0.1, ~n.5, op.1 ) ▶₀ #s1
+17: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a1
+18: InFlight( p0, ~n.4, op ) ▶₀ #s0
+19: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+20: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+21: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.3> ) ▶₀ #vr.1
+22: InFlight( ~p1, n.3, <'settle', h(~x), rid> ) ▶₀ #vr.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+14
+15
+16
+17
+18
+19
+20
+21
+22
+7
+8
+9
+10
+11
+12
+13
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k2))
+7:  (¬(%b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k))
+8:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+9: UpdateDone( ~p1, n.1, <'settle', h(~x), ~rid.3> ) ▶₀ #i1
+10: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+11: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+12: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+13: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+14: UpdateDone( ~p0.1, n.6, <'settle', h(~x), rid2> ) ▶₀ #l
+15: !Block( %b ) ▶₁ #l
+16: ForwardExpiries( p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+17: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+18: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+19: SettleRequested( 'F2', ~p1, h(~x), ~rid.3, %1 ) @ #q1
+20: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+21: SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q
+22: InFlight( ~p2, ~n.5, op.2 ) ▶₀ #s2
+23: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+24: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+25: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+26: InFlight( p0, ~n.3, op ) ▶₀ #s0
+27: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+28: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+15
+9
+10
+11
+12
+13
+14
+22
+23
+24
+25
+26
+27
+28
+16
+17
+18
+19
+20
+21
+0
+1
+2
+3
+4
+5
+6
+7
+8
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a1 < #vr.1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a1 < #q) ∧ (#q < #vr.1))
+8:  (¬(#q.1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q.1 < #l) ∧ (#l < #vr.1))
+9:  (¬(#q0 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.1))
+10:  (¬(#q1 < #vr.1))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.2>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.1))
+11:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.1))
+12:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.1))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.1))
+13:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.1)
+14:  (¬(%1 ⊏ %b))  ∥ (#a1 < #vr.1)
+15:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.1)
+16:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.1)
+17:  (¬(%1 ⊏ %b))  ∥ (#q1 < #vr.1)
+18:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.1)
+19:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.1)
+20:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.1)
+21:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.1 < #j2)
+22:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.1 < #k1)
+23:  (#vr.1 = #k0)  ∥ (#vr.1 = #j2)  ∥ (#vr.1 = #k1)
+24:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#a < #j2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j2))
+25:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (¬(#a < #j4))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #j4))
+26:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#a < #k1))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %b ) @ #q)  ∧   (#a < #q) ∧ (#q < #k1))
+27:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+28:  (¬(#q < #j4))  ∥ (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #j4))
+29:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a < #j2)
+30:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a < #j4)
+31:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a < #k1)
+32:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+33:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k))
+34:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.1>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+35:  (¬((%b%+%1%+%1) ⊏ (%1%+%1%+%1%+%1%+%1)))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2.2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #k2))
+36: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+37: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+38: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+39: UpdateDone( ~p1, n.2, <'settle', h(~x), rid2> ) ▶₀ #l
+40: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+41: ForwardExpiries( p0, ~p2, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+42: ForwardExpiries( ~p2, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+43: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q1
+44: SettleRequested( 'F2', ~p2, h(~x), ~rid.2, %1 ) @ #q1
+45: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+46: SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q.1
+47: SettleRequested( 'F1', ~p0.1, h(~x), rid2.1, %b ) @ #q
+48: SettleRequested( 'F1', ~p0.1, h(~x), rid2.2, %b ) @ #q
+49: InFlight( ~p2, ~n.4, op.2 ) ▶₀ #s2
+50: AwaitFulfilled( ~p2, ~x ) ▶₀ #a1
+51: InFlight( ~p2, ~n.4, op.1 ) ▶₀ #s1
+52: InFlight( p0, ~n.3, op ) ▶₀ #s0
+53: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+54: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+55: InFlight( ~p2, n.1, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.2
+56: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+57: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+58: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+36
+37
+38
+39
+40
+49
+50
+51
+52
+53
+54
+55
+41
+42
+43
+44
+45
+46
+47
+48
+56
+57
+58
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: Committed( ~p0.1, <'settle', h(~x), rid.2> ) ▶₁ #a1
+3: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+4: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+5: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+6: ForwardExpiries( p0, ~p0.1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+7: ForwardExpiries( ~p0.1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+8: SettleRequested( 'R', ~p2, h(~x), ~rid.3, %1 ) @ #q2
+9: SettleRequested( 'F2', ~p0.1, h(~x), ~rid.4, %1 ) @ #q
+10: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+11: SettleRequested( 'F2', ~p1, h(~x), rid, %1 ) @ #q.1
+12: SettleRequested( 'F1', ~p0.1, h(~x), ~rid.4, %1 ) @ #q
+13: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+14: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+15: InFlight( ~p0.1, ~n.5, op.1 ) ▶₀ #s1
+16: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a1
+17: InFlight( p0, ~n.4, op ) ▶₀ #s0
+18: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+19: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+20: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.3> ) ▶₀ #vr.1
+21: InFlight( ~p1, n.3, <'settle', h(~x), rid> ) ▶₀ #vr.2
+22: InFlight( ~p0.1, n.1, <'settle', h(~x), ~rid.4> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+6
+7
+8
+9
+10
+11
+12
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+3: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+4: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+5: ForwardExpiries( p0, ~p0.1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+6: ForwardExpiries( ~p0.1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+7: SettleRequested( 'R', ~p2, h(~x), ~rid.3, %1 ) @ #q2
+8: SettleRequested( 'F2', ~p0.1, h(~x), ~rid.2, %1 ) @ #q
+9: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+10: SettleRequested( 'F2', ~p1, h(~x), rid, %1 ) @ #q.1
+11: SettleRequested( 'F1', ~p0.1, h(~x), ~rid.2, %1 ) @ #q
+12: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+13: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+14: InFlight( ~p0.1, ~n.5, op.1 ) ▶₀ #s1
+15: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a1
+16: InFlight( p0, ~n.4, op ) ▶₀ #s0
+17: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+18: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+19: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.3> ) ▶₀ #vr.1
+20: InFlight( ~p1, n.3, <'settle', h(~x), rid> ) ▶₀ #vr.2
+21: InFlight( ~p0.1, n.1, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+5
+6
+7
+8
+9
+10
+11
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q)  ∧   (#a < #q) ∧ (#q < #vr.2))
+8:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.2))
+9:  (¬(#q < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #vr.2))
+10:  (¬(#q0 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.2))
+11:  (¬(#q1 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), ~rid.3>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.2))
+12:  (¬(#q2 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.2>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.2))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.2))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.2))
+15:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.2))
+16:  (¬(%1 ⊏ %b))  ∥ (#a < #vr.2)
+17:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.2)
+18:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.2)
+19:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.2)
+20:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.2)
+21:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.2)
+22:  (¬(%1 ⊏ %b))  ∥ (#q1 < #vr.2)
+23:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.2)
+24:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.2)
+25:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.2)
+26:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.2)
+27:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.2 < #j2)
+28:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.2 < #k1)
+29:  (#vr.2 = #k0)  ∥ (#vr.2 = #j2)  ∥ (#vr.2 = #k1)
+30:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a.1 < #j2)
+31:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a.1 < #j4)
+32:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a.1 < #k1)
+33: UpdateDone( ~p1, n.1, <'settle', h(~x), ~rid.3> ) ▶₀ #i1
+34: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+35: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+36: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+37: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+38: UpdateDone( ~p0.1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+39: Committed( ~p0.1, <'settle', h(~x), rid.4> ) ▶₁ #a.1
+40: !Block( %b ) ▶₂ #a.1
+41: ForwardExpiries( p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+42: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+43: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+44: SettleRequested( 'F2', ~p1, h(~x), ~rid.3, %1 ) @ #q1
+45: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+46: SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q
+47: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+48: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+49: InFlight( ~p1, ~n.5, op.1 ) ▶₀ #s1
+50: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+51: InFlight( p0, ~n.4, op ) ▶₀ #s0
+52: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+53: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+54: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a.1
+55: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+56: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+57: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+40
+33
+34
+35
+36
+37
+38
+39
+47
+48
+49
+50
+51
+52
+53
+54
+41
+42
+43
+44
+45
+46
+55
+56
+57
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q)  ∧   (#a < #q) ∧ (#q < #vr.2))
+8:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.2))
+9:  (¬(#q < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #vr.2))
+10:  (¬(#q0 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.2))
+11:  (¬(#q1 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), ~rid.3>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.2))
+12:  (¬(#q2 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.2>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.2))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.2))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.2))
+15:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.2))
+16:  (¬(%1 ⊏ %b))  ∥ (#a < #vr.2)
+17:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.2)
+18:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.2)
+19:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.2)
+20:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.2)
+21:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.2)
+22:  (¬(%1 ⊏ %b))  ∥ (#q1 < #vr.2)
+23:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.2)
+24:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.2)
+25:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.2)
+26:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.2)
+27:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.2 < #j2)
+28:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.2 < #k1)
+29:  (#vr.2 = #k0)  ∥ (#vr.2 = #j2)  ∥ (#vr.2 = #k1)
+30:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a.1 < #j2)
+31:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a.1 < #j4)
+32:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a.1 < #k1)
+33: UpdateDone( ~p1, n.1, <'settle', h(~x), ~rid.3> ) ▶₀ #i1
+34: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+35: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+36: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+37: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+38: UpdateDone( ~p0.1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+39: Committed( ~p0.1, <'settle', h(~x), rid.4> ) ▶₁ #a.1
+40: ForwardExpiries( p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+41: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+42: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+43: SettleRequested( 'F2', ~p1, h(~x), ~rid.3, %1 ) @ #q1
+44: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+45: SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q
+46: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+47: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+48: InFlight( ~p1, ~n.5, op.1 ) ▶₀ #s1
+49: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+50: InFlight( p0, ~n.4, op ) ▶₀ #s0
+51: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+52: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+53: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a.1
+54: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+55: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+56: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+33
+34
+35
+36
+37
+38
+39
+46
+47
+48
+49
+50
+51
+52
+53
+40
+41
+42
+43
+44
+45
+54
+55
+56
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p1, ~p0, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p0, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p0, h(~x), ~rid.1, %1 ) @ #q
+6: SettleRequested( 'F1', ~p1, h(~x), ~rid, %1 ) @ #q0
+7: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q0
+8: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+9: InFlight( ~p2, ~n.5, op.2 ) ▶₀ #s2
+10: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+11: InFlight( ~p0, ~n.4, op.1 ) ▶₀ #s1
+12: AwaitFulfilled( ~p0, ~x ) ▶₀ #a1
+13: InFlight( ~p1, ~n.3, op ) ▶₀ #s0
+14: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+15: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+16: InFlight( ~p1, n, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+17: InFlight( ~p0, n.1, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+9
+10
+11
+12
+13
+14
+15
+16
+17
+2
+3
+4
+5
+6
+7
+8
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p0, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p0, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p0, h(~x), ~rid.1, %1 ) @ #q
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: SettleRequested( 'F2', ~p1, h(~x), rid, %1 ) @ #q.1
+8: InFlight( ~p2, ~n.4, op.2 ) ▶₀ #s2
+9: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+10: InFlight( ~p0, ~n.3, op.1 ) ▶₀ #s1
+11: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+12: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+13: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+14: InFlight( ~p2, n.1, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+15: InFlight( ~p1, n.2, <'settle', h(~x), rid> ) ▶₀ #vr.2
+16: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+8
+9
+10
+11
+12
+13
+14
+15
+16
+2
+3
+4
+5
+6
+7
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p2, ~p0, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p0, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.1, %1 ) @ #q0
+5: SettleRequested( 'F2', ~p0, h(~x), ~rid.2, %1 ) @ #q
+6: SettleRequested( 'F1', ~p2, h(~x), ~rid.1, %1 ) @ #q0
+7: SettleRequested( 'F2', ~p1, h(~x), rid, %1 ) @ #q.1
+8: SettleRequested( 'F1', ~p0, h(~x), ~rid.2, %1 ) @ #q
+9: InFlight( ~p2, ~n.3, op.2 ) ▶₀ #s2
+10: AwaitFulfilled( ~p2, ~x ) ▶₀ #a0
+11: InFlight( ~p0, ~n.4, op.1 ) ▶₀ #s1
+12: AwaitFulfilled( ~p0, ~x ) ▶₀ #a1
+13: InFlight( ~p2, ~n.3, op ) ▶₀ #s0
+14: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+15: InFlight( ~p2, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.1
+16: InFlight( ~p1, n.2, <'settle', h(~x), rid> ) ▶₀ #vr.2
+17: InFlight( ~p0, n.1, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+9
+10
+11
+12
+13
+14
+15
+16
+17
+2
+3
+4
+5
+6
+7
+8
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q)  ∧   (#a < #q) ∧ (#q < #vr.2))
+8:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.2))
+9:  (¬(#q < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #vr.2))
+10:  (¬(#q0 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.2))
+11:  (¬(#q1 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), ~rid.3>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.2))
+12:  (¬(#q2 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.2>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.2))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.2))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.2))
+15:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.2))
+16:  (¬(%1 ⊏ %b))  ∥ (#a < #vr.2)
+17:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.2)
+18:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.2)
+19:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.2)
+20:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.2)
+21:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.2)
+22:  (¬(%1 ⊏ %b))  ∥ (#q1 < #vr.2)
+23:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.2)
+24:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.2)
+25:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.2)
+26:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.2)
+27:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.2 < #j2)
+28:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.2 < #k1)
+29:  (#vr.2 = #k0)  ∥ (#vr.2 = #j2)  ∥ (#vr.2 = #k1)
+30:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a.1 < #j2)
+31:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a.1 < #j4)
+32:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a.1 < #k1)
+33: Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a
+34: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+35: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+36: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+37: UpdateDone( ~p0.1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+38: Committed( ~p0.1, <'settle', h(~x), rid.4> ) ▶₁ #a.1
+39: ForwardExpiries( p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+40: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+41: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+42: SettleRequested( 'F2', ~p1, h(~x), ~rid.3, %1 ) @ #q1
+43: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+44: SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q
+45: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+46: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+47: InFlight( ~p1, ~n.5, op.1 ) ▶₀ #s1
+48: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+49: InFlight( p0, ~n.4, op ) ▶₀ #s0
+50: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+51: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+52: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a.1
+53: InFlight( ~p1, n.1, <'settle', h(~x), ~rid.3> ) ▶₀ #vr.3
+54: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+55: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+56: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+33
+34
+35
+36
+37
+38
+45
+46
+47
+48
+49
+50
+51
+52
+53
+39
+40
+41
+42
+43
+44
+54
+55
+56
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0.1, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q)  ∧   (#a < #q) ∧ (#q < #vr.2))
+8:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.2))
+9:  (¬(#q < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p0.1, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #vr.2))
+10:  (¬(#q0 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( p0, <'settle', h(~x), r0>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.2))
+11:  (¬(#q1 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), ~rid>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.2))
+12:  (¬(#q2 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.2>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.2))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( p0, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.2))
+14:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.2))
+15:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.2))
+16:  (¬(%1 ⊏ %b))  ∥ (#a < #vr.2)
+17:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.2)
+18:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.2)
+19:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.2)
+20:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.2)
+21:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.2)
+22:  (¬(%1 ⊏ %b))  ∥ (#q1 < #vr.2)
+23:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.2)
+24:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.2)
+25:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.2)
+26:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.2)
+27:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.2 < #j2)
+28:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.2 < #k1)
+29:  (#vr.2 = #k0)  ∥ (#vr.2 = #j2)  ∥ (#vr.2 = #k1)
+30:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a.1 < #j2)
+31:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a.1 < #j4)
+32:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a.1 < #k1)
+33: UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0
+34: UpdateDone( p0, n, <'settle', h(~x), r0> ) ▶₀ #i0
+35: Committed( p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+36: UpdateDone( ~p0.1, n.3, <'settle', h(~x), rid2> ) ▶₀ #l
+37: Committed( ~p0.1, <'settle', h(~x), rid.3> ) ▶₁ #a.1
+38: ForwardExpiries( p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)) @ #e
+39: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+40: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+41: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+42: SettleRequested( 'F1', p0, h(~x), r0, %1 ) @ #q0
+43: SettleRequested( 'F1', ~p0.1, h(~x), rid2, %1 ) @ #q
+44: InFlight( ~p2, ~n.6, op.2 ) ▶₀ #s2
+45: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+46: InFlight( ~p1, ~n.5, op.1 ) ▶₀ #s1
+47: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+48: InFlight( p0, ~n.4, op ) ▶₀ #s0
+49: AwaitFulfilled( p0, ~x ) ▶₀ #a0
+50: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+51: AwaitFulfilled( ~p0.1, ~x ) ▶₀ #a.1
+52: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.3
+53: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+54: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+55: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+33
+34
+35
+36
+37
+44
+45
+46
+47
+48
+49
+50
+51
+52
+38
+39
+40
+41
+42
+43
+53
+54
+55
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: UpdateDone( ~p0, n, <'settle', h(~x), ~rid.3> ) ▶₀ #i0
+3: Committed( ~p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+4: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+5: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+6: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+7: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+8: SettleRequested( 'F1', ~p0, h(~x), ~rid.3, %1 ) @ #q
+9: InFlight( ~p2, ~n.5, op.2 ) ▶₀ #s2
+10: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+11: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+12: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+13: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+14: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+15: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+16: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+9
+10
+11
+12
+13
+14
+15
+16
+4
+5
+6
+7
+8
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0, h(~x), rid2, %1 ) @ #q)  ∧   (#a < #q) ∧ (#q < #vr.2))
+8:  (¬(%1 ⊏ %b))  ∥ (¬(#a0 < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a0 < #q) ∧ (#q < #vr.2))
+9:  (¬(#q < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p0, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #vr.2))
+10:  (¬(#q0 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.1>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.2))
+11:  (¬(#q1 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), ~rid>, n ) @ #l)  ∧   (#q1 < #l) ∧ (#l < #vr.2))
+12:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.2))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i1 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %1 ) @ #a)  ∧   (#i1 < #a) ∧ (#a < #vr.2))
+14:  (¬(%1 ⊏ %b))  ∥ (#a < #vr.2)
+15:  (¬(%1 ⊏ %b))  ∥ (#a0 < #vr.2)
+16:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.2)
+17:  (¬(%1 ⊏ %b))  ∥ (#i1 < #vr.2)
+18:  (¬(%1 ⊏ %b))  ∥ (#q1 < #vr.2)
+19:  (¬(%1 ⊏ %b))  ∥ (#q0 < #vr.2)
+20:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.2)
+21:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.2)
+22:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.2)
+23:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.2 < #j2)
+24:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.2 < #k1)
+25:  (#vr.2 = #k0)  ∥ (#vr.2 = #j2)  ∥ (#vr.2 = #k1)
+26:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a.1 < #j2)
+27:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a.1 < #j4)
+28:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a.1 < #k1)
+29: UpdateDone( ~p0, n.2, <'settle', h(~x), rid2> ) ▶₀ #l
+30: Committed( ~p0, <'settle', h(~x), rid.2> ) ▶₁ #a.1
+31: ForwardExpiries( ~p2, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+32: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+33: SettleRequested( 'R', ~p2, h(~x), ~rid.1, %1 ) @ #q0
+34: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+35: SettleRequested( 'F1', ~p2, h(~x), ~rid.1, %1 ) @ #q0
+36: SettleRequested( 'F1', ~p0, h(~x), rid2, %1 ) @ #q
+37: InFlight( ~p2, ~n.3, op.2 ) ▶₀ #s2
+38: AwaitFulfilled( ~p2, ~x ) ▶₀ #a0
+39: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+40: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+41: InFlight( ~p2, ~n.3, op ) ▶₀ #s0
+42: InFlight( ~p2, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.1
+43: AwaitFulfilled( ~p0, ~x ) ▶₀ #a.1
+44: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.3
+45: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+46: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+47: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+29
+30
+37
+38
+39
+40
+41
+42
+43
+44
+31
+32
+33
+34
+35
+36
+45
+46
+47
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2:  (¬(%b ⊏ (%1%+%1)))  ∥ (#l < #j2)
+3:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#l < #k1)
+4:  (¬(%b ⊏ (%1%+%1)))  ∥ (¬(#l < #j2))  ∥ (∃ #a.   (PreimageAvailable( ~p0, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j2))
+5:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (¬(#l < #k1))  ∥ (∃ #a.   (PreimageAvailable( ~p0, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #k1))
+6:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (∃ #a.   (PreimageAvailable( ~p0, h(~x), %b ) @ #a)  ∧   (#l < #a) ∧ (#a < #j4))
+7:  (¬(%1 ⊏ %b))  ∥ (¬(#a < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F1', ~p0, h(~x), rid2, %1 ) @ #q)  ∧   (#a < #q) ∧ (#q < #vr.2))
+8:  (¬(%1 ⊏ %b))  ∥ (¬(#a2 < #vr.2))  ∥ (∃ rid2 #q.   (SettleRequested( 'F2', ~p1, h(~x), rid2, %1 ) @ #q)  ∧   (#a2 < #q) ∧ (#q < #vr.2))
+9:  (¬(#q < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p0, <'settle', h(~x), rid2>, n ) @ #l)  ∧   (#q < #l) ∧ (#l < #vr.2))
+10:  (¬(#q0 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p1, <'settle', h(~x), ~rid>, n ) @ #l)  ∧   (#q0 < #l) ∧ (#l < #vr.2))
+11:  (¬(#q2 < #vr.2))  ∥ (¬((%1%+%1%+%1) ⊏ %b))  ∥ (∃ n #l.   (HTLCCommitted( ~p2, <'settle', h(~x), ~rid.1>, n ) @ #l)  ∧   (#q2 < #l) ∧ (#l < #vr.2))
+12:  (¬(%1 ⊏ %b))  ∥ (¬(#i0 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p1, h(~x), %1 ) @ #a)  ∧   (#i0 < #a) ∧ (#a < #vr.2))
+13:  (¬(%1 ⊏ %b))  ∥ (¬(#i2 < #vr.2))  ∥ (∃ #a.   (PreimageAvailable( ~p2, h(~x), %1 ) @ #a)  ∧   (#i2 < #a) ∧ (#a < #vr.2))
+14:  (¬(%1 ⊏ %b))  ∥ (#a < #vr.2)
+15:  (¬(%1 ⊏ %b))  ∥ (#a2 < #vr.2)
+16:  (¬(%1 ⊏ %b))  ∥ (#i0 < #vr.2)
+17:  (¬(%1 ⊏ %b))  ∥ (#i2 < #vr.2)
+18:  (¬(%1 ⊏ %b))  ∥ (#q0 < #vr.2)
+19:  (¬(%1 ⊏ %b))  ∥ (#q2 < #vr.2)
+20:  (¬((%1%+%1) ⊏ %b))  ∥ (#j2 < #vr.2)
+21:  (¬(%1 ⊏ %b))  ∥ (#k0 < #vr.2)
+22:  (¬((%1%+%1%+%1) ⊏ %b))  ∥ (#k1 < #vr.2)
+23:  (¬(%b ⊏ (%1%+%1)))  ∥ (#vr.2 < #j2)
+24:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#vr.2 < #k1)
+25:  (#vr.2 = #k0)  ∥ (#vr.2 = #j2)  ∥ (#vr.2 = #k1)
+26:  (¬(%b ⊏ (%1%+%1)))  ∥ (#a.1 < #j2)
+27:  (¬(%b ⊏ (%1%+%1%+%1%+%1)))  ∥ (#a.1 < #j4)
+28:  (¬(%b ⊏ (%1%+%1%+%1)))  ∥ (#a.1 < #k1)
+29: UpdateDone( ~p0, n.2, <'settle', h(~x), rid2> ) ▶₀ #l
+30: Committed( ~p0, <'settle', h(~x), rid.2> ) ▶₁ #a.1
+31: ForwardExpiries( ~p1, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+32: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+33: SettleRequested( 'R', ~p2, h(~x), ~rid.1, %1 ) @ #q2
+34: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q0
+35: SettleRequested( 'F1', ~p1, h(~x), ~rid, %1 ) @ #q0
+36: SettleRequested( 'F1', ~p0, h(~x), rid2, %1 ) @ #q
+37: InFlight( ~p2, ~n.4, op.2 ) ▶₀ #s2
+38: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+39: InFlight( ~p1, ~n.3, op.1 ) ▶₀ #s1
+40: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+41: InFlight( ~p1, ~n.3, op ) ▶₀ #s0
+42: InFlight( ~p2, n.1, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.1
+43: AwaitFulfilled( ~p0, ~x ) ▶₀ #a.1
+44: InFlight( ~p1, n, <'settle', h(~x), ~rid> ) ▶₀ #vr.3
+45: %b ⊏ (%1%+%1%+%1%+%1%+%1)
+46: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1)
+47: %b ⊏ (%1%+%1%+%1%+%1%+%1%+%1%+%1)
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+29
+30
+37
+38
+39
+40
+41
+42
+43
+44
+31
+32
+33
+34
+35
+36
+45
+46
+47
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: Committed( ~p0, <'settle', h(~x), rid.1> ) ▶₁ #a0
+3: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+4: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+5: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+6: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+7: SettleRequested( 'F1', ~p0, h(~x), ~rid.3, %1 ) @ #q
+8: InFlight( ~p2, ~n.5, op.2 ) ▶₀ #s2
+9: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+10: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+11: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+12: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+13: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+14: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+15: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+16: InFlight( ~p0, n, <'settle', h(~x), ~rid.3> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+8
+9
+10
+11
+12
+13
+14
+15
+16
+3
+4
+5
+6
+7
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: InFlight( ~p2, ~n.5, op.2 ) ▶₀ #s2
+8: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+9: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+10: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+11: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+12: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+13: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+14: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+15: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+11
+12
+13
+14
+15
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: AwaitFulfilled( ~p2, ~x ) ▶₀ #a2
+8: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+9: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+10: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+11: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+12: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+13: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+14: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+11
+12
+13
+14
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1
+8: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+9: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+10: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+11: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+12: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+13: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+11
+12
+13
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: AwaitFulfilled( ~p1, ~x ) ▶₀ #a
+8: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+9: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+10: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+11: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+12: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+11
+12
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: InFlight( ~p0, ~n.3, op ) ▶₀ #s0
+8: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+9: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+10: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+11: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+11
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: AwaitFulfilled( ~p0, ~x ) ▶₀ #a0
+8: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+9: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+10: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+10
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2> ) ▶₀ #vr.1
+8: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.2
+9: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.3
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+9
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: InFlight( ~p1, n.1, <'settle', h(~x), ~rid> ) ▶₀ #vr.1
+8: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.2
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+8
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+7: InFlight( ~p0, n, <'settle', h(~x), ~rid.1> ) ▶₀ #vr.1
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+7
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0:  ((%t1%+%1%+%1) = %t0)  ∥ ((%t1%+%1%+%1) ⊏ %t0)
+1:  ((%t2%+%1%+%1) = %t1)  ∥ ((%t2%+%1%+%1) ⊏ %t1)
+2: ForwardExpiries( ~p0, ~p1, h(~x), (%1%+%1%+%1%+%1%+%1),                 (%1%+%1%+%1)) @ #e
+3: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+4: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+5: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+6: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+2
+3
+4
+5
+6
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: ForwardExpiries( ~p1, ~p2, h(~x), (%1%+%1%+%1), %1 ) @ #e
+1: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+2: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+3: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+3
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: SettleRequested( 'R', ~p2, h(~x), ~rid.2, %1 ) @ #q2
+1: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+2: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+2
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: SettleRequested( 'F2', ~p1, h(~x), ~rid, %1 ) @ #q1
+1: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+1
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+0: SettleRequested( 'F1', ~p0, h(~x), ~rid.1, %1 ) @ #q
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+0
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+>>>>>>>>>>>>>>>>>>>>>>>> START INPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> START OUTPUT
+
+>>>>>>>>>>>>>>>>>>>>>>>> END Tactic call
+
+theory DeadlineCore2 begin
+
+// Function signature and definition of the equational theory E
+
+builtins: natural-numbers
+functions: fst/1, h/1, pair/2, snd/1
+equations: fst(<x.1, x.2>) = x.1, snd(<x.1, x.2>) = x.2
+
+tactic: facts_first
+presort: s
+prio: {id}
+  regex"^\s*!Block[(]"
+prio: {id}
+  regex"^\s*(Committed|InFlight|UpdateDone|UpdateFor|AwaitFulfilled|Fulfilled|FwdPending|ReceiverHas)[(]"
+deprio: {id}
+  regex"∥"
+deprio: {id}
+  regex"KU[(]"
+
+
+tactic: splits_first
+presort: s
+prio: {id}
+  regex"∥"
+prio: {id}
+  regex"^\s*!Block[(]"
+prio: {id}
+  regex"^\s*(Committed|InFlight|UpdateDone|UpdateFor|AwaitFulfilled|Fulfilled|FwdPending|ReceiverHas)[(]"
+deprio: {id}
+  regex"KU[(]"
+
+
+
+
+
+
+
+
+
+rule (modulo E) Clock_Tick:
+   [ In( %t ) ] --[ Tick( %t ) ]-> [ !Block( %t ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Setup_Route:
+   [
+   Fr( ~x ), Fr( ~p0 ), Fr( ~p1 ), Fr( ~p2 ), In( %t0 ), In( %t1 ),
+   In( %t2 )
+   ]
+  --[
+  SetupOnce( ), HTLCForwarded( 'F1', 'S', 'F2', ~p0, ~p1, h(~x) ),
+  ForwardExpiries( ~p0, ~p1, h(~x), %t0, %t1 ),
+  HTLCForwarded( 'F2', 'F1', 'R', ~p1, ~p2, h(~x) ),
+  ForwardExpiries( ~p1, ~p2, h(~x), %t1, %t2 )
+  ]->
+   [
+   ReceiverHas( ~p2, ~x ), FwdPending( 'F1', ~p0, ~p1 ),
+   FwdPending( 'F2', ~p1, ~p2 )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Receiver_Request_Settle:
+   [ ReceiverHas( p1, x ), !Block( %b ), Fr( ~rid ) ]
+  --[ SettleRequested( 'R', p1, h(x), ~rid, %b ), Now( %b ) ]->
+   [ UpdateFor( p1, <'settle', h(x), ~rid> ), AwaitFulfilled( p1, x ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Update_For_Op:
+   [ UpdateFor( ptr, op ), Fr( ~n ) ]
+  --[ ChannelUpdateFor( ptr, op, ~n ) ]->
+   [ InFlight( ptr, ~n, op ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Revoke_Old_State:
+   [ InFlight( ptr, n, op ) ]
+  --[ StateUpdate( ptr, n ) ]->
+   [ UpdateDone( ptr, n, op ) ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Commit_Op:
+   [ UpdateDone( ptr, n, op ), !Block( %b ) ]
+  --[
+  HTLCCommitted( ptr, op, n ), HTLCCommittedAt( ptr, op, %b ), Now( %b )
+  ]->
+   [ Committed( ptr, op ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Deliver_Preimage:
+   [
+   AwaitFulfilled( ptr, x ), Committed( ptr, <'settle', h(x), rid> ),
+   !Block( %b )
+   ]
+  --[ PreimageAvailable( ptr, h(x), %b ), Now( %b ) ]->
+   [ Fulfilled( ptr, x ) ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Forwarder_Request_Settle:
+   [
+   Fulfilled( pout, x ), FwdPending( P, pin, pout ), !Block( %b ),
+   Fr( ~rid )
+   ]
+  --[ SettleRequested( P, pin, h(x), ~rid, %b ), Now( %b ) ]->
+   [ UpdateFor( pin, <'settle', h(x), ~rid> ), AwaitFulfilled( pin, x ) ]
+
+  /* has exactly the trivial AC variant */
+
+restriction SetupOnce:
+  "∀ #i #j. ((SetupOnce( ) @ #i) ∧ (SetupOnce( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+restriction TickOnce:
+  "∀ %t #i #j. ((Tick( %t ) @ #i) ∧ (Tick( %t ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+restriction TicksInOrder:
+  "∀ %s %t #i #j.
+    (((Tick( %s ) @ #i) ∧ (Tick( %t ) @ #j)) ∧ (%s ⊏ %t)) ⇒ (#i < #j)"
+  // safety formula
+
+restriction NowIsLatest:
+  "∀ %b %c #q #t.
+    (((Now( %b ) @ #q) ∧ (Tick( %c ) @ #t)) ∧ (%b ⊏ %c)) ⇒ (#q < #t)"
+  // safety formula
+
+restriction ReceiptPromptness:
+  "∀ ptr y rid %b %c #i #t.
+    ((((HTLCCommittedAt( ptr, <'settle', y, rid>, %b ) @ #i) ∧
+       (Tick( %c ) @ #t)) ∧
+      (%b ⊏ %c)) ∧
+     (#i < #t)) ⇒
+    (∃ #a. ((PreimageAvailable( ptr, y, %b ) @ #a) ∧ (#i < #a)) ∧ (#a < #t))"
+
+restriction ForwarderPromptness:
+  "∀ P Prev Next pin pout y %b %c #f #a #t.
+    (((((HTLCForwarded( P, Prev, Next, pin, pout, y ) @ #f) ∧
+        (PreimageAvailable( pout, y, %b ) @ #a)) ∧
+       (Tick( %c ) @ #t)) ∧
+      (%b ⊏ %c)) ∧
+     (#a < #t)) ⇒
+    (∃ rid2 #q.
+      ((SettleRequested( P, pin, y, rid2, %b ) @ #q) ∧ (#a < #q)) ∧ (#q < #t))"
+
+restriction BoundedResponsiveness:
+  "∀ Q ptr y rid %b %c #r #k.
+    ((((SettleRequested( Q, ptr, y, rid, %b ) @ #r) ∧ (Tick( %c ) @ #k)) ∧
+      (#r < #k)) ∧
+     ((%b%+%1%+%1) ⊏ %c)) ⇒
+    (∃ n #l.
+      ((HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #l) ∧ (#r < #l)) ∧
+      (#l < #k))"
+
+restriction CLTVGap:
+  "∀ pin pout y %tIn %tOut #e.
+    (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ⇒
+    (((%tOut%+%1%+%1) = %tIn) ∨ ((%tOut%+%1%+%1) ⊏ %tIn))"
+  // safety formula
+
+lemma Delivery_Unique [reuse]:
+  all-traces
+  "∀ ptr y %b %d #a #a2.
+    ((PreimageAvailable( ptr, y, %b ) @ #a) ∧
+     (PreimageAvailable( ptr, y, %d ) @ #a2)) ⇒
+    (#a = #a2)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ ptr y %b %d #a #a2.
+  (PreimageAvailable( ptr, y, %b ) @ #a) ∧
+  (PreimageAvailable( ptr, y, %d ) @ #a2)
+ ∧
+  ¬(#a = #a2)"
+*/
+by sorry
+
+lemma Request_Unique_Channel [reuse]:
+  all-traces
+  "∀ Q Q2 ptr y rid rid2 %b %d #q #q2.
+    ((SettleRequested( Q, ptr, y, rid, %b ) @ #q) ∧
+     (SettleRequested( Q2, ptr, y, rid2, %d ) @ #q2)) ⇒
+    (#q = #q2)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Q Q2 ptr y rid rid2 %b %d #q #q2.
+  (SettleRequested( Q, ptr, y, rid, %b ) @ #q) ∧
+  (SettleRequested( Q2, ptr, y, rid2, %d ) @ #q2)
+ ∧
+  ¬(#q = #q2)"
+*/
+by sorry
+
+lemma Commit_Unique_Channel [reuse]:
+  all-traces
+  "∀ ptr y rid rid2 n n2 #c #c2.
+    ((HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #c) ∧
+     (HTLCCommitted( ptr, <'settle', y, rid2>, n2 ) @ #c2)) ⇒
+    (#c = #c2)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ ptr y rid rid2 n n2 #c #c2.
+  (HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #c) ∧
+  (HTLCCommitted( ptr, <'settle', y, rid2>, n2 ) @ #c2)
+ ∧
+  ¬(#c = #c2)"
+*/
+by sorry
+
+lemma Commit_Unique [reuse]:
+  all-traces
+  "∀ ptr y rid n n2 #c #c2.
+    ((HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #c) ∧
+     (HTLCCommitted( ptr, <'settle', y, rid>, n2 ) @ #c2)) ⇒
+    (#c = #c2)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ ptr y rid n n2 #c #c2.
+  (HTLCCommitted( ptr, <'settle', y, rid>, n ) @ #c) ∧
+  (HTLCCommitted( ptr, <'settle', y, rid>, n2 ) @ #c2)
+ ∧
+  ¬(#c = #c2)"
+*/
+by sorry
+
+lemma Request_Unique [reuse]:
+  all-traces
+  "∀ Q ptr y rid rid2 %b %d #q #q2.
+    ((SettleRequested( Q, ptr, y, rid, %b ) @ #q) ∧
+     (SettleRequested( Q, ptr, y, rid2, %d ) @ #q2)) ⇒
+    (#q = #q2)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ Q ptr y rid rid2 %b %d #q #q2.
+  (SettleRequested( Q, ptr, y, rid, %b ) @ #q) ∧
+  (SettleRequested( Q, ptr, y, rid2, %d ) @ #q2)
+ ∧
+  ¬(#q = #q2)"
+*/
+by sorry
+
+lemma Two_Hop_Witness_Concrete:
+  exists-trace
+  "∃ p0 p1 p2 y r0 r1 r2 #k0 #e #i2 #i1 #i0 #k1 #k2 #k.
+    (((((((((((((((Tick( %1 ) @ #k0) ∧
+                  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)
+                   ) @ #e)) ∧
+                 (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e)) ∧
+                (#k0 < #e)) ∧
+               (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2)) ∧
+              (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1)) ∧
+             (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0)) ∧
+            (Tick( (%1%+%1%+%1) ) @ #k1)) ∧
+           (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2)) ∧
+          (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)) ∧
+         (#i2 < #i1)) ∧
+        (#i1 < #i0)) ∧
+       (#i0 < #k1)) ∧
+      (#k1 < #k2)) ∧
+     (#k2 < #k)) ∧
+    (∀ %t #j.
+      (Tick( %t ) @ #j) ⇒
+      ((((#j = #k0) ∨ (#j = #k1)) ∨ (#j = #k2)) ∨ (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ p0 p1 p2 y r0 r1 r2 #k0 #e #i2 #i1 #i0 #k1 #k2 #k.
+  (Tick( %1 ) @ #k0) ∧
+  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1) ) @ #e) ∧
+  (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e) ∧
+  (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2) ∧
+  (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1) ∧
+  (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)
+ ∧
+  (#k0 < #e) ∧
+  (#i2 < #i1) ∧
+  (#i1 < #i0) ∧
+  (#i0 < #k1) ∧
+  (#k1 < #k2) ∧
+  (#k2 < #k) ∧
+  (∀ %t #j.
+    (Tick( %t ) @ #j) ⇒ ((#j = #k0) ∨ (#j = #k1) ∨ (#j = #k2) ∨ (#j = #k)))"
+*/
+by sorry
+
+lemma Two_Hop_Gap_Counterexample:
+  exists-trace
+  "∃ p0 p1 p2 y r2 r0 n0 %c %cx #k0 #e #i2 #k #l.
+    ((((((((((Tick( %1 ) @ #k0) ∧
+             (ForwardExpiries( p0, p1, y, (%1%+%1%+%1), (%1%+%1) ) @ #e)) ∧
+            (ForwardExpiries( p1, p2, y, (%1%+%1), %1 ) @ #e)) ∧
+           (#k0 < #e)) ∧
+          (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2)) ∧
+         (Tick( %cx ) @ #k)) ∧
+        ((%1%+%1%+%1) ⊏ %cx)) ∧
+       (#i2 < #k)) ∧
+      (HTLCCommitted( p0, <'settle', y, r0>, n0 ) @ #l)) ∧
+     (HTLCCommittedAt( p0, <'settle', y, r0>, %c ) @ #l)) ∧
+    (#k < #l)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ p0 p1 p2 y r2 r0 n0 %c %cx #k0 #e #i2 #k #l.
+  (Tick( %1 ) @ #k0) ∧
+  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1), (%1%+%1) ) @ #e) ∧
+  (ForwardExpiries( p1, p2, y, (%1%+%1), %1 ) @ #e) ∧
+  (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2) ∧
+  (Tick( %cx ) @ #k) ∧
+  (HTLCCommitted( p0, <'settle', y, r0>, n0 ) @ #l) ∧
+  (HTLCCommittedAt( p0, <'settle', y, r0>, %c ) @ #l)
+ ∧
+  (#k0 < #e) ∧ ((%1%+%1%+%1) ⊏ %cx) ∧ (#i2 < #k) ∧ (#k < #l)"
+*/
+by sorry
+
+lemma Two_Hop_Witness_Pinned:
+  exists-trace
+  "∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+     #i1 #a1 #q0 #u0 #s0 #i0 #a0 #k1 #k2 #k.
+    ((((((((((((((((((((((((((((((((((((((((Tick( %1 ) @ #k0) ∧
+                                           (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)
+                                            ) @ #e)) ∧
+                                          (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e)) ∧
+                                         (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2)) ∧
+                                        (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2)) ∧
+                                       (StateUpdate( p2, n2 ) @ #s2)) ∧
+                                      (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2)) ∧
+                                     (PreimageAvailable( p2, y, %1 ) @ #a2)) ∧
+                                    (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1)) ∧
+                                   (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1)) ∧
+                                  (StateUpdate( p1, n1 ) @ #s1)) ∧
+                                 (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1)) ∧
+                                (PreimageAvailable( p1, y, %1 ) @ #a1)) ∧
+                               (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0)) ∧
+                              (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0)) ∧
+                             (StateUpdate( p0, n0 ) @ #s0)) ∧
+                            (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0)) ∧
+                           (PreimageAvailable( p0, y, %1 ) @ #a0)) ∧
+                          (Tick( (%1%+%1%+%1) ) @ #k1)) ∧
+                         (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2)) ∧
+                        (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)) ∧
+                       (#k0 < #e)) ∧
+                      (#e < #q2)) ∧
+                     (#q2 < #u2)) ∧
+                    (#u2 < #s2)) ∧
+                   (#s2 < #i2)) ∧
+                  (#i2 < #a2)) ∧
+                 (#a2 < #q1)) ∧
+                (#q1 < #u1)) ∧
+               (#u1 < #s1)) ∧
+              (#s1 < #i1)) ∧
+             (#i1 < #a1)) ∧
+            (#a1 < #q0)) ∧
+           (#q0 < #u0)) ∧
+          (#u0 < #s0)) ∧
+         (#s0 < #i0)) ∧
+        (#i0 < #a0)) ∧
+       (#a0 < #k1)) ∧
+      (#k1 < #k2)) ∧
+     (#k2 < #k)) ∧
+    (∀ %t #j.
+      (Tick( %t ) @ #j) ⇒
+      ((((#j = #k0) ∨ (#j = #k1)) ∨ (#j = #k2)) ∨ (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+   #i1 #a1 #q0 #u0 #s0 #i0 #a0 #k1 #k2 #k.
+  (Tick( %1 ) @ #k0) ∧
+  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1) ) @ #e) ∧
+  (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e) ∧
+  (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2) ∧
+  (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2) ∧
+  (StateUpdate( p2, n2 ) @ #s2) ∧
+  (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2) ∧
+  (PreimageAvailable( p2, y, %1 ) @ #a2) ∧
+  (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1) ∧
+  (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1) ∧
+  (StateUpdate( p1, n1 ) @ #s1) ∧
+  (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1) ∧
+  (PreimageAvailable( p1, y, %1 ) @ #a1) ∧
+  (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0) ∧
+  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0) ∧
+  (StateUpdate( p0, n0 ) @ #s0) ∧
+  (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0) ∧
+  (PreimageAvailable( p0, y, %1 ) @ #a0) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)
+ ∧
+  (#k0 < #e) ∧
+  (#e < #q2) ∧
+  (#q2 < #u2) ∧
+  (#u2 < #s2) ∧
+  (#s2 < #i2) ∧
+  (#i2 < #a2) ∧
+  (#a2 < #q1) ∧
+  (#q1 < #u1) ∧
+  (#u1 < #s1) ∧
+  (#s1 < #i1) ∧
+  (#i1 < #a1) ∧
+  (#a1 < #q0) ∧
+  (#q0 < #u0) ∧
+  (#u0 < #s0) ∧
+  (#s0 < #i0) ∧
+  (#i0 < #a0) ∧
+  (#a0 < #k1) ∧
+  (#k1 < #k2) ∧
+  (#k2 < #k) ∧
+  (∀ %t #j.
+    (Tick( %t ) @ #j) ⇒ ((#j = #k0) ∨ (#j = #k1) ∨ (#j = #k2) ∨ (#j = #k)))"
+*/
+by sorry
+
+lemma Two_Hop_Gap_Pinned:
+  exists-trace
+  "∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #k1 #k2
+     #u1 #s1 #i1 #a1 #q0 #u0 #s0 #k #i0.
+    ((((((((((((((((((((((((((((((((((((((Tick( %1 ) @ #k0) ∧
+                                         (ForwardExpiries( p0, p1, y, (%1%+%1%+%1), (%1%+%1) ) @ #e)) ∧
+                                        (ForwardExpiries( p1, p2, y, (%1%+%1), %1 ) @ #e)) ∧
+                                       (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2)) ∧
+                                      (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2)) ∧
+                                     (StateUpdate( p2, n2 ) @ #s2)) ∧
+                                    (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2)) ∧
+                                   (PreimageAvailable( p2, y, %1 ) @ #a2)) ∧
+                                  (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1)) ∧
+                                 (Tick( (%1%+%1) ) @ #k1)) ∧
+                                (Tick( (%1%+%1%+%1) ) @ #k2)) ∧
+                               (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1)) ∧
+                              (StateUpdate( p1, n1 ) @ #s1)) ∧
+                             (HTLCCommittedAt( p1, <'settle', y, r1>, (%1%+%1%+%1) ) @ #i1)) ∧
+                            (PreimageAvailable( p1, y, (%1%+%1%+%1) ) @ #a1)) ∧
+                           (SettleRequested( 'F1', p0, y, r0, (%1%+%1%+%1) ) @ #q0)) ∧
+                          (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0)) ∧
+                         (StateUpdate( p0, n0 ) @ #s0)) ∧
+                        (Tick( (%1%+%1%+%1%+%1) ) @ #k)) ∧
+                       (HTLCCommittedAt( p0, <'settle', y, r0>, (%1%+%1%+%1%+%1) ) @ #i0)) ∧
+                      (#k0 < #e)) ∧
+                     (#e < #q2)) ∧
+                    (#q2 < #u2)) ∧
+                   (#u2 < #s2)) ∧
+                  (#s2 < #i2)) ∧
+                 (#i2 < #a2)) ∧
+                (#a2 < #q1)) ∧
+               (#q1 < #k1)) ∧
+              (#k1 < #k2)) ∧
+             (#k2 < #u1)) ∧
+            (#u1 < #s1)) ∧
+           (#s1 < #i1)) ∧
+          (#i1 < #a1)) ∧
+         (#a1 < #q0)) ∧
+        (#q0 < #u0)) ∧
+       (#u0 < #s0)) ∧
+      (#s0 < #k)) ∧
+     (#k < #i0)) ∧
+    (∀ %t #j.
+      (Tick( %t ) @ #j) ⇒
+      ((((#j = #k0) ∨ (#j = #k1)) ∨ (#j = #k2)) ∨ (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #k1 #k2
+   #u1 #s1 #i1 #a1 #q0 #u0 #s0 #k #i0.
+  (Tick( %1 ) @ #k0) ∧
+  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1), (%1%+%1) ) @ #e) ∧
+  (ForwardExpiries( p1, p2, y, (%1%+%1), %1 ) @ #e) ∧
+  (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2) ∧
+  (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2) ∧
+  (StateUpdate( p2, n2 ) @ #s2) ∧
+  (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2) ∧
+  (PreimageAvailable( p2, y, %1 ) @ #a2) ∧
+  (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1) ∧
+  (Tick( (%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k2) ∧
+  (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1) ∧
+  (StateUpdate( p1, n1 ) @ #s1) ∧
+  (HTLCCommittedAt( p1, <'settle', y, r1>, (%1%+%1%+%1) ) @ #i1) ∧
+  (PreimageAvailable( p1, y, (%1%+%1%+%1) ) @ #a1) ∧
+  (SettleRequested( 'F1', p0, y, r0, (%1%+%1%+%1) ) @ #q0) ∧
+  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0) ∧
+  (StateUpdate( p0, n0 ) @ #s0) ∧
+  (Tick( (%1%+%1%+%1%+%1) ) @ #k) ∧
+  (HTLCCommittedAt( p0, <'settle', y, r0>, (%1%+%1%+%1%+%1) ) @ #i0)
+ ∧
+  (#k0 < #e) ∧
+  (#e < #q2) ∧
+  (#q2 < #u2) ∧
+  (#u2 < #s2) ∧
+  (#s2 < #i2) ∧
+  (#i2 < #a2) ∧
+  (#a2 < #q1) ∧
+  (#q1 < #k1) ∧
+  (#k1 < #k2) ∧
+  (#k2 < #u1) ∧
+  (#u1 < #s1) ∧
+  (#s1 < #i1) ∧
+  (#i1 < #a1) ∧
+  (#a1 < #q0) ∧
+  (#q0 < #u0) ∧
+  (#u0 < #s0) ∧
+  (#s0 < #k) ∧
+  (#k < #i0) ∧
+  (∀ %t #j.
+    (Tick( %t ) @ #j) ⇒ ((#j = #k0) ∨ (#j = #k1) ∨ (#j = #k2) ∨ (#j = #k)))"
+*/
+by sorry
+
+lemma Stamp_Between_Ticks:
+  all-traces
+  "∀ %b #q.
+    (Now( %b ) @ #q) ⇒
+    ((∃ #t. (Tick( %b ) @ #t) ∧ (#t < #q)) ∧
+     (¬(∃ %c #t2. ((Tick( %c ) @ #t2) ∧ (%b ⊏ %c)) ∧ (#t2 < #q))))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ %b #q.
+  (Now( %b ) @ #q)
+ ∧
+  ((∀ #t. (Tick( %b ) @ #t) ⇒ ¬(#t < #q)) ∨
+   (∃ %c #t2. (Tick( %c ) @ #t2) ∧ (%b ⊏ %c) ∧ (#t2 < #q)))"
+*/
+by sorry
+
+lemma Two_Hop_Witness_Consecutive:
+  exists-trace
+  "∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+     #i1 #a1 #q0 #u0 #s0 #i0 #a0 #j2 #k1 #j4 #k2 #k.
+    ((((((((((((((((((((((((((((((((((((((((((((Tick( %1 ) @ #k0) ∧
+                                               (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)
+                                                ) @ #e)) ∧
+                                              (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e)) ∧
+                                             (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2)) ∧
+                                            (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2)) ∧
+                                           (StateUpdate( p2, n2 ) @ #s2)) ∧
+                                          (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2)) ∧
+                                         (PreimageAvailable( p2, y, %1 ) @ #a2)) ∧
+                                        (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1)) ∧
+                                       (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1)) ∧
+                                      (StateUpdate( p1, n1 ) @ #s1)) ∧
+                                     (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1)) ∧
+                                    (PreimageAvailable( p1, y, %1 ) @ #a1)) ∧
+                                   (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0)) ∧
+                                  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0)) ∧
+                                 (StateUpdate( p0, n0 ) @ #s0)) ∧
+                                (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0)) ∧
+                               (PreimageAvailable( p0, y, %1 ) @ #a0)) ∧
+                              (Tick( (%1%+%1) ) @ #j2)) ∧
+                             (Tick( (%1%+%1%+%1) ) @ #k1)) ∧
+                            (Tick( (%1%+%1%+%1%+%1) ) @ #j4)) ∧
+                           (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2)) ∧
+                          (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)) ∧
+                         (#k0 < #e)) ∧
+                        (#e < #q2)) ∧
+                       (#q2 < #u2)) ∧
+                      (#u2 < #s2)) ∧
+                     (#s2 < #i2)) ∧
+                    (#i2 < #a2)) ∧
+                   (#a2 < #q1)) ∧
+                  (#q1 < #u1)) ∧
+                 (#u1 < #s1)) ∧
+                (#s1 < #i1)) ∧
+               (#i1 < #a1)) ∧
+              (#a1 < #q0)) ∧
+             (#q0 < #u0)) ∧
+            (#u0 < #s0)) ∧
+           (#s0 < #i0)) ∧
+          (#i0 < #a0)) ∧
+         (#a0 < #j2)) ∧
+        (#j2 < #k1)) ∧
+       (#k1 < #j4)) ∧
+      (#j4 < #k2)) ∧
+     (#k2 < #k)) ∧
+    (∀ %t #j.
+      (Tick( %t ) @ #j) ⇒
+      ((((((#j = #k0) ∨ (#j = #j2)) ∨ (#j = #k1)) ∨ (#j = #j4)) ∨ (#j = #k2)) ∨
+       (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+   #i1 #a1 #q0 #u0 #s0 #i0 #a0 #j2 #k1 #j4 #k2 #k.
+  (Tick( %1 ) @ #k0) ∧
+  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1) ) @ #e) ∧
+  (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e) ∧
+  (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2) ∧
+  (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2) ∧
+  (StateUpdate( p2, n2 ) @ #s2) ∧
+  (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2) ∧
+  (PreimageAvailable( p2, y, %1 ) @ #a2) ∧
+  (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1) ∧
+  (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1) ∧
+  (StateUpdate( p1, n1 ) @ #s1) ∧
+  (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1) ∧
+  (PreimageAvailable( p1, y, %1 ) @ #a1) ∧
+  (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0) ∧
+  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0) ∧
+  (StateUpdate( p0, n0 ) @ #s0) ∧
+  (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0) ∧
+  (PreimageAvailable( p0, y, %1 ) @ #a0) ∧
+  (Tick( (%1%+%1) ) @ #j2) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1%+%1) ) @ #j4) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)
+ ∧
+  (#k0 < #e) ∧
+  (#e < #q2) ∧
+  (#q2 < #u2) ∧
+  (#u2 < #s2) ∧
+  (#s2 < #i2) ∧
+  (#i2 < #a2) ∧
+  (#a2 < #q1) ∧
+  (#q1 < #u1) ∧
+  (#u1 < #s1) ∧
+  (#s1 < #i1) ∧
+  (#i1 < #a1) ∧
+  (#a1 < #q0) ∧
+  (#q0 < #u0) ∧
+  (#u0 < #s0) ∧
+  (#s0 < #i0) ∧
+  (#i0 < #a0) ∧
+  (#a0 < #j2) ∧
+  (#j2 < #k1) ∧
+  (#k1 < #j4) ∧
+  (#j4 < #k2) ∧
+  (#k2 < #k) ∧
+  (∀ %t #j.
+    (Tick( %t ) @ #j)
+   ⇒
+    ((#j = #k0) ∨
+     (#j = #j2) ∨
+     (#j = #k1) ∨
+     (#j = #j4) ∨
+     (#j = #k2) ∨
+     (#j = #k)))"
+*/
+by sorry
+
+lemma Two_Hop_Witness_Consecutive_A [heuristic={facts_first}]:
+  exists-trace
+  "∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+     #i1 #a1 #q0 #u0 #s0 #i0 #a0 #j2 #k1 #j4 #k2 #k.
+    ((((((((((((((((((((((((((((((((((((((((((((Tick( %1 ) @ #k0) ∧
+                                               (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)
+                                                ) @ #e)) ∧
+                                              (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e)) ∧
+                                             (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2)) ∧
+                                            (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2)) ∧
+                                           (StateUpdate( p2, n2 ) @ #s2)) ∧
+                                          (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2)) ∧
+                                         (PreimageAvailable( p2, y, %1 ) @ #a2)) ∧
+                                        (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1)) ∧
+                                       (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1)) ∧
+                                      (StateUpdate( p1, n1 ) @ #s1)) ∧
+                                     (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1)) ∧
+                                    (PreimageAvailable( p1, y, %1 ) @ #a1)) ∧
+                                   (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0)) ∧
+                                  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0)) ∧
+                                 (StateUpdate( p0, n0 ) @ #s0)) ∧
+                                (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0)) ∧
+                               (PreimageAvailable( p0, y, %1 ) @ #a0)) ∧
+                              (Tick( (%1%+%1) ) @ #j2)) ∧
+                             (Tick( (%1%+%1%+%1) ) @ #k1)) ∧
+                            (Tick( (%1%+%1%+%1%+%1) ) @ #j4)) ∧
+                           (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2)) ∧
+                          (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)) ∧
+                         (#k0 < #e)) ∧
+                        (#e < #q2)) ∧
+                       (#q2 < #u2)) ∧
+                      (#u2 < #s2)) ∧
+                     (#s2 < #i2)) ∧
+                    (#i2 < #a2)) ∧
+                   (#a2 < #q1)) ∧
+                  (#q1 < #u1)) ∧
+                 (#u1 < #s1)) ∧
+                (#s1 < #i1)) ∧
+               (#i1 < #a1)) ∧
+              (#a1 < #q0)) ∧
+             (#q0 < #u0)) ∧
+            (#u0 < #s0)) ∧
+           (#s0 < #i0)) ∧
+          (#i0 < #a0)) ∧
+         (#a0 < #j2)) ∧
+        (#j2 < #k1)) ∧
+       (#k1 < #j4)) ∧
+      (#j4 < #k2)) ∧
+     (#k2 < #k)) ∧
+    (∀ %t #j.
+      (Tick( %t ) @ #j) ⇒
+      ((((((#j = #k0) ∨ (#j = #j2)) ∨ (#j = #k1)) ∨ (#j = #j4)) ∨ (#j = #k2)) ∨
+       (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+   #i1 #a1 #q0 #u0 #s0 #i0 #a0 #j2 #k1 #j4 #k2 #k.
+  (Tick( %1 ) @ #k0) ∧
+  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1) ) @ #e) ∧
+  (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e) ∧
+  (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2) ∧
+  (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2) ∧
+  (StateUpdate( p2, n2 ) @ #s2) ∧
+  (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2) ∧
+  (PreimageAvailable( p2, y, %1 ) @ #a2) ∧
+  (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1) ∧
+  (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1) ∧
+  (StateUpdate( p1, n1 ) @ #s1) ∧
+  (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1) ∧
+  (PreimageAvailable( p1, y, %1 ) @ #a1) ∧
+  (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0) ∧
+  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0) ∧
+  (StateUpdate( p0, n0 ) @ #s0) ∧
+  (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0) ∧
+  (PreimageAvailable( p0, y, %1 ) @ #a0) ∧
+  (Tick( (%1%+%1) ) @ #j2) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1%+%1) ) @ #j4) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)
+ ∧
+  (#k0 < #e) ∧
+  (#e < #q2) ∧
+  (#q2 < #u2) ∧
+  (#u2 < #s2) ∧
+  (#s2 < #i2) ∧
+  (#i2 < #a2) ∧
+  (#a2 < #q1) ∧
+  (#q1 < #u1) ∧
+  (#u1 < #s1) ∧
+  (#s1 < #i1) ∧
+  (#i1 < #a1) ∧
+  (#a1 < #q0) ∧
+  (#q0 < #u0) ∧
+  (#u0 < #s0) ∧
+  (#s0 < #i0) ∧
+  (#i0 < #a0) ∧
+  (#a0 < #j2) ∧
+  (#j2 < #k1) ∧
+  (#k1 < #j4) ∧
+  (#j4 < #k2) ∧
+  (#k2 < #k) ∧
+  (∀ %t #j.
+    (Tick( %t ) @ #j)
+   ⇒
+    ((#j = #k0) ∨
+     (#j = #j2) ∨
+     (#j = #k1) ∨
+     (#j = #j4) ∨
+     (#j = #k2) ∨
+     (#j = #k)))"
+*/
+simplify
+solve( !Block( %1 ) ▶₁ #i2 )
+  case Clock_Tick
+  solve( !Block( %1 ) ▶₂ #a2 )
+    case Clock_Tick
+    solve( !Block( %1 ) ▶₁ #i1 )
+      case Clock_Tick
+      solve( !Block( %1 ) ▶₂ #a1 )
+        case Clock_Tick
+        solve( !Block( %1 ) ▶₁ #i0 )
+          case Clock_Tick
+          solve( !Block( %1 ) ▶₂ #a0 )
+            case Clock_Tick
+            solve( UpdateFor( p2, <'settle', h(x), r2> ) ▶₀ #u2 )
+              case Receiver_Request_Settle
+              solve( !Block( %b ) ▶₁ #l )
+                case Clock_Tick
+                solve( !Block( %b ) ▶₂ #a )
+                  case Clock_Tick
+                  solve( UpdateDone( ~p2, n.2, <'settle', h(~x), ~rid.4> ) ▶₀ #i2 )
+                    case Revoke_Old_State
+                    solve( Committed( ~p2, <'settle', h(~x), rid.3> ) ▶₁ #a2 )
+                      case Commit_Op
+                      solve( UpdateFor( p1.1, <'settle', h(~x), r1> ) ▶₀ #u1 )
+                        case Forwarder_Request_Settle_case_2
+                        solve( !Block( %b ) ▶₁ #l )
+                          case Clock_Tick
+                          solve( !Block( %b ) ▶₂ #a.1 )
+                            case Clock_Tick
+                            solve( UpdateDone( ~p1, n.1, <'settle', h(~x), ~rid.3> ) ▶₀ #i1 )
+                              case Revoke_Old_State
+                              solve( Committed( ~p1, <'settle', h(~x), rid> ) ▶₁ #a )
+                                case Commit_Op
+                                solve( UpdateFor( p0, <'settle', h(~x), r0> ) ▶₀ #u0 )
+                                  case Forwarder_Request_Settle_case_1
+                                  solve( UpdateDone( ~p0, n, <'settle', h(~x), ~rid.3> ) ▶₀ #i0 )
+                                    case Revoke_Old_State
+                                    solve( Committed( ~p0, <'settle', h(~x), rid.1> ) ▶₁ #a0 )
+                                      case Commit_Op
+                                      solve( InFlight( ~p2, ~n.5, op.2 ) ▶₀ #s2 )
+                                        case Update_For_Op
+                                        solve( AwaitFulfilled( ~p2, ~x ) ▶₀ #a2 )
+                                          case Receiver_Request_Settle
+                                          solve( InFlight( ~p1, ~n.4, op.1 ) ▶₀ #s1 )
+                                            case Update_For_Op
+                                            solve( AwaitFulfilled( ~p1, ~x ) ▶₀ #a )
+                                              case Forwarder_Request_Settle
+                                              solve( InFlight( ~p0, ~n.3, op ) ▶₀ #s0 )
+                                                case Update_For_Op
+                                                solve( AwaitFulfilled( ~p0, ~x ) ▶₀ #a0 )
+                                                  case Forwarder_Request_Settle
+                                                  solve( InFlight( ~p2, n.2, <'settle', h(~x), ~rid.2>
+                                                         ) ▶₀ #vr.1 )
+                                                    case Update_For_Op
+                                                    solve( InFlight( ~p1, n.1, <'settle', h(~x), ~rid>
+                                                           ) ▶₀ #vr.1 )
+                                                      case Update_For_Op
+                                                      solve( InFlight( ~p0, n, <'settle', h(~x), ~rid.1>
+                                                             ) ▶₀ #vr.1 )
+                                                        case Update_For_Op
+                                                        solve( ForwardExpiries( ~p0, ~p1, h(~x),
+                                                                                (%1%+%1%+%1%+%1%+%1),
+                                                                                (%1%+%1%+%1)
+                                                               ) @ #e )
+                                                          case Setup_Route
+                                                          solve( ForwardExpiries( ~p1, ~p2, h(~x),
+                                                                                  (%1%+%1%+%1), %1
+                                                                 ) @ #e )
+                                                            case Setup_Route
+                                                            solve( SettleRequested( 'R', ~p2, h(~x), ~rid.2,
+                                                                                    %1
+                                                                   ) @ #q2 )
+                                                              case Receiver_Request_Settle
+                                                              solve( SettleRequested( 'F2', ~p1, h(~x), ~rid,
+                                                                                      %1
+                                                                     ) @ #q1 )
+                                                                case Forwarder_Request_Settle
+                                                                solve( SettleRequested( 'F1', ~p0, h(~x),
+                                                                                        ~rid.1, %1
+                                                                       ) @ #q )
+                                                                  case Forwarder_Request_Settle
+                                                                  SOLVED // trace found
+                                                                qed
+                                                              qed
+                                                            qed
+                                                          qed
+                                                        qed
+                                                      qed
+                                                    qed
+                                                  qed
+                                                qed
+                                              qed
+                                            qed
+                                          qed
+                                        qed
+                                      qed
+                                    qed
+                                  qed
+                                qed
+                              qed
+                            qed
+                          qed
+                        qed
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Two_Hop_Witness_Consecutive_B [heuristic={splits_first}]:
+  exists-trace
+  "∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+     #i1 #a1 #q0 #u0 #s0 #i0 #a0 #j2 #k1 #j4 #k2 #k.
+    ((((((((((((((((((((((((((((((((((((((((((((Tick( %1 ) @ #k0) ∧
+                                               (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1)
+                                                ) @ #e)) ∧
+                                              (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e)) ∧
+                                             (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2)) ∧
+                                            (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2)) ∧
+                                           (StateUpdate( p2, n2 ) @ #s2)) ∧
+                                          (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2)) ∧
+                                         (PreimageAvailable( p2, y, %1 ) @ #a2)) ∧
+                                        (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1)) ∧
+                                       (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1)) ∧
+                                      (StateUpdate( p1, n1 ) @ #s1)) ∧
+                                     (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1)) ∧
+                                    (PreimageAvailable( p1, y, %1 ) @ #a1)) ∧
+                                   (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0)) ∧
+                                  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0)) ∧
+                                 (StateUpdate( p0, n0 ) @ #s0)) ∧
+                                (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0)) ∧
+                               (PreimageAvailable( p0, y, %1 ) @ #a0)) ∧
+                              (Tick( (%1%+%1) ) @ #j2)) ∧
+                             (Tick( (%1%+%1%+%1) ) @ #k1)) ∧
+                            (Tick( (%1%+%1%+%1%+%1) ) @ #j4)) ∧
+                           (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2)) ∧
+                          (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)) ∧
+                         (#k0 < #e)) ∧
+                        (#e < #q2)) ∧
+                       (#q2 < #u2)) ∧
+                      (#u2 < #s2)) ∧
+                     (#s2 < #i2)) ∧
+                    (#i2 < #a2)) ∧
+                   (#a2 < #q1)) ∧
+                  (#q1 < #u1)) ∧
+                 (#u1 < #s1)) ∧
+                (#s1 < #i1)) ∧
+               (#i1 < #a1)) ∧
+              (#a1 < #q0)) ∧
+             (#q0 < #u0)) ∧
+            (#u0 < #s0)) ∧
+           (#s0 < #i0)) ∧
+          (#i0 < #a0)) ∧
+         (#a0 < #j2)) ∧
+        (#j2 < #k1)) ∧
+       (#k1 < #j4)) ∧
+      (#j4 < #k2)) ∧
+     (#k2 < #k)) ∧
+    (∀ %t #j.
+      (Tick( %t ) @ #j) ⇒
+      ((((((#j = #k0) ∨ (#j = #j2)) ∨ (#j = #k1)) ∨ (#j = #j4)) ∨ (#j = #k2)) ∨
+       (#j = #k)))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ p0 p1 p2 y r0 r1 r2 n0 n1 n2 #k0 #e #q2 #u2 #s2 #i2 #a2 #q1 #u1 #s1
+   #i1 #a1 #q0 #u0 #s0 #i0 #a0 #j2 #k1 #j4 #k2 #k.
+  (Tick( %1 ) @ #k0) ∧
+  (ForwardExpiries( p0, p1, y, (%1%+%1%+%1%+%1%+%1), (%1%+%1%+%1) ) @ #e) ∧
+  (ForwardExpiries( p1, p2, y, (%1%+%1%+%1), %1 ) @ #e) ∧
+  (SettleRequested( 'R', p2, y, r2, %1 ) @ #q2) ∧
+  (ChannelUpdateFor( p2, <'settle', y, r2>, n2 ) @ #u2) ∧
+  (StateUpdate( p2, n2 ) @ #s2) ∧
+  (HTLCCommittedAt( p2, <'settle', y, r2>, %1 ) @ #i2) ∧
+  (PreimageAvailable( p2, y, %1 ) @ #a2) ∧
+  (SettleRequested( 'F2', p1, y, r1, %1 ) @ #q1) ∧
+  (ChannelUpdateFor( p1, <'settle', y, r1>, n1 ) @ #u1) ∧
+  (StateUpdate( p1, n1 ) @ #s1) ∧
+  (HTLCCommittedAt( p1, <'settle', y, r1>, %1 ) @ #i1) ∧
+  (PreimageAvailable( p1, y, %1 ) @ #a1) ∧
+  (SettleRequested( 'F1', p0, y, r0, %1 ) @ #q0) ∧
+  (ChannelUpdateFor( p0, <'settle', y, r0>, n0 ) @ #u0) ∧
+  (StateUpdate( p0, n0 ) @ #s0) ∧
+  (HTLCCommittedAt( p0, <'settle', y, r0>, %1 ) @ #i0) ∧
+  (PreimageAvailable( p0, y, %1 ) @ #a0) ∧
+  (Tick( (%1%+%1) ) @ #j2) ∧
+  (Tick( (%1%+%1%+%1) ) @ #k1) ∧
+  (Tick( (%1%+%1%+%1%+%1) ) @ #j4) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1) ) @ #k2) ∧
+  (Tick( (%1%+%1%+%1%+%1%+%1%+%1) ) @ #k)
+ ∧
+  (#k0 < #e) ∧
+  (#e < #q2) ∧
+  (#q2 < #u2) ∧
+  (#u2 < #s2) ∧
+  (#s2 < #i2) ∧
+  (#i2 < #a2) ∧
+  (#a2 < #q1) ∧
+  (#q1 < #u1) ∧
+  (#u1 < #s1) ∧
+  (#s1 < #i1) ∧
+  (#i1 < #a1) ∧
+  (#a1 < #q0) ∧
+  (#q0 < #u0) ∧
+  (#u0 < #s0) ∧
+  (#s0 < #i0) ∧
+  (#i0 < #a0) ∧
+  (#a0 < #j2) ∧
+  (#j2 < #k1) ∧
+  (#k1 < #j4) ∧
+  (#j4 < #k2) ∧
+  (#k2 < #k) ∧
+  (∀ %t #j.
+    (Tick( %t ) @ #j)
+   ⇒
+    ((#j = #k0) ∨
+     (#j = #j2) ∨
+     (#j = #k1) ∨
+     (#j = #j4) ∨
+     (#j = #k2) ∨
+     (#j = #k)))"
+*/
+by sorry
+
+lemma Deadline_Stamp_Per_Hop [reuse]:
+  all-traces
+  "∀ P Prev Next pin pout y rid %b %cx %tIn %tOut #f #e #i #k.
+    (((((((HTLCForwarded( P, Prev, Next, pin, pout, y ) @ #f) ∧
+          (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e)) ∧
+         (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i)) ∧
+        ((%b = %tOut) ∨ (%b ⊏ %tOut))) ∧
+       (Tick( %cx ) @ #k)) ∧
+      (%tIn ⊏ %cx)) ∧
+     (#i < #k)) ⇒
+    (∃ rid2 %c #l.
+      ((HTLCCommittedAt( pin, <'settle', y, rid2>, %c ) @ #l) ∧
+       ((%c = %tIn) ∨ (%c ⊏ %tIn))) ∧
+      (#l < #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ P Prev Next pin pout y rid %b %cx %tIn %tOut #f #e #i #k.
+  (HTLCForwarded( P, Prev, Next, pin, pout, y ) @ #f) ∧
+  (ForwardExpiries( pin, pout, y, %tIn, %tOut ) @ #e) ∧
+  (HTLCCommittedAt( pout, <'settle', y, rid>, %b ) @ #i) ∧
+  (Tick( %cx ) @ #k)
+ ∧
+  (((%b = %tOut) ∨ (%b ⊏ %tOut))) ∧
+  (%tIn ⊏ %cx) ∧
+  (#i < #k) ∧
+  (∀ rid2 %c #l.
+    (HTLCCommittedAt( pin, <'settle', y, rid2>, %c ) @ #l)
+   ⇒
+    (((¬(%c = %tIn)) ∧ (¬(%c ⊏ %tIn))) ∨ (¬(#l < #k))))"
+*/
+by sorry
+
+lemma End_To_End_Two_Hops:
+  all-traces
+  "∀ p0 p1 p2 y rid %b %cx %t0 %t1 %t2 #f1 #e1 #f2 #e2 #i #k.
+    (((((((((HTLCForwarded( 'F1', 'S', 'F2', p0, p1, y ) @ #f1) ∧
+            (ForwardExpiries( p0, p1, y, %t0, %t1 ) @ #e1)) ∧
+           (HTLCForwarded( 'F2', 'F1', 'R', p1, p2, y ) @ #f2)) ∧
+          (ForwardExpiries( p1, p2, y, %t1, %t2 ) @ #e2)) ∧
+         (HTLCCommittedAt( p2, <'settle', y, rid>, %b ) @ #i)) ∧
+        ((%b = %t2) ∨ (%b ⊏ %t2))) ∧
+       (Tick( %cx ) @ #k)) ∧
+      (%t0 ⊏ %cx)) ∧
+     (#i < #k)) ⇒
+    (∃ rid0 %c #l.
+      ((HTLCCommittedAt( p0, <'settle', y, rid0>, %c ) @ #l) ∧
+       ((%c = %t0) ∨ (%c ⊏ %t0))) ∧
+      (#l < #k))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ p0 p1 p2 y rid %b %cx %t0 %t1 %t2 #f1 #e1 #f2 #e2 #i #k.
+  (HTLCForwarded( 'F1', 'S', 'F2', p0, p1, y ) @ #f1) ∧
+  (ForwardExpiries( p0, p1, y, %t0, %t1 ) @ #e1) ∧
+  (HTLCForwarded( 'F2', 'F1', 'R', p1, p2, y ) @ #f2) ∧
+  (ForwardExpiries( p1, p2, y, %t1, %t2 ) @ #e2) ∧
+  (HTLCCommittedAt( p2, <'settle', y, rid>, %b ) @ #i) ∧
+  (Tick( %cx ) @ #k)
+ ∧
+  (((%b = %t2) ∨ (%b ⊏ %t2))) ∧
+  (%t0 ⊏ %cx) ∧
+  (#i < #k) ∧
+  (∀ rid0 %c #l.
+    (HTLCCommittedAt( p0, <'settle', y, rid0>, %c ) @ #l)
+   ⇒
+    (((¬(%c = %t0)) ∧ (¬(%c ⊏ %t0))) ∨ (¬(#l < #k))))"
+*/
+by sorry
+
+
+
+
+
+
+
+
+
+/* All wellformedness checks were successful. */
+
+/*
+Generated from:
+Tamarin version 1.10.0
+Maude version 3.2 (unsupported)
+Git revision: cb62c305f8c8b8c1e664152aa33c95b7b8d5ef32, branch: master
+Compiled at: 2024-10-30 11:11:02.432289291 UTC
+*/
+
+end
+
+==============================================================================
+summary of summaries:
+
+analyzed: deadline_core2.spthy
+
+  processing time: 10.11s
+  
+  Delivery_Unique (all-traces): analysis incomplete (1 steps)
+  Request_Unique_Channel (all-traces): analysis incomplete (1 steps)
+  Commit_Unique_Channel (all-traces): analysis incomplete (1 steps)
+  Commit_Unique (all-traces): analysis incomplete (1 steps)
+  Request_Unique (all-traces): analysis incomplete (1 steps)
+  Two_Hop_Witness_Concrete (exists-trace): analysis incomplete (1 steps)
+  Two_Hop_Gap_Counterexample (exists-trace): analysis incomplete (1 steps)
+  Two_Hop_Witness_Pinned (exists-trace): analysis incomplete (1 steps)
+  Two_Hop_Gap_Pinned (exists-trace): analysis incomplete (1 steps)
+  Stamp_Between_Ticks (all-traces): analysis incomplete (1 steps)
+  Two_Hop_Witness_Consecutive (exists-trace): analysis incomplete (1 steps)
+  Two_Hop_Witness_Consecutive_A (exists-trace): verified (35 steps)
+  Two_Hop_Witness_Consecutive_B (exists-trace): analysis incomplete (1 steps)
+  Deadline_Stamp_Per_Hop (all-traces): analysis incomplete (1 steps)
+  End_To_End_Two_Hops (all-traces): analysis incomplete (1 steps)
+
+==============================================================================
