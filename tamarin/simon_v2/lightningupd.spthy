@@ -4,7 +4,6 @@ begin
 // Goal 2: Simon's model with HTLC steps routed through channel updates.
 #include "modelupd.spthy"
 #include "tactics.spthy"
-#include "lemmasupd.spthy"
 
 tactic: upd
 presort: s
@@ -65,5 +64,10 @@ lemma Hand_Payment:
     & not (Ex P p z #i. Refunded(P, p, z) @ #i)
     & not (Ex t #i. Tick(t) @ #i)"
 
+
+
+// Simon's lemmas (and ours) come after the two goal-2 lemmas: their [reuse]
+// lemmas would otherwise be added to the goal-2 proofs and make them loop.
+#include "lemmasupd.spthy"
 
 end
