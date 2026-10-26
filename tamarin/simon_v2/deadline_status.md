@@ -98,3 +98,18 @@ Updated wording: the theorem holds for every trace satisfying the clock and
 liveness restrictions, including traces with skipped ticks. Consecutive-tick
 witnesses for one hop and for two hops show that the restrictions are
 satisfiable under ordinary unit-step block progression.
+
+## FINAL PAPER SCOPE (agreed after review)
+Claim: a symbolic, completion-aware, conditional CLTV-gap theorem for the core
+one-hop and two-hop models, under NowIsLatest, receipt promptness, forwarder
+promptness, and bounded update responsiveness. Novelty phrased "to our
+knowledge" (see related_work.md).
+
+Limitations to state explicitly in the paper:
+1. The theorem is not verified on the full modeldeadline3 model.
+2. The extension from two hops to arbitrary routes is an induction argument,
+   not a Tamarin proof.
+3. NowIsLatest is an abstraction assumption; the consecutive-tick witnesses
+   show satisfiability, not refinement equivalence to a full blockchain clock.
+4. The 20 verified modelupd safety lemmas do not cover the remaining
+   timed-out safety lemmas.
