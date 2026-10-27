@@ -16,3 +16,7 @@
   Expiry_Unique (all-traces): verified (6 steps) | 205s
   Intermediary_Never_Loses_Under_Liveness: TIMEOUT (900s) | 16s
   Timeout_Race_Blocked: TIMEOUT (900s) | 15s
+  Receiver_Paid_At_Most_Offered: TIMEOUT (900s) | 900s
+  Forward_Excludes_Fulfill: TIMEOUT (900s) | 900s
+  Forwarder_Claims_In_Time: TIMEOUT (900s) | 15s
+  Intermediary_Recovers_Funds: TIMEOUT (900s) | 15s
