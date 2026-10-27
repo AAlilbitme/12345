@@ -1,8 +1,9 @@
 # Run every verified experiment and collect all results in one log.
-#   make                  -> everything, results in results.log
+#   make                  -> final model + goal 2, results in results.log
+#   make deadline         -> deadline theorem folder (appends to results.log)
 #   make TAMARIN=/path/to/tamarin-prover
-# Takes several hours (folder 1 about 20 min, folder 2 about 1-2 h, folder 3
-# under 1 h on a laptop). Each folder also writes its own detailed logs.
+# make takes about 1.5-2.5 h on a laptop (folder 1 about 20 min, folder 2 about
+# 1-2 h). Each folder also writes its own detailed logs.
 
 TAMARIN ?= tamarin-prover
 LOG      = results.log
@@ -11,7 +12,7 @@ LOG      = results.log
 
 all:
 	@echo "Verified experiments - started $$(date)" > $(LOG)
-	@$(MAKE) --no-print-directory final htlc deadline
+	@$(MAKE) --no-print-directory final htlc
 	@echo "" >> $(LOG); echo "Finished $$(date)" >> $(LOG)
 	@echo ""; echo "All results: $(CURDIR)/$(LOG)"
 
