@@ -10,3 +10,9 @@
   Hop_Forwarded_Once: TIMEOUT (900s) | 900s
   Fee_Requires_Forward (all-traces): verified (10 steps) | 222s
   Forwarder_Refunds_In_Time: TIMEOUT (900s) | 15s
+  Settle_Excludes_Sender_Refund: TIMEOUT (900s) | 901s
+  Loss_Requires_Inaction (all-traces): verified (2 steps) | 18s
+  Forward_Amount_From_Upstream (all-traces): verified (180 steps) | 319s
+  Expiry_Unique (all-traces): verified (6 steps) | 205s
+  Intermediary_Never_Loses_Under_Liveness: TIMEOUT (900s) | 16s
+  Timeout_Race_Blocked: TIMEOUT (900s) | 15s
