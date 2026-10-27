@@ -17,7 +17,7 @@ SAFETY = state_update delayed_funds instant_funds settlement_is_traceable \
          Claim_Excludes_Refund Redeem_Excludes_Refund \
          Receiver_Paid_Invoice_Amount ForwardTimeGap
 
-.PHONY: all verify goal2 safety lemma clean
+.PHONY: all verify goal2 safety each lemma clean
 
 all: goal2 safety
 
@@ -33,9 +33,20 @@ safety:
 	LANG=C.UTF-8 $(TAMARIN) $(THEORY) $(addprefix --prove=,$(SAFETY)) $(RTS) > safety.log 2>&1
 	@grep -E "^  [A-Za-z_]+ \(" safety.log | grep -E "verified|falsified"
 
+# Every lemma of the theory, one Tamarin call each, with a time limit per lemma
+# (LIMIT seconds, default 900). Results are collected in each.txt as
+# verified / falsified / TIMEOUT. Takes hours: about 60 lemmas.
+LIMIT ?= 900
+each:
+	@: > each.txt
+	@for L in $$(grep -h "^lemma" $(THEORY) lemmasupd.spthy | sed -E 's/^lemma ([A-Za-z_0-9]+).*/\1/'); do \
+	  r=$$(LANG=C.UTF-8 timeout $(LIMIT) $(TAMARIN) $(THEORY) --prove=$$L $(RTS) 2>&1 | grep -E "^  $$L \("); \
+	  echo "$${r:-  $$L: TIMEOUT ($(LIMIT)s)}" | tee -a each.txt; \
+	done
+
 # One lemma, e.g. make lemma L=Hand_Payment
 lemma:
 	LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=$(L) $(RTS) 2>&1 | grep -E "^  $(L) \("
 
 clean:
-	rm -f goal2.log safety.log
+	rm -f goal2.log safety.log each.txt
