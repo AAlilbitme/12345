@@ -7,3 +7,6 @@
   Forward_Expiry_From_Upstream (all-traces): verified (180 steps) | 316s
   Payment_Atomicity_Under_Liveness: TIMEOUT (900s) | 14s
   Forward_Requires_Incoming: TIMEOUT (900s) | 900s
+  Hop_Forwarded_Once: TIMEOUT (900s) | 900s
+  Fee_Requires_Forward (all-traces): verified (10 steps) | 222s
+  Forwarder_Refunds_In_Time: TIMEOUT (900s) | 15s

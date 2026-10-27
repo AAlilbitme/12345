@@ -10,6 +10,8 @@ Each numbered folder is self-contained: `cd` into it and run its main file.
 | `tactics.spthy` | Simon's tactics + `offer_invoice` |
 | `lemmas.spthy` | Simon's lemmas + 5 added (invoice origin, offer requires invoice, funding spent once, no double publish, `Payment_Base`) |
 | `Makefile` | `make verify`: 51/51 verified, 52/52 with `-D=LIVENESS` |
+
+Lemma counts: `lemmas.spthy` declares 58 lemmas. Some sit in `#ifdef LIVENESS ... #else ... #endif` blocks, so 51 are loaded without flags and 52 with `-D=LIVENESS` (45 in both, 6 only without the flag, 7 only with it). All loaded lemmas verify in each configuration.
 | `simon_original_model.spthy` | Simon's original model, for comparison (not included by anything) |
 
 ## 2_htlcs_through_channel_updates/  (Simon's goal 2)
@@ -21,6 +23,8 @@ Each numbered folder is self-contained: `cd` into it and run its main file.
 | `tactics.spthy` | Same as in folder 1 |
 
 Verified: `Settle_Is_Channel_Update` (30 steps), `Hand_Payment` (83 steps), and 20 of Simon's safety lemmas (list in `notes/deadline_status.md`).
+
+Scope: one HTLC at a time per channel (`Mutex`, `OneHTLCPerHashPerChannel`). `UpdateFor`, `ChannelUpdateFor` and `HTLCCommitted` carry the channel and the operation (`add`/`settle`/`fail` with the payment hash), but no request ID, so the model does not distinguish retries or several HTLCs with the same hash on one channel. The deadline core models (folder 3) do carry request IDs.
 
     tamarin-prover lightningupd.spthy --prove=Settle_Is_Channel_Update --prove=Hand_Payment --derivcheck-timeout=600
 

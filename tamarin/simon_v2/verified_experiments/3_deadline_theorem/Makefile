@@ -11,7 +11,7 @@ ONE_SAFETY  = Settle_Commit_Correspondence Stamp_Between_Ticks \
 ONE_THEOREM = Deadline_Per_Hop Deadline_Witness_Concrete Deadline_Witness_Consecutive
 
 # Two forwarders (deadline_core2.spthy)
-TWO_THEOREM = End_To_End_Two_Hops Two_Hop_Witness_Pinned Two_Hop_Witness_Consecutive_A
+TWO_THEOREM = Deadline_Stamp_Per_Hop End_To_End_Two_Hops Two_Hop_Witness_Pinned Two_Hop_Witness_Consecutive_A
 
 .PHONY: all verify one-hop two-hop one-safety one-theorem one-ablation one-gap \
         two-theorem two-gap clean
@@ -44,7 +44,7 @@ one-gap:
 	LANG=C.UTF-8 $(TAMARIN) deadline_core.spthy $(GAPCTRL) --prove=Gap_Concrete $(RTS) > one_gap.log 2>&1
 	@grep -E "^  Gap_Concrete \(" one_gap.log
 
-# End-to-end theorem over two forwarders and its witnesses.
+# Composable per-hop theorem, end-to-end theorem over two forwarders, witnesses.
 two-theorem:
 	LANG=C.UTF-8 $(TAMARIN) deadline_core2.spthy $(THEOREM) $(addprefix --prove=,$(TWO_THEOREM)) $(RTS) > two_theorem.log 2>&1
 	@grep -E "^  [A-Za-z_]+ \(" two_theorem.log | grep -E "verified|falsified"
