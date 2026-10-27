@@ -3,7 +3,7 @@ THEORY   = lightningupd.spthy
 RTS      = --derivcheck-timeout=600 +RTS -M8G -RTS
 
 # Goal 2: HTLC steps take effect only after a completed channel update.
-GOAL2  = Settle_Is_Channel_Update Hand_Payment
+GOAL2  = Settle_Is_Channel_Update HTLC_Commit_Correspondence Hand_Payment
 
 # Simon's safety lemmas that verify on this model (the others time out, so a
 # full --prove does not finish).

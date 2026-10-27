@@ -25,6 +25,15 @@ lemma Settle_Is_Channel_Update [heuristic={upd}]:
      | (Ex X #k. LtkCompromised(X) @ #k)"
 
 
+// Correspondence: a committed HTLC operation comes from the matching channel
+// update (same channel, operation and update number) and a completed state
+// update of that channel, in that order.
+lemma HTLC_Commit_Correspondence:
+  "All ptr op n #c. HTLCCommitted(ptr, op, n) @ #c
+   ==> Ex A B #u #s. ChannelUpdateFor(ptr, op, n) @ #u
+         & StateUpdate(A, B, ptr, n) @ #s
+         & #u < #s & #s < #c"
+
 // Hand-built trace, full payment: S -> F -> R, every HTLC step through a
 // completed channel update (update, revoke, commit), then settled back.
 lemma Hand_Payment:

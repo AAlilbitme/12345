@@ -24,7 +24,7 @@ Lemma counts: `lemmas.spthy` declares 58 lemmas. Some sit in `#ifdef LIVENESS ..
 
 Verified: `Settle_Is_Channel_Update` (30 steps), `Hand_Payment` (83 steps), and 20 of Simon's safety lemmas (list in `notes/deadline_status.md`).
 
-Scope: one HTLC at a time per channel (`Mutex`, `OneHTLCPerHashPerChannel`). `UpdateFor`, `ChannelUpdateFor` and `HTLCCommitted` carry the channel and the operation (`add`/`settle`/`fail` with the payment hash), but no request ID, so the model does not distinguish retries or several HTLCs with the same hash on one channel. The deadline core models (folder 3) do carry request IDs.
+Scope: the channel abstraction permits at most one HTLC per payment hash per channel (`Mutex`, `OneHTLCPerHashPerChannel`). Consequently, request identifiers are unnecessary in the current proofs: a channel update is identified by (channel, hash, operation), and `HTLC_Commit_Correspondence` ties each `HTLCCommitted(ptr, op, n)` to the matching `ChannelUpdateFor(ptr, op, n)` and `StateUpdate(..., ptr, n)`. Extending the model to concurrent or repeated HTLCs (several HTLCs on one channel, retries with the same hash, duplicate settle requests) would require carrying a unique HTLC/request identifier through `UpdateFor`, `ChannelUpdateFor`, `InFlight` and `HTLCCommitted`. This is a completion-aware core abstraction, not a complete multi-HTLC Lightning implementation.
 
     tamarin-prover lightningupd.spthy --prove=Settle_Is_Channel_Update --prove=Hand_Payment --derivcheck-timeout=600
 
