@@ -1,1 +1,0 @@
-Request_Without_Commit_B1 (A + stamps, Simon's clock):   Request_Without_Commit_B1 (exists-trace): verified (79 steps) | -M13G, timeout 1800s | elapsed 458s

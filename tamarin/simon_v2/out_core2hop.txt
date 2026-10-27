@@ -1,8 +1,0 @@
-Request_Unique [flags: none]:   Request_Unique (all-traces): verified (1393 steps) | 16s | wf-warnings: 0
-Delivery_Unique [flags: none]:   Delivery_Unique (all-traces): verified (15342 steps) | 353s | wf-warnings: 0
-Deadline_Stamp_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Stamp_Per_Hop (all-traces): verified (14858 steps) | 635s | wf-warnings: 0
-End_To_End_Two_Hops [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   End_To_End_Two_Hops (all-traces): verified (80 steps) | 2s | wf-warnings: 0
-Two_Hop_Witness_Concrete [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 | 900s | wf-warnings: 0
-Two_Hop_Gap_Counterexample [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | 900s | wf-warnings: 0
-Two_Hop_Gap_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP1]: TIMEOUT/exit 124 | 2401s
-Two_Hop_Witness_Pinned [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 | 2401s

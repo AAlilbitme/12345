@@ -1,6 +1,0 @@
-theory CheckUpd3T
-begin
-#include "modelupd3.spthy"
-lemma Open_Reachable:
-  exists-trace "Ex A B ptr #i. ChannelOpen(A, B, ptr) @ #i & not (Ex X #k. LtkCompromised(X) @ #k)"
-end

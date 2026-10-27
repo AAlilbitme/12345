@@ -1,7 +1,0 @@
-Deadline_Witness_Concrete [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Witness_Concrete (exists-trace): verified (49 steps) | 587s | wf-warnings: 0
-Deadline_Witness [flags: -D=LIVENESS -D=BOUND -D=GAP2]: TIMEOUT/exit 124 | 900s | wf-warnings: 0
-Ablation_Concrete [flags: -D=LIVENESS -D=GAP2]:   Ablation_Concrete (exists-trace): verified (14 steps) | 2s | wf-warnings: 0
-Ablation_Counterexample [flags: -D=LIVENESS -D=GAP2]:   Ablation_Counterexample (exists-trace): verified (27 steps) | 3s | wf-warnings: 0
-Gap_Concrete [flags: -D=LIVENESS -D=BOUND -D=GAP1]:   Gap_Concrete (exists-trace): verified (17 steps) | 2s | wf-warnings: 0
-Gap_Counterexample [flags: -D=LIVENESS -D=BOUND -D=GAP1]:   Gap_Counterexample (exists-trace): verified (31 steps) | 4s | wf-warnings: 0
-Deadline_Per_Hop [flags: -D=LIVENESS -D=BOUND -D=GAP2]:   Deadline_Per_Hop (all-traces): verified (30 steps) | 1s | wf-warnings: 0

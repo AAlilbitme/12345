@@ -1,6 +1,0 @@
-Two_Hop_Witness_Pinned [flags: -D=RECEIPT]:   Two_Hop_Witness_Pinned (exists-trace): verified (34 steps) | 8s
-Two_Hop_Witness_Pinned [flags: -D=BOUND]: TIMEOUT/exit 124 | 601s
-Two_Hop_Witness_Pinned [flags: -D=FWDPROMPT]:   Two_Hop_Witness_Pinned (exists-trace): verified (40 steps) | 7s
-Two_Hop_Witness_Pinned [flags: -D=GAP2]:   Two_Hop_Witness_Pinned (exists-trace): verified (36 steps) | 16s
-  Commit_Unique (all-traces): verified (266 steps)
-Two_Hop_Witness_Pinned +Commit_Unique [flags: -D=BOUND]:   Two_Hop_Witness_Pinned (exists-trace): verified (34 steps) | 7s

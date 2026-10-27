@@ -1,8 +1,7 @@
-// The Lightning model: channel layer, multi-hop HTLC routing, block clock,
-// wormhole attacker, and the restrictions (assumptions).  Included by
-// Lightning.spthy; facts and events are explained in Lightning.md.
-// (Copied from Simon's model as pasted.  Only change: two annotation events,
-//  OfferFor in Sender_Offer_HTLC, marked ADDED.)
+// Simon's Lightning model (modelfixb.spthy) with HTLC steps routed through
+// channel updates: an HTLC add, settle or fail takes effect only after a
+// completed channel update. Included by lightningupd.spthy.
+// Changes to Simon's model are marked ADDED or CHANGED.
 
 builtins: hashing, signing, natural-numbers
 
