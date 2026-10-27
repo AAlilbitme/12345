@@ -20,3 +20,18 @@
   Forward_Excludes_Fulfill: TIMEOUT (900s) | 900s
   Forwarder_Claims_In_Time: TIMEOUT (900s) | 15s
   Intermediary_Recovers_Funds: TIMEOUT (900s) | 15s
+  Amount_Decreases_Along_Route (all-traces): verified (14 steps) | 190s
+  Fee_Is_Amount_Difference (all-traces): verified (10 steps) | 208s
+  Offer_Precedes_Forwards (all-traces): verified (11 steps) | 220s
+  Sender_Pays_Invoice_Plus_Fees: TIMEOUT (900s) | 901s
+  Redeem_Reveals (all-traces): verified (4 steps) | 192s
+  Expiry_Below_First_Hop (all-traces): verified (16 steps) | 213s
+  Incoming_Resolved_By_Claim_Or_Timeout (all-traces): verified (6 steps) | 226s
+  Outgoing_Preimage_Kept (all-traces): verified (15 steps) | 253s
+  Collect_Enabled (all-traces): verified (26 steps) | 215s
+  Refund_Enabled (all-traces): verified (25 steps) | 261s
+  Invoice_Signature_Origin (all-traces): verified (4 steps) | 224s
+  Punish_Enabled (all-traces): verified (50 steps) | 247s
+  Offer_Requires_Invoice (all-traces): verified (6 steps) | 223s
+  No_Double_Publish (all-traces): verified (172 steps) | 201s
+  Funding_Spent_Once: TIMEOUT (900s) | 900s

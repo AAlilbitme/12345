@@ -113,3 +113,17 @@ Limitations to state explicitly in the paper:
    show satisfiability, not refinement equivalence to a full blockchain clock.
 4. The 20 verified modelupd safety lemmas do not cover the remaining
    timed-out safety lemmas.
+
+## Goal-2 model (2_htlcs_through_channel_updates): per-lemma run, safety config
+Each lemma in its own Tamarin call, 900 s limit (results: each_results.txt).
+Safety configuration loads 50 of the lemmas in lemmasupd.spthy plus the goal-2
+lemmas. Of the 50:
+- verified: 42 (20 from the earlier batch runs + 22 in this run)
+- timeout (900 s, inconclusive): 8 - Settle_Requires_Receiver_Release,
+  Forward_Requires_Incoming, Hop_Forwarded_Once, Settle_Excludes_Sender_Refund,
+  Receiver_Paid_At_Most_Offered, Forward_Excludes_Fulfill,
+  Sender_Pays_Invoice_Plus_Fees, Funding_Spent_Once
+- falsified: 0
+Liveness-only lemmas (exist only with -D=LIVENESS; not run here): 7.
+Goal-2 lemmas: Settle_Is_Channel_Update (30), Hand_Payment (83) verified;
+HTLC_Commit_Correspondence pending.
