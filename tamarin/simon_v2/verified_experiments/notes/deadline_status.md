@@ -126,4 +126,4 @@ lemmas. Of the 50:
 - falsified: 0
 Liveness-only lemmas (exist only with -D=LIVENESS; not run here): 7.
 Goal-2 lemmas: Settle_Is_Channel_Update (30), Hand_Payment (83) verified;
-HTLC_Commit_Correspondence pending.
+HTLC_Commit_Correspondence verified (10 steps): every HTLCCommitted(ptr, op, n) is preceded by ChannelUpdateFor(ptr, op, n) and StateUpdate(_, _, ptr, n), in that order. The commit-based coupling is proved, not only inferred from the rules.
