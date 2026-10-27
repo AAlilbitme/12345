@@ -1,0 +1,9 @@
+  Cheating_Never_Pays: TIMEOUT (900s) | 17s
+  Claim_Requires_Release (all-traces): verified (89 steps) | 284s
+  Redeem_Requires_Receiver_Release (all-traces): verified (11 steps) | 209s
+  Invoice_Authenticates_Settlement (all-traces): verified (258 steps) | 271s
+  Settle_Requires_Receiver_Release: TIMEOUT (900s) | 900s
+  Refund_Requires_Timeout (all-traces): verified (148 steps) | 253s
+  Forward_Expiry_From_Upstream (all-traces): verified (180 steps) | 316s
+  Payment_Atomicity_Under_Liveness: TIMEOUT (900s) | 14s
+  Forward_Requires_Incoming: TIMEOUT (900s) | 900s
