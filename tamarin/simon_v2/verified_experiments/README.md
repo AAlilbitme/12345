@@ -56,11 +56,23 @@ default 5 s derivation check times out on these models). Add
 Prove named lemmas only; a full `--prove` does not finish.
 
     cd 2_htlcs_through_channel_updates
+    make verify                  # goal-2 lemmas + the 20 verified safety lemmas
+    make goal2                   # Settle_Is_Channel_Update, Hand_Payment
+    make safety                  # the 20 safety lemmas that verify on this model
+    make lemma L=Hand_Payment
+
+    # without make:
     tamarin-prover lightningupd.spthy --prove=Settle_Is_Channel_Update --prove=Hand_Payment --derivcheck-timeout=600
     tamarin-prover lightningupd.spthy --prove=Ltk_Known_Implies_Compromised --derivcheck-timeout=600   # one of the 20 safety lemmas
 
 ### 3_deadline_theorem
     cd 3_deadline_theorem
+    make verify                  # everything below
+    make one-hop                 # one-safety, one-theorem, one-ablation, one-gap
+    make two-hop                 # two-theorem, two-gap
+    # controls print "verified" when the counterexample trace is found
+
+    # without make:
     # one hop - safety (no flags)
     tamarin-prover deadline_core.spthy --prove=Settle_Commit_Correspondence --prove=Stamp_Between_Ticks --prove=Request_Without_Commit --prove=Commit_Without_Receipt
     # one hop - theorem and witnesses
