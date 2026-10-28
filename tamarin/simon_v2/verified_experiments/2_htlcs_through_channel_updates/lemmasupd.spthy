@@ -265,7 +265,7 @@ lemma Amount_Decreases_Along_Route [reuse, use_induction]:
        | (Ex S F1 p1 %v1 #o. HTLCOffered(S, F1, p1, y) @ #o
             & HTLCAmount(p1, y, %v1) @ #o & %vb << %v1 & #o < #i)"
 
-lemma Receiver_Paid_At_Most_Offered [heuristic={upd_route}]: // add: heuristic
+lemma Receiver_Paid_At_Most_Offered: // add: uses Paid_Has_Amount
     "All R y %vR #r.
         ReceiverPaid(R, y, %vR) @ #r
      ==> Ex S F1 p1 %v1 #o. HTLCOffered(S, F1, p1, y) @ #o

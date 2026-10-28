@@ -84,6 +84,8 @@ lemma Hand_Payment:
 tactic: route_once   // add
 presort: s
 prio:
+    regex "^\s*Route[(]"   // add
+prio:
     regex "^\s*AwaitRoute[(]"
 prio:
     regex "^\s*(Committed|InFlight|UpdateFor)[(]"
@@ -101,6 +103,11 @@ lemma Route_Made_Once [reuse, heuristic={route_once}]:   // add
 lemma Route_Has_Amount [reuse, heuristic={route_once}]:   // add
   "All ptr y %v #i. RouteMade(ptr, y, %v) @ #i
    ==> Ex #a. HTLCAmount(ptr, y, %v) @ #a & #a < #i"
+
+// add: what the receiver is paid is the amount of an HTLC added on its channel.
+lemma Paid_Has_Amount [reuse, heuristic={route_once}]:   // add
+  "All R y %v #r. ReceiverPaid(R, y, %v) @ #r
+   ==> Ex ptr #a. HTLCAmount(ptr, y, %v) @ #a & #a < #r"
 
 // add: a Fulfilled fact is only produced after some preimage release.
 lemma Fulfilled_Out_Released [reuse, use_induction, heuristic={upd_preimage}]:   // add
