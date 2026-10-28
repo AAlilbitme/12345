@@ -22,9 +22,13 @@ Lemma counts: `lemmas.spthy` declares 58 lemmas. Some sit in `#ifdef LIVENESS ..
 | `lemmasupd.spthy` | `lemmas.spthy` without `Payment_Base` |
 | `tactics.spthy` | Same as in folder 1 |
 
-Verified: `Settle_Is_Channel_Update` (30 steps), `HTLC_Commit_Correspondence` (10 steps: every commit comes from the matching channel update and state update), `Hand_Payment` (83 steps), and **42 of the 50** safety lemmas from `lemmasupd.spthy`; 8 time out at 15 min per lemma (inconclusive), none falsified. Per-lemma results in `2_htlcs_through_channel_updates/each_results.txt`; summary in `notes/deadline_status.md`. Run them all with `make each` (hours).
+Verified: `Settle_Is_Channel_Update` (30 steps), `HTLC_Commit_Correspondence` (10 steps: every commit comes from the matching channel update and state update), `Hand_Payment` (83 steps), and **49 of the 50** safety lemmas from `lemmasupd.spthy`, none falsified:
+- 42 in one run (`make safety`);
+- `Settle_Excludes_Sender_Refund` (194 steps) and `Sender_Pays_Invoice_Plus_Fees` (1470 steps) with a 30-min limit per lemma;
+- the five that used to time out, with new tactics and helper lemmas (`make fixed`, all additions marked `// add`): `Forward_Requires_Incoming` (182), `Settle_Requires_Receiver_Release` (778), `Hop_Forwarded_Once` (10), `Forward_Excludes_Fulfill` (6), `Receiver_Paid_At_Most_Offered` (4). Helpers: `Route_Made_Once` (146, needs `--bound=6`), `Route_Has_Amount` (74), `Paid_Has_Amount` (6), `Fulfilled_Out_Released` (275), `Release_By_Creator` (23). The model only gains the action labels `RouteMade` and `FulfilledOut`;
+- `Funding_Spent_Once`: still open (long run). Per-lemma results in `2_htlcs_through_channel_updates/each_results.txt`; summary in `notes/deadline_status.md`. Run them all with `make each` (hours).
 
-Scope: the channel abstraction permits at most one HTLC per payment hash per channel (`Mutex`, `OneHTLCPerHashPerChannel`). Consequently, request identifiers are unnecessary in the current proofs: a channel update is identified by (channel, hash, operation), and `HTLC_Commit_Correspondence` ties each `HTLCCommitted(ptr, op, n)` to the matching `ChannelUpdateFor(ptr, op, n)` and `StateUpdate(..., ptr, n)`. Extending the model to concurrent or repeated HTLCs (several HTLCs on one channel, retries with the same hash, duplicate settle requests) would require carrying a unique HTLC/request identifier through `UpdateFor`, `ChannelUpdateFor`, `InFlight` and `HTLCCommitted`. This is a completion-aware core abstraction, not a complete multi-HTLC Lightning implementation.
+Scope: the channel abstraction permits at most one HTLC per payment hash per channel (`Mutex`, `OneHTLCPerHashPerChannel`). The `Mutex` comes from Simon's model; removing it (concurrent HTLCs on one channel) is goal 3. Request identifiers are unnecessary in the current proofs: a channel update is identified by (channel, hash, operation), and `HTLC_Commit_Correspondence` ties each `HTLCCommitted(ptr, op, n)` to the matching `ChannelUpdateFor(ptr, op, n)` and `StateUpdate(..., ptr, n)`. Retries with the same hash or duplicate settle requests would require carrying a unique HTLC/request identifier through `UpdateFor`, `ChannelUpdateFor`, `InFlight` and `HTLCCommitted`. This is a completion-aware core abstraction, not a complete multi-HTLC Lightning implementation.
 
     tamarin-prover lightningupd.spthy --prove=Settle_Is_Channel_Update --prove=Hand_Payment --derivcheck-timeout=600
 
@@ -60,14 +64,15 @@ default 5 s derivation check times out on these models). Add
 Prove named lemmas only; a full `--prove` does not finish.
 
     cd 2_htlcs_through_channel_updates
-    make verify                  # goal-2 lemmas + the 20 verified safety lemmas
-    make goal2                   # Settle_Is_Channel_Update, Hand_Payment
-    make safety                  # the 20 safety lemmas that verify on this model
+    make verify                  # goal2 + safety + fixed
+    make goal2                   # Settle_Is_Channel_Update, HTLC_Commit_Correspondence, Hand_Payment
+    make safety                  # 42 safety lemmas in one run
+    make fixed                   # helper lemmas + the 5 formerly timed-out lemmas
     make lemma L=Hand_Payment
 
     # without make:
     tamarin-prover lightningupd.spthy --prove=Settle_Is_Channel_Update --prove=Hand_Payment --derivcheck-timeout=600
-    tamarin-prover lightningupd.spthy --prove=Ltk_Known_Implies_Compromised --derivcheck-timeout=600   # one of the 20 safety lemmas
+    tamarin-prover lightningupd.spthy --prove=Ltk_Known_Implies_Compromised --derivcheck-timeout=600   # one safety lemma
 
 ### 3_deadline_theorem
     cd 3_deadline_theorem

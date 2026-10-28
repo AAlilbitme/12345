@@ -26,9 +26,22 @@ SAFETY = state_update delayed_funds instant_funds settlement_is_traceable \
          Collect_Enabled Refund_Enabled Invoice_Signature_Origin \
          Punish_Enabled Offer_Requires_Invoice No_Double_Publish
 
-.PHONY: all verify goal2 safety each lemma clean
+# add: helper lemmas (in lightningupd.spthy) and the five lemmas that used to
+# add: time out; run one by one. Route_Made_Once needs --bound=6.
+HELPERS = Release_By_Creator Fulfilled_Out_Released Paid_Has_Amount Route_Has_Amount
+FIXED   = Forward_Requires_Incoming Settle_Requires_Receiver_Release \
+          Hop_Forwarded_Once Forward_Excludes_Fulfill Receiver_Paid_At_Most_Offered
 
-all: goal2 safety
+.PHONY: all verify goal2 safety fixed each lemma clean
+
+all: goal2 safety fixed
+
+# add: helpers, then the five formerly timed-out lemmas, one call each.
+fixed:
+	@LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=Route_Made_Once --bound=6 $(RTS) 2>&1 | grep -E "^  Route_Made_Once \("
+	@for L in $(HELPERS) $(FIXED); do \
+	  LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=$$L $(RTS) 2>&1 | grep -E "^  $$L \("; \
+	done
 
 verify: all
 

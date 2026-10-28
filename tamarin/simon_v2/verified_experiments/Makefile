@@ -21,7 +21,7 @@ final:
 	@$(MAKE) --no-print-directory -C 1_final_verified_model verify TAMARIN=$(TAMARIN) 2>&1 | grep -E "verified|falsified|incomplete" | tee -a $(LOG)
 
 htlc:
-	@echo "" >> $(LOG); echo "== 2_htlcs_through_channel_updates (goal-2 lemmas, 42 safety lemmas) - $$(date)" | tee -a $(LOG)
+	@echo "" >> $(LOG); echo "== 2_htlcs_through_channel_updates (goal-2 lemmas, safety lemmas, helpers + formerly timed-out lemmas) - $$(date)" | tee -a $(LOG)
 	@$(MAKE) --no-print-directory -C 2_htlcs_through_channel_updates verify TAMARIN=$(TAMARIN) 2>&1 | grep -E "verified|falsified" | tee -a $(LOG)
 
 deadline:
