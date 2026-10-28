@@ -77,6 +77,31 @@ lemma Hand_Payment:
 
 // Simon's lemmas (and ours) come after the two goal-2 lemmas: their [reuse]
 // lemmas would otherwise be added to the goal-2 proofs and make them loop.
+// add: helper lemmas for the four safety lemmas that timed out. They are
+// add: placed after the goal-2 lemmas so their [reuse] does not affect them.
+
+// add: a route on a channel for a hash is created at most once (it comes from
+// add: the single committed add of that hash on that channel).
+lemma Route_Made_Once [reuse, heuristic={upd_route}]:   // add
+  "All ptr y v1 v2 #i #j. RouteMade(ptr, y, v1) @ #i & RouteMade(ptr, y, v2) @ #j
+   ==> #i = #j"
+
+// add: the amount of every route is at most the amount the sender offered.
+lemma Route_Amount_Bounded [reuse, use_induction, heuristic={upd_route}]:   // add
+  "All ptr y %v #i. RouteMade(ptr, y, %v) @ #i
+   ==> Ex S F1 p1 %v1 #o. HTLCOffered(S, F1, p1, y) @ #o
+         & HTLCAmount(p1, y, %v1) @ #o & (%v << %v1 | %v = %v1) & #o < #i"
+
+// add: a Fulfilled fact is only produced after some preimage release.
+lemma Fulfilled_Out_Released [reuse, use_induction, heuristic={upd_preimage}]:   // add
+  "All ptr x #i. FulfilledOut(ptr, x) @ #i
+   ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"
+
+// add: only the receiver that created the invoice can release its preimage.
+lemma Release_By_Creator [reuse]:   // add
+  "All R R2 S x #j #k. InvoiceCreated(R, S, h(x)) @ #j & PreimageReleased(R2, x) @ #k
+   ==> R = R2"
+
 #include "lemmasupd.spthy"
 
 end

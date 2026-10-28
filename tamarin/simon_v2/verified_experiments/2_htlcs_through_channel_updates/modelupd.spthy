@@ -403,11 +403,11 @@ rule Commit_HTLC_Update:
 
 rule Add_Committed:
     [ AwaitRoute(P, N, ptr, y, %v, %t), Committed(ptr, <'add', y>) ]
-    --> [ Route(P, N, ptr, y, %v, %t) ]
+    --[ RouteMade(ptr, y, %v) ]-> [ Route(P, N, ptr, y, %v, %t) ]   // add: RouteMade annotation
 
 rule Settle_Committed:
     [ AwaitFulfilled(ptr, x), Committed(ptr, <'settle', h(x)>) ]
-    --[ MutexReleased(ptr) ]-> [ Fulfilled(ptr, x), Mutex(ptr) ]
+    --[ MutexReleased(ptr), FulfilledOut(ptr, x) ]-> [ Fulfilled(ptr, x), Mutex(ptr) ]   // add: FulfilledOut annotation
 
 rule Fail_Committed:
     [ Committed(ptr, <'fail', y>) ]
@@ -440,7 +440,8 @@ rule AttackerSkip:
       !Compromised(EntryAtt) ]
     --[ FulfilledProduced(ptrSkip, x),
         Eq(h(x), y),
-        FulfilledUsed(ptrExit, x), FulfilledMade(ptrSkip, x) ]->
+        FulfilledUsed(ptrExit, x), FulfilledMade(ptrSkip, x),
+        FulfilledOut(ptrSkip, x) ]->   // add: FulfilledOut annotation
     [ Fulfilled(ptrSkip, x) ]
 
 restriction OneResolutionPerHTLC:
