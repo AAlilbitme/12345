@@ -326,3 +326,50 @@ deprio:
     regex "IntermediaryPending"
     regex "Fulfilled"
     regex "KU[(]"
+
+// add: tactics for the goal-2 model (HTLC steps through channel updates).
+// add: They solve the new HTLC chain first (Route/Fulfilled -> AwaitRoute/
+// add: AwaitFulfilled -> Committed -> InFlight -> UpdateFor) and leave the
+// add: channel-state history (PendingA/B, StateA/B) and KU goals for last.
+tactic: upd_route // add
+presort: s
+prio:
+    regex "^\s*Route[(]"
+prio:
+    regex "^\s*(AwaitRoute|Committed|InFlight|!UpdateDone)[(]"
+prio:
+    regex "^\s*(HTLCForwarded|HTLCOffered|HTLCAdded|HTLCFulfilled)[(]"
+prio:
+    regex "^\s*UpdateFor[(]"
+deprio:
+    regex "Pending[AB][(]"
+    regex "State[AB][(]"
+    regex "KU[(]"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"
+
+tactic: upd_preimage // add
+presort: s
+prio:
+    regex "^\s*SenderPending[(].*▶₀ #i\s*$"
+prio:
+    regex "^\s*Fulfilled[(]"
+prio:
+    regex "^\s*(AwaitFulfilled|Committed|InFlight|!UpdateDone)[(]"
+prio:
+    regex "^\s*PreimageReleased[(]"
+prio:
+    regex "^\s*(ReceiverInv|InvoiceCreated|SecretPreimage)[(]"
+prio:
+    regex "^\s*!Compromised[(]" | regex "LtkCompromised"
+deprio:
+    regex "Pending[AB][(]"
+    regex "State[AB][(]"
+    regex "KU[(]"
+    regex "RouteInfo"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"

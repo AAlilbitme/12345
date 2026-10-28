@@ -88,7 +88,7 @@ lemma Fulfilled_Requires_Release [reuse, use_induction, heuristic=S]:
         FulfilledProduced(ptr, x) @ #i
      ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"
 
-lemma Settle_Requires_Receiver_Release [heuristic={sender_preimage}]:
+lemma Settle_Requires_Receiver_Release [heuristic={upd_preimage}]: // add: was sender_preimage
     "All S F1 R ptr x #i #j.
         SenderSettled(S, F1, R, ptr, x) @ #i
       & InvoiceCreated(R, S, h(x)) @ #j
@@ -100,7 +100,7 @@ lemma Claim_Requires_Release [use_induction]:
       & SecretPreimage(R, x) @ #j
      ==> Ex #k. PreimageReleased(R, x) @ #k & #k < #i"
 
-lemma Forward_Requires_Incoming [use_induction]:
+lemma Forward_Requires_Incoming [use_induction, heuristic={upd_route}]: // add: heuristic
     "All Me Prev Next ptrIn ptrOut y #i.
         HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #i
      ==> (Ex S #j. HTLCOffered(S, Me, ptrIn, y) @ #j & #j < #i)
@@ -171,13 +171,13 @@ lemma Timeout_Race_Blocked:
       & not (Ex #c. LtkCompromised(P) @ #c & #c < #k))"
 #endif
 
-lemma Hop_Forwarded_Once [reuse, heuristic={route_first}]:
+lemma Hop_Forwarded_Once [reuse, heuristic={upd_route}]: // add: was route_first
     "All D Pv Nx D2 Pv2 Nx2 pin pout pout2 y #f #g.
         HTLCForwarded(D, Pv, Nx, pin, pout, y) @ #f
       & HTLCForwarded(D2, Pv2, Nx2, pin, pout2, y) @ #g
      ==> #f = #g"
 
-lemma Forward_Excludes_Fulfill [reuse, heuristic={route_first}]:
+lemma Forward_Excludes_Fulfill [reuse, heuristic={upd_route}]: // add: was route_first
     "All D Pv Nx pin pout y R PrevR #f #r.
         HTLCForwarded(D, Pv, Nx, pin, pout, y) @ #f
       & HTLCFulfilled(R, PrevR, pin, y) @ #r
@@ -265,7 +265,7 @@ lemma Amount_Decreases_Along_Route [reuse, use_induction]:
        | (Ex S F1 p1 %v1 #o. HTLCOffered(S, F1, p1, y) @ #o
             & HTLCAmount(p1, y, %v1) @ #o & %vb << %v1 & #o < #i)"
 
-lemma Receiver_Paid_At_Most_Offered:
+lemma Receiver_Paid_At_Most_Offered [heuristic={upd_route}]: // add: heuristic
     "All R y %vR #r.
         ReceiverPaid(R, y, %vR) @ #r
      ==> Ex S F1 p1 %v1 #o. HTLCOffered(S, F1, p1, y) @ #o
