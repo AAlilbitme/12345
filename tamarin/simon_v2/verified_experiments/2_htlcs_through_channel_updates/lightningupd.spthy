@@ -80,17 +80,27 @@ lemma Hand_Payment:
 // add: helper lemmas for the four safety lemmas that timed out. They are
 // add: placed after the goal-2 lemmas so their [reuse] does not affect them.
 
+// add: tactic for the route helpers: trace the AwaitRoute fact back first.
+tactic: route_once   // add
+presort: s
+prio:
+    regex "^\s*AwaitRoute[(]"
+prio:
+    regex "^\s*(Committed|InFlight|UpdateFor)[(]"
+deprio:
+    regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "!UpdateDone"
+
 // add: a route on a channel for a hash is created at most once (it comes from
 // add: the single committed add of that hash on that channel).
-lemma Route_Made_Once [reuse, heuristic={upd_route}]:   // add
+lemma Route_Made_Once [reuse, heuristic={route_once}]:   // add
   "All ptr y v1 v2 #i #j. RouteMade(ptr, y, v1) @ #i & RouteMade(ptr, y, v2) @ #j
    ==> #i = #j"
 
-// add: the amount of every route is at most the amount the sender offered.
-lemma Route_Amount_Bounded [reuse, use_induction, heuristic={upd_route}]:   // add
+// add: the amount of a route is the amount of the HTLC added on that channel
+// add: (with Amount_Decreases_Along_Route this bounds what the receiver gets).
+lemma Route_Has_Amount [reuse, heuristic={route_once}]:   // add
   "All ptr y %v #i. RouteMade(ptr, y, %v) @ #i
-   ==> Ex S F1 p1 %v1 #o. HTLCOffered(S, F1, p1, y) @ #o
-         & HTLCAmount(p1, y, %v1) @ #o & (%v << %v1 | %v = %v1) & #o < #i"
+   ==> Ex #a. HTLCAmount(ptr, y, %v) @ #a & #a < #i"
 
 // add: a Fulfilled fact is only produced after some preimage release.
 lemma Fulfilled_Out_Released [reuse, use_induction, heuristic={upd_preimage}]:   // add
