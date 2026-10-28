@@ -6,8 +6,9 @@
 - Inconclusive (batch timeout): all other safety lemmas, including
   Funding_Spent_Once, No_Double_Publish, Invoice_Signature_Origin,
   Offer_Requires_Invoice.
-- Claim allowed: "the goal-2 model preserves the 20 verified safety properties
-  under channel-update routing; the rest are pending or inconclusive."
+- Superseded: see "Goal-2 model ... per-lemma run" below; all 50 safety
+  lemmas now verify. Claim allowed: "the goal-2 model preserves all 50 safety
+  properties under channel-update routing."
 
 ## Deadline model (modeldeadline.spthy / deadline.spthy) - categories
 1. Correspondence and clock invariants (safety config):
@@ -111,8 +112,8 @@ Limitations to state explicitly in the paper:
    not a Tamarin proof.
 3. NowIsLatest is an abstraction assumption; the consecutive-tick witnesses
    show satisfiability, not refinement equivalence to a full blockchain clock.
-4. The 20 verified modelupd safety lemmas do not cover the remaining
-   timed-out safety lemmas.
+4. All 50 modelupd safety lemmas verify; five rely on verified helper lemmas
+   (one, Route_Made_Once, proved with --bound=6).
 
 ## Goal-2 model (2_htlcs_through_channel_updates): per-lemma run, safety config
 Each lemma in its own Tamarin call, 900 s limit (results: each_results.txt).
@@ -124,6 +125,15 @@ lemmas. Of the 50:
   Receiver_Paid_At_Most_Offered, Forward_Excludes_Fulfill,
   Sender_Pays_Invoice_Plus_Fees, Funding_Spent_Once
 - falsified: 0
+Update (final): all 8 timeouts now verify, so 50/50 safety lemmas verified.
+- Settle_Excludes_Sender_Refund (194), Sender_Pays_Invoice_Plus_Fees (1470):
+  30-min limit per lemma; Funding_Spent_Once (7140): about 1-2 h.
+- With new tactics and helper lemmas (marked // add): Forward_Requires_Incoming
+  (182), Settle_Requires_Receiver_Release (778), Hop_Forwarded_Once (10),
+  Forward_Excludes_Fulfill (6), Receiver_Paid_At_Most_Offered (4).
+- Helpers, all verified: Route_Made_Once (146, --bound=6), Route_Has_Amount
+  (74), Paid_Has_Amount (6), Fulfilled_Out_Released (275), Release_By_Creator
+  (23). Model change: action labels RouteMade and FulfilledOut only.
 Liveness-only lemmas (exist only with -D=LIVENESS; not run here): 7.
 Goal-2 lemmas: Settle_Is_Channel_Update (30), Hand_Payment (83) verified;
 HTLC_Commit_Correspondence verified (10 steps): every HTLCCommitted(ptr, op, n) is preceded by ChannelUpdateFor(ptr, op, n) and StateUpdate(_, _, ptr, n), in that order. The commit-based coupling is proved, not only inferred from the rules.

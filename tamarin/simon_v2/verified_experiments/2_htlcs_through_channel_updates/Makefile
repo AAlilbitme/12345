@@ -27,10 +27,11 @@ SAFETY = state_update delayed_funds instant_funds settlement_is_traceable \
          Punish_Enabled Offer_Requires_Invoice No_Double_Publish
 
 # add: helper lemmas (in lightningupd.spthy) and the five lemmas that used to
-# add: time out; run one by one. Route_Made_Once needs --bound=6.
+# add: time out (Funding_Spent_Once takes 1-2 h); run one by one. Route_Made_Once needs --bound=6.
 HELPERS = Release_By_Creator Fulfilled_Out_Released Paid_Has_Amount Route_Has_Amount
-FIXED   = Forward_Requires_Incoming Settle_Requires_Receiver_Release \
-          Hop_Forwarded_Once Forward_Excludes_Fulfill Receiver_Paid_At_Most_Offered
+FIXED   = Funding_Spent_Once Forward_Requires_Incoming Settle_Requires_Receiver_Release \
+          Hop_Forwarded_Once Forward_Excludes_Fulfill Receiver_Paid_At_Most_Offered \
+          Settle_Excludes_Sender_Refund Sender_Pays_Invoice_Plus_Fees
 
 .PHONY: all verify goal2 safety fixed each lemma clean
 
