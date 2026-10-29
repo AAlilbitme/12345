@@ -52,9 +52,13 @@ goal2:
 	@grep -E "^  [A-Za-z_]+ \(" goal2.log | grep -E "verified|falsified"
 
 # The 42 safety lemmas that verify on this model.
+# add: one Tamarin call per lemma; a single call for all 42 runs out of memory
+# add: on a laptop (8 GB heap) now that the helper lemmas are [reuse].
 safety:
-	LANG=C.UTF-8 $(TAMARIN) $(THEORY) $(addprefix --prove=,$(SAFETY)) $(RTS) > safety.log 2>&1
-	@grep -E "^  [A-Za-z_]+ \(" safety.log | grep -E "verified|falsified"
+	@: > safety.log
+	@for L in $(SAFETY); do \
+	  LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=$$L $(RTS) 2>&1 | grep -E "^  $$L \(" | tee -a safety.log; \
+	done
 
 # Every lemma of the theory, one Tamarin call each, with a time limit per lemma
 # (LIMIT seconds, default 900). Results are collected in each.txt as

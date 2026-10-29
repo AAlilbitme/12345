@@ -23,7 +23,7 @@ Lemma counts: `lemmas.spthy` declares 58 lemmas. Some sit in `#ifdef LIVENESS ..
 | `tactics.spthy` | Same as in folder 1 |
 
 Verified: `Settle_Is_Channel_Update` (30 steps), `HTLC_Commit_Correspondence` (10 steps: every commit comes from the matching channel update and state update), `Hand_Payment` (83 steps), and **all 50** safety lemmas from `lemmasupd.spthy`, none falsified:
-- 42 in one run (`make safety`);
+- 42 with `make safety` (one Tamarin call per lemma);
 - `Settle_Excludes_Sender_Refund` (194 steps) and `Sender_Pays_Invoice_Plus_Fees` (1470 steps) with a 30-min limit per lemma;
 - the five that used to time out, with new tactics and helper lemmas (`make fixed`, all additions marked `// add`): `Forward_Requires_Incoming` (182), `Settle_Requires_Receiver_Release` (778), `Hop_Forwarded_Once` (10), `Forward_Excludes_Fulfill` (6), `Receiver_Paid_At_Most_Offered` (4). Helpers: `Route_Made_Once` (146, needs `--bound=6`), `Route_Has_Amount` (74), `Paid_Has_Amount` (6), `Fulfilled_Out_Released` (275), `Release_By_Creator` (23). The model only gains the action labels `RouteMade` and `FulfilledOut`;
 - `Funding_Spent_Once` (7140 steps, about 1-2 h on its own). Per-lemma results in `2_htlcs_through_channel_updates/each_results.txt`; summary in `notes/deadline_status.md`. Run them all with `make each` (hours).
@@ -66,7 +66,7 @@ Prove named lemmas only; a full `--prove` does not finish.
     cd 2_htlcs_through_channel_updates
     make verify                  # goal2 + safety + fixed
     make goal2                   # Settle_Is_Channel_Update, HTLC_Commit_Correspondence, Hand_Payment
-    make safety                  # 42 safety lemmas in one run
+    make safety                  # 42 safety lemmas, one call each
     make fixed                   # helper lemmas + the 5 formerly timed-out lemmas
     make lemma L=Hand_Payment
 
