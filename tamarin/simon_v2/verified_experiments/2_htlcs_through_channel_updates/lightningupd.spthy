@@ -141,6 +141,25 @@ deprio:
 deprio:
     regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "RouteInfo" | regex "Mutex"
 
+// add: tactic for the liveness lemmas on this model: resolve the HTLC commit
+// add: chain (Committed / InFlight / AwaitFulfilled / Fulfilled / pending HTLC
+// add: state) first, then the liveness restrictions' events, channel history
+// add: and KU last.
+tactic: live_commit   // add
+presort: s
+prio:
+    regex "^\s*(IntermediaryPending|SenderPending)[(]"
+prio:
+    regex "^\s*(Fulfilled|AwaitFulfilled|AwaitRoute|Route)[(]"
+prio:
+    regex "^\s*(Committed|InFlight|!UpdateDone)[(]"
+prio:
+    regex "HTLCCommitted[(]" | regex "Refunded[(]" | regex "Redeemed[(]"
+prio:
+    regex "^\s*!Block[(]" | regex "Tick[(]"
+deprio:
+    regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "RouteInfo" | regex "ChannelConnect" | regex "Mutex" | regex "Wallet"
+
 // add: a route on a channel for a hash is created at most once (it comes from
 // add: the single committed add of that hash on that channel).
 lemma Route_Made_Once [reuse, heuristic={route_once}]:   // add
