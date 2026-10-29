@@ -218,6 +218,43 @@ lemma Forwarder_Claims_In_Time:
       & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
      ==> Ex #l. Redeemed(pin, y) @ #l & #l < #k"
 
+// add: goal-2 versions. In this model Redeemed(pout, y) marks that the
+// add: downstream peer STARTED a settle; the settle takes effect only when its
+// add: channel update is committed (HTLCCommitted(pout, <'settle', y>, n)).
+// add: The liveness assumptions (ForwarderCollectsInTime) are stated on the
+// add: committed settle, so the claims are stated on it too.
+lemma Forwarder_Claims_In_Time_Committed:   // add
+    "All P Prev Next pin pout y %tIn %tOut %b n #f #e #i #k.
+        HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+      & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+      & HTLCCommitted(pout, <'settle', y>, n) @ #i & #i < #k
+      & Tick(%b) @ #k & %tIn << %b & #f < #k
+      & not (Ex #c. LtkCompromised(P) @ #c & #c < #k)
+     ==> Ex nIn #l. HTLCCommitted(pin, <'settle', y>, nIn) @ #l & #l < #k"
+
+// add: an honest forwarder never has its outgoing settle and its incoming
+// add: fail both committed (it never pays downstream without being paid).
+lemma Intermediary_Never_Loses_Committed:   // add
+    "All P Prev Next pin pout y n1 n2 #f #i #j.
+        HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+      & HTLCCommitted(pout, <'settle', y>, n1) @ #i
+      & HTLCCommitted(pin, <'fail', y>, n2) @ #j
+     ==> Ex #l. LtkCompromised(P) @ #l"
+
+// add: the gap: the downstream peer starts the settle (Redeemed) but the
+// add: update is never committed before the incoming HTLC expires, so the
+// add: honest forwarder has not claimed upstream. If this trace exists,
+// add: Forwarder_Claims_In_Time (stated on Redeemed) cannot hold here.
+lemma Claim_Gap_Witness:   // add
+  exists-trace
+  "Ex P Prev Next pin pout y %tIn %tOut %b #f #e #i #k.
+        HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
+      & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
+      & Redeemed(pout, y) @ #i & #i < #k
+      & Tick(%b) @ #k & %tIn << %b & #f < #k
+      & not (Ex X #c. LtkCompromised(X) @ #c)
+      & not (Ex #l. Redeemed(pin, y) @ #l & #l < #k)"
+
 lemma Forwarder_Refunds_In_Time [heuristic={forwarder_resolution}]:
     "All P Prev Next pin pout y %tIn %tOut %b #f #e #k.
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f

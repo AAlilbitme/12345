@@ -53,7 +53,9 @@ SAFETY = state_update delayed_funds instant_funds settlement_is_traceable \
 LIVENESS = Cheating_Never_Pays Intermediary_Never_Loses_Under_Liveness \
            Payment_Atomicity_Under_Liveness Timeout_Race_Blocked \
            Forwarder_Claims_In_Time Forwarder_Refunds_In_Time \
-           Intermediary_Recovers_Funds
+           Intermediary_Recovers_Funds \
+           Forwarder_Claims_In_Time_Committed Intermediary_Never_Loses_Committed \
+           Claim_Gap_Witness   # add: goal-2 versions and the gap witness
 
 .PHONY: all verify goal2 helpers safety liveness lemma summary check-count clean
 SHELL = /bin/bash
