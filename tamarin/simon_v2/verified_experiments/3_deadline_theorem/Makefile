@@ -41,9 +41,12 @@ one-hop:
 	-@$(RUN1) Ablation_Concrete $(ABLATION)
 	-@$(RUN1) Gap_Concrete $(GAPCTRL)
 
-# add: the two-hop composition is run only after the one-hop theorem verified.
+# add: the two-hop composition is run only after the one-hop theorem verified
+# add: at the SAME revision (no uncommitted changes) and with the same flags.
+REV = $(shell git rev-parse --short HEAD)$(shell git diff --quiet -- . || echo +dirty)
 two-hop:
-	@grep -P "\tDeadline_Per_Hop\t.*\tVERIFIED\t" results.tsv > /dev/null 2>&1 || { echo "run make one-hop first (Deadline_Per_Hop not verified)"; exit 1; }
+	@awk -F'\t' -v rev="$(REV)" -v fl="$(strip $(THEOREM))" '$$2==rev && $$6=="Deadline_Per_Hop" && $$7==fl && $$10=="VERIFIED" {ok=1} END {exit !ok}' results.tsv 2>/dev/null \
+	  || { echo "Deadline_Per_Hop not VERIFIED at revision $(REV) with $(strip $(THEOREM)): run make one-hop first"; exit 1; }
 	-@for L in $(TWO_THEOREM) $(TWO_WITNESS); do $(RUN2) $$L $(THEOREM); done
 	-@$(RUN2) Two_Hop_Gap_Pinned $(GAPCTRL)
 

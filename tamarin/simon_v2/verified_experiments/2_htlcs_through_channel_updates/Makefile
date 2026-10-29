@@ -55,7 +55,8 @@ LIVENESS = Cheating_Never_Pays Intermediary_Never_Loses_Under_Liveness \
            Forwarder_Claims_In_Time Forwarder_Refunds_In_Time \
            Intermediary_Recovers_Funds
 
-.PHONY: all verify goal2 helpers safety liveness lemma summary clean
+.PHONY: all verify goal2 helpers safety liveness lemma summary check-count clean
+SHELL = /bin/bash
 
 all: goal2 helpers safety
 verify: all
@@ -75,6 +76,13 @@ liveness:
 
 lemma:
 	-@$(RUN) $(L) $(FLAGS)
+
+# add: check that GOAL2 + HELPERS + SAFETY is exactly what Tamarin loads
+# add: without flags, and LIVENESS what it adds with -D=LIVENESS.
+check-count:
+	@diff <(echo $(GOAL2) $(HELPERS) $(SAFETY) | tr ' ' '\n' | sort) <(../list_lemmas.sh $(THEORY) lemmasupd.spthy | sort) && echo "Makefile lists match the theory (no flags)"
+	@TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) $(THEORY) lemmasupd.spthy
+	@FLAG=LIVENESS TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) $(THEORY) lemmasupd.spthy
 
 summary:
 	@echo "results.tsv (latest run of each lemma/flags):"

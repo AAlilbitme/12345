@@ -19,7 +19,7 @@ export MEM   ?= 8G
 SAFETY_LEMMAS   = $(shell ../list_lemmas.sh lemmas.spthy)
 LIVENESS_LEMMAS = $(shell FLAG=LIVENESS ../list_lemmas.sh lemmas.spthy)
 
-.PHONY: all verify safety liveness count regression lemma summary interactive clean
+.PHONY: all verify safety liveness count check-count regression lemma summary interactive clean
 
 all: safety liveness
 verify: all
@@ -28,6 +28,11 @@ count:
 	@echo "declared in lemmas.spthy: $$(grep -c '^lemma' lemmas.spthy)"
 	@echo "loaded without flags:     $(words $(SAFETY_LEMMAS))"
 	@echo "loaded with -D=LIVENESS:  $(words $(LIVENESS_LEMMAS))"
+
+# add: check the lemma lists against what Tamarin itself loads (a few minutes).
+check-count:
+	@TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) lemmas.spthy
+	@FLAG=LIVENESS TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) lemmas.spthy
 
 safety:
 	-@for L in $(SAFETY_LEMMAS); do $(RUN) $$L; done
