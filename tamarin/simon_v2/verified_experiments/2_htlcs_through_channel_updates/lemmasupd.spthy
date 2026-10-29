@@ -83,7 +83,7 @@ lemma HTLC_On_Opened_Channel [reuse, use_induction]:
         HTLCAdded(ptr, y) @ #i
      ==> Ex X Y #j. ChannelOpen(X, Y, ptr) @ #j & #j < #i"
 
-lemma Fulfilled_Requires_Release [reuse, use_induction, heuristic=S]:
+lemma Fulfilled_Requires_Release [reuse, use_induction, heuristic={fulfilled_back}]: // add: was heuristic=S
     "All ptr x #i.
         FulfilledProduced(ptr, x) @ #i
      ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"

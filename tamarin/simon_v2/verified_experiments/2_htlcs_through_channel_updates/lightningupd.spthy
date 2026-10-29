@@ -92,6 +92,23 @@ prio:
 deprio:
     regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "!UpdateDone"
 
+// add: tactic for Fulfilled_Requires_Release: follow the Fulfilled /
+// add: AwaitFulfilled facts back to the preimage release and leave the channel
+// add: update chain (Committed, InFlight, UpdateFor) for last. With heuristic=S
+// add: the proof runs out of memory on this model.
+tactic: fulfilled_back   // add
+presort: s
+prio:
+    regex "^\s*Fulfilled[(]"
+prio:
+    regex "^\s*AwaitFulfilled[(]"
+prio:
+    regex "^\s*(IntermediaryPending|ReceiverInv)[(]"
+deprio:
+    regex "Committed[(]" | regex "InFlight[(]" | regex "UpdateFor[(]" | regex "!UpdateDone"
+deprio:
+    regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "RouteInfo" | regex "Mutex"
+
 // add: a route on a channel for a hash is created at most once (it comes from
 // add: the single committed add of that hash on that channel).
 lemma Route_Made_Once [reuse, heuristic={route_once}]:   // add
