@@ -54,7 +54,7 @@ gitrev=${GITREV:-$(git rev-parse --short HEAD 2>/dev/null || echo none)}   # GIT
 tver=$("$TAMARIN" --version 2>/dev/null | head -1 | sed -E 's/.*tamarin-prover ([^ ,]+).*/\1/')
 mver=$(maude --version 2>/dev/null | head -1)
 printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-    "$(date -Iseconds)" "$gitrev" "$tver" "$mver" "$THEORY" "$LEMMA" "$*" \
+    "$(date -Iseconds)" "$gitrev" "$tver" "$mver" "$THEORY" "$LEMMA" "$*${TAG:+ $TAG}" \
     "$LIMIT" "$MEM" "$res" "${steps:--}" "$secs" "$code" "${peak:--}" "$loaded" >> "$RESULTS"
 printf "%-18s %-45s %6s steps %6ss %9s\n" "$res" "$LEMMA" "${steps:--}" "$secs" "${peak:--}"
 [ "$res" = VERIFIED ]
