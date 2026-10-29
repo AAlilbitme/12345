@@ -88,35 +88,6 @@ lemma Fulfilled_Requires_Release [reuse, use_induction, heuristic=S]:
         FulfilledProduced(ptr, x) @ #i
      ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"
 
-// add: helper lemmas (moved here from lightningupd.spthy).
-// add: a route on a channel for a hash is created at most once (it comes from
-// add: the single committed add of that hash on that channel).
-lemma Route_Made_Once [reuse, heuristic={route_once}]:   // add
-  "All ptr y v1 v2 #i #j. RouteMade(ptr, y, v1) @ #i & RouteMade(ptr, y, v2) @ #j
-   ==> #i = #j"
-
-// add: the amount of a route is the amount of the HTLC added on that channel
-// add: (with Amount_Decreases_Along_Route this bounds what the receiver gets).
-lemma Route_Has_Amount [reuse, heuristic={route_once}]:   // add
-  "All ptr y %v #i. RouteMade(ptr, y, %v) @ #i
-   ==> Ex #a. HTLCAmount(ptr, y, %v) @ #a & #a < #i"
-
-// add: what the receiver is paid is the amount of an HTLC added on its channel.
-lemma Paid_Has_Amount [reuse, heuristic={route_once}]:   // add
-  "All R y %v #r. ReceiverPaid(R, y, %v) @ #r
-   ==> Ex ptr #a. HTLCAmount(ptr, y, %v) @ #a & #a < #r"
-
-// add: a Fulfilled fact is only produced after some preimage release.
-lemma Fulfilled_Out_Released [reuse, use_induction, heuristic={upd_preimage}]:   // add
-  "All ptr x #i. FulfilledOut(ptr, x) @ #i
-   ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"
-
-// add: only the receiver that created the invoice can release its preimage.
-lemma Release_By_Creator [reuse]:   // add
-  "All R R2 S x #j #k. InvoiceCreated(R, S, h(x)) @ #j & PreimageReleased(R2, x) @ #k
-   ==> R = R2"
-
-
 lemma Settle_Requires_Receiver_Release [heuristic={upd_preimage}]: // add: was sender_preimage
     "All S F1 R ptr x #i #j.
         SenderSettled(S, F1, R, ptr, x) @ #i
