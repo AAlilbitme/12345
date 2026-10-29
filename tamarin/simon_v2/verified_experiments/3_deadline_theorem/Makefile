@@ -1,5 +1,20 @@
+# add: every lemma runs in its own Tamarin call through ../run_lemma.sh (result
+# add: classification + metadata in results.tsv, full logs in logs/).
+# add: Three kinds of runs, kept apart:
+# add:   theorem  - universal lemmas, never bounded
+# add:   witness  - exists-trace lemmas showing the assumptions are satisfiable
+# add:   control  - exists-trace counterexamples: VERIFIED here means the
+# add:              counterexample trace WAS found (the property fails without
+# add:              the assumption), as intended.
+#
+#   make                 one-hop then two-hop
+#   make summary         counts per result from results.tsv
+
 TAMARIN ?= tamarin-prover
-RTS      = --derivcheck-timeout=600 +RTS -M8G -RTS
+export LIMIT ?= 1800
+export MEM   ?= 8G
+RUN1 = TAMARIN=$(TAMARIN) ../run_lemma.sh deadline_core.spthy
+RUN2 = TAMARIN=$(TAMARIN) ../run_lemma.sh deadline_core2.spthy
 
 THEOREM  = -D=LIVENESS -D=BOUND -D=GAP2   # all assumptions
 ABLATION = -D=LIVENESS -D=GAP2            # without bounded responsiveness
@@ -8,51 +23,36 @@ GAPCTRL  = -D=LIVENESS -D=BOUND -D=GAP1   # gap tOut + 1 <= tIn (below D = 2)
 # One hop (deadline_core.spthy)
 ONE_SAFETY  = Settle_Commit_Correspondence Stamp_Between_Ticks \
               Request_Without_Commit Commit_Without_Receipt
-ONE_THEOREM = Deadline_Per_Hop Deadline_Witness_Concrete Deadline_Witness_Consecutive
+ONE_THEOREM = Deadline_Per_Hop
+ONE_WITNESS = Deadline_Witness_Concrete Deadline_Witness_Consecutive
 
 # Two forwarders (deadline_core2.spthy)
-TWO_THEOREM = Deadline_Stamp_Per_Hop End_To_End_Two_Hops Two_Hop_Witness_Pinned Two_Hop_Witness_Consecutive_A
+TWO_THEOREM = Deadline_Stamp_Per_Hop End_To_End_Two_Hops
+TWO_WITNESS = Two_Hop_Witness_Pinned Two_Hop_Witness_Consecutive_A
 
-.PHONY: all verify one-hop two-hop one-safety one-theorem one-ablation one-gap \
-        two-theorem two-gap clean
+.PHONY: all verify one-hop two-hop lemma summary clean
 
 all: one-hop two-hop
-
 verify: all
 
-one-hop: one-safety one-theorem one-ablation one-gap
+one-hop:
+	-@for L in $(ONE_SAFETY); do $(RUN1) $$L; done
+	-@for L in $(ONE_THEOREM) $(ONE_WITNESS); do $(RUN1) $$L $(THEOREM); done
+	-@$(RUN1) Ablation_Concrete $(ABLATION)
+	-@$(RUN1) Gap_Concrete $(GAPCTRL)
 
-two-hop: two-theorem two-gap
+# add: the two-hop composition is run only after the one-hop theorem verified.
+two-hop:
+	@grep -P "\tDeadline_Per_Hop\t.*\tVERIFIED\t" results.tsv > /dev/null 2>&1 || { echo "run make one-hop first (Deadline_Per_Hop not verified)"; exit 1; }
+	-@for L in $(TWO_THEOREM) $(TWO_WITNESS); do $(RUN2) $$L $(THEOREM); done
+	-@$(RUN2) Two_Hop_Gap_Pinned $(GAPCTRL)
 
-# Correspondence, stamp invariant, request != commit, commit != receipt.
-one-safety:
-	LANG=C.UTF-8 $(TAMARIN) deadline_core.spthy $(addprefix --prove=,$(ONE_SAFETY)) $(RTS) > one_safety.log 2>&1
-	@grep -E "^  [A-Za-z_]+ \(" one_safety.log | grep -E "verified|falsified"
+# One lemma, e.g. make lemma F=deadline_core.spthy L=Deadline_Per_Hop FLAGS="-D=LIVENESS -D=BOUND -D=GAP2"
+lemma:
+	-@TAMARIN=$(TAMARIN) ../run_lemma.sh $(F) $(L) $(FLAGS)
 
-# Per-hop deadline theorem and its witnesses.
-one-theorem:
-	LANG=C.UTF-8 $(TAMARIN) deadline_core.spthy $(THEOREM) $(addprefix --prove=,$(ONE_THEOREM)) $(RTS) > one_theorem.log 2>&1
-	@grep -E "^  [A-Za-z_]+ \(" one_theorem.log | grep -E "verified|falsified"
-
-# Control: without bounded responsiveness a counterexample exists ("verified" = trace found).
-one-ablation:
-	LANG=C.UTF-8 $(TAMARIN) deadline_core.spthy $(ABLATION) --prove=Ablation_Concrete $(RTS) > one_ablation.log 2>&1
-	@grep -E "^  Ablation_Concrete \(" one_ablation.log
-
-# Control: with a gap below D a counterexample exists ("verified" = trace found).
-one-gap:
-	LANG=C.UTF-8 $(TAMARIN) deadline_core.spthy $(GAPCTRL) --prove=Gap_Concrete $(RTS) > one_gap.log 2>&1
-	@grep -E "^  Gap_Concrete \(" one_gap.log
-
-# Composable per-hop theorem, end-to-end theorem over two forwarders, witnesses.
-two-theorem:
-	LANG=C.UTF-8 $(TAMARIN) deadline_core2.spthy $(THEOREM) $(addprefix --prove=,$(TWO_THEOREM)) $(RTS) > two_theorem.log 2>&1
-	@grep -E "^  [A-Za-z_]+ \(" two_theorem.log | grep -E "verified|falsified"
-
-# Control: with gaps below D the end-to-end claim fails ("verified" = trace found).
-two-gap:
-	LANG=C.UTF-8 $(TAMARIN) deadline_core2.spthy $(GAPCTRL) --prove=Two_Hop_Gap_Pinned $(RTS) > two_gap.log 2>&1
-	@grep -E "^  Two_Hop_Gap_Pinned \(" two_gap.log
+summary:
+	@tail -n +2 results.tsv | awk -F'\t' '{k=$$5" "$$6" "$$7; r[k]=$$10} END {for (k in r) c[r[k]]++; for (x in c) printf "  %-14s %d\n", x, c[x]}'
 
 clean:
-	rm -f one_*.log two_*.log
+	rm -rf logs results.tsv

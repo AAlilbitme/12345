@@ -1,3 +1,5 @@
 results.log
 *.log
 each.txt
+logs/
+results.tsv

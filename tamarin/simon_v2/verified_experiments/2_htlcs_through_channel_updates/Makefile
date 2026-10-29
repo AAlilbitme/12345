@@ -1,12 +1,31 @@
+# add: every lemma runs in its own Tamarin call through ../run_lemma.sh, which
+# add: classifies the result (VERIFIED, FALSIFIED, INCOMPLETE, TIMEOUT,
+# add: OUT_OF_MEMORY, ERROR) and appends a row with git revision, tool
+# add: versions, flags, limits and result to results.tsv. Full logs: logs/.
+#
+#   make                 goal2 + helpers + safety (no flags)
+#   make liveness        lemmas that exist only with -D=LIVENESS
+#   make summary         counts per result from results.tsv
+#   make lemma L=Hand_Payment [FLAGS=-D=LIVENESS]
+#   LIMIT=3600 MEM=12G make ...   change time / memory limit per lemma
+
 TAMARIN ?= tamarin-prover
 THEORY   = lightningupd.spthy
-RTS      = --derivcheck-timeout=600 +RTS -M8G -RTS
+RUN      = TAMARIN=$(TAMARIN) ../run_lemma.sh $(THEORY)
+export LIMIT ?= 1800
+export MEM   ?= 8G
 
 # Goal 2: HTLC steps take effect only after a completed channel update.
-GOAL2  = Settle_Is_Channel_Update HTLC_Commit_Correspondence Hand_Payment
+# add: the last four are new (Add/Fulfil/Fail through channel updates, refund witness).
+GOAL2  = Settle_Is_Channel_Update HTLC_Commit_Correspondence Hand_Payment \
+         Add_Is_Channel_Update Fulfil_Needs_Committed_Add \
+         Fail_Is_Channel_Update Refund_Path_Witness
 
-# Simon's safety lemmas (and ours): 42 of the 50 here; the other 8 are in
-# FIXED below. A full --prove does not finish.   // add: updated comment
+# add: helper lemmas for the safety lemmas below (proof aids, not results).
+HELPERS = Route_Made_Once Route_Has_Amount Paid_Has_Amount \
+          Fulfilled_Out_Released Release_By_Creator
+
+# Simon's safety lemmas (and ours), 50 in the configuration without flags.
 SAFETY = state_update delayed_funds instant_funds settlement_is_traceable \
          No_Punishment_Without_Cheating Funds_Locked_Before_Update \
          Update_Requires_Negotiation OneOutcomePerHTLC \
@@ -24,56 +43,42 @@ SAFETY = state_update delayed_funds instant_funds settlement_is_traceable \
          Offer_Precedes_Forwards Redeem_Reveals Expiry_Below_First_Hop \
          Incoming_Resolved_By_Claim_Or_Timeout Outgoing_Preimage_Kept \
          Collect_Enabled Refund_Enabled Invoice_Signature_Origin \
-         Punish_Enabled Offer_Requires_Invoice No_Double_Publish
+         Punish_Enabled Offer_Requires_Invoice No_Double_Publish \
+         Funding_Spent_Once Forward_Requires_Incoming \
+         Settle_Requires_Receiver_Release Hop_Forwarded_Once \
+         Forward_Excludes_Fulfill Receiver_Paid_At_Most_Offered \
+         Settle_Excludes_Sender_Refund Sender_Pays_Invoice_Plus_Fees
 
-# add: helper lemmas (in lightningupd.spthy) and the eight lemmas that used to
-# add: time out (Funding_Spent_Once takes 1-2 h); run one by one. Route_Made_Once needs --bound=6.
-HELPERS = Release_By_Creator Fulfilled_Out_Released Paid_Has_Amount Route_Has_Amount
-FIXED   = Funding_Spent_Once Forward_Requires_Incoming Settle_Requires_Receiver_Release \
-          Hop_Forwarded_Once Forward_Excludes_Fulfill Receiver_Paid_At_Most_Offered \
-          Settle_Excludes_Sender_Refund Sender_Pays_Invoice_Plus_Fees
+# Lemmas that exist only with -D=LIVENESS.
+LIVENESS = Cheating_Never_Pays Intermediary_Never_Loses_Under_Liveness \
+           Payment_Atomicity_Under_Liveness Timeout_Race_Blocked \
+           Forwarder_Claims_In_Time Forwarder_Refunds_In_Time \
+           Intermediary_Recovers_Funds
 
-.PHONY: all verify goal2 safety fixed each lemma clean
+.PHONY: all verify goal2 helpers safety liveness lemma summary clean
 
-all: goal2 safety fixed
-
-# add: helpers, then the eight formerly timed-out lemmas, one call each.
-fixed:
-	@LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=Route_Made_Once --bound=6 $(RTS) 2>&1 | grep -E "^  Route_Made_Once \("
-	@for L in $(HELPERS) $(FIXED); do \
-	  LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=$$L $(RTS) 2>&1 | grep -E "^  $$L \("; \
-	done
-
+all: goal2 helpers safety
 verify: all
 
-# The goal-2 lemmas (3/3 verified).
 goal2:
-	LANG=C.UTF-8 $(TAMARIN) $(THEORY) $(addprefix --prove=,$(GOAL2)) $(RTS) > goal2.log 2>&1
-	@grep -E "^  [A-Za-z_]+ \(" goal2.log | grep -E "verified|falsified"
+	-@for L in $(GOAL2); do $(RUN) $$L; done
 
-# The 42 safety lemmas that verify on this model.
-# add: one Tamarin call per lemma; a single call for all 42 runs out of memory
-# add: on a laptop (8 GB heap) now that the helper lemmas are [reuse].
+helpers:
+	-@for L in $(HELPERS); do $(RUN) $$L; done
+
 safety:
-	@: > safety.log
-	@for L in $(SAFETY); do \
-	  LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=$$L $(RTS) 2>&1 | grep -E "^  $$L \(" | tee -a safety.log; \
-	done
+	-@for L in $(SAFETY); do $(RUN) $$L; done
 
-# Every lemma of the theory, one Tamarin call each, with a time limit per lemma
-# (LIMIT seconds, default 900). Results are collected in each.txt as
-# verified / falsified / TIMEOUT. Takes hours: about 60 lemmas.
-LIMIT ?= 900
-each:
-	@: > each.txt
-	@for L in $$(grep -h "^lemma" $(THEORY) lemmasupd.spthy | sed -E 's/^lemma ([A-Za-z_0-9]+).*/\1/'); do \
-	  r=$$(LANG=C.UTF-8 timeout $(LIMIT) $(TAMARIN) $(THEORY) --prove=$$L $(RTS) 2>&1 | grep -E "^  $$L \("); \
-	  echo "$${r:-  $$L: TIMEOUT ($(LIMIT)s)}" | tee -a each.txt; \
-	done
+# add: Hand_Payment first: it shows the liveness restrictions still allow a payment.
+liveness:
+	-@for L in Hand_Payment $(LIVENESS); do $(RUN) $$L -D=LIVENESS; done
 
-# One lemma, e.g. make lemma L=Hand_Payment
 lemma:
-	LANG=C.UTF-8 $(TAMARIN) $(THEORY) --prove=$(L) $(RTS) 2>&1 | grep -E "^  $(L) \("
+	-@$(RUN) $(L) $(FLAGS)
+
+summary:
+	@echo "results.tsv (latest run of each lemma/flags):"
+	@tail -n +2 results.tsv | awk -F'\t' '{k=$$6" "$$7; r[k]=$$10} END {for (k in r) c[r[k]]++; for (x in c) printf "  %-14s %d\n", x, c[x]}'
 
 clean:
-	rm -f goal2.log safety.log each.txt
+	rm -rf logs results.tsv
