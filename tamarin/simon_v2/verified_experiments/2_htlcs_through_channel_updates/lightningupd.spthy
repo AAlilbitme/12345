@@ -74,6 +74,38 @@ lemma Hand_Payment:
     & not (Ex t #i. Tick(t) @ #i)"
 
 
+// add: an HTLC is forwarded only after its incoming add was committed through a
+// add: completed channel update of the incoming channel.
+lemma Add_Is_Channel_Update [heuristic={upd}]:   // add
+  "All Me Prev Next pin pout y #f. HTLCForwarded(Me, Prev, Next, pin, pout, y) @ #f
+   ==> Ex n #c. HTLCCommitted(pin, <'add', y>, n) @ #c & #c < #f"
+
+// add: same for the receiver: it fulfils only a committed add.
+lemma Fulfil_Needs_Committed_Add [heuristic={upd}]:   // add
+  "All R Prev pin y #r. HTLCFulfilled(R, Prev, pin, y) @ #r
+   ==> Ex n #c. HTLCCommitted(pin, <'add', y>, n) @ #c & #c < #r"
+
+// add: a fail update is committed only for an HTLC that was refunded after
+// add: its timeout.
+lemma Fail_Is_Channel_Update [heuristic={upd}]:   // add
+  "All ptr y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c
+   ==> Ex P #r. Refunded(P, ptr, y) @ #r & #r < #c"
+
+// add: witness for the refund path: the sender refunds after the timeout and
+// add: the fail goes through a completed channel update.
+lemma Refund_Path_Witness:   // add
+  exists-trace
+  "Ex S F p y n n2 A B #o #c0 #r #u #s #c.
+      HTLCOffered(S, F, p, y) @ #o
+    & HTLCCommitted(p, <'add', y>, n) @ #c0
+    & Refunded(S, p, y) @ #r
+    & ChannelUpdateFor(p, <'fail', y>, n2) @ #u
+    & StateUpdate(A, B, p, n2) @ #s
+    & HTLCCommitted(p, <'fail', y>, n2) @ #c
+    & #o < #c0 & #c0 < #r & #r < #u & #u < #s & #s < #c
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+
 
 // Simon's lemmas (and ours) come after the two goal-2 lemmas: their [reuse]
 // lemmas would otherwise be added to the goal-2 proofs and make them loop.
