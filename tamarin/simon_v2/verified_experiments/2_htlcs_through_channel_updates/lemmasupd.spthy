@@ -167,20 +167,20 @@ lemma Fail_From_Refund [reuse, heuristic={upd}]:   // add
 
 // add: an HTLC is never both settled and failed on the same channel (both
 // add: start with Old(ptr, y), which happens once).
-lemma Settle_Fail_Exclusive [reuse, heuristic={live_commit}]:   // add
+lemma Settle_Fail_Exclusive [reuse]:   // add
     "All ptr y n1 n2 #i #j.
         HTLCCommitted(ptr, <'settle', y>, n1) @ #i
       & HTLCCommitted(ptr, <'fail', y>, n2) @ #j
      ==> F"
 
-lemma Intermediary_Never_Loses_Under_Liveness [heuristic={live_commit}]:   // add: heuristic
+lemma Intermediary_Never_Loses_Under_Liveness:   // add: (live_commit tactic removed; the default heuristic works with the helpers)
     "All P Prev Next Up ptrIn ptrOut y #i #j #k.
         HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i
       & Redeemed(ptrOut, y) @ #j
       & Refunded(Up, ptrIn, y) @ #k
      ==> Ex #l. LtkCompromised(P) @ #l"
 
-lemma Payment_Atomicity_Under_Liveness [heuristic={live_commit}]:   // add: heuristic
+lemma Payment_Atomicity_Under_Liveness:   // add: (live_commit tactic removed; the default heuristic works with the helpers)
     "All F1 F2 Prev1 Next1 Prev2 Next2 ptrSF1 ptrF1F2 ptrF2R y #i #j #k.
         HTLCForwarded(F1, Prev1, Next1, ptrSF1, ptrF1F2, y) @ #i
       & HTLCForwarded(F2, Prev2, Next2, ptrF1F2, ptrF2R, y) @ #j
@@ -188,7 +188,7 @@ lemma Payment_Atomicity_Under_Liveness [heuristic={live_commit}]:   // add: heur
       & (not Ex P #l. LtkCompromised(P) @ #l)
      ==> not (Ex Up #m. Refunded(Up, ptrSF1, y) @ #m)"
 
-lemma Timeout_Race_Blocked [heuristic={live_commit}]:   // add: heuristic
+lemma Timeout_Race_Blocked:   // add: (live_commit tactic removed; the default heuristic works with the helpers)
     "not (Ex P Prev Next Up ptrIn ptrOut y %tIn %tOut %b #l #e #i #j #k.
         HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #l
       & ForwardExpiries(ptrIn, ptrOut, y, %tIn, %tOut) @ #e
@@ -237,7 +237,7 @@ lemma Claim_Excludes_Refund [reuse, heuristic={pending_once}]:
      ==> F"
 
 #ifdef LIVENESS
-lemma Forwarder_Claims_In_Time [heuristic={live_commit}]:   // add: heuristic
+lemma Forwarder_Claims_In_Time:   // add: (live_commit tactic removed; the default heuristic works with the helpers)
     "All P Prev Next pin pout y %tIn %tOut %b #f #e #i #k.
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
       & ForwardExpiries(pin, pout, y, %tIn, %tOut) @ #e
@@ -262,7 +262,7 @@ lemma Forwarder_Claims_In_Time_Committed:   // add
 
 // add: an honest forwarder never has its outgoing settle and its incoming
 // add: fail both committed (it never pays downstream without being paid).
-lemma Intermediary_Never_Loses_Committed [heuristic={live_commit}]:   // add: heuristic
+lemma Intermediary_Never_Loses_Committed:   // add: (live_commit tactic removed; the default heuristic works with the helpers)
     "All P Prev Next pin pout y n1 n2 #f #i #j.
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f
       & HTLCCommitted(pout, <'settle', y>, n1) @ #i
