@@ -93,16 +93,25 @@ lemma Fail_Is_Channel_Update [heuristic={upd}]:   // add
 
 // add: witness for the refund path: the sender refunds after the timeout and
 // add: the fail goes through a completed channel update.
-lemma Refund_Path_Witness:   // add
+// add: the trace is pinned (one channel, two ticks, two HTLC updates) to keep the search small.
+lemma Refund_Path_Witness [heuristic={upd}]:   // add
   exists-trace
-  "Ex S F p y n n2 A B #o #c0 #r #u #s #c.
-      HTLCOffered(S, F, p, y) @ #o
+  "Ex S F p y n n2 A B a0 b0 %t %b #o0 #o #c0 #t1 #t2 #r #u #s #c.
+      ChannelOpen(a0, b0, p) @ #o0
+    & HTLCOffered(S, F, p, y) @ #o
+    & HTLCExpiry(p, y, %t) @ #o
     & HTLCCommitted(p, <'add', y>, n) @ #c0
+    & Tick(%t) @ #t1 & Tick(%b) @ #t2 & %t << %b
     & Refunded(S, p, y) @ #r
     & ChannelUpdateFor(p, <'fail', y>, n2) @ #u
     & StateUpdate(A, B, p, n2) @ #s
     & HTLCCommitted(p, <'fail', y>, n2) @ #c
-    & #o < #c0 & #c0 < #r & #r < #u & #u < #s & #s < #c
+    & #o0 < #o & #o < #c0 & #c0 < #t1 & #t1 < #t2 & #t2 < #r
+    & #r < #u & #u < #s & #s < #c
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o0)
+    & (All x #i. Tick(x) @ #i ==> (#i = #t1 | #i = #t2))
+    & (All q op m #i. HTLCCommitted(q, op, m) @ #i ==> (#i = #c0 | #i = #c))
+    & (All a b q m #i. StateUpdate(a, b, q, m) @ #i ==> (#i = #s | #i < #c0))
     & not (Ex X #k. LtkCompromised(X) @ #k)"
 
 
