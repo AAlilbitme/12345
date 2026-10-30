@@ -50,7 +50,10 @@ SAFETY = state_update delayed_funds instant_funds settlement_is_traceable \
          Settle_Excludes_Sender_Refund Sender_Pays_Invoice_Plus_Fees
 
 # Lemmas that exist only with -D=LIVENESS.
-LIVENESS = Cheating_Never_Pays Intermediary_Never_Loses_Under_Liveness \
+# add: the first four are helper lemmas (only in the LIVENESS block).
+LIVENESS = Redeem_Refund_Exclusive Settle_From_Redeem Fail_From_Refund \
+           Settle_Fail_Exclusive \
+           Cheating_Never_Pays Intermediary_Never_Loses_Under_Liveness \
            Payment_Atomicity_Under_Liveness Timeout_Race_Blocked \
            Forwarder_Claims_In_Time Forwarder_Refunds_In_Time \
            Intermediary_Recovers_Funds \
