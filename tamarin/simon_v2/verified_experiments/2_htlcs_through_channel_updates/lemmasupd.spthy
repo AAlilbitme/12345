@@ -149,6 +149,22 @@ lemma Forward_Expiry_From_Upstream [reuse, heuristic={route_first}]:
 // add: the LIVENESS block, so the configuration without flags (50 safety
 // add: lemmas) does not load them, and only later lemmas reuse them.
 
+// add: a redeem and a refund of the same HTLC exclude each other (both
+// add: happen with Old(ptr, y), which happens once).
+lemma Redeem_Refund_Exclusive [reuse]:   // add
+    "All P ptr y #o #r. Redeemed(ptr, y) @ #o & Refunded(P, ptr, y) @ #r ==> F"
+
+// add: a committed settle comes from a redeem of that HTLC.
+lemma Settle_From_Redeem [reuse, heuristic={upd}]:   // add
+    "All ptr y n #c. HTLCCommitted(ptr, <'settle', y>, n) @ #c
+     ==> Ex #o. Redeemed(ptr, y) @ #o & #o < #c"
+
+// add: a committed fail comes from a refund (which needs the expiry tick,
+// add: Refund_Requires_Timeout).
+lemma Fail_From_Refund [reuse, heuristic={upd}]:   // add
+    "All ptr y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c
+     ==> Ex P #r. Refunded(P, ptr, y) @ #r & #r < #c"
+
 // add: an HTLC is never both settled and failed on the same channel (both
 // add: start with Old(ptr, y), which happens once).
 lemma Settle_Fail_Exclusive [reuse, heuristic={live_commit}]:   // add
@@ -156,12 +172,6 @@ lemma Settle_Fail_Exclusive [reuse, heuristic={live_commit}]:   // add
         HTLCCommitted(ptr, <'settle', y>, n1) @ #i
       & HTLCCommitted(ptr, <'fail', y>, n2) @ #j
      ==> F"
-
-// add: a committed fail comes from a refund (which needs the expiry tick,
-// add: Refund_Requires_Timeout).
-lemma Fail_From_Refund [reuse, heuristic={upd}]:   // add
-    "All ptr y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c
-     ==> Ex P #r. Refunded(P, ptr, y) @ #r & #r < #c"
 
 lemma Intermediary_Never_Loses_Under_Liveness [heuristic={live_commit}]:   // add: heuristic
     "All P Prev Next Up ptrIn ptrOut y #i #j #k.
