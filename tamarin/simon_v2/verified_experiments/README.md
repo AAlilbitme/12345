@@ -22,11 +22,19 @@ Lemma counts: `lemmas.spthy` declares 58 lemmas. Some sit in `#ifdef LIVENESS ..
 | `lemmasupd.spthy` | `lemmas.spthy` without `Payment_Base` |
 | `tactics.spthy` | Same as in folder 1 |
 
-Verified: `Settle_Is_Channel_Update` (30 steps), `HTLC_Commit_Correspondence` (10 steps: every commit comes from the matching channel update and state update), `Hand_Payment` (83 steps), and **all 50** safety lemmas from `lemmasupd.spthy`, none falsified:
-- 42 with `make safety` (one Tamarin call per lemma);
-- `Settle_Excludes_Sender_Refund` (194 steps) and `Sender_Pays_Invoice_Plus_Fees` (1470 steps) with a 30-min limit per lemma;
-- the five that used to time out, with new tactics and helper lemmas (`make fixed`, all additions marked `// add`): `Forward_Requires_Incoming` (182), `Settle_Requires_Receiver_Release` (778), `Hop_Forwarded_Once` (10), `Forward_Excludes_Fulfill` (6), `Receiver_Paid_At_Most_Offered` (4). Helpers: `Route_Made_Once` (146, needs `--bound=6`), `Route_Has_Amount` (74), `Paid_Has_Amount` (6), `Fulfilled_Out_Released` (275), `Release_By_Creator` (23). The model only gains the action labels `RouteMade` and `FulfilledOut`;
-- `Funding_Spent_Once` (7140 steps, about 1-2 h on its own). Per-lemma results in `2_htlcs_through_channel_updates/each_results.txt`; summary in `notes/deadline_status.md`. Run them all with `make each` (hours).
+Results (Tamarin 1.10, one lemma per call, 12 GB heap; every run is recorded in `results.tsv` with git revision, versions, flags, limits, result, steps, time and peak memory). Nothing is falsified except the gap witness, whose falsification is the expected result.
+
+- **Goal 2, no flags (7/7 verified):** `Settle_Is_Channel_Update` (30 steps), `HTLC_Commit_Correspondence` (10), `Hand_Payment` (83), `Add_Is_Channel_Update` (8), `Fulfil_Needs_Committed_Add` (7), `Fail_Is_Channel_Update` (170), `Refund_Path_Witness` (32, exists-trace, pinned trace).
+- **Safety, no flags (50/50 verified)**, plus 5 helper lemmas (all verified, no `--bound`): `Route_Made_Once` (146), `Route_Has_Amount` (74), `Paid_Has_Amount` (6), `Fulfilled_Out_Released` (275), `Release_By_Creator` (11-23). Slowest: `Funding_Spent_Once` (7140 steps, 1-2 h), `Sender_Pays_Invoice_Plus_Fees` (1470). `Fulfilled_Requires_Release` uses the `fulfilled_back` tactic (with `heuristic=S` it runs out of memory).
+- **Liveness, `-D=LIVENESS` (all verified):** Simon's 7 (`Cheating_Never_Pays` 102, `Intermediary_Never_Loses_Under_Liveness` 12, `Payment_Atomicity_Under_Liveness` 84, `Timeout_Race_Blocked` 25, `Forwarder_Claims_In_Time` 9, `Forwarder_Refunds_In_Time` 121, `Intermediary_Recovers_Funds` 239), `Hand_Payment` (83: a payment is still possible under the liveness assumptions), two committed-settle versions (`Forwarder_Claims_In_Time_Committed` 7, `Intermediary_Never_Loses_Committed` 12) and 4 helpers that exist only in the LIVENESS block (`Redeem_Refund_Exclusive`, `Settle_From_Redeem`, `Fail_From_Refund`, `Settle_Fail_Exclusive`).
+- **`Claim_Gap_Witness`: falsified (9 steps), as expected.** No trace exists in which a downstream settle has started but is not committed before the incoming HTLC expires. This is an assumption, not a result: the liveness restrictions `ForwarderCollectsInTime` / `ForwarderRefundsInTime` force a started settle to complete in time. State it as such in the paper.
+
+All additions are marked `// add`. The model itself only gains the action labels `RouteMade` and `FulfilledOut`. Peak memory is about 8-10 GB per lemma, mostly for loading the model: run one prover at a time.
+
+    make                 # goal2 + helpers + safety, one call per lemma (several hours)
+    make liveness        # helpers + liveness lemmas with -D=LIVENESS
+    make summary         # counts per result
+    make check-count     # lemma lists vs. what Tamarin loads
 
 Scope: the channel abstraction permits at most one HTLC per payment hash per channel (`Mutex`, `OneHTLCPerHashPerChannel`). The `Mutex` comes from Simon's model; removing it (concurrent HTLCs on one channel) is goal 3. Request identifiers are unnecessary in the current proofs: a channel update is identified by (channel, hash, operation), and `HTLC_Commit_Correspondence` ties each `HTLCCommitted(ptr, op, n)` to the matching `ChannelUpdateFor(ptr, op, n)` and `StateUpdate(..., ptr, n)`. Retries with the same hash or duplicate settle requests would require carrying a unique HTLC/request identifier through `UpdateFor`, `ChannelUpdateFor`, `InFlight` and `HTLCCommitted`. This is a completion-aware core abstraction, not a complete multi-HTLC Lightning implementation.
 
@@ -64,10 +72,10 @@ default 5 s derivation check times out on these models). Add
 Prove named lemmas only; a full `--prove` does not finish.
 
     cd 2_htlcs_through_channel_updates
-    make verify                  # goal2 + safety + fixed
-    make goal2                   # Settle_Is_Channel_Update, HTLC_Commit_Correspondence, Hand_Payment
-    make safety                  # 42 safety lemmas, one call each
-    make fixed                   # helper lemmas + the 5 formerly timed-out lemmas
+    make verify                  # goal2 + helpers + safety
+    make goal2                   # the 7 goal-2 lemmas
+    make safety                  # the 50 safety lemmas, one call each
+    make liveness                # -D=LIVENESS lemmas
     make lemma L=Hand_Payment
 
     # without make:

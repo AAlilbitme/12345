@@ -137,3 +137,16 @@ Update (final): all 8 timeouts now verify, so 50/50 safety lemmas verified.
 Liveness-only lemmas (exist only with -D=LIVENESS; not run here): 7.
 Goal-2 lemmas: Settle_Is_Channel_Update (30), Hand_Payment (83) verified;
 HTLC_Commit_Correspondence verified (10 steps): every HTLCCommitted(ptr, op, n) is preceded by ChannelUpdateFor(ptr, op, n) and StateUpdate(_, _, ptr, n), in that order. The commit-based coupling is proved, not only inferred from the rules.
+
+
+## Goal-2 model: final status (one lemma per call, run_lemma.sh)
+- Goal 2: 7/7 verified (incl. Add/Fulfil/Fail_Is_Channel_Update, Refund_Path_Witness).
+- Safety: 50/50 verified; 5 helpers verified; Route_Made_Once no longer needs --bound
+  (it needed ~15 min and 10 GB). Fulfilled_Requires_Release: fulfilled_back tactic.
+- Liveness (-D=LIVENESS): all 7 of Simon's lemmas verified, plus Hand_Payment,
+  2 committed-settle versions and 4 LIVENESS-only helpers. Key step: helpers
+  Redeem_Refund_Exclusive, Settle_From_Redeem, Fail_From_Refund,
+  Settle_Fail_Exclusive with the default heuristic (a custom tactic made it worse).
+- Claim_Gap_Witness falsified (expected): under the liveness restrictions a
+  started settle is always committed before the incoming expiry. This is an
+  assumption of the model and must be stated as one.

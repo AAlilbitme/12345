@@ -58,7 +58,7 @@ LIVENESS = Redeem_Refund_Exclusive Settle_From_Redeem Fail_From_Refund \
            Forwarder_Claims_In_Time Forwarder_Refunds_In_Time \
            Intermediary_Recovers_Funds \
            Forwarder_Claims_In_Time_Committed Intermediary_Never_Loses_Committed \
-           Claim_Gap_Witness   # add: goal-2 versions and the gap witness
+           Claim_Gap_Witness   # add: goal-2 versions; Claim_Gap_Witness is expected FALSIFIED (no such trace)
 
 .PHONY: all verify goal2 helpers safety liveness lemma summary check-count clean
 SHELL = /bin/bash

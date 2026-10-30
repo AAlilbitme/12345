@@ -271,8 +271,9 @@ lemma Intermediary_Never_Loses_Committed:   // add: (live_commit tactic removed;
 
 // add: the gap: the downstream peer starts the settle (Redeemed) but the
 // add: update is never committed before the incoming HTLC expires, so the
-// add: honest forwarder has not claimed upstream. If this trace exists,
-// add: Forwarder_Claims_In_Time (stated on Redeemed) cannot hold here.
+// add: honest forwarder has not claimed upstream. RESULT: falsified (9 steps),
+// add: i.e. no such trace exists: the liveness restrictions force a started
+// add: settle to be committed in time. Expected result: FALSIFIED.
 lemma Claim_Gap_Witness:   // add
   exists-trace
   "Ex P Prev Next pin pout y %tIn %tOut %b #f #e #i #k.
