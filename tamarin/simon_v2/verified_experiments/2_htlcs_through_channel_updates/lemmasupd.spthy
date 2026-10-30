@@ -145,6 +145,24 @@ lemma Forward_Expiry_From_Upstream [reuse, heuristic={route_first}]:
      ==> Ex #a. HTLCExpiry(pin, y, %tin)[-] @ #a & #a < #f"
 
 #ifdef LIVENESS
+// add: helper lemmas for the liveness lemmas on the goal-2 model. They sit in
+// add: the LIVENESS block, so the configuration without flags (50 safety
+// add: lemmas) does not load them, and only later lemmas reuse them.
+
+// add: an HTLC is never both settled and failed on the same channel (both
+// add: start with Old(ptr, y), which happens once).
+lemma Settle_Fail_Exclusive [reuse, heuristic={live_commit}]:   // add
+    "All ptr y n1 n2 #i #j.
+        HTLCCommitted(ptr, <'settle', y>, n1) @ #i
+      & HTLCCommitted(ptr, <'fail', y>, n2) @ #j
+     ==> F"
+
+// add: a committed fail comes from a refund (which needs the expiry tick,
+// add: Refund_Requires_Timeout).
+lemma Fail_From_Refund [reuse, heuristic={upd}]:   // add
+    "All ptr y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c
+     ==> Ex P #r. Refunded(P, ptr, y) @ #r & #r < #c"
+
 lemma Intermediary_Never_Loses_Under_Liveness [heuristic={live_commit}]:   // add: heuristic
     "All P Prev Next Up ptrIn ptrOut y #i #j #k.
         HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i
