@@ -1,0 +1,152 @@
+# Goal-2 / deadline status (only completed proofs count; timeouts are inconclusive)
+
+## Safety on modelupd (no -D=LIVENESS)
+- Verified: 20 lemmas (see runupd_batch_w0.txt, runupd_batch_w1.txt).
+- Falsified: 0.
+- Inconclusive (batch timeout): all other safety lemmas, including
+  Funding_Spent_Once, No_Double_Publish, Invoice_Signature_Origin,
+  Offer_Requires_Invoice.
+- Superseded: see "Goal-2 model ... per-lemma run" below; all 50 safety
+  lemmas now verify. Claim allowed: "the goal-2 model preserves all 50 safety
+  properties under channel-update routing."
+
+## Deadline model (modeldeadline.spthy / deadline.spthy) - categories
+1. Correspondence and clock invariants (safety config):
+   Settle_Commit_Correspondence (gate for bounded responsiveness),
+   Ticks_Consecutive, Request/Commit/Receipt_Stamp_Is_Current.
+2. Satisfiability witness (-D=LIVENESS): Deadline_Witness.
+3. Deadline theorem (-D=LIVENESS): Deadline_Per_Hop.
+4. Negative controls:
+   - ablation: Deadline_Per_Hop with -D=LIVENESS -D=NOBOUND (expect falsified)
+   - CLTV gap D-1: -D=LIVENESS -D=SMALLGAP (expect falsified; inspect trace for
+     maximum delay and expiry tick before the late commit)
+   - Request_Without_Commit, Commit_Without_Receipt (safety config, no
+     assumptions active)
+
+The theorem only counts together with a verified Deadline_Witness.
+No liveness claim until categories 1-4 complete.
+
+## Result on the one-hop core model (deadline_core.spthy) - all gates met
+Gate 1 (safety config): Settle_Commit_Correspondence verified (6);
+  Delivery_Unique (8027) and Request_Unique (693) verified [reuse helpers];
+  Request_Without_Commit verified (13); Commit_Without_Receipt verified (12).
+Gate 2 (-D=LIVENESS -D=BOUND -D=GAP2): Deadline_Witness_Concrete verified (49).
+  (General Deadline_Witness: timeout; a concrete trace suffices for existence.)
+Gate 3 (-D=LIVENESS -D=BOUND -D=GAP2): Deadline_Per_Hop verified (30).
+Gate 4: Ablation (-D=LIVENESS -D=GAP2): trace found, concrete (14) and general (27).
+        Gap control (-D=LIVENESS -D=BOUND -D=GAP1): trace found, concrete (17)
+        and general (31); in Gap_Concrete the upstream settle commits in block 3,
+        after the tick past tIn = 2.
+No wellformedness warnings. Results in out_core2.txt, out_core3.txt, out_core_bisect.txt.
+
+Claim allowed: conditional, completion-aware per-hop deadline theorem for the
+one-hop core model (honest parties, settle path), under bounded responsiveness
+(D = 2), receipt/forwarder promptness and the CLTV gap; NowIsLatest is a
+modelling restriction. Not claimed: arbitrary routes (composition not done),
+the full model (modeldeadline3: witness/controls inconclusive), novelty
+(literature comparison pending).
+
+## Composition on the two-forwarder core model (deadline_core2.spthy)
+Route S -p0-> F1 -p1-> F2 -p2-> R, expiries t0 > t1 > t2.
+Helpers (safety config, [reuse], valid in every config): Delivery_Unique,
+  Request_Unique, Commit_Unique, Request_Unique_Channel, Commit_Unique_Channel.
+Under -D=LIVENESS -D=BOUND -D=GAP2:
+  Deadline_Stamp_Per_Hop (composable: downstream commit stamp <= tOut and a tick
+    past tIn => upstream commit stamp <= tIn, before that tick): verified (124).
+  End_To_End_Two_Hops (receiver settle on p2 by t2, tick past t0 => settle on
+    p0 by t0): verified (80).
+  Two_Hop_Witness_Pinned: verified (48) - assumptions jointly satisfiable.
+Under -D=LIVENESS -D=BOUND -D=GAP1:
+  Two_Hop_Gap_Pinned: verified (37) - with gaps of 1 the settle on p0 commits
+    only after a tick past t0.
+Lemma-setup bug found and fixed on the way: Deadline_Stamp_Per_Hop was marked
+[reuse] in every configuration; it is now only present under GAP2 and after the
+existence lemmas (a reused lemma applies only to later ones).
+
+Claim allowed: two-hop composition mechanically checked. Arbitrary finite routes
+follow by induction on route length because Deadline_Stamp_Per_Hop has the same
+premise/conclusion form at every hop (paper argument, not a Tamarin proof).
+Not done: a two-hop ablation (the one-hop ablation already shows the bound is
+needed), the deadline result on the full model, the literature comparison.
+
+## Review P1 (clock abstraction) - results
+- Stamp_Between_Ticks (Now(b) is emitted by every request, receipt and commit
+  rule, and by no other rule): verified in deadline_core (23) and
+  deadline_core2 (27). Every stamped event lies after Tick(b) and before any
+  tick with a larger value.
+- One hop: Deadline_Witness_Consecutive (ticks 1,2,3,4, no tick skipped or
+  added; -D=LIVENESS -D=BOUND -D=GAP2) verified (20), after adding the
+  channel-level helpers (Request_Unique_Channel 751, Commit_Unique_Channel 251,
+  Commit_Unique 2) to deadline_core.
+- Two hops: Two_Hop_Witness_Consecutive (ticks 1..6) TIMEOUT (45 min). Only the
+  skipping-clock witness Two_Hop_Witness_Pinned (ticks 1,3,5,6) is verified.
+
+Agreed wording: the theorem holds for every trace satisfying the clock and
+liveness restrictions, including traces with skipped ticks. For one hop, a
+consecutive-tick witness shows the restrictions are satisfiable under ordinary
+unit-step block progression; for two hops, satisfiability is shown only with a
+skipping clock. The theorem stays conditional on NowIsLatest and the three
+assumptions. Novelty: "to our knowledge" (see related_work.md).
+
+## Update: two-hop consecutive witness
+Two_Hop_Witness_Consecutive_A (ticks 1..6, no tick skipped or added;
+-D=LIVENESS -D=BOUND -D=GAP2) verified (35 steps, 10 s) with the tactic
+facts_first (solve protocol facts first; assumption case splits and KU goals
+last). Without the tactic: timeout at 45 min. (Variant B, splits_first, was
+stopped after A succeeded; no result.)
+
+Updated wording: the theorem holds for every trace satisfying the clock and
+liveness restrictions, including traces with skipped ticks. Consecutive-tick
+witnesses for one hop and for two hops show that the restrictions are
+satisfiable under ordinary unit-step block progression.
+
+## FINAL PAPER SCOPE (agreed after review)
+Claim: a symbolic, completion-aware, conditional CLTV-gap theorem for the core
+one-hop and two-hop models, under NowIsLatest, receipt promptness, forwarder
+promptness, and bounded update responsiveness. Novelty phrased "to our
+knowledge" (see related_work.md).
+
+Limitations to state explicitly in the paper:
+1. The theorem is not verified on the full modeldeadline3 model.
+2. The extension from two hops to arbitrary routes is an induction argument,
+   not a Tamarin proof.
+3. NowIsLatest is an abstraction assumption; the consecutive-tick witnesses
+   show satisfiability, not refinement equivalence to a full blockchain clock.
+4. All 50 modelupd safety lemmas verify; five rely on verified helper lemmas
+   (one, Route_Made_Once, proved with --bound=6).
+
+## Goal-2 model (2_htlcs_through_channel_updates): per-lemma run, safety config
+Each lemma in its own Tamarin call, 900 s limit (results: each_results.txt).
+Safety configuration loads 50 of the lemmas in lemmasupd.spthy plus the goal-2
+lemmas. Of the 50:
+- verified: 42 (20 from the earlier batch runs + 22 in this run)
+- timeout (900 s, inconclusive): 8 - Settle_Requires_Receiver_Release,
+  Forward_Requires_Incoming, Hop_Forwarded_Once, Settle_Excludes_Sender_Refund,
+  Receiver_Paid_At_Most_Offered, Forward_Excludes_Fulfill,
+  Sender_Pays_Invoice_Plus_Fees, Funding_Spent_Once
+- falsified: 0
+Update (final): all 8 timeouts now verify, so 50/50 safety lemmas verified.
+- Settle_Excludes_Sender_Refund (194), Sender_Pays_Invoice_Plus_Fees (1470):
+  30-min limit per lemma; Funding_Spent_Once (7140): about 1-2 h.
+- With new tactics and helper lemmas (marked // add): Forward_Requires_Incoming
+  (182), Settle_Requires_Receiver_Release (778), Hop_Forwarded_Once (10),
+  Forward_Excludes_Fulfill (6), Receiver_Paid_At_Most_Offered (4).
+- Helpers, all verified: Route_Made_Once (146, --bound=6), Route_Has_Amount
+  (74), Paid_Has_Amount (6), Fulfilled_Out_Released (275), Release_By_Creator
+  (23). Model change: action labels RouteMade and FulfilledOut only.
+Liveness-only lemmas (exist only with -D=LIVENESS; not run here): 7.
+Goal-2 lemmas: Settle_Is_Channel_Update (30), Hand_Payment (83) verified;
+HTLC_Commit_Correspondence verified (10 steps): every HTLCCommitted(ptr, op, n) is preceded by ChannelUpdateFor(ptr, op, n) and StateUpdate(_, _, ptr, n), in that order. The commit-based coupling is proved, not only inferred from the rules.
+
+
+## Goal-2 model: final status (one lemma per call, run_lemma.sh)
+- Goal 2: 7/7 verified (incl. Add/Fulfil/Fail_Is_Channel_Update, Refund_Path_Witness).
+- Safety: 50/50 verified; 5 helpers verified; Route_Made_Once no longer needs --bound
+  (it needed ~15 min and 10 GB). Fulfilled_Requires_Release: fulfilled_back tactic.
+- Liveness (-D=LIVENESS): all 7 of Simon's lemmas verified, plus Hand_Payment,
+  2 committed-settle versions and 4 LIVENESS-only helpers. Key step: helpers
+  Redeem_Refund_Exclusive, Settle_From_Redeem, Fail_From_Refund,
+  Settle_Fail_Exclusive with the default heuristic (a custom tactic made it worse).
+- Claim_Gap_Witness falsified (expected): under the liveness restrictions a
+  started settle is always committed before the incoming expiry. This is an
+  assumption of the model and must be stated as one.

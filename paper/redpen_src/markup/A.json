@@ -1,0 +1,205 @@
+{
+ "section": "A",
+ "strikes": [
+  {
+   "page": 1,
+   "start": "AI: Pointers (also applies to the abstract):",
+   "end": "theory is the delta.",
+   "why": "Orange AI box. Its valid advice (state what is proven, for which runs and against which adversary; thin coupling; no composition theorem) is implemented by the new contributions list (note at 'c) Contributions:'). Prongs (a)-(c) describe a different model: csf_final has no block clock in the main model and no end-to-end value-conservation or 'steals exactly the path fees' lemma."
+  },
+  {
+   "page": 1,
+   "start": "We provide a novel modelisation of the Lightning Network",
+   "end": "",
+   "why": "Old contributions sentence (continues on p.2). Replaced by the new contributions list (note at 'c) Contributions:')."
+  },
+  {
+   "page": 2,
+   "start": "in TAMARIN featuring Unbounded channels;",
+   "end": "timing constrains over arbitrary paths.",
+   "why": "Old contributions bullets (continued from p.1). Replaced by the new contributions list on p.1."
+  },
+  {
+   "page": 2,
+   "start": "We included it in our model as well. The model",
+   "end": "the channel-layer properties all remain intact.",
+   "why": "Overclaim: in csf_final, commitment transactions carry no HTLC outputs; the layers couple only through !ChannelConnect, Mutex(ptr) and OneResolutionPerHTLC. Replaced by the note at 'extra output.'"
+  },
+  {
+   "page": 2,
+   "start": "It connects the parts in our",
+   "end": "rules to the real protocol.",
+   "why": "Unclear (Simon's margin question). Replaced by the rule-to-output mapping in the note at 'enables unilateral closing.'"
+  },
+  {
+   "page": 2,
+   "start": "The model represents only the in-flight outputs",
+   "end": "revocation path on Output 4 .",
+   "why": "Wrong for csf_final: the modelled commitment has no in-flight Outputs 1/2, while Outputs 3/4 and the revocation path are modelled. Replaced by the same mapping note."
+  },
+  {
+   "page": 4,
+   "start": "If honest forwarders submit their claims on time,",
+   "end": "otherwise, no one does.",
+   "why": "'Otherwise, no one does' is wrong: an intermediary that fails to claim loses its incoming HTLC while the parties downstream are paid (Necessity_IMC_Honest_Intermediary_Loses). Replaced by the note at 'locked them.'"
+  },
+  {
+   "page": 4,
+   "start": "[TODO]re-add the wormhole attack later.",
+   "end": "talk about the model [END TODO]",
+   "why": "Co-author TODO resolved by the two-sentence wormhole pointer in the note at 'claim window [21].', as Sana's margin comment suggests."
+  },
+  {
+   "page": 5,
+   "start": "AI: Restructure proposal \u2013 make this section about the",
+   "end": "this table is the paper\u2019s claim to rigor.",
+   "why": "Orange AI box describes a different model: csf_final has none of LessThan, TickOnce, TicksInOrder, ExpiryBlockReached, ForwarderResolvesInTime or timeout.spthy, and No_Punishment_Without_Cheating does not discharge OneResolutionPerHTLC. Its valid core (one theory, thin coupling, named interface, argued not mechanized) is implemented in the Sec. IV intro note."
+  },
+  {
+   "page": 5,
+   "start": "As the Lightning Network is a very complex protocol,",
+   "end": "the former and abstracting it away.",
+   "why": "Wrong for csf_final: the model is one theory, and routing runs on channels opened by the channel layer instead of abstracting it away. Replaced by the Sec. IV intro note at the section heading."
+  },
+  {
+   "page": 5,
+   "start": "Such threat model is too strong for Blockchain protocols,",
+   "end": "the blockchain grows following honnest behaviour",
+   "why": "Wrong for csf_final: the adversary keeps full Dolev-Yao control of the network and the main model has no blockchain or clock; liveness is imposed by restrictions on honest forwarders. Replaced by the threat-model note at 'term algebra under consideration.' The sentence continues on p.6 ('and 2) the participants ... liveness of the participant.'), which is struck on p. 6 as well."
+  }
+ ],
+ "notes": [
+  {
+   "page": 1,
+   "anchor": "Formal Verification of the Lightning Network",
+   "html": "<p>TODO (legend; remove before submission): <b>red</b> = updates that re-anchor the paper to the verified csf_final artefact (<code>lightning.spthy</code> + <code>lightning_aux.spthy</code>, TAMARIN 1.10), reproduced on Sana's laptop. <b>Red strikethrough</b> = proposed deletions. All changes are proposals and still need to be agreed with Simon.</p>"
+  },
+  {
+   "page": 1,
+   "anchor": "Abstract\u2014 TODO",
+   "html": "<p><b>Abstract</b>&#8212;The Lightning Network routes payments over chains of payment channels using hash time-locked contracts (HTLCs). We present a TAMARIN model that captures, in one theory, the channel layer (unboundedly many updates, revocation, punishment) and generic multi-hop routing over routes of any length, against a Dolev-Yao adversary who can also compromise long-term keys. We prove that only parties that cheated or whose key was compromised are punished, that settlements are authenticated by the receiver's invoice, and that preimages, which our model never sends on the network, stay secret. Under explicit liveness assumptions, imposed as TAMARIN restrictions that remove every run violating them (for instance, every run in which an uncompromised intermediary whose outgoing HTLC was redeemed does not claim its incoming HTLC in time), an intermediary whose key is not compromised never has its outgoing HTLC redeemed while its incoming HTLC is refunded, and payment atomicity holds in runs without key compromise. The assumption that intermediaries claim their incoming HTLC is necessary: without it, TAMARIN finds a trace without key compromise in which an intermediary that never claims its incoming HTLC loses funds. We give the wormhole attack as a TAMARIN-checked trace: colluding intermediaries bypass an honest one, which is refunded but earns no fee. Conversely, we prove for routes of any length that a hop of a settled payment whose hash is offered once can be bypassed only if some long-term key is compromised. In a fixed-route model with a symbolic stand-in for point time-locked contracts (PTLCs), per-hop locks prevent the wormhole around an honest intermediary when the sender is honest, whereas plain HTLCs admit it. All results are machine-checked with TAMARIN 1.10 and reproduced with one command.</p>"
+  },
+  {
+   "page": 1,
+   "anchor": "This paper attempts to alleviate that issue.",
+   "html": "<p>TODO: tone down \"complete\": our model abstracts the HTLC outputs of commitment transactions (Sec. IV). Suggested: \"... it still lacks a machine-checked model that covers both the channel layer and multi-hop routing for unboundedly many channels, updates and payments and for routes of any length.\" This sentence must be consistent with the positioning against [8], [9] and Kiayias&#8211;Litos (CSF 2020) in the related work (see open question on a 'first' claim).</p>"
+  },
+  {
+   "page": 1,
+   "anchor": "c) Contributions:",
+   "html": "<p>We make the following contributions. All results are checked with TAMARIN 1.10. The all-traces statements hold for every trace of the model that satisfies its restrictions (Sec. IV-A), that is, for any number of parties, channels, channel updates and payments.</p><ul><li><b>One theory for both layers (Sec. IV).</b> A single TAMARIN theory (<code>lightning.spthy</code>) with a single adversary covers two layers. The first is the channel layer: opening, unboundedly many updates, revocation, cooperative and unilateral closing, and punishment. The second is multi-hop HTLC routing, where one generic rule (<code>Forward_HTLC</code>) handles every hop, so routes of any length over the channels opened by the channel layer are included. The layers share the channel topology (<code>!ChannelConnect</code>) and a per-channel slot (<code>Mutex</code>: one in-flight HTLC per channel at a time). The contract between them, that each HTLC is resolved at most once, is the named restriction <code>OneResolutionPerHTLC</code>, which we justify informally. We do not claim a composition theorem.</li><li><b>Adversary (Sec. IV-A).</b> A Dolev-Yao network adversary that can, in addition, compromise the long-term key of any party at any time (<code>Compromise_Ltk</code>). Two compromised parties on the route of the same payment can relay the preimage around the parties between them (<code>AttackerSkip</code>).</li><li><b>Safety (Sec. V).</b> We prove 32 all-traces lemmas. Among them: a party is punished only if it published a revoked state or its key was compromised (<code>No_Punishment_Without_Cheating</code>); a sender settles only against an invoice created by the receiver, unless the receiver's key was compromised (<code>Invoice_Authenticates_Settlement</code>); the adversary never learns a payment preimage (<code>Preimage_Never_Known</code>; in our model the preimage is never sent on the network); and no HTLC is both redeemed and refunded (<code>OneOutcomePerHTLC</code>). Intermediary safety and payment atomicity rely on three named liveness restrictions (T1, T2b, T3; Sec. IV-A). Being restrictions, they remove every trace that violates them, including traces in which an uncompromised forwarder could not have acted in time; these results say nothing about such traces. An intermediary whose outgoing HTLC is redeemed has its incoming HTLC refunded only if its key was compromised before that incoming HTLC timed out (<code>Intermediary_Never_Loses_Strong</code>; a weaker variant is <code>Intermediary_Never_Loses_Under_Liveness</code>). In runs without key compromise, if two consecutive forwarders relay a payment and the outgoing HTLC of the second is redeemed, the incoming HTLC of the first is never refunded (<code>Payment_Atomicity_Under_Liveness</code>). Ten exists-trace lemmas (nine found automatically, one replayed from a saved proof) show that channels open, update and close, that multi-hop payments complete, and that the attacks discussed below are reachable.</li><li><b>The wormhole as a trace and as a theorem (Secs. V-E and VI).</b> We give a five-party trace (Alice, Att1, Indiana, Att2, Bob) in which the sender settles and the receiver is paid, while the honest intermediary Indiana is refunded on its outgoing HTLC and earns no fee (<code>Wormhole_Fee_Theft_Reachable</code>; TAMARIN checks it by replaying a saved 116-step proof). Conversely, we prove that if the sender settles a payment, a forwarding hop on its route is refunded on its outgoing HTLC only if the long-term key of some party is compromised. We prove this for each of the first six hops of a route of any length (<code>First_Hop_Skip_Requires_Compromise</code>, <code>Second_Hop_Skip_Requires_Compromise</code>, <code>Hop3_Skip_Requires_Compromise</code> to <code>Hop6_Skip_Requires_Compromise</code>), and for every hop of a route of any length, assuming the payment hash is offered only once (<code>Any_Hop_Skip_Requires_Compromise</code>). The latter is proved with the three liveness restrictions removed; since removing restrictions only adds traces, it also holds in the full model. Neither result says which party is compromised, or when. The fixed-position theorems are proved in the full model, i.e., under the liveness restrictions.</li><li><b>Necessity of the liveness assumptions (Sec. V-D).</b> We remove the liveness restrictions one at a time. Without <code>IntermediaryMustClaim</code> (T3), TAMARIN finds a trace without key compromise in which an intermediary's outgoing HTLC is redeemed while its incoming HTLC is refunded (<code>Necessity_IMC_Honest_Intermediary_Loses</code>). Hence T3 is necessary for intermediary safety. Without <code>RedeemBeforeTimeout</code> (T1), all five liveness lemmas we check remain provable; without <code>OutgoingTimesOutFirst</code> (T2b), both intermediary-safety lemmas remain provable. The CLTV-delta ordering of timeouts (<code>ForwardTimeGap</code>) is not an assumption but a proved lemma, implied by T2b.</li><li><b>Countermeasure.</b> An auxiliary model (<code>lightning_aux.spthy</code>) uses the fixed route S&#8594;H1&#8594;H2&#8594;H3&#8594;R. In it, per-hop locks are derived along the route with per-hop secret tweaks, a symbolic stand-in for point time-locked contracts (PTLCs) [6]. With these locks, the sender's HTLC is never redeemed while H2's outgoing HTLC is refunded, unless H2 or the sender is compromised (<code>No_Wormhole_Around_Honest_Hop</code>). With a common payment hash, the same attack is reachable (<code>Wormhole_Around_Honest_Hop</code>).</li><li><b>Reproducibility.</b> A single command (<code>make all</code>) reproduces all results: the 55 lemmas of the main model, the 24-lemma run of the any-length theorem, the 21 lemmas of the auxiliary models, and the necessity runs.</li></ul><p>The TLA+ model checking of [8] explores finite instances. In contrast, our all-traces results hold for unboundedly many channels, updates and payments, and for routes of any length.</p>"
+  },
+  {
+   "page": 2,
+   "anchor": "where an in-flight payment is an extra output.",
+   "html": "<p>Our model (Sec. IV) does not place HTLCs inside commitment transactions. Instead, this meeting point becomes an explicit interface: routing runs only on channels opened by the channel layer, holds at most one in-flight HTLC per channel at a time, and assumes that each HTLC is resolved at most once. The wormhole attack (Sec. V-E) exploits only the payment hash shared along a route and involves no channel-layer rule. Since the channel-layer lemmas are proved in the same theory, they also hold in the presence of the wormhole.</p>"
+  },
+  {
+   "page": 2,
+   "anchor": "This transaction notably enables unilateral closing.",
+   "html": "<p>Fig. 2 also fixes the vocabulary of our channel-layer rules. A commitment is modelled as the tuple <code>&lt;'commit', ptr, A, B, n, h(s)&gt;</code> together with its signature, where <code>h(s)</code> commits to the revocation secret <code>s</code> of state <code>n</code>. Publishing Alice's current commitment (<code>Publish_Current_A</code>) creates two outputs. Bob's Output 3 is spendable immediately (<code>OnChainInstant</code>, spent by <code>Instant_Funds_B</code>). Alice's Output 4 is delayed (<code>OnChainDelayed</code>, spent by <code>Claim_Funds_A</code>, which marks the end of the CSV delay with the action <code>CSVPassed</code>; the main model has no clock). Publishing a revoked commitment (<code>Publish_Revoked_A</code>) instead opens the revocation path, through which Bob takes all funds (<code>Punish_A</code>, <code>AllFundsTo</code>). The in-flight Outputs 1 and 2 are not part of the modelled commitment; HTLCs are handled by the routing layer (Sec. II-B, Sec. IV).</p>"
+  },
+  {
+   "page": 2,
+   "anchor": "wait for a time lock",
+   "html": "<p>TODO (protocol accuracy; answers Simon's margin comment): in a unilateral close only the publisher waits, and its delay is the relative timelock CSV (<code>to_self_delay</code>) on its own output (Output 4). The counterparty's Output 3 is spendable immediately, as Sec. II-A2d says. CLTV is the absolute timeout of the in-flight HTLC outputs (Outputs 1 and 2). Suggested text: \"In a unilateral close, one party broadcasts its latest commitment. Its own output is locked by a relative timelock (CSV), which gives the counterparty time to check whether the published state was revoked and, if so, to claim the entire channel balance through the revocation path.\" If this paragraph is kept, the second CSV gloss below becomes redundant.</p>"
+  },
+  {
+   "page": 3,
+   "anchor": "Model of the Transaction held by A",
+   "html": "<p>TODO: rename to \"Fig. 2: Commitment transaction held by A\". The figure shows the protocol transaction; our model keeps only Outputs 3 and 4 and the revocation path (see Sec. II-A1), not the in-flight Outputs 1 and 2.</p>"
+  },
+  {
+   "page": 3,
+   "anchor": "as a single signature of the whole transaction",
+   "html": "<p>In our model, each party signs its own commitment (e.g., <code>sigA0 = sign(commitA0, ltkA)</code> in <code>Create_State_A</code>). Both signatures are verified (<code>Both_States_Committed</code>) before the funds are locked (<code>Lock_Funds_And_Open</code>). The counter-signature of the real protocol is abstracted into this check.</p>"
+  },
+  {
+   "page": 3,
+   "anchor": "Our model collapses this complexity into",
+   "html": "<p>If this paragraph is kept, correct it: our model does not represent Outputs 1 and 2 at all. HTLCs are not outputs of the modelled commitment; they are resolved in the routing layer. The single on-chain spend of an HTLC output is replaced by the restriction <code>OneResolutionPerHTLC</code>: each HTLC is redeemed or refunded at most once (Sec. IV).</p>"
+  },
+  {
+   "page": 3,
+   "anchor": "the defect of Section V-B0a",
+   "html": "<p>TODO: broken cross-reference \"V-B0a\" (a paragraph label). Point it to the paragraph of Sec. V that explains why <code>Publish_Revoked_A/B</code> must consume the linear <code>RevokedCommitmentUnspent</code>.</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "index the lemma groups of Table II.",
+   "html": "<p>TODO: Table II is being rebuilt for csf_final; check that the circled numbers 1&#8211;6 still index its lemma groups. Fig. 3 depicts the protocol. In the model, the invoice carries no amount and deadlines are not numbers (see the note in Sec. II-B).</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "not a loss of funds",
+   "html": "<p>TODO: delete \"(Loss_Requires_Inaction)\" from this caption. In csf_final that lemma reads:</p><pre>lemma Loss_Requires_Inaction:\n    \"All P Prev Next Up ptrIn ptrOut y #i #j #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #i\n      &amp; Redeemed(ptrOut, y) @ #j\n      &amp; Refunded(Up, ptrIn, y) @ #k\n     ==&gt; not (Ex #l. Redeemed(ptrIn, y) @ #l)\"</pre><p>It states that if a forwarder's outgoing HTLC is redeemed and its incoming HTLC is refunded, the incoming HTLC was never redeemed. It says nothing about griefing. <code>Refund_Possible</code> (exists-trace) only shows that a sender can be refunded in a run without key compromise. That honest parties will be refunded is a progress property, which trace lemmas do not express.</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "As a result, the payment either completes",
+   "html": "<p>TODO: replace this sentence by: \"As a result, the payment is meant to either complete along the entire path or fail. The wormhole attack (end of this section and Sec. V-E) shows that colluding intermediaries can break this for the hops between them.\"</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "Each HTLC becomes an additional conditional output",
+   "html": "<p>(This describes the protocol. In our model, HTLCs are not outputs of commitment transactions; see Sec. IV.) Our model also simplifies amounts and deadlines. Amounts are local to a hop: <code>Forward_HTLC</code> reads the incoming amount, the fee and the outgoing amount from the network, and its only constraint on them is <code>Eq(%vIn, %vOut %+ %fee)</code>. The invoice <code>&lt;'invoice', R, S, y&gt;</code> and the sender's offer carry no amount. Amounts are therefore not chained along the route, and we make no claim of end-to-end value conservation. Deadlines are not numbers either: the ordering (3) is captured by the restriction <code>OutgoingTimesOutFirst</code> (T2b) and the lemma <code>ForwardTimeGap</code> derived from it. Auxiliary models with explicit block heights (<code>lightning_aux.spthy</code>, flags CLOCK and CLTV) check the numeric claim-window argument (e.g., <code>Claim_Window_Exists</code>, <code>Claim_Window_Nonempty</code>, <code>Staggered_Path_Safe</code>).</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "funds return to the party that locked them.",
+   "html": "<p>Once the receiver has released <i>x</i>, if every intermediary claims its incoming HTLC in time, all HTLCs on the path are settled. An intermediary that fails to do so after its outgoing HTLC was redeemed loses the forwarded amount, while the parties downstream are paid. This is why forwarders need liveness (Remark 2).</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "redeeming the HTLC.",
+   "html": "<p>In our model, HTLCs are resolved without on-chain transactions and the preimage is never sent on the network, so the adversary never learns it (<code>Preimage_Never_Known</code>, Sec. IV-A). Compromised parties can reuse a preimage only through the explicit rule <code>AttackerSkip</code>.</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "within their claim window [21].",
+   "html": "<p>Finally, all HTLCs of a payment are locked by the same hash <i>y</i>. Two colluding intermediaries on the route can therefore pass <i>x</i> around the hops between them, so that the payment completes while the bypassed hops are refunded and earn no fee: this is the wormhole attack [6]. Sec. V-E gives such a trace, checked by TAMARIN, and Sec. VI proves that, for routes of any length, a hop of a payment that the sender settles, and whose hash is offered once, can be bypassed only if some party's long-term key is compromised.</p>"
+  },
+  {
+   "page": 4,
+   "anchor": "Removing it falsifies Intermediary_Never_Loses_Under_Liveness.",
+   "html": "<p>More precisely: once T3 (<code>IntermediaryMustClaim</code>) is removed, TAMARIN finds a trace without any key compromise in which an intermediary's outgoing HTLC is redeemed while its incoming HTLC is refunded (<code>Necessity_IMC_Honest_Intermediary_Loses</code>, exists-trace, 28 steps). This trace violates <code>Intermediary_Never_Loses_Under_Liveness</code>. (Also fix \"T3sec.\" to \"T3 (Sec. IV-A)\".)</p>"
+  },
+  {
+   "page": 5,
+   "anchor": "remembering the action facts A.",
+   "html": "<p>TODO (wording, answers Simon): \"... captures that <i>L</i> is rewritten as <i>R</i> in <i>S</i>, and the action facts <i>A</i> are appended to the trace.\"</p>"
+  },
+  {
+   "page": 5,
+   "anchor": "and natural-numbers built-ins",
+   "html": "<p>The hashing built-in provides <code>h</code>, used for payment hashes <code>y = h(x)</code> and for the commitment <code>h(s)</code> to a revocation secret. The signing built-in provides <code>sign</code>, <code>verify</code> and <code>pk</code>, used for the channel handshake, commitments and invoices. The natural-numbers built-in provides the sort of amounts (variables <code>%v</code>) with addition <code>%+</code>, used for the per-hop constraint <code>Eq(%vIn, %vOut %+ %fee)</code>.</p>"
+  },
+  {
+   "page": 5,
+   "anchor": "IV. FORMAL MODELING METHODOLOGY",
+   "html": "<p>We model the protocol as a single TAMARIN theory (<code>lightning.spthy</code>, 37 rules) with a single adversary. It contains both the payment-channel protocol (Sec. II-A) and multi-hop routing (Sec. II-B). One generic rule, <code>Forward_HTLC</code>, handles every hop, so routes of any length are covered. The routing layer does not abstract the channel layer away, but the coupling is deliberately thin: commitment transactions carry no HTLC outputs, and the layers interact only through three explicit interfaces.</p><ul><li><b>Topology.</b> <code>Lock_Funds_And_Open</code> mints the persistent facts <code>!ChannelConnect(ptr, $A, $B)</code> and <code>!ChannelConnect(ptr, $B, $A)</code>, which <code>Sender_Offer_HTLC</code>, <code>Forward_HTLC</code> and <code>Open_Timeout</code> require. HTLCs are therefore added only on opened channels (<code>HTLC_On_Opened_Channel</code>).</li><li><b>Slot.</b> Opening also mints one linear fact <code>Mutex(ptr)</code>. Adding an HTLC consumes it, and settling or refunding that HTLC returns it. A channel therefore holds at most one in-flight HTLC at a time and can be reused afterwards.</li><li><b>Resolution.</b> Each HTLC is resolved (redeemed or refunded) at most once:<pre>restriction OneResolutionPerHTLC:\n    \"All ptr y #i #j. Old(ptr, y) @ #i &amp; Old(ptr, y) @ #j ==&gt; #i = #j\"</pre>In the protocol this holds because an HTLC output of the current commitment can be spent only once on chain. Spending it from an older state requires publishing a revoked commitment, which the counterparty can punish (<code>Publish_Revoked_A/B</code>, <code>Punish_A/B</code>). This argument is not mechanized, and we do not claim a composition theorem.</li></ul><p>All other abstractions are also explicit, named restrictions (Sec. IV-A).</p>"
+  },
+  {
+   "page": 5,
+   "anchor": "constrained to the term algebra under consideration.",
+   "html": "<p>Our adversary keeps this full control of the network. Channel proposals and acknowledgements and invoices are sent over the network (<code>Out</code>/<code>In</code>). The adversary also chooses the values that honest rules read from the network: the balances of a channel update (<code>Update_State</code>) and, at each hop, the incoming amount, the fee and the outgoing amount (<code>Forward_HTLC</code>, whose only constraint on amounts is <code>Eq(%vIn, %vOut %+ %fee)</code>). HTLC offers and fulfilments between adjacent hops are modelled as linear facts (<code>Route</code>, <code>Fulfilled</code>), that is, as authenticated, non-replayable messages between channel partners.</p><p><b>Key compromise.</b> Rule <code>Compromise_Ltk</code> reveals the long-term signing key of any party at any time (action <code>LtkCompromised(A)</code>, fact <code>!Compromised(A)</code>). The adversary can then sign as that party, e.g., forge its invoices (reachable: <code>Forged_Invoice_Requires_Key_Compromise</code>). The preimage <i>x</i> of an invoice is never sent on the network, and the adversary never learns it (<code>Preimage_Never_Known</code>). What compromised parties can do with it is given explicitly by rule <code>AttackerSkip</code>: two compromised parties that offered or forwarded HTLCs with the same payment hash may move the fulfilment of one party's outgoing HTLC to the other party's outgoing HTLC. In effect, they relay <i>x</i> around the parties between them (the wormhole, Sec. V-E). Apart from their keys, <code>AttackerSkip</code> and the exemptions below, compromised parties follow the protocol rules.</p><p><b>Time.</b> Time is abstract: the timeout of channel <code>ptr</code> is the event <code>TimedOut(ptr)</code> of rule <code>Open_Timeout</code>, which can happen at any point after the channel is opened and at most once per channel (<code>OneTimeoutPerPtr</code>). The adversary therefore chooses when timeouts happen relative to honest actions. The liveness restrictions T1, T2b and T3 below constrain this choice. They do more than constrain the adversary: as TAMARIN restrictions, they remove every trace that violates them, including traces in which an uncompromised forwarder could not have claimed or timed out in the required order; our results say nothing about such traces. T1 applies to every HTLC; T2b and T3 bind only forwarders whose key was not compromised before their incoming HTLC timed out.</p>"
+  }
+ ],
+ "inserts": [],
+ "open_questions": [
+  "Should we claim a 'first'? None of the notes do. Positioning against [8], [9] (FC 2026) and Kiayias-Litos (CSF 2020) has to be settled first (also affects the p.1 sentence 'does not yet feature any complete ... formalisation').",
+  "Simon's question on p.2: keep or drop the two paragraphs 'Concretely, the two parties open a channel...' and 'Channels can be closed either cooperatively...'? If kept, they need the CSV/CLTV fix in the note at 'wait for a time lock'.",
+  "The model-vs-protocol sentences added in Sec. II (notes on pp. 2-4): keep them in the overview, or move them to Sec. IV as the (still valid) orange box on p.2 suggests?"
+ ],
+ "changes": [
+  "Verified all 11 strikes and all anchors with resolve.py (all OK, spans exact); HTML is well formed and uses only allowed tags.",
+  "Wormhole_Fee_Theft_Reachable is NOT found automatically: it is an exists-trace lemma replayed from a saved 116-step proof (Makefile REPLAY_LEMMAS, results.txt). Fixed 'TAMARIN finds' in the abstract, the contributions and the wormhole pointer on p.4.",
+  "Contributions: 'All statements hold for all traces' restricted to the all-traces statements; 'Two further lemmas' (wrongly suggesting they are outside the 32) reworded as 'intermediary safety and payment atomicity rely on T1, T2b, T3'; exists-trace count split 9 automatic + 1 replay; added that Any_Hop_Skip_Requires_Compromise is proved without the liveness restrictions and carries over by trace inclusion; added the allowed necessity conclusion that T2b is not needed for intermediary safety; TLA+ [8] sentence softened to 'explores finite instances'.",
+  "Abstract shortened from about 230 to about 200 words; replaced the overbroad 'intermediaries never lose funds' with the exact INL statement; added the punishment property; 'some long-term key' (theorem does not say whose).",
+  "Wormhole pointer (p.4) now carries the single-offer premise of the any-length theorem.",
+  "Fig. 3b note: Refund_Possible only shows that a sender can be refunded without compromise (no claim about honest parties in general). Loss_Requires_Inaction and OneResolutionPerHTLC copied verbatim from the .spthy (programmatically).",
+  "p.2 mapping note: added that CSVPassed is only a marker (main model has no clock). p.4 release-round note: conditioned on the receiver having released x.",
+  "Threat model: 'All messages exchanged pass through Out/In' was wrong (revocation secrets, Route/Fulfilled are facts); now lists what is sent. Timeouts happen only after the channel opens (Open_Timeout needs !ChannelConnect); T1 binds every HTLC, only T2b/T3 have the compromise exemption.",
+  "Added coverage: p.1 note to tone down 'complete and unbounded verified formalisation' (model abstracts HTLC outputs; positioning vs [8], [9], Kiayias-Litos); p.3 note to rename Fig. 2 caption 'Model of the Transaction held by A' (it shows the protocol transaction, not the model); p.4 typo 'T3sec.' folded into the T3-necessity note."
+ ]
+}

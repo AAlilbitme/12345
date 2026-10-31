@@ -1,0 +1,37 @@
+  Cheating_Never_Pays: TIMEOUT (900s) | 17s
+  Claim_Requires_Release (all-traces): verified (89 steps) | 284s
+  Redeem_Requires_Receiver_Release (all-traces): verified (11 steps) | 209s
+  Invoice_Authenticates_Settlement (all-traces): verified (258 steps) | 271s
+  Settle_Requires_Receiver_Release: TIMEOUT (900s) | 900s
+  Refund_Requires_Timeout (all-traces): verified (148 steps) | 253s
+  Forward_Expiry_From_Upstream (all-traces): verified (180 steps) | 316s
+  Payment_Atomicity_Under_Liveness: TIMEOUT (900s) | 14s
+  Forward_Requires_Incoming: TIMEOUT (900s) | 900s
+  Hop_Forwarded_Once: TIMEOUT (900s) | 900s
+  Fee_Requires_Forward (all-traces): verified (10 steps) | 222s
+  Forwarder_Refunds_In_Time: TIMEOUT (900s) | 15s
+  Settle_Excludes_Sender_Refund: TIMEOUT (900s) | 901s
+  Loss_Requires_Inaction (all-traces): verified (2 steps) | 18s
+  Forward_Amount_From_Upstream (all-traces): verified (180 steps) | 319s
+  Expiry_Unique (all-traces): verified (6 steps) | 205s
+  Intermediary_Never_Loses_Under_Liveness: TIMEOUT (900s) | 16s
+  Timeout_Race_Blocked: TIMEOUT (900s) | 15s
+  Receiver_Paid_At_Most_Offered: TIMEOUT (900s) | 900s
+  Forward_Excludes_Fulfill: TIMEOUT (900s) | 900s
+  Forwarder_Claims_In_Time: TIMEOUT (900s) | 15s
+  Intermediary_Recovers_Funds: TIMEOUT (900s) | 15s
+  Amount_Decreases_Along_Route (all-traces): verified (14 steps) | 190s
+  Fee_Is_Amount_Difference (all-traces): verified (10 steps) | 208s
+  Offer_Precedes_Forwards (all-traces): verified (11 steps) | 220s
+  Sender_Pays_Invoice_Plus_Fees: TIMEOUT (900s) | 901s
+  Redeem_Reveals (all-traces): verified (4 steps) | 192s
+  Expiry_Below_First_Hop (all-traces): verified (16 steps) | 213s
+  Incoming_Resolved_By_Claim_Or_Timeout (all-traces): verified (6 steps) | 226s
+  Outgoing_Preimage_Kept (all-traces): verified (15 steps) | 253s
+  Collect_Enabled (all-traces): verified (26 steps) | 215s
+  Refund_Enabled (all-traces): verified (25 steps) | 261s
+  Invoice_Signature_Origin (all-traces): verified (4 steps) | 224s
+  Punish_Enabled (all-traces): verified (50 steps) | 247s
+  Offer_Requires_Invoice (all-traces): verified (6 steps) | 223s
+  No_Double_Publish (all-traces): verified (172 steps) | 201s
+  Funding_Spent_Once: TIMEOUT (900s) | 900s

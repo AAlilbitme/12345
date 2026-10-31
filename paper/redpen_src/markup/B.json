@@ -1,0 +1,357 @@
+{
+ "section": "B",
+ "strikes": [
+  {
+   "page": 6,
+   "start": "[NOTE]Just to make sure before I rewrite",
+   "end": "important enough to be worth the space. [END NOTE]",
+   "why": "Simon's self-check note, resolved by this update: T2a is now a lemma (note at 'Restriction T2a'), T1 is well-formedness, T2b/T3 encode Rmk. 2 and the claiming liveness, punishment liveness is not encoded (TODO note at 'To make the model relevant')."
+  },
+  {
+   "page": 6,
+   "start": "AI: OUTDATED: this T1/T2a/T2b/T3 taxonomy describes",
+   "end": "obligation (not an ordering), and removing it falsifies Intermediary_Never_Loses_Under_Liveness.",
+   "why": "Wrong for csf_final: describes another model (RedeemBeforeTimeout dropped, TickOnce/TicksInOrder/ExpiryBlockReached, ForwarderResolvesInTime). Its T3 claim does hold for csf_final, but only through the separate counterexample Necessity_IMC_Honest_Intermediary_Loses, which violates Intermediary_Never_Loses_Under_Liveness (the direct proof attempt without T3 gives no result). Its one valid point (ForwardTimeGap is a lemma) is adopted in the T2a note."
+  },
+  {
+   "page": 6,
+   "start": "An HTLC must be redeemed before its timeout.",
+   "end": "but a clock well-formedness.",
+   "why": "Reads as an obligation; replaced by the exact csf_final restriction in the note at 'Restriction T1 (RedeemBeforeTimeout).'"
+  },
+  {
+   "page": 6,
+   "start": "Restriction T2a (ForwardTimeGap). If both of a forward-",
+   "end": "the outgoing one hits its timeout first.",
+   "why": "ForwardTimeGap is a proven lemma in csf_final, not a restriction; replaced by the note at this spot."
+  },
+  {
+   "page": 6,
+   "start": "Restriction T2b (HonestPartiesActBeforeIncoming",
+   "end": "then the outgoing one timed out earlier.",
+   "why": "Named OutgoingTimesOutFirst in csf_final and guarded by non-compromise; replaced by the note at this spot."
+  },
+  {
+   "page": 6,
+   "start": "An interme- diary claims its incoming HTLC",
+   "end": "once the outgoing HTLC is redeemed.",
+   "why": "Omits csf_final's timeout premise and non-compromise guard; replaced by the note at 'Restriction T3 (IntermediaryMustClaim).'"
+  },
+  {
+   "page": 6,
+   "start": "[NOTE]V1 [END NOTE] Restr. T1 keeps the clock",
+   "end": "along with the timing results of Sec. V-D.",
+   "why": "Version V1 of a duplicated paragraph (resolves Sana's 'keep one version'). T2a is no longer a restriction, removing T3 falsifies Intermediary_Never_Loses_Under_Liveness only through the separate counterexample Necessity_IMC_Honest_Intermediary_Loses (the direct check gives no result), and there is no Value Conservation lemma. Replaced by the single paragraph in the note at 'Restr. T1 keeps the clock'."
+  },
+  {
+   "page": 6,
+   "start": "[NOTE]V2 [END NOTE] Restrs. T1 to T2b are structural",
+   "end": "along with the timing results of Sec. V-D.",
+   "why": "Version V2 of the same paragraph, with the same errors. Replaced by the single paragraph in the note at 'Restr. T1 keeps the clock'."
+  },
+  {
+   "page": 6,
+   "start": "[NOTE]This restriction feels a bit out of place currently",
+   "end": "[END NOTE]",
+   "why": "Resolved: Restr. Eq is now introduced together with the other structural restrictions (note at 'Restriction Eq.')."
+  },
+  {
+   "page": 7,
+   "start": "AI: This subsection was written for the old five-theory split",
+   "end": "that is a result, not a confession.",
+   "why": "Wrong for csf_final: written for another merge; its 'one theory' omits the five auxiliary models of lightning_aux.spthy, and the 'argued discharge' of OneResolutionPerHTLC is not in the artifact. Its valid points (thin coupling, no HTLCs in commitments, refinement as future work) are kept in the notes at 'To overcome this problem' and 'Splitting a model'."
+  },
+  {
+   "page": 7,
+   "start": "To overcome this problem, we split the model",
+   "end": "each verified individually.",
+   "why": "csf_final is not split into independent theories; replaced by the note at this spot."
+  },
+  {
+   "page": 7,
+   "start": "Splitting a model comes with limitations",
+   "end": "it justifies reading them together.",
+   "why": "Describes the old five-theory split; replaced by the note at this spot (one main theory plus five auxiliary models)."
+  },
+  {
+   "page": 7,
+   "start": "As stated in Sec. IV-B our models splits",
+   "end": "the channels from the routing.",
+   "why": "In csf_final both layers are in one theory; replaced by the note at this spot."
+  },
+  {
+   "page": 8,
+   "start": "Lock_Funds_And_Open mints the two mirrors",
+   "end": "one- shot slot Free(ptr).",
+   "why": "csf_final mints a reusable Mutex(ptr) and further persistent facts; replaced by the note at this spot."
+  },
+  {
+   "page": 8,
+   "start": "Forward obligations travel as",
+   "end": "can race on the same channel.",
+   "why": "Fulfill/Free(ptr) are Fulfilled/Mutex(ptr) in csf_final and the slot is given back on resolution; replaced by the note at this spot."
+  },
+  {
+   "page": 8,
+   "start": "rule Forward_HTLC:",
+   "end": "Route($Me, $Next, ptrOut, y) ]",
+   "why": "Not the csf_final rule (Free, ForwardHTLC; no HTLCForwarded, HTLCAdded, !RouteInfo); replaced by the verbatim csf_final rule in the note at this spot."
+  },
+  {
+   "page": 8,
+   "start": "The premise Route($Prev,$Me,ptrIn,y) is consumed",
+   "end": "Listing 1 over the idealised routing layer.",
+   "why": "Wrong for csf_final: the slot is Mutex(ptrOut); the wormhole uses AttackerSkip, not the Eq amount constraint; Neq does not make Prev and Next distinct; there is no abstract Listing-1 counterpart. Replaced by the note at this spot."
+  },
+  {
+   "page": 8,
+   "start": "Receiver_Create_Invoice mints the invoice",
+   "end": "the window in which a wormhole steals the fee.",
+   "why": "Fulfill and PaymentComplete do not exist in csf_final (Fulfilled, SenderSettled), and the preimage is never output; replaced by the note at this spot."
+  },
+  {
+   "page": 8,
+   "start": "The complementarity of claiming and refunding",
+   "end": "liveness requirement of Rmk. 1 symbolically.",
+   "why": "Wrong attribution (answers the AI margin request): T1 is not a liveness requirement, T2b encodes Rmk. 2 and T3 the claiming liveness. Replaced by the note at this spot."
+  },
+  {
+   "page": 8,
+   "start": "[TODO]Better section name and frameing [END TODO]",
+   "end": "",
+   "why": "Resolved: new title and opening framing in the note at 'B. Verified Lemma'."
+  },
+  {
+   "page": 9,
+   "start": "Theory File Aspect Modeled Safety Reachability",
+   "end": "TABLE I: The five-theory modular architecture.",
+   "why": "Five-theory table of the old lineage; replaced by the new Table I (insert after this page)."
+  },
+  {
+   "page": 9,
+   "start": "AI: OUTDATED NUMBERS: the 43/31/87-lemmas-across-",
+   "end": "catalogue has the same re-anchoring problem, but that is mechanical.",
+   "why": "Wrong for csf_final: describes another model (Lightning.spthy with 46 all-traces + 8 exists-trace, separate timeout.spthy). The csf_final numbers are in the new Table I."
+  },
+  {
+   "page": 9,
+   "start": "[TODO]We may want to rename the files.",
+   "end": "the file we name. [END TODO]",
+   "why": "Resolved: csf_final consists of lightning.spthy and lightning_aux.spthy, named consistently in the new Table I (Modif.spthy is gone)."
+  },
+  {
+   "page": 9,
+   "start": "[NOTE]SJ: I feel like we need a paragraph",
+   "end": "\"mulithop.spthy is our main file\" [END NOTE]",
+   "why": "Resolved: the new Table I comes with a plain-English paragraph saying which file models what ('lightning.spthy is our main model'); see the insert after this page."
+  },
+  {
+   "page": 9,
+   "start": "We verified 87 lemmas accross the fives theories",
+   "end": "Clock.spthy, Cltv.spthy, and timeout.spthy.",
+   "why": "Old-lineage counts and file names; replaced by the paragraph under the new Table I (insert after this page)."
+  },
+  {
+   "page": 9,
+   "start": "[TODO]Move to the right place. This is the old",
+   "end": "where exactly yet though. [END TODO]",
+   "why": "Resolved: the corrected amounts/fees paragraph goes at the end of Sec. V-A2 (note at 'Our model includes the value')."
+  },
+  {
+   "page": 9,
+   "start": "Our model includes the value of each HTLC",
+   "end": "We can not prove anything about fee policy.",
+   "why": "csf_final reads all three amounts per hop (incl. In(%vIn)) and does not chain them along the path; replaced by the note at this spot."
+  },
+  {
+   "page": 9,
+   "start": "The wormhole is exactly the gap between them,",
+   "end": "Wormhole_Steals_Exactly_The_Fees mea- sures.",
+   "why": "Lemma Wormhole_Steals_Exactly_The_Fees does not exist in csf_final; replaced by the note at this spot."
+  },
+  {
+   "page": 9,
+   "start": "We skip three things deliberately.",
+   "end": "[6] also characterize it.",
+   "why": "Forward1_HTLC, the one-shot Free(ptr) and the fixed path (Sender, Forward1, Forward2) belong to the old model; replaced by the note at this spot."
+  },
+  {
+   "page": 9,
+   "start": "1 rule Publish_Current_A:",
+   "end": "[ FundsTo($A, n) ]",
+   "why": "Duplicates the Publish_Current_A and Claim_Funds_A listings on p. 8, which match csf_final (see the note there)."
+  }
+ ],
+ "notes": [
+  {
+   "page": 6,
+   "anchor": "To make the model relevant, we restrict",
+   "html": "<p>TODO (answers Simon's struck [NOTE], checked against csf_final): (1) T1 (<code>RedeemBeforeTimeout</code>) is not needed by any of the five liveness lemmas (necessity runs, Sec. V-D), so it is presented as well-formedness. (2) The decreasing deadlines of Rmk. 2 are T2b (<code>OutgoingTimesOutFirst</code>); the claiming liveness stated after Rmk. 2 is T3 (<code>IntermediaryMustClaim</code>). (3) Correct: punishment liveness is not encoded; none of the nine restrictions of csf_final mentions <code>Cheat</code> or <code>Punish</code>.</p>"
+  },
+  {
+   "page": 6,
+   "anchor": "Restriction T1 (RedeemBeforeTimeout).",
+   "html": "<p>Replace the struck description by: <i>If an HTLC is redeemed and its channel times out, the redemption comes first.</i> This is not a liveness assumption but a well-formedness condition on timeouts: with T1 removed, all five liveness lemmas of Sec. V-D are still proved.</p><pre>restriction RedeemBeforeTimeout:\n    \"All ptr y #i #j.\n        Redeemed(ptr, y) @ #i &amp; TimedOut(ptr) @ #j ==&gt; #i &lt; #j\"</pre>"
+  },
+  {
+   "page": 6,
+   "anchor": "Restriction T2a (ForwardTimeGap).",
+   "html": "<p>Replace by: <b>Lemma (ForwardTimeGap, formerly Restr. T2a).</b> <i>If both the incoming and the outgoing HTLC of a forwarding hop time out, and the forwarder was not compromised before its incoming timeout, then the outgoing one times out first.</i> This is no longer assumed: it follows from Restr. T2b and <code>OneTimeoutPerPtr</code>, and Tamarin proves it (<code>make verify</code>).</p><pre>lemma ForwardTimeGap [reuse]:\n    \"All P Prev Next ptrIn ptrOut y #f #j #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #f\n      &amp; TimedOut(ptrOut) @ #j\n      &amp; TimedOut(ptrIn)  @ #k\n      &amp; not (Ex #c. LtkCompromised(P) @ #c &amp; #c &lt; #k)\n     ==&gt; #j &lt; #k\"</pre><p>TODO (answers Simon's margin question): yes, in csf_final it is proven from T2b, so only T1, T2b and T3 remain as liveness restrictions.</p>"
+  },
+  {
+   "page": 6,
+   "anchor": "Restriction T2b (HonestPartiesActBeforeIncoming",
+   "html": "<p>Replace by: <b>Restriction T2b</b> (<code>OutgoingTimesOutFirst</code>). <i>If the incoming HTLC of a forwarding hop times out and the forwarder was not compromised before, then its outgoing HTLC timed out earlier.</i> This is the decreasing-deadline (CLTV-delta) invariant of Rmk. 2. Forwarders compromised before their incoming timeout are not constrained.</p><pre>restriction OutgoingTimesOutFirst:\n    \"All P Prev Next ptrIn ptrOut y #f #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #f\n      &amp; TimedOut(ptrIn) @ #k\n      &amp; not (Ex #c. LtkCompromised(P) @ #c &amp; #c &lt; #k)\n     ==&gt; Ex #m. TimedOut(ptrOut) @ #m &amp; #m &lt; #k\"</pre>"
+  },
+  {
+   "page": 6,
+   "anchor": "Restriction T3 (IntermediaryMustClaim).",
+   "html": "<p>Replace the struck description by: <i>If a forwarder's outgoing HTLC is redeemed and its incoming HTLC times out, and the forwarder was not compromised before that timeout, then its incoming HTLC is redeemed too.</i> This is the claiming liveness of Rmks. 1 and 2. It only constrains traces in which the incoming HTLC times out, which are the only traces in which the upstream party can be refunded (<code>Refund_Requires_Timeout</code>). By T1, the claim then comes before the timeout. As a restriction, T3 does not penalise a missing claim but removes every such trace, including traces in which the forwarder could not have claimed in time; lemmas proved under T3 say nothing about those runs.</p><pre>restriction IntermediaryMustClaim:\n    \"All P Prev Next ptrIn ptrOut y #f #i #k.\n        HTLCForwarded(P, Prev, Next, ptrIn, ptrOut, y) @ #f\n      &amp; Redeemed(ptrOut, y) @ #i\n      &amp; TimedOut(ptrIn)  @ #k\n      &amp; not (Ex #c. LtkCompromised(P) @ #c &amp; #c &lt; #k)\n     ==&gt; Ex #l. Redeemed(ptrIn, y) @ #l\"</pre>"
+  },
+  {
+   "page": 6,
+   "anchor": "Restr. T1 keeps the clock",
+   "html": "<p>Replace both versions (V1, V2) by: Restr. T1 is a well-formedness condition on timeouts. Restr. T2b encodes the decreasing deadlines of Rmk. 2, and <code>ForwardTimeGap</code> (formerly T2a) is derived from it. Restr. T3 is the liveness assumption on which intermediary safety rests. The necessity runs of Sec. V-D remove one restriction at a time. Without T1, all five liveness lemmas (<code>ForwardTimeGap</code>, <code>Timeout_Race_Blocked</code>, <code>Intermediary_Never_Loses_Under_Liveness</code>, <code>Intermediary_Never_Loses_Strong</code>, <code>Payment_Atomicity_Under_Liveness</code>) are still proved. Without T2b, <code>Timeout_Race_Blocked</code> and both intermediary-safety lemmas are still proved. Without T3, Tamarin finds a trace with no compromised party in which an intermediary's outgoing HTLC is redeemed while its incoming one is refunded (<code>Necessity_IMC_Honest_Intermediary_Loses</code>): an honest intermediary loses money. The remaining checks give no result within 600 s, and we draw no conclusion from them. Under these restrictions we prove payment atomicity, intermediary safety, routing causality, invoice authentication and preimage secrecy (Sec. V-C), the timing results of Sec. V-D, and that a forwarder at positions 1 to 6 of a route can be bypassed only if some key was compromised (Secs. V-E and VI). The bypass theorem for any position of a single-offer payment (Sec. VI) is proved without T1, T2b and T3.</p>"
+  },
+  {
+   "page": 6,
+   "anchor": "Restriction Eq. EQ(a,b) is true iff.",
+   "html": "<p>Add after this paragraph: Restr. Eq (<code>Equality</code>) is one of six structural restrictions. <code>Equality</code> and <code>Inequality</code> turn the <code>Eq</code> and <code>Neq</code> action facts into constraints. <code>OneChannelPerPtr</code> and <code>OneTimeoutPerPtr</code> let a channel be opened at most once and time out at most once, and <code>OneHTLCPerHashPerChannel</code> lets an HTLC with a given payment hash be added at most once per channel. The sixth, <code>OneResolutionPerHTLC</code>, lets each HTLC be resolved (redeemed or refunded, action fact <code>Old</code>) at most once; it stands for a guarantee of the channel layer, which in our model does not carry HTLC outputs (Sec. IV-B).</p><pre>restriction Equality:\n    \"All x y #i. Eq(x, y) @ #i ==&gt; x = y\"\n\nrestriction Inequality:\n    \"All x y #i. Neq(x, y) @ #i ==&gt; not(x = y)\"</pre>"
+  },
+  {
+   "page": 7,
+   "anchor": "any two of them remain traceable when combined.",
+   "html": "<p>TODO: \"any two of them remain traceable\" understates what we verify (and should read \"tractable\"): the main theory <code>lightning.spthy</code> combines signatures, hashing and natural numbers (<code>builtins: hashing, signing, natural-numbers</code>) and is verified in full; only the unbounded clock is kept out of it. Suggested: \"...; without the unbounded clock, the remaining ones are tractable together.\"</p>"
+  },
+  {
+   "page": 7,
+   "anchor": "To overcome this problem, we split",
+   "html": "<p>Replace the struck sentence by: We therefore keep the block clock out of the main theory. <code>lightning.spthy</code> combines signatures, hashing and natural-number amounts, but represents timeouts as untimed events whose order is constrained by the restrictions of Sec. IV-A. The block clock and the CLTV arithmetic are analysed in small auxiliary models that use hashing and natural numbers only.</p>"
+  },
+  {
+   "page": 7,
+   "anchor": "Splitting a model comes with limitations",
+   "html": "<p>Replace the two struck paragraphs by:</p><p>Our artifact consists of one main theory and five small auxiliary models. The main theory, <code>lightning.spthy</code>, contains both the payment-channel layer (Sec. V-A1) and multi-hop routing over routes of any length (Sec. V-A2), under a single Dolev-Yao adversary that can also compromise long-term keys. The auxiliary models, all in <code>lightning_aux.spthy</code> and each selected by a preprocessor flag, cover what the main theory leaves out: the PTLC countermeasure (<code>-D=PTLC</code>) and its HTLC baseline (<code>-D=HTLC</code>), a block-clock model of CLTV deadlines (<code>-D=CLOCK</code>), CLTV-delta arithmetic (<code>-D=CLTV</code>) and the early-timeout race (<code>-D=TIMEOUT</code>). Each auxiliary model is self-contained and is not composed with the main theory; Table I states what each run establishes.</p><p>Inside the main theory, the two layers share only the long-term keys and the channel topology: <code>Lock_Funds_And_Open</code> mints the persistent <code>!ChannelConnect</code> facts and the per-channel slot <code>Mutex(ptr)</code> that the routing rules use. HTLC state is not folded into the commitment transactions: <code>StateA</code> and <code>StateB</code> carry balances and revocation data but no HTLC outputs. That an HTLC is resolved (redeemed or refunded) at most once is imposed by Restr. <code>OneResolutionPerHTLC</code> rather than derived from the channel mechanics. A mechanized link between HTLC resolution and the channel layer, for example by refinement, is future work.</p>"
+  },
+  {
+   "page": 7,
+   "anchor": "As stated in Sec. IV-B",
+   "html": "<p>Replace by: As stated in Sec. IV-B, the main theory contains both layers, as two groups of rules that share only the long-term keys and the channel topology.</p>"
+  },
+  {
+   "page": 7,
+   "anchor": "corresponding signed commitment.",
+   "html": "<p>Replace \"signed commitment\" by \"commitment\": <code>StateA</code> and <code>StateB</code> hold the commitment <code>&lt;'commit', ptr, $A, $B, n, h(sA)&gt;</code> without its signature; signatures appear only in the pending mirrors and are checked in <code>Revoke_Old_Secret</code>.</p>"
+  },
+  {
+   "page": 7,
+   "anchor": "rule Update_State:",
+   "html": "<p>TODO: checked; the listing matches rule <code>Update_State</code> of csf_final. It elides only <code>newCommitB</code>, <code>sigBnew</code> and the premises <code>Fr(~n_new), Fr(~sAnew), Fr(~sBnew), !Ltk($A, ltkA), !Ltk($B, ltkB)</code>.</p>"
+  },
+  {
+   "page": 7,
+   "anchor": "publishes the old revocation secrets.",
+   "html": "<p>Replace \"publishes the old revocation secrets\" by \"records the old revocation secrets as persistent facts\": <code>!RevokedSecret</code> is a state fact, and no rule sends a revocation secret over the network.</p>"
+  },
+  {
+   "page": 7,
+   "anchor": "rule Revoke_Old_Secret:",
+   "html": "<p>TODO: checked; the listing matches rule <code>Revoke_Old_Secret</code> of csf_final. It elides only <code>n_old, sAold, oldCommitA</code> (resp. <code>n_old, sBold, oldCommitB</code>) and <code>fA_new, fB_new</code> in the two <code>Pending</code> premises.</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "Lock_Funds_And_Open mints the two mirrors",
+   "html": "<p>Replace by: <code>Lock_Funds_And_Open</code> mints the two mirrors together with the persistent facts <code>!ValidOnChain(ptr)</code>, <code>!ChannelRecord(ptr, $A, $B)</code> and <code>!ChannelConnect</code> (one per direction), and the per-channel slot <code>Mutex(ptr)</code>, which the routing rules take and give back (Sec. V-A2).</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "rule Publish_Current_A:",
+   "html": "<p>TODO: checked; both listings match csf_final. <code>Publish_Current_A</code> hides the action facts <code>PublishState($A, n), OnChainDelayedProduce($A, n), OnChainInstantProduce($B, n)</code> behind \"...\"; <code>Claim_Funds_A</code> is verbatim. The duplicate full listings on p. 9 are struck.</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "then Punish_B) transfers the whole",
+   "html": "<p>Replace <code>Punish_B</code> by <code>Punish_A</code>: in csf_final, <code>Punish_A</code> consumes the <code>OnChainCheat($A, $B, ...)</code> and <code>RevealedSecret($A, ...)</code> facts produced by <code>Publish_Revoked_A</code> and yields <code>AllFundsTo($B)</code> (action <code>Punish($B, $A, n_old)</code>).</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "Forward obligations travel as",
+   "html": "<p>Replace by: Forward obligations travel as linear facts <code>Route($Prev, $Me, ptrIn, y)</code>, and every added HTLC is also recorded in a persistent fact <code>!RouteInfo</code>. Once an HTLC is redeemed, the preimage travels back as <code>Fulfilled(ptr, x)</code>. The slot <code>Mutex(ptr)</code>, minted when the channel opens (Sec. V-A1), acts as a per-channel lock: it is consumed whenever an HTLC is added to the channel and given back when that HTLC is redeemed or refunded. Hence no two HTLCs are pending on the same channel at the same time, while the channel stays reusable for later payments.</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "rule Forward_HTLC:",
+   "html": "<p>Replace the listing by the csf_final rule (verbatim):</p><pre>rule Forward_HTLC:\n    [ Route($Prev, $Me, ptrIn, y),\n      !ChannelConnect(ptrOut, $Me, $Next),\n      Mutex(ptrOut),\n      In(%vIn), In(%fee), In(%vOut) ]\n    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y),\n        HTLCAdded(ptrOut, y),\n        FeeCharged($Me, y, %fee),\n        Eq(%vIn,  %vOut %+ %fee),\n        Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]-&gt;\n    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y, %vIn, %vOut, %fee),\n      Route($Me, $Next, ptrOut, y),\n      !RouteInfo($Me, $Next, ptrOut, y) ]</pre>"
+  },
+  {
+   "page": 8,
+   "anchor": "The premise Route($Prev,$Me,ptrIn,y) is consumed",
+   "html": "<p>Replace by: <code>Forward_HTLC</code> consumes <code>Route($Prev, $Me, ptrIn, y)</code> and produces <code>Route($Me, $Next, ptrOut, y)</code>. It advances the payment one hop, takes the slot <code>Mutex(ptrOut)</code> of the outgoing channel, and stores in <code>IntermediaryPending</code> everything the hop needs to settle or to be refunded later. <code>$Next</code> is any party with which <code>$Me</code> shares a channel, so routes are built hop by hop and have no fixed length; this single rule serves every forwarding hop of every route. The incoming amount, the fee and the outgoing amount are chosen by the environment and constrained only by <code>Eq(%vIn, %vOut %+ %fee)</code>. The action <code>HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y)</code> identifies the hop in our lemmas, <code>HTLCAdded(ptrOut, y)</code> feeds Restr. <code>OneHTLCPerHashPerChannel</code>, and <code>FeeCharged</code> records the fee the hop expects. The <code>Neq</code> facts make the forwarder distinct from both of its neighbours and the two channels distinct from each other.</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "Receiver_Create_Invoice mints the invoice",
+   "html": "<p>Replace by: <code>Receiver_Create_Invoice</code> signs the tagged invoice <code>&lt;'invoice', $Receiver, $Sender, y&gt;</code> with <code>y = h(~x)</code>, sends it with its signature, and keeps the preimage private in <code>ReceiverInv</code>. <code>Sender_Offer_HTLC</code> checks that signature before offering the first HTLC. <code>Receiver_Fulfill_HTLC</code> consumes the last <code>Route</code> fact, checks <code>Eq(h(x), y)</code>, emits <code>Redeemed(ptrIn, y)</code> and passes the preimage upstream as <code>Fulfilled(ptrIn, x)</code>. The preimage is never sent over the network, and the adversary never learns it (<code>Preimage_Never_Known</code>). <code>Intermediary_Settle</code> then consumes <code>IntermediaryPending</code> and <code>Fulfilled(ptrOut, x)</code>, emits <code>Fulfilled(ptrIn, x)</code> one hop upstream and records <code>FeeEarned</code> when the intermediary collects its fee. Both rules give the slot <code>Mutex(ptrIn)</code> back. <code>Sender_Settle</code> finally consumes <code>SenderPending</code> and <code>Fulfilled(ptrSF, x)</code> and closes the payment with <code>SenderSettled</code>.</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "The complementarity of claiming and refunding",
+   "html": "<p>Replace by: Both refund rules also give the slot <code>Mutex</code> back. Timeouts are untimed channel events: <code>Open_Timeout</code> may fire at any point once the channel exists, at most once per channel (<code>OneTimeoutPerPtr</code>), and makes the pending HTLCs on that channel refundable. The interplay of claiming and refunding is pinned down by the three liveness restrictions of Sec. IV-A: <code>RedeemBeforeTimeout</code> forbids redeeming after the timeout, <code>OutgoingTimesOutFirst</code> encodes the decreasing deadlines of Rmk. 2, and <code>IntermediaryMustClaim</code> encodes the claiming liveness of Rmks. 1 and 2.</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "Interactions with the Blockchain:",
+   "html": "<p>TODO: add at the end of Sec. V-A2, just before this heading:</p><p>Besides the Dolev-Yao network and key compromise (<code>Compromise_Ltk</code>), the adversary has one routing rule, used for the wormhole:</p><pre>rule AttackerSkip:\n    [ Fulfilled(ptrExit, x),\n      !RouteInfo(ExitAtt, Next, ptrExit, y)[-,no_precomp],\n      !RouteInfo(EntryAtt, Skipped, ptrSkip, y)[-,no_precomp],\n      !Compromised(ExitAtt),\n      !Compromised(EntryAtt) ]\n    --[ FulfilledProduced(ptrSkip, x),\n        Skipped(ptrSkip, x),   // annotation: marks a wormhole skip\n        Eq(h(x), y) ]-&gt;\n    [ Fulfilled(ptrSkip, x) ]</pre><p>If two compromised parties, <code>ExitAtt</code> and <code>EntryAtt</code>, have each added an HTLC for the same payment hash <code>y</code>, on channels <code>ptrExit</code> and <code>ptrSkip</code>, then <code>AttackerSkip</code> takes the preimage released on <code>ptrExit</code> and delivers it on <code>ptrSkip</code>. <code>EntryAtt</code> can then settle upstream, while the hops between <code>ptrSkip</code> and <code>ptrExit</code>, starting with <code>Skipped</code>, never see their outgoing HTLC fulfilled and can at best be refunded. The rule emits <code>Skipped(ptrSkip, x)</code> but neither <code>Redeemed</code> nor <code>FeeEarned</code>. It yields the wormhole trace of Sec. V-E (<code>Wormhole_Fee_Theft_Reachable</code>), and the hop-bypass theorems (Sec. V-E, VI) show that, if the sender settles, a forwarder at positions 1 to 6 of the route, or at any position of a single-offer payment, is bypassed only if some key was compromised.</p>"
+  },
+  {
+   "page": 8,
+   "anchor": "B. Verified Lemma",
+   "html": "<p>Rename to <b>B. Verification Results</b> and open the subsection with: Table I lists every verification run of our artifact, one per Makefile target; <code>make all</code> runs them in order. All results were obtained with Tamarin 1.10 (which reports the Maude version used, 3.2, as unsupported) and reproduced on a laptop with a 6 GB heap limit (<code>MEM=6G</code>).</p>"
+  },
+  {
+   "page": 9,
+   "anchor": "Our model includes the value of each HTLC",
+   "html": "<p>Replace by (end of Sec. V-A2, after the <code>Forward_HTLC</code> paragraph): Amounts and fees are modelled per hop only. <code>Forward_HTLC</code> reads the incoming amount, the fee and the outgoing amount from the network (<code>In(%vIn)</code>, <code>In(%fee)</code>, <code>In(%vOut)</code>, natural-number terms) and enforces <code>Eq(%vIn, %vOut %+ %fee)</code>, so incoming = outgoing + fee holds at every hop by construction. The three values are kept in <code>IntermediaryPending</code>. <code>Sender_Offer_HTLC</code>, the invoice and the <code>Route</code> facts carry no amount, so amounts are not chained along the path, and the model makes no statement about end-to-end value, such as the amount the receiver obtains or the total fee the sender pays. We keep per-hop fees because the wormhole of Sec. V-E is a fee theft. The fee is a single per-hop quantity rather than Lightning's <code>base_fee + fee_rate</code> formula, and we prove nothing about fee policy.</p>"
+  },
+  {
+   "page": 9,
+   "anchor": "The wormhole is exactly the gap",
+   "html": "<p>Replace by: In the wormhole trace, the bypassed honest hop emits <code>FeeCharged</code> but never <code>FeeEarned</code>, although the sender settles and the receiver is paid (<code>Wormhole_Fee_Theft_Reachable</code>, Sec. V-E). Conversely, a hop whose key is never compromised earns a fee only after it has forwarded the payment and its outgoing HTLC has been redeemed (<code>Fee_Only_On_Successful_Forward</code>).</p>"
+  },
+  {
+   "page": 9,
+   "anchor": "We skip three things deliberately.",
+   "html": "<p>Replace by: We deliberately leave out three things. First, channel capacity: <code>Forward_HTLC</code> has no <code>Wallet</code> premise and HTLCs do not change the balances in <code>StateA</code> and <code>StateB</code>, so a forward never fails for lack of funds. Second, concurrent HTLCs on one channel: <code>Mutex(ptr)</code> is taken when an HTLC is added to channel <code>ptr</code> and given back when that HTLC is redeemed or refunded, so a channel carries at most one pending HTLC at a time; later payments can reuse it, each with a payment hash not used on that channel before (Restr. <code>OneHTLCPerHashPerChannel</code>). Third, onion routing: the sender chooses only the first hop, each forwarder chooses its next hop among its own channels, and route information is kept in local state rather than sent in layered encryption. We therefore make no claims about hiding who pays whom, and the wormhole appears purely as fee theft, as also characterized in [6].</p>"
+  }
+ ],
+ "inserts": [
+  {
+   "after_page": 9,
+   "title": "New Table I and its explanatory paragraph (replaces the struck old Table I, its caption, and 'We verified 87 lemmas ...')",
+   "html": "<p><b>TABLE I: Verification runs of the artifact (Tamarin 1.10), one row per Makefile target; <code>make all</code> runs them in this order. A = all-traces lemmas, E = exists-trace lemmas.</b></p><table><tr><th>Target</th><th>File and flags</th><th>Content</th><th>Built-ins</th><th>A</th><th>E</th><th>Result</th></tr><tr><td><code>make verify</code></td><td><code>lightning.spthy</code></td><td>Main model: channel layer, multi-hop routing over routes of any length (one generic <code>Forward_HTLC</code>), wormhole rule <code>AttackerSkip</code>, key compromise. 32 safety lemmas; 13 hop-bypass lemmas (<code>First_Hop_</code>, <code>Second_Hop_</code>, <code>Hop3_</code> to <code>Hop6_Skip_Requires_Compromise</code>, plus 7 helpers); 10 exists-trace lemmas (9 found automatically, <code>Wormhole_Fee_Theft_Reachable</code> replayed from a saved 116-step proof)</td><td>hashing, signing, natural-numbers</td><td>45</td><td>10</td><td>55/55 verified</td></tr><tr><td><code>make general</code></td><td><code>lightning.spthy -D=GENERAL -D=NO_IMC -D=NO_OTF -D=NO_RBT -D=NECESSITY</code></td><td>Liveness restrictions T1, T2b, T3 removed. <code>Any_Hop_Skip_Requires_Compromise</code> (any route length, single offer per payment hash; 7 steps), its 7 helpers, and 16 default-mode lemmas re-proved in this mode</td><td>hashing, signing, natural-numbers</td><td>24</td><td>0</td><td>24/24 verified</td></tr><tr><td><code>make aux</code></td><td><code>lightning_aux.spthy -D=PTLC</code></td><td>PTLC countermeasure on the fixed route S, H1, H2, H3, R: <code>No_Wormhole_Around_Honest_Hop</code> (25 steps), 2 control traces, 2 sanity traces</td><td>hashing, natural-numbers</td><td>1</td><td>4</td><td>5/5 verified</td></tr><tr><td></td><td><code>lightning_aux.spthy -D=HTLC</code></td><td>HTLC baseline on the same route: <code>Wormhole_Around_Honest_Hop</code> is reachable (12 steps); 2 sanity traces</td><td>hashing, natural-numbers</td><td>0</td><td>3</td><td>3/3 verified</td></tr><tr><td></td><td><code>lightning_aux.spthy -D=CLOCK</code></td><td>Block-clock model of CLTV deadlines: channel/HTLC lifecycle, claim windows, preimage timing, exclusive outcomes; 3 reachability traces</td><td>hashing, natural-numbers</td><td>6</td><td>3</td><td>9/9 verified</td></tr><tr><td></td><td><code>lightning_aux.spthy -D=CLTV</code></td><td>CLTV-delta arithmetic: positive gap, non-empty claim window, staggered path</td><td>hashing, natural-numbers</td><td>3</td><td>0</td><td>3/3 verified</td></tr><tr><td></td><td><code>lightning_aux.spthy -D=TIMEOUT</code></td><td>Four-rule model without timeout ordering: the early-timeout race is reachable (<code>Early_Timeout_Race</code>)</td><td>hashing, natural-numbers</td><td>0</td><td>1</td><td>1/1 verified</td></tr><tr><td><code>make necessity</code></td><td><code>lightning.spthy -D=NECESSITY</code> with one of <code>-D=NO_IMC</code>, <code>-D=NO_OTF</code>, <code>-D=NO_RBT</code></td><td>One liveness restriction (T3, T2b or T1) removed per run; the 5 liveness lemmas re-checked, 600 s limit each; counterexample <code>Necessity_IMC_Honest_Intermediary_Loses</code> (with <code>-D=NO_IMC</code>)</td><td>hashing, signing, natural-numbers</td><td>15 checks</td><td>1</td><td>10 of 15 checks verified, 5 without result; counterexample verified (28 steps)</td></tr><tr><td><b>Total</b></td><td>verify + general + aux</td><td>16 of the 24 general-mode proofs re-prove default-mode lemmas in the liveness-free mode</td><td></td><td>79</td><td>21</td><td>100 lemma proofs, all verified (plus the necessity runs)</td></tr></table><p><code>lightning.spthy</code> is our main model. It contains the channel layer of Sec. V-A1, multi-hop routing with the single generic rule <code>Forward_HTLC</code> (Sec. V-A2) and the wormhole rule <code>AttackerSkip</code>, all under one Dolev-Yao adversary that can compromise long-term keys. In its default mode (<code>make verify</code>), all 55 lemmas are verified: 32 safety lemmas about channels and payments (Sec. V-C, V-D); 13 lemmas (six theorems and seven helpers) showing that the forwarders at positions 1 to 6 of a route cannot be bypassed unless some key was compromised (Sec. VI-A); and 10 exists-trace lemmas. These show that the model is not vacuous (channel updates, cooperative closes, refunds and honest multi-hop payments are reachable), that the assumptions of our safety lemmas matter (a payment without a matching invoice can settle once the receiver's key is compromised; a compromised intermediary can lose), and that the wormhole is reachable. <code>make general</code> runs the same file without the three liveness restrictions and proves the bypass theorem for routes of any length, <code>Any_Hop_Skip_Requires_Compromise</code> (Sec. VI); since removing restrictions only adds traces, this all-traces result also holds in the default mode. <code>lightning_aux.spthy</code> holds five small, self-contained models, one per flag: the PTLC countermeasure and its HTLC baseline (Sec. VI-E), two timing models (block clock, CLTV delta) that make explicit the deadlines the main model abstracts into untimed timeout events, and the early-timeout race, the trace pattern that <code>Timeout_Race_Blocked</code> excludes in the main model for uncompromised forwarders. <code>make necessity</code> removes one liveness restriction at a time (Sec. V-D).</p>"
+  }
+ ],
+ "open_questions": [
+  "Restriction labels: keep T1, T2b, T3 (T2a is now the lemma ForwardTimeGap), or renumber them T1-T3? Other sections cite T2b and T3.",
+  "OneResolutionPerHTLC is the only link between HTLC resolution and the channel layer. State it only as an assumption, or also give an informal argument (resolving an HTLC twice would need a revoked commitment, cf. No_Punishment_Without_Cheating)? Nothing in csf_final mechanizes that argument.",
+  "Necessity_OTF_Timeout_Order_Broken is in lightning.spthy (-D=NO_OTF) but is not run by make necessity and has no result: remove it from the shipped file, or keep it and say so?",
+  "Space: put the five restriction/lemma formulas from the page-6 notes in Sec. IV-A itself, or in Appendix A with only the informal statements in the body?"
+ ],
+ "changes": [
+  "Verified every strike and anchor with resolve.py (all resolve to exactly the intended spans); no change needed to the draft's spans.",
+  "Added strike p9 '[TODO]Move to the right place ...' (resolved: the amounts note now names the place).",
+  "Added note p7 'any two of them remain traceable': understated, since lightning.spthy combines hashing, signing and natural-numbers; also traceable -> tractable.",
+  "Added note p7 'corresponding signed commitment': StateA/StateB hold the unsigned commitment.",
+  "Added note p7 'publishes the old revocation secrets': !RevokedSecret is a state fact, never output.",
+  "p7 IV-B and 'As stated in Sec. IV-B' notes: the two layers share the long-term keys as well as the topology (Sender_Offer_HTLC reads !Ltk/!Pk), so 'share only the channel topology' is fixed.",
+  "p6 V1/V2 strikes: why now records that removing T3 gives no result for INL_Under_Liveness (the counterexample is a separate lemma); dropped 'support this classification' from the merged paragraph (the necessity runs do not show that T2b encodes Rmk. 2).",
+  "p6 Eq note: no longer calls Equality/Inequality 'ill-formed-trace' restrictions; the top TODO is trimmed so it no longer repeats the T2a answer.",
+  "p8 Receiver_Create_Invoice note: removed 'a hop with FeeCharged but no FeeEarned has forwarded without being paid; this is what the wormhole achieves' (it also holds for any refunded hop, so it does not characterise the wormhole).",
+  "p8 Forward_HTLC explanation: 'every hop' changed to 'every forwarding hop' (the first hop is Sender_Offer_HTLC).",
+  "p8 AttackerSkip explanation: the preimage is taken from ptrExit and delivered on ptrSkip; the in-between hops never see their outgoing HTLC fulfilled (not 'never receive x').",
+  "p8 V-B note: added the Maude 3.2 'unsupported' caveat that FACTS requires.",
+  "p9 onion-routing sentence: replaced the vague 'nothing about the route is hidden' with a factual statement (route information is kept in local state; no layered encryption).",
+  "Table I: general row states the single-offer premise. The paragraph says 'verified' (not 'proves') for exists-trace lemmas; Forged_Invoice is described accurately (a settlement with no matching invoice once the receiver's key is compromised); the TIMEOUT model is tied to Timeout_Race_Blocked instead of 'deadlines'; the total row no longer double-counts. The duplicate Necessity_OTF TODO is dropped (kept as an open question).",
+  "Re-checked against lightning.spthy / Makefile / results.txt: rule and restriction texts are verbatim; counts are 45A+10E (verify), 24A (general), 1A+4E, 0A+3E, 6A+3E, 3A, 0A+1E (aux) = 79A+21E = 100; necessity 10/15 verified, 5 no result, counterexample 28 steps."
+ ]
+}
