@@ -150,3 +150,7 @@ HTLC_Commit_Correspondence verified (10 steps): every HTLCCommitted(ptr, op, n) 
 - Claim_Gap_Witness falsified (expected): under the liveness restrictions a
   started settle is always committed before the incoming expiry. This is an
   assumption of the model and must be stated as one.
+
+- Reproduced on MacBook Air M5 (16 GB), Tamarin 1.12.0: folder 1 103/103 VERIFIED;
+  folder 2 76 VERIFIED + Claim_Gap_Witness FALSIFIED (expected). Results hold on
+  Tamarin 1.10 and 1.12.

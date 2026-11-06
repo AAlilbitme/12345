@@ -50,6 +50,14 @@ Flags: `-D=LIVENESS -D=BOUND -D=GAP2` (theorem), `-D=LIVENESS -D=GAP2` (ablation
 
     tamarin-prover deadline_core.spthy -D=LIVENESS -D=BOUND -D=GAP2 --prove=Deadline_Per_Hop
 
+## Reproduced on a MacBook Air M5 (16 GB), Tamarin 1.12.0 / Maude 3.5.1
+
+- Folder 1: 103/103 VERIFIED (51 without flags, 52 with `-D=LIVENESS`).
+- Folder 2: 76 VERIFIED + 1 FALSIFIED (`Claim_Gap_Witness`, the expected result):
+  62 without flags (7 goal-2, 5 helpers, 50 safety) and 15 with `-D=LIVENESS`.
+  Peak memory 10.4 GB (`Funding_Spent_Once`, `Sender_Pays_Invoice_Plus_Fees`).
+- The same proofs also verify on Tamarin 1.10 (server runs).
+
 ## Running on a Mac (e.g. MacBook Air, 16 GB)
 
     brew install tamarin-prover/tap/tamarin-prover   # includes Maude
