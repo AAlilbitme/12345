@@ -24,9 +24,20 @@ RESULTS=${RESULTS:-results.tsv}
 mkdir -p logs
 LOG="logs/${LEMMA}$(echo "$*" | tr -c 'A-Za-z0-9=' '_' | sed 's/^_*//; s/^\(.\)/_\1/').log"
 
+# add: macOS has no `timeout`; use GNU coreutils' gtimeout there (brew install coreutils)
+TIMEOUT=timeout; command -v timeout >/dev/null 2>&1 || TIMEOUT=gtimeout
+command -v "$TIMEOUT" >/dev/null 2>&1 || { echo "need timeout (Linux) or gtimeout (macOS: brew install coreutils)"; exit 2; }
+
+# add: RESUME=1 skips a lemma that already has a VERIFIED/FALSIFIED row with the
+# add: same flags in $RESULTS (to spread a long run over several sessions).
+if [ "${RESUME:-0}" = 1 ] && [ -f "$RESULTS" ] && awk -F'\t' -v l="$LEMMA" -v f="$*${TAG:+ $TAG}" \
+     '$6==l && $7==f && ($10=="VERIFIED" || $10=="FALSIFIED") {ok=1} END {exit !ok}' "$RESULTS"; then
+  printf "%-18s %-45s (already in %s)\n" SKIPPED "$LEMMA" "$RESULTS"; exit 0
+fi
+
 start=$(date +%s)
 # +RTS -s: GHC prints its memory statistics (incl. peak) at exit.
-LANG=C.UTF-8 timeout "$LIMIT" "$TAMARIN" "$THEORY" --prove="$LEMMA" "$@" \
+LANG=C.UTF-8 "$TIMEOUT" "$LIMIT" "$TAMARIN" "$THEORY" --prove="$LEMMA" "$@" \
     --derivcheck-timeout=600 +RTS -M"$MEM" -s -RTS > "$LOG" 2>&1
 code=$?
 secs=$(( $(date +%s) - start ))
@@ -54,7 +65,7 @@ gitrev=${GITREV:-$(git rev-parse --short HEAD 2>/dev/null || echo none)}   # GIT
 tver=$("$TAMARIN" --version 2>/dev/null | head -1 | sed -E 's/.*tamarin-prover ([^ ,]+).*/\1/')
 mver=$(maude --version 2>/dev/null | head -1)
 printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-    "$(date -Iseconds)" "$gitrev" "$tver" "$mver" "$THEORY" "$LEMMA" "$*${TAG:+ $TAG}" \
+    "$(date +%Y-%m-%dT%H:%M:%S%z)" "$gitrev" "$tver" "$mver" "$THEORY" "$LEMMA" "$*${TAG:+ $TAG}" \
     "$LIMIT" "$MEM" "$res" "${steps:--}" "$secs" "$code" "${peak:--}" "$loaded" >> "$RESULTS"
 printf "%-18s %-45s %6s steps %6ss %9s\n" "$res" "$LEMMA" "${steps:--}" "$secs" "${peak:--}"
 [ "$res" = VERIFIED ]

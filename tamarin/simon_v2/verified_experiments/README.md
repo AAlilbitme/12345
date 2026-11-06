@@ -50,6 +50,21 @@ Flags: `-D=LIVENESS -D=BOUND -D=GAP2` (theorem), `-D=LIVENESS -D=GAP2` (ablation
 
     tamarin-prover deadline_core.spthy -D=LIVENESS -D=BOUND -D=GAP2 --prove=Deadline_Per_Hop
 
+## Running on a Mac (e.g. MacBook Air, 16 GB)
+
+    brew install tamarin-prover/tap/tamarin-prover   # includes Maude
+    brew install coreutils                           # gtimeout, used by run_lemma.sh
+
+    cd 2_htlcs_through_channel_updates
+    RESUME=1 caffeinate -i make MEM=10G              # goal 2 + helpers + 50 safety lemmas
+    RESUME=1 caffeinate -i make liveness MEM=10G
+    make summary
+
+`RESUME=1` skips lemmas already VERIFIED/FALSIFIED in `results.tsv`, so the run
+can be stopped (Ctrl-C) and continued later. Run one `make` at a time: most
+goal-2 lemmas need 8-10 GB. A lemma reported as OUT_OF_MEMORY can be retried
+alone with `make lemma L=<name> MEM=12G` (macOS then swaps; slow but works).
+
 ## How to run
 
 Requirements: Tamarin 1.10 and Maude. Always run from inside the folder.
