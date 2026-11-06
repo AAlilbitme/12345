@@ -1,0 +1,112 @@
+// Prototype v3: arbitrary-length routing (linear-fact chain) + timeout/refund
+// + timing restrictions, to test the REAL safety lemmas over an unbounded chain:
+//   - Redeem_Requires_Receiver_Release  (authentication/atomicity, no timing)
+//   - Intermediary_Never_Loses          (safety under liveness, generic hop)
+theory generic_v3
+begin
+
+builtins: hashing
+
+rule Open_Channel:
+    [ Fr(~ptr) ]
+    --[ ChannelOpen($A, $B, ~ptr) ]->
+    [ !ChannelConnect(~ptr, $A, $B), !ChannelConnect(~ptr, $B, $A) ]
+
+rule Receiver_Create_Invoice:
+    [ Fr(~x) ]
+    --[ InvoiceCreated($Receiver, h(~x)), SecretPreimage($Receiver, ~x) ]->
+    [ ReceiverInv($Receiver, ~x), !Invoice($Receiver, h(~x)) ]
+
+rule Sender_Offer_HTLC:
+    [ !Invoice($Receiver, y), !ChannelConnect(ptrSF, $Sender, $F) ]
+    --[ HTLCOffered($Sender, $F, ptrSF, y), HTLCAdded(ptrSF, y), Neq($Sender, $F) ]->
+    [ SenderPending($Sender, $F, ptrSF, y), Route($Sender, $F, ptrSF, y) ]
+
+rule Forward_HTLC:
+    [ Route($Prev, $Me, ptrIn, y), !ChannelConnect(ptrOut, $Me, $Next) ]
+    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y), HTLCAdded(ptrOut, y),
+        ForwardHTLC($Me, ptrIn, ptrOut, y),
+        Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]->
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y),
+      Route($Me, $Next, ptrOut, y) ]
+
+rule Receiver_Fulfill_HTLC:
+    [ Route($Prev, $Receiver, ptrIn, y), ReceiverInv($Receiver, x) ]
+    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y),
+        PreimageReleased($Receiver, x), Redeemed(ptrIn, y), Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ]
+
+rule Intermediary_Settle:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y), Fulfill(ptrOut, x) ]
+    --[ IntermediaryClaimed($Me, $Prev, ptrIn, x), Redeemed(ptrIn, y), Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ]
+
+rule Sender_Settle:
+    [ SenderPending($Sender, $F, ptrSF, y), Fulfill(ptrSF, x) ]
+    --[ SenderSettled($Sender, $F, ptrSF, x), Redeemed(ptrSF, y), Eq(h(x), y) ]->
+    [ ]
+
+// --- timeout / refund ---
+rule Channel_Timeout:
+    [ !ChannelConnect(ptr, A, B) ] --[ TimedOut(ptr) ]-> [ !Timeout(ptr) ]
+
+rule Intermediary_Refund:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y), !Timeout(ptrOut) ]
+    --[ Refunded(ptrOut, y) ]->
+    [ ]
+
+rule Sender_Refund:
+    [ SenderPending($Sender, $F, ptrSF, y), !Timeout(ptrSF) ]
+    --[ Refunded(ptrSF, y) ]->
+    [ ]
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+// HTLC resolves exactly one way.
+restriction OneOutcomePerHTLC:
+    "All ptr y #i #j. Redeemed(ptr, y) @ #i & Refunded(ptr, y) @ #j ==> F"
+restriction OneTimeoutPerPtr:
+    "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
+
+// T1: redeem only before timeout.
+restriction RedeemBeforeTimeout:
+    "All ptr y #i #j. Redeemed(ptr, y) @ #i & TimedOut(ptr) @ #j ==> #i < #j"
+// T2: outgoing times out before incoming.
+restriction ForwardTimeGap:
+    "All P ptrIn ptrOut y #f #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrOut) @ #j & TimedOut(ptrIn) @ #k ==> #j < #k"
+// T2b (liveness): if the incoming times out, the outgoing timed out earlier.
+restriction HonestActsBeforeIncomingTimeout:
+    "All P ptrIn ptrOut y #f #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f & TimedOut(ptrIn) @ #k
+     ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
+// T3: if outgoing redeemed before incoming timeout, incoming is swept.
+restriction IntermediaryMustClaim:
+    "All P ptrIn ptrOut y #f #i #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i & TimedOut(ptrIn) @ #k & #i < #k
+     ==> Ex #l. Redeemed(ptrIn, y) @ #l"
+
+// ---- safety lemmas, all generic over chain length ----
+
+// AUTHENTICATION / ATOMICITY (no timing): nothing is redeemed unless the
+// genuine receiver released the matching preimage.
+lemma Redeem_Requires_Receiver_Release [use_induction]:
+    "All ptr y #i.
+        Redeemed(ptr, y) @ #i
+     ==> Ex R x #k. PreimageReleased(R, x) @ #k & h(x) = y"
+
+// INTERMEDIARY SAFETY (under liveness): an honest forwarder can't have its
+// outgoing redeemed and its incoming refunded -- impossible in this model.
+lemma Intermediary_Never_Loses:
+    "All Me ptrIn ptrOut y #f #i #j.
+        ForwardHTLC(Me, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & Refunded(ptrIn, y) @ #j
+     ==> F"
+
+end

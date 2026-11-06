@@ -1,0 +1,30 @@
+\section{Discussion}
+
+\medbfparagraph{What the discipline costs and what it buys}
+Adding linear tokens is not free: each one is a premise the prover must
+resolve, and each one narrows what the model admits. We found the cost to be
+negative in practice --- the hardened $N$-hop theory verifies in half the time
+of the unhardened one --- but the general point is that narrowing is exactly
+what makes the model faithful. A model that admits more traces than reality is
+not a more conservative model; it is a wrong one that happens to fail safe on
+all-traces properties and fail open on witnesses.
+
+\medbfparagraph{Where the prover stops scaling}
+Three boundaries are worth recording. First, the triple of signing,
+natural-number induction and an unbounded clock is intractable together, which
+is why the package is modular rather than monolithic. Second,
+\code{Settle\_Requires\_Receiver\_Release} does not terminate over the generic
+settle chain, though it verifies at fixed hop count. Third, the refinement
+argument of \Cref{thm:refinement} is pen-and-paper. Each of these is a place
+where a reader should discount our claims, and we prefer to name them than to
+let them be discovered.
+
+\medbfparagraph{Threats to validity}
+Our model abstracts Bitcoin script: outputs are represented by pointers and
+spend conditions by rule premises, not by evaluated script. It treats
+signatures symbolically, so signature-level attacks are out of scope by
+construction. Timing in the concrete theory is relational, and the two
+block-clock theories that make it numeric do not carry the signing layer.
+Finally, the wormhole is unreachable in the abstract model for structural
+reasons (\Cref{sec:refinement}), so message-layer attacks must be established
+at the concrete layer and do not transfer to arbitrary $N$.

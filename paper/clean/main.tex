@@ -1,0 +1,30 @@
+\documentclass[conference]{IEEEtran}
+\input{preamble}
+
+\begin{document}
+
+\title{Formal Verification of the Lightning Network in \tamarin}
+\author{}   % anonymous submission
+\maketitle
+
+\input{sections/00_abstract}
+\input{sections/01_intro}
+\input{sections/02_overview}
+\input{sections/03_method}
+\input{sections/05a_model}
+\input{sections/05b_properties}
+\input{sections/06_bypass}
+\input{sections/07_related}
+
+\input{refs}
+
+\appendices
+\input{sections/appendix}
+\section{Model Listings}\label{app:listings}
+This appendix collects the rules and lemma statements of \code{lightning.spthy} and \code{lightning_aux.spthy} that the main text describes in prose.
+\input{sections/appx_F2}
+\input{sections/appx_F3}
+\input{sections/appx_F4}
+\input{sections/appx_F5}
+
+\end{document}

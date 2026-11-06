@@ -1,0 +1,62 @@
+theory HopProgressOnChain
+begin
+
+/*
+  Progress prototype: one forwarder F between an incoming HTLC (S -> F) and an
+  outgoing HTLC (F -> R).  No liveness restrictions.  Instead:
+    - progress (Backes et al., EuroS&P 2017): an honest process that can act
+      without adversary input eventually does;
+    - the timing order is protocol structure, not a restriction:
+        * an HTLC is resolved at most once (lock on its cell),
+        * the incoming HTLC can only time out after the outgoing one did
+          (the CLTV delta: the incoming refund needs the outgoing timeout).
+  Goal: intermediary safety is then proved, not assumed.
+*/
+
+builtins: hashing
+options: translation-progress
+
+let ForwarderClaim =
+  lock 'in';
+  lookup 'in_res' as q in unlock 'in'
+  else (insert 'in_res', 'redeemed'; event RedeemIn(); unlock 'in')
+
+let Receiver =
+  // R may claim the outgoing HTLC with the preimage (or never: R is not forced)
+  lock 'out';
+  lookup 'out_res' as r in unlock 'out'
+  else (insert 'out_res', 'redeemed'; event RedeemOut(); unlock 'out';
+        // the redeem is on chain: the honest forwarder can now claim without
+        // waiting for anyone, so progress forces it to do so
+        ForwarderClaim)
+
+let OutTimeout =
+  lock 'out';
+  lookup 'out_res' as r in unlock 'out'
+  else (insert 'out_res', 'timedout'; event TimeoutOut(); unlock 'out')
+
+let InTimeout =
+  // CLTV delta: the incoming HTLC expires only after the outgoing one did
+  lookup 'out_res' as r in
+  (if r = 'timedout' then
+    (lock 'in';
+     lookup 'in_res' as q in unlock 'in'
+     else (insert 'in_res', 'refunded'; event RefundIn(); unlock 'in'))
+   else 0)
+
+process:
+new ~x; ( Receiver || OutTimeout || InTimeout )
+
+// Sanity: both outcomes are possible
+lemma Redeem_Possible: exists-trace "Ex #i. RedeemIn() @ #i"
+lemma Refund_Possible: exists-trace "Ex #i. RefundIn() @ #i"
+
+// Intermediary safety without any liveness restriction
+lemma Intermediary_Safe:
+  "All #i. RedeemOut() @ #i ==> not (Ex #j. RefundIn() @ #j)"
+
+// Liveness from progress: if the outgoing HTLC is redeemed, F claims its incoming HTLC
+lemma Intermediary_Claims:
+  "All #i. RedeemOut() @ #i ==> Ex #j. RedeemIn() @ #j"
+
+end
