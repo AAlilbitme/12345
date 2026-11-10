@@ -155,3 +155,7 @@ HTLC_Commit_Correspondence verified (10 steps): every HTLCCommitted(ptr, op, n) 
   folder 2 76 VERIFIED + Claim_Gap_Witness FALSIFIED (expected). Results hold on
   Tamarin 1.10 and 1.12.
 - Re-verified after the runner/cleanup changes (server, Tamarin 1.10, one lemma per call): 76 VERIFIED + Claim_Gap_Witness FALSIFIED (expected); no wellformedness warnings; `make` exits 0.
+- Added restriction CommitOnlyWhileOpen (an HTLC step is committed only before the
+  funding output is spent). Before: Commit_After_Close_Witness VERIFIED (23 steps).
+  After, full re-verification (server, Tamarin 1.10): 76 VERIFIED + 2 expected
+  FALSIFIED witnesses (Claim_Gap_Witness, Commit_After_Close_Witness).

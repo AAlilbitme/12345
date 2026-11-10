@@ -50,8 +50,11 @@ Limitations of the goal-2 model (state them in the paper):
   out. The liveness lemmas therefore say nothing about on-chain HTLC resolution,
   and they assume the channel peer cooperates in the update (even a compromised
   one). The final model (folder 1) does not have this restriction.
-- **A completed update can be committed after the channel is closed:**
-  `Commit_HTLC_Update` needs only `InFlight` and the persistent `!UpdateDone`.
+- **Fixed: commit only while the channel is open.** Without the restriction
+  `CommitOnlyWhileOpen` a completed update could be committed after the channel
+  was closed (`Commit_After_Close_Witness` found that trace, 23 steps). With the
+  restriction the witness is FALSIFIED. Effects of a step committed before the
+  close can still happen after it; on-chain HTLC resolution is not modelled.
 - **Balances are not linked to HTLC amounts:** `Update_State_HTLC` takes the new
   balances from the network, as `Update_State` does. Goal 2 proves the order
   (an HTLC step takes effect only after a completed update), not that funds move
@@ -76,7 +79,7 @@ Flags: `-D=LIVENESS -D=BOUND -D=GAP2` (theorem), `-D=LIVENESS -D=GAP2` (ablation
 ## Reproduced on a MacBook Air M5 (16 GB), Tamarin 1.12.0 / Maude 3.5.1
 
 - Folder 1: 103/103 VERIFIED (51 without flags, 52 with `-D=LIVENESS`).
-- Folder 2: 76 VERIFIED + 1 FALSIFIED (`Claim_Gap_Witness`, the expected result):
+- Folder 2 (before `CommitOnlyWhileOpen` was added): 76 VERIFIED + 1 FALSIFIED (`Claim_Gap_Witness`, the expected result):
   62 without flags (7 goal-2, 5 helpers, 50 safety) and 15 with `-D=LIVENESS`.
   Peak memory 10.4 GB (`Funding_Spent_Once`, `Sender_Pays_Invoice_Plus_Fees`).
 - The same proofs also verify on Tamarin 1.10 (server runs).
