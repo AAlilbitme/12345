@@ -5,6 +5,9 @@
 # Usage: run_lemma.sh THEORY LEMMA [extra tamarin flags...]
 # Environment: TAMARIN (default tamarin-prover), LIMIT seconds (default 1800),
 #              MEM heap limit (default 8G), RESULTS file (default results.tsv),
+#              DERIVCHECK seconds for Tamarin's derivation checks (default 600;
+#              0 disables them: loading is ~40% faster, use only after one run
+#              with the checks on the same files),
 #              EXPECT (default VERIFIED), RESUME=1 (skip results already recorded
 #              for the same lemma, flags AND the same .spthy files)
 #
@@ -27,6 +30,7 @@ LIMIT=${LIMIT:-1800}
 MEM=${MEM:-8G}
 RESULTS=${RESULTS:-results.tsv}
 EXPECT=${EXPECT:-VERIFIED}
+DERIVCHECK=${DERIVCHECK:-600}
 # add: checksum of all theory files in this folder, so a recorded result is
 # add: only reused (RESUME=1) for exactly the same model.
 sha=$(cat ./*.spthy | { sha256sum 2>/dev/null || shasum -a 256; } | cut -c1-12)
@@ -47,7 +51,7 @@ fi
 start=$(date +%s)
 # +RTS -s: GHC prints its memory statistics (incl. peak) at exit.
 LANG=C.UTF-8 "$TIMEOUT" "$LIMIT" "$TAMARIN" "$THEORY" --prove="$LEMMA" "$@" \
-    --derivcheck-timeout=600 +RTS -M"$MEM" -s -RTS > "$LOG" 2>&1
+    --derivcheck-timeout="$DERIVCHECK" +RTS -M"$MEM" -s -RTS > "$LOG" 2>&1
 code=$?
 secs=$(( $(date +%s) - start ))
 

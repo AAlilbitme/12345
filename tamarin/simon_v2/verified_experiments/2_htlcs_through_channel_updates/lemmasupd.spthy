@@ -284,6 +284,86 @@ lemma Claim_Gap_Witness:   // add
       & not (Ex X #c. LtkCompromised(X) @ #c)
       & not (Ex #l. Redeemed(pin, y) @ #l & #l < #k)"
 
+// add: the liveness assumptions are not vacuous. Witness for the situation of
+// add: ForwarderCollectsInTime: a payment S -> F -> R settled back to F's
+// add: incoming channel through channel updates, and afterwards the clock
+// add: passes the incoming expiry.
+// add: OPEN: Tamarin does not find this trace within 30 minutes (timeout, not
+// add: a result); it is not part of `make liveness` (see `make open`).
+lemma Liveness_Collect_Witness:   // add
+  exists-trace
+  "Ex S F R p0 p1 x n0 n1 n2 n3 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 s3 t3 %tIn %tOut %b
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu #u2 #r2 #c2 #cl #u3 #r3 #c3 #k1 #k2 #k3.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ForwardExpiries(p0, p1, h(x), %tIn, %tOut) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & HTLCFulfilled(R, F, p1, h(x)) @ #fu
+    & ChannelUpdateFor(p1, <'settle', h(x)>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'settle', h(x)>, n2) @ #c2
+    & IntermediaryClaimed(F, S, p0, x) @ #cl
+    & ChannelUpdateFor(p0, <'settle', h(x)>, n3) @ #u3
+    & StateUpdate(s3, t3, p0, n3) @ #r3
+    & HTLCCommitted(p0, <'settle', h(x)>, n3) @ #c3
+    & Tick(%tOut) @ #k1 & Tick(%tIn) @ #k2 & Tick(%b) @ #k3 & %tIn << %b
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #fu
+    & #fu < #u2 & #u2 < #r2 & #r2 < #c2 & #c2 < #cl
+    & #cl < #u3 & #u3 < #r3 & #r3 < #c3
+    & #c3 < #k1 & #k1 < #k2 & #k2 < #k3
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2 | #i = #r3))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2 | #i = #u3))
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2 | #i = #c3))
+    & (All p #i. MutexReleased(p) @ #i ==> #c2 < #i)
+    & (All p z #i. Old(p, z) @ #i ==> z = h(x))
+    & (All t #i. Tick(t) @ #i ==> (#i = #k1 | #i = #k2 | #i = #k3))
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex P p z #i. Refunded(P, p, z) @ #i)"
+
+// add: witness for the situation of ForwarderRefundsInTime: F forwards, the
+// add: downstream never settles, F refunds its outgoing HTLC after the outgoing
+// add: expiry, the fail is committed, and then the clock passes the incoming expiry.
+lemma Liveness_Refund_Witness:   // add
+  exists-trace
+  "Ex S F R p0 p1 y n0 n1 n2 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 %tIn %tOut %b
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #k1 #k2 #rf #u2 #r2 #c2 #k3.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, y) @ #o
+    & ChannelUpdateFor(p0, <'add', y>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', y>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, y) @ #f
+    & ForwardExpiries(p0, p1, y, %tIn, %tOut) @ #f
+    & ChannelUpdateFor(p1, <'add', y>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', y>, n1) @ #c1
+    & Tick(%tOut) @ #k1 & Tick(%tIn) @ #k2
+    & Refunded(F, p1, y) @ #rf
+    & ChannelUpdateFor(p1, <'fail', y>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'fail', y>, n2) @ #c2
+    & Tick(%b) @ #k3 & %tIn << %b
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #k1 & #k1 < #k2 & #k2 < #rf
+    & #rf < #u2 & #u2 < #r2 & #r2 < #c2 & #c2 < #k3
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2))
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2))
+    & (All p z #i. Old(p, z) @ #i ==> (z = y & #i = #rf))
+    & (All t #i. Tick(t) @ #i ==> (#i = #k1 | #i = #k2 | #i = #k3))
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
 lemma Forwarder_Refunds_In_Time [heuristic={forwarder_resolution}]:
     "All P Prev Next pin pout y %tIn %tOut %b #f #e #k.
         HTLCForwarded(P, Prev, Next, pin, pout, y) @ #f

@@ -21,7 +21,9 @@ export MEM   ?= 8G
 # add: the last four are new (Add/Fulfil/Fail through channel updates, refund witness).
 GOAL2  = Settle_Is_Channel_Update HTLC_Commit_Correspondence Hand_Payment \
          Add_Is_Channel_Update Fulfil_Needs_Committed_Add \
-         Fail_Is_Channel_Update Refund_Path_Witness
+         Fail_Is_Channel_Update Refund_Path_Witness \
+         Settle_Is_Channel_Update_Strong Route_Requires_Commit \
+         Mutex_Release_Requires_Commit
 
 # add: exists-trace lemma that must be FALSIFIED (the trace must not exist).
 GOAL2_NO_TRACE = Commit_After_Close_Witness
@@ -62,11 +64,15 @@ LIVENESS = Redeem_Refund_Exclusive Settle_From_Redeem Fail_From_Refund \
            Payment_Atomicity_Under_Liveness Timeout_Race_Blocked \
            Forwarder_Claims_In_Time Forwarder_Refunds_In_Time \
            Intermediary_Recovers_Funds \
-           Forwarder_Claims_In_Time_Committed Intermediary_Never_Loses_Committed
+           Forwarder_Claims_In_Time_Committed Intermediary_Never_Loses_Committed \
+           Liveness_Refund_Witness
+# add: OPEN: exists-trace witness that times out (30 min, two variants); not
+# add: part of `make liveness`. Try it with: make open LIMIT=7200
+LIVENESS_OPEN = Liveness_Collect_Witness
 # add: exists-trace lemmas that must be FALSIFIED (the trace must not exist).
 LIVENESS_NO_TRACE = Claim_Gap_Witness
 
-.PHONY: all verify goal2 helpers safety liveness lemma summary check-count clean
+.PHONY: all verify goal2 helpers safety liveness open lemma summary check-count clean
 SHELL = /bin/bash
 
 all: goal2 helpers safety
@@ -86,6 +92,9 @@ safety:
 liveness:
 	@fail=0; for L in Hand_Payment $(LIVENESS); do $(RUN) $$L -D=LIVENESS || fail=1; done; \
 	 for L in $(LIVENESS_NO_TRACE); do EXPECT=FALSIFIED $(RUN) $$L -D=LIVENESS || fail=1; done; exit $$fail
+
+open:
+	@for L in $(LIVENESS_OPEN); do $(RUN) $$L -D=LIVENESS; done
 
 lemma:
 	@$(RUN) $(L) $(FLAGS)

@@ -24,7 +24,7 @@ Lemma counts: `lemmas.spthy` declares 58 lemmas. Some sit in `#ifdef LIVENESS ..
 
 Results (Tamarin 1.10, one lemma per call, 12 GB heap; every run is recorded in `results.tsv` with git revision, versions, flags, limits, result, steps, time and peak memory). Nothing is falsified except the gap witness, whose falsification is the expected result.
 
-- **Goal 2, no flags (7/7 verified):** `Settle_Is_Channel_Update` (30 steps), `HTLC_Commit_Correspondence` (10), `Hand_Payment` (83), `Add_Is_Channel_Update` (8), `Fulfil_Needs_Committed_Add` (7), `Fail_Is_Channel_Update` (170), `Refund_Path_Witness` (32, exists-trace, pinned trace).
+- **Goal 2, no flags (7/7 verified; 10 with the lemmas added after the review, see below):** `Settle_Is_Channel_Update` (30 steps), `HTLC_Commit_Correspondence` (10), `Hand_Payment` (83), `Add_Is_Channel_Update` (8), `Fulfil_Needs_Committed_Add` (7), `Fail_Is_Channel_Update` (170), `Refund_Path_Witness` (32, exists-trace, pinned trace).
 - **Safety, no flags (50/50 verified)**, plus 5 helper lemmas (all verified, no `--bound`): `Route_Made_Once` (146), `Route_Has_Amount` (74), `Paid_Has_Amount` (6), `Fulfilled_Out_Released` (275), `Release_By_Creator` (11-23). Slowest: `Funding_Spent_Once` (7140 steps, 1-2 h), `Sender_Pays_Invoice_Plus_Fees` (1470). `Fulfilled_Requires_Release` uses the `fulfilled_back` tactic (with `heuristic=S` it runs out of memory).
 - **Liveness, `-D=LIVENESS` (all verified):** Simon's 7 (`Cheating_Never_Pays` 102, `Intermediary_Never_Loses_Under_Liveness` 12, `Payment_Atomicity_Under_Liveness` 84, `Timeout_Race_Blocked` 25, `Forwarder_Claims_In_Time` 9, `Forwarder_Refunds_In_Time` 121, `Intermediary_Recovers_Funds` 239), `Hand_Payment` (83: a payment is still possible under the liveness assumptions), two committed-settle versions (`Forwarder_Claims_In_Time_Committed` 7, `Intermediary_Never_Loses_Committed` 12) and 4 helpers that exist only in the LIVENESS block (`Redeem_Refund_Exclusive`, `Settle_From_Redeem`, `Fail_From_Refund`, `Settle_Fail_Exclusive`).
 - **`Claim_Gap_Witness`: falsified (9 steps), as expected.** No trace exists in which a downstream settle has started but is not committed before the incoming HTLC expires. This is an assumption, not a result: the liveness restrictions `ForwarderCollectsInTime` / `ForwarderRefundsInTime` force a started settle to complete in time. State it as such in the paper.
@@ -40,6 +40,35 @@ All additions are marked `// add`. The model itself only gains the action labels
 FALSIFIED for `Claim_Gap_Witness`); a Tamarin wellformedness warning counts as a
 failure. `RESUME=1` reuses a recorded result only for the same lemma, flags and
 unchanged `.spthy` files (checksum in `results.tsv`).
+
+Added after the review (all marked `// add`):
+- `Settle_Is_Channel_Update_Strong` (30 steps): the only exception to "settle
+  needs a committed update" is a compromise *before* the settle.
+- `Route_Requires_Commit` (6) and `Mutex_Release_Requires_Commit` (47): no
+  effect without a commit (a route needs a committed add; the channel is freed
+  only after a committed settle or fail).
+- `Liveness_Refund_Witness` (90, `-D=LIVENESS`): the situation of
+  `ForwarderRefundsInTime` really occurs (forward, outgoing refund after its
+  expiry, committed fail, clock passes the incoming expiry).
+- Open: `Liveness_Collect_Witness`, the same check for `ForwarderCollectsInTime`
+  (a settled payment followed by ticks past the incoming expiry), times out at
+  30 minutes in two variants. It is inconclusive and not part of `make liveness`
+  (`make open` runs it).
+
+Memory and time: loading the goal-2 model (Tamarin's precomputation) takes
+about 2 min and 7.8 GB before any proof starts; folder 1 needs 20 s and 1.2 GB.
+The cost comes with the channel-update chain for HTLC steps. It is not reduced
+by `--open-chains`, by removing the attacker-chosen balances in
+`Update_State_HTLC`, or by removing `AttackerSkip` (all measured). Not yet
+tested: separate facts per operation instead of the generic `op` in
+`UpdateFor` / `InFlight` / `Committed`. Derivation checks take about 40% of the
+loading time: after one complete run, `DERIVCHECK=0 make ...` skips them.
+
+Docker (same tool versions as the server runs; build not tested on the server,
+which has no Docker daemon):
+
+    docker build -t lightning-tamarin .
+    docker run --rm -m 14g lightning-tamarin make
 
 Limitations of the goal-2 model (state them in the paper):
 - **Liveness assumptions exclude closing a channel with an HTLC in flight.**

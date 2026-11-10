@@ -117,6 +117,26 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
 
 
 
+// add: stronger form of Settle_Is_Channel_Update: the only exception is a
+// add: compromise that happened BEFORE the settle (not "some party, any time").
+lemma Settle_Is_Channel_Update_Strong [heuristic={upd}]:   // add
+  "All S F R ptr x #s. SenderSettled(S, F, R, ptr, x) @ #s
+   ==> (Ex n #c. HTLCCommitted(ptr, <'settle', h(x)>, n) @ #c & #c < #s)
+     | (Ex X #k. LtkCompromised(X) @ #k & #k < #s)"
+
+// add: converse direction of the correspondence: no effect without a commit.
+// add: A route exists only after the add was committed on that channel.
+lemma Route_Requires_Commit [heuristic={upd}]:   // add
+  "All ptr y v #i. RouteMade(ptr, y, v) @ #i
+   ==> Ex n #c. HTLCCommitted(ptr, <'add', y>, n) @ #c & #c < #i"
+
+// add: the channel is freed for the next HTLC only after a settle or a fail
+// add: was committed on it.
+lemma Mutex_Release_Requires_Commit [heuristic={upd}]:   // add
+  "All ptr #i. MutexReleased(ptr) @ #i
+   ==> (Ex y n #c. HTLCCommitted(ptr, <'settle', y>, n) @ #c & #c < #i)
+     | (Ex y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c & #c < #i)"
+
 // add: checks the oddity "an HTLC update is committed only after its channel
 // add: was closed": the update completes, the channel is closed cooperatively,
 // add: and only then is the HTLC step committed. Without the restriction
