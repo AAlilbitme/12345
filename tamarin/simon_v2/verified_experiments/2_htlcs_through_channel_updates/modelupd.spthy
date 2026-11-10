@@ -447,6 +447,14 @@ rule AttackerSkip:
 restriction OneResolutionPerHTLC:
     "All ptr y #i #j. Old(ptr, y) @ #i & Old(ptr, y) @ #j ==> #i = #j"
 
+// add: an HTLC step is committed only while its channel is open (before the
+// add: funding output is spent). Commit_HTLC_Update is an internal step that is
+// add: enabled as soon as the update is complete, so this only removes traces
+// add: in which that step is delayed until after the close; effects of an
+// add: already committed step may still happen after the close.
+restriction CommitOnlyWhileOpen:   // add
+    "All ptr op n #c #i. HTLCCommitted(ptr, op, n) @ #c & FundingSpent(ptr) @ #i ==> #c < #i"
+
 restriction OneHTLCPerHashPerChannel:
     "All ptr y #m #n. HTLCAdded(ptr, y) @ #m & HTLCAdded(ptr, y) @ #n ==> #m = #n"
 

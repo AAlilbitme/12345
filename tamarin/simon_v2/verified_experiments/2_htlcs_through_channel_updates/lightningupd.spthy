@@ -117,6 +117,27 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
 
 
 
+// add: checks the oddity "an HTLC update is committed only after its channel
+// add: was closed": the update completes, the channel is closed cooperatively,
+// add: and only then is the HTLC step committed. Without the restriction
+// add: CommitOnlyWhileOpen this trace exists (verified, 23 steps); with it the
+// add: expected result is FALSIFIED (no such trace).
+lemma Commit_After_Close_Witness [heuristic={upd}]:   // add
+  exists-trace
+  "Ex S F p y n A B a0 b0 m #o0 #o #u #s #cl #c.
+      ChannelOpen(a0, b0, p) @ #o0
+    & HTLCOffered(S, F, p, y) @ #o
+    & ChannelUpdateFor(p, <'add', y>, n) @ #u
+    & StateUpdate(A, B, p, n) @ #s
+    & Close(A, B, p, m) @ #cl
+    & HTLCCommitted(p, <'add', y>, n) @ #c
+    & #o0 < #o & #o < #u & #u < #s & #s < #cl & #cl < #c
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o0)
+    & (All a b q k #i. StateUpdate(a, b, q, k) @ #i ==> (#i = #s | #i < #o))
+    & (All q op k #i. HTLCCommitted(q, op, k) @ #i ==> #i = #c)
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex t #i. Tick(t) @ #i)"
+
 // Simon's lemmas (and ours) come after the goal-2 lemmas above: their [reuse]
 // lemmas would otherwise be added to the goal-2 proofs and make them loop.
 // add: below: tactics and [reuse] helper lemmas for safety lemmas that timed

@@ -23,6 +23,9 @@ GOAL2  = Settle_Is_Channel_Update HTLC_Commit_Correspondence Hand_Payment \
          Add_Is_Channel_Update Fulfil_Needs_Committed_Add \
          Fail_Is_Channel_Update Refund_Path_Witness
 
+# add: exists-trace lemma that must be FALSIFIED (the trace must not exist).
+GOAL2_NO_TRACE = Commit_After_Close_Witness
+
 # add: helper lemmas for the safety lemmas below (proof aids, not results).
 HELPERS = Route_Made_Once Route_Has_Amount Paid_Has_Amount \
           Fulfilled_Out_Released Release_By_Creator
@@ -70,7 +73,8 @@ all: goal2 helpers safety
 verify: all
 
 goal2:
-	@fail=0; for L in $(GOAL2); do $(RUN) $$L || fail=1; done; exit $$fail
+	@fail=0; for L in $(GOAL2); do $(RUN) $$L || fail=1; done; \
+	 for L in $(GOAL2_NO_TRACE); do EXPECT=FALSIFIED $(RUN) $$L || fail=1; done; exit $$fail
 
 helpers:
 	@fail=0; for L in $(HELPERS); do $(RUN) $$L || fail=1; done; exit $$fail
@@ -89,7 +93,7 @@ lemma:
 # add: check that GOAL2 + HELPERS + SAFETY is exactly what Tamarin loads
 # add: without flags, and LIVENESS what it adds with -D=LIVENESS.
 check-count:
-	@diff <(echo $(GOAL2) $(HELPERS) $(SAFETY) | tr ' ' '\n' | sort) <(../list_lemmas.sh $(THEORY) lemmasupd.spthy | sort) && echo "Makefile lists match the theory (no flags)"
+	@diff <(echo $(GOAL2) $(GOAL2_NO_TRACE) $(HELPERS) $(SAFETY) | tr ' ' '\n' | sort) <(../list_lemmas.sh $(THEORY) lemmasupd.spthy | sort) && echo "Makefile lists match the theory (no flags)"
 	@TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) $(THEORY) lemmasupd.spthy
 	@FLAG=LIVENESS TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) $(THEORY) lemmasupd.spthy
 
