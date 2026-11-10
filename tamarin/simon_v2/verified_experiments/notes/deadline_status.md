@@ -116,7 +116,7 @@ Limitations to state explicitly in the paper:
    (one, Route_Made_Once, proved with --bound=6).
 
 ## Goal-2 model (2_htlcs_through_channel_updates): per-lemma run, safety config
-Each lemma in its own Tamarin call, 900 s limit (results: each_results.txt).
+Each lemma in its own Tamarin call, 900 s limit (old run; superseded by the final status below).
 Safety configuration loads 50 of the lemmas in lemmasupd.spthy plus the goal-2
 lemmas. Of the 50:
 - verified: 42 (20 from the earlier batch runs + 22 in this run)
