@@ -36,10 +36,10 @@ all: one-hop two-hop
 verify: all
 
 one-hop:
-	-@for L in $(ONE_SAFETY); do $(RUN1) $$L; done
-	-@for L in $(ONE_THEOREM) $(ONE_WITNESS); do $(RUN1) $$L $(THEOREM); done
-	-@$(RUN1) Ablation_Concrete $(ABLATION)
-	-@$(RUN1) Gap_Concrete $(GAPCTRL)
+	@fail=0; for L in $(ONE_SAFETY); do $(RUN1) $$L || fail=1; done; exit $$fail
+	@fail=0; for L in $(ONE_THEOREM) $(ONE_WITNESS); do $(RUN1) $$L $(THEOREM) || fail=1; done; exit $$fail
+	@$(RUN1) Ablation_Concrete $(ABLATION)
+	@$(RUN1) Gap_Concrete $(GAPCTRL)
 
 # add: the two-hop composition is run only after the one-hop theorem verified
 # add: at the SAME revision (no uncommitted changes) and with the same flags.
@@ -47,15 +47,15 @@ REV = $(shell git rev-parse --short HEAD)$(shell git diff --quiet -- . || echo +
 two-hop:
 	@awk -F'\t' -v rev="$(REV)" -v fl="$(strip $(THEOREM))" '$$2==rev && $$6=="Deadline_Per_Hop" && $$7==fl && $$10=="VERIFIED" {ok=1} END {exit !ok}' results.tsv 2>/dev/null \
 	  || { echo "Deadline_Per_Hop not VERIFIED at revision $(REV) with $(strip $(THEOREM)): run make one-hop first"; exit 1; }
-	-@for L in $(TWO_THEOREM) $(TWO_WITNESS); do $(RUN2) $$L $(THEOREM); done
-	-@$(RUN2) Two_Hop_Gap_Pinned $(GAPCTRL)
+	@fail=0; for L in $(TWO_THEOREM) $(TWO_WITNESS); do $(RUN2) $$L $(THEOREM) || fail=1; done; exit $$fail
+	@$(RUN2) Two_Hop_Gap_Pinned $(GAPCTRL)
 
 # One lemma, e.g. make lemma F=deadline_core.spthy L=Deadline_Per_Hop FLAGS="-D=LIVENESS -D=BOUND -D=GAP2"
 lemma:
-	-@TAMARIN=$(TAMARIN) ../run_lemma.sh $(F) $(L) $(FLAGS)
+	@TAMARIN=$(TAMARIN) ../run_lemma.sh $(F) $(L) $(FLAGS)
 
 summary:
-	@tail -n +2 results.tsv | awk -F'\t' '{k=$$5" "$$6" "$$7; r[k]=$$10} END {for (k in r) c[r[k]]++; for (x in c) printf "  %-14s %d\n", x, c[x]}'
+	@../summary.sh results.tsv
 
 clean:
 	rm -rf logs results.tsv

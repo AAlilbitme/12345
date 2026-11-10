@@ -86,7 +86,8 @@ lemma Fulfil_Needs_Committed_Add [heuristic={upd}]:   // add
    ==> Ex n #c. HTLCCommitted(pin, <'add', y>, n) @ #c & #c < #r"
 
 // add: a fail update is committed only for an HTLC that was refunded after
-// add: its timeout.
+// add: its timeout. (Fail_From_Refund in lemmasupd.spthy is the same statement
+// add: as a [reuse] helper, loaded only with -D=LIVENESS.)
 lemma Fail_Is_Channel_Update [heuristic={upd}]:   // add
   "All ptr y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c
    ==> Ex P #r. Refunded(P, ptr, y) @ #r & #r < #c"
@@ -116,10 +117,10 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
 
 
 
-// Simon's lemmas (and ours) come after the two goal-2 lemmas: their [reuse]
+// Simon's lemmas (and ours) come after the goal-2 lemmas above: their [reuse]
 // lemmas would otherwise be added to the goal-2 proofs and make them loop.
-// add: helper lemmas for the four safety lemmas that timed out. They are
-// add: placed after the goal-2 lemmas so their [reuse] does not affect them.
+// add: below: tactics and [reuse] helper lemmas for safety lemmas that timed
+// add: out without them. They also come after the goal-2 lemmas.
 
 // add: tactic for the route helpers: trace the AwaitRoute fact back first.
 tactic: route_once   // add
@@ -149,25 +150,6 @@ deprio:
     regex "Committed[(]" | regex "InFlight[(]" | regex "UpdateFor[(]" | regex "!UpdateDone"
 deprio:
     regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "RouteInfo" | regex "Mutex"
-
-// add: tactic for the liveness lemmas on this model: resolve the HTLC commit
-// add: chain (Committed / InFlight / AwaitFulfilled / Fulfilled / pending HTLC
-// add: state) first, then the liveness restrictions' events, channel history
-// add: and KU last.
-tactic: live_commit   // add
-presort: s
-prio:
-    regex "^\s*(IntermediaryPending|SenderPending)[(]"
-prio:
-    regex "^\s*(Fulfilled|AwaitFulfilled|AwaitRoute|Route)[(]"
-prio:
-    regex "^\s*(Committed|InFlight|!UpdateDone)[(]"
-prio:
-    regex "HTLCCommitted[(]" | regex "Refunded[(]" | regex "Redeemed[(]"
-prio:
-    regex "^\s*!Block[(]" | regex "Tick[(]"
-deprio:
-    regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "RouteInfo" | regex "ChannelConnect" | regex "Mutex" | regex "Wallet"
 
 // add: a route on a channel for a hash is created at most once (it comes from
 // add: the single committed add of that hash on that channel).

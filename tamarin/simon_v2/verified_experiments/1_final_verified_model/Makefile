@@ -35,10 +35,10 @@ check-count:
 	@FLAG=LIVENESS TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) lemmas.spthy
 
 safety:
-	-@for L in $(SAFETY_LEMMAS); do $(RUN) $$L; done
+	@fail=0; for L in $(SAFETY_LEMMAS); do $(RUN) $$L || fail=1; done; exit $$fail
 
 liveness:
-	-@for L in $(LIVENESS_LEMMAS); do $(RUN) $$L -D=LIVENESS; done
+	@fail=0; for L in $(LIVENESS_LEMMAS); do $(RUN) $$L -D=LIVENESS || fail=1; done; exit $$fail
 
 # Final regression check only: the whole theory in one call per configuration.
 regression:
@@ -47,13 +47,10 @@ regression:
 	@for f in regression.log regression_liveness.log; do echo "$$f: $$(grep -cE '^  [A-Za-z_0-9]+ \(.*verified' $$f) verified, $$(grep -cE '^  [A-Za-z_0-9]+ \(.*(falsified|incomplete)' $$f) not verified, $$(tail -1 $$f)"; done
 
 lemma:
-	-@$(RUN) $(L) $(FLAGS)
+	@$(RUN) $(L) $(FLAGS)
 
 summary:
-	@tail -n +2 results.tsv | awk -F'\t' '{k=$$6" "$$7; r[k]=$$10} END {for (k in r) c[r[k]]++; for (x in c) printf "  %-14s %d\n", x, c[x]}'
-
-interactive:
-	LANG=C.UTF-8 $(TAMARIN) interactive .
+	@../summary.sh results.tsv
 
 clean:
 	rm -rf logs results.tsv regression.log regression_liveness.log

@@ -33,8 +33,31 @@ All additions are marked `// add`. The model itself only gains the action labels
 
     make                 # goal2 + helpers + safety, one call per lemma (several hours)
     make liveness        # helpers + liveness lemmas with -D=LIVENESS
-    make summary         # counts per result
+    make summary         # counts per result; lists every result that is not the expected one
     make check-count     # lemma lists vs. what Tamarin loads
+
+`make` fails if any lemma does not give its expected result (VERIFIED, or
+FALSIFIED for `Claim_Gap_Witness`); a Tamarin wellformedness warning counts as a
+failure. `RESUME=1` reuses a recorded result only for the same lemma, flags and
+unchanged `.spthy` files (checksum in `results.tsv`).
+
+Limitations of the goal-2 model (state them in the paper):
+- **Liveness assumptions exclude closing a channel with an HTLC in flight.**
+  `ForwarderRefundsInTime` / `ForwarderCollectsInTime` require a *committed*
+  fail or settle before the incoming expiry. A commit needs a channel update,
+  which is impossible once the channel is closed, so traces in which a channel
+  with a pending forwarded HTLC is closed and time passes the expiry are ruled
+  out. The liveness lemmas therefore say nothing about on-chain HTLC resolution,
+  and they assume the channel peer cooperates in the update (even a compromised
+  one). The final model (folder 1) does not have this restriction.
+- **A completed update can be committed after the channel is closed:**
+  `Commit_HTLC_Update` needs only `InFlight` and the persistent `!UpdateDone`.
+- **Balances are not linked to HTLC amounts:** `Update_State_HTLC` takes the new
+  balances from the network, as `Update_State` does. Goal 2 proves the order
+  (an HTLC step takes effect only after a completed update), not that funds move
+  by the HTLC amount.
+- `Settle_Is_Channel_Update` allows the exception "some party is compromised"
+  (any party, any time), which is weaker than "a party on this route, earlier".
 
 Scope: the channel abstraction permits at most one HTLC per payment hash per channel (`Mutex`, `OneHTLCPerHashPerChannel`). The `Mutex` comes from Simon's model; removing it (concurrent HTLCs on one channel) is goal 3. Request identifiers are unnecessary in the current proofs: a channel update is identified by (channel, hash, operation), and `HTLC_Commit_Correspondence` ties each `HTLCCommitted(ptr, op, n)` to the matching `ChannelUpdateFor(ptr, op, n)` and `StateUpdate(..., ptr, n)`. Retries with the same hash or duplicate settle requests would require carrying a unique HTLC/request identifier through `UpdateFor`, `ChannelUpdateFor`, `InFlight` and `HTLCCommitted`. This is a completion-aware core abstraction, not a complete multi-HTLC Lightning implementation.
 

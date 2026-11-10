@@ -11,6 +11,8 @@ TAMARIN ?= tamarin-prover
 export LIMIT ?= 1800
 export MEM   ?= 8G
 LOG      = results.log
+SHELL    = /bin/bash
+.SHELLFLAGS = -o pipefail -c
 
 .PHONY: all final htlc deadline clean
 
@@ -22,15 +24,15 @@ all:
 
 final:
 	@echo "" >> $(LOG); echo "== 1_final_verified_model - $$(date)" | tee -a $(LOG)
-	@$(MAKE) --no-print-directory -C 1_final_verified_model count verify summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
+	@$(MAKE) --no-print-directory -C 1_final_verified_model -k count verify summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
 
 htlc:
 	@echo "" >> $(LOG); echo "== 2_htlcs_through_channel_updates - $$(date)" | tee -a $(LOG)
-	@$(MAKE) --no-print-directory -C 2_htlcs_through_channel_updates verify liveness summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
+	@$(MAKE) --no-print-directory -C 2_htlcs_through_channel_updates -k verify liveness summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
 
 deadline:
 	@echo "" >> $(LOG); echo "== 3_deadline_theorem (controls: VERIFIED = counterexample found) - $$(date)" | tee -a $(LOG)
-	@$(MAKE) --no-print-directory -C 3_deadline_theorem verify summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
+	@$(MAKE) --no-print-directory -C 3_deadline_theorem -k verify summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
 
 clean:
 	rm -f $(LOG)

@@ -1,3 +1,5 @@
+# add: make fails if any lemma does not give its expected result (use make -k
+# add: to run the remaining groups anyway).
 # add: every lemma runs in its own Tamarin call through ../run_lemma.sh, which
 # add: classifies the result (VERIFIED, FALSIFIED, INCOMPLETE, TIMEOUT,
 # add: OUT_OF_MEMORY, ERROR) and appends a row with git revision, tool
@@ -57,8 +59,9 @@ LIVENESS = Redeem_Refund_Exclusive Settle_From_Redeem Fail_From_Refund \
            Payment_Atomicity_Under_Liveness Timeout_Race_Blocked \
            Forwarder_Claims_In_Time Forwarder_Refunds_In_Time \
            Intermediary_Recovers_Funds \
-           Forwarder_Claims_In_Time_Committed Intermediary_Never_Loses_Committed \
-           Claim_Gap_Witness   # add: goal-2 versions; Claim_Gap_Witness is expected FALSIFIED (no such trace)
+           Forwarder_Claims_In_Time_Committed Intermediary_Never_Loses_Committed
+# add: exists-trace lemmas that must be FALSIFIED (the trace must not exist).
+LIVENESS_NO_TRACE = Claim_Gap_Witness
 
 .PHONY: all verify goal2 helpers safety liveness lemma summary check-count clean
 SHELL = /bin/bash
@@ -67,20 +70,21 @@ all: goal2 helpers safety
 verify: all
 
 goal2:
-	-@for L in $(GOAL2); do $(RUN) $$L; done
+	@fail=0; for L in $(GOAL2); do $(RUN) $$L || fail=1; done; exit $$fail
 
 helpers:
-	-@for L in $(HELPERS); do $(RUN) $$L; done
+	@fail=0; for L in $(HELPERS); do $(RUN) $$L || fail=1; done; exit $$fail
 
 safety:
-	-@for L in $(SAFETY); do $(RUN) $$L; done
+	@fail=0; for L in $(SAFETY); do $(RUN) $$L || fail=1; done; exit $$fail
 
 # add: Hand_Payment first: it shows the liveness restrictions still allow a payment.
 liveness:
-	-@for L in Hand_Payment $(LIVENESS); do $(RUN) $$L -D=LIVENESS; done
+	@fail=0; for L in Hand_Payment $(LIVENESS); do $(RUN) $$L -D=LIVENESS || fail=1; done; \
+	 for L in $(LIVENESS_NO_TRACE); do EXPECT=FALSIFIED $(RUN) $$L -D=LIVENESS || fail=1; done; exit $$fail
 
 lemma:
-	-@$(RUN) $(L) $(FLAGS)
+	@$(RUN) $(L) $(FLAGS)
 
 # add: check that GOAL2 + HELPERS + SAFETY is exactly what Tamarin loads
 # add: without flags, and LIVENESS what it adds with -D=LIVENESS.
@@ -90,8 +94,7 @@ check-count:
 	@FLAG=LIVENESS TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) $(THEORY) lemmasupd.spthy
 
 summary:
-	@echo "results.tsv (latest run of each lemma/flags):"
-	@tail -n +2 results.tsv | awk -F'\t' '{k=$$6" "$$7; r[k]=$$10} END {for (k in r) c[r[k]]++; for (x in c) printf "  %-14s %d\n", x, c[x]}'
+	@../summary.sh results.tsv
 
 clean:
 	rm -rf logs results.tsv
