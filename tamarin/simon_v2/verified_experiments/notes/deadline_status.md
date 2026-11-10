@@ -154,3 +154,4 @@ HTLC_Commit_Correspondence verified (10 steps): every HTLCCommitted(ptr, op, n) 
 - Reproduced on MacBook Air M5 (16 GB), Tamarin 1.12.0: folder 1 103/103 VERIFIED;
   folder 2 76 VERIFIED + Claim_Gap_Witness FALSIFIED (expected). Results hold on
   Tamarin 1.10 and 1.12.
+- Re-verified after the runner/cleanup changes (server, Tamarin 1.10, one lemma per call): 76 VERIFIED + Claim_Gap_Witness FALSIFIED (expected); no wellformedness warnings; `make` exits 0.
