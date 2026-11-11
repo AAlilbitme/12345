@@ -128,6 +128,29 @@ can be stopped (Ctrl-C) and continued later. Run one `make` at a time: most
 goal-2 lemmas need 8-10 GB. A lemma reported as OUT_OF_MEMORY can be retried
 alone with `make lemma L=<name> MEM=12G` (macOS then swaps; slow but works).
 
+## 4_attack_search/  (small model: find the attack, then the assumption that stops it)
+`attack_core.spthy`: one honest forwarder F between a payer S and a payee R that
+may both misbehave. HTLCs are settled off-chain, or closed and then claimed
+(payee, with the preimage) or refunded (payer, after the expiry) on-chain.
+F loses when its outgoing HTLC is claimed and its incoming HTLC is refunded.
+Loads in about a second; `make` takes about two minutes.
+
+| Run | Result |
+|---|---|
+| `Forwarder_Loss`, no assumptions | trace found (19 steps) |
+| `Forwarder_Loss` without prompt refund (`-D=PROMPT_CLAIM -D=GAP`) | trace found |
+| `Forwarder_Loss` without prompt claim (`-D=PROMPT_REFUND -D=GAP`) | trace found |
+| `Forwarder_Loss` without the CLTV gap (`-D=PROMPT_REFUND -D=PROMPT_CLAIM`) | trace found |
+| `No_Forwarder_Loss` with all three | verified (22 steps): F never loses, whatever S and R do |
+| `Forwarder_Loss` with all three | falsified (no trace), as expected |
+| payment off-chain / on-chain / refund witnesses, with and without assumptions | all found |
+
+So each of the three assumptions about F's own on-chain actions is necessary,
+and together they are sufficient, in this model. Abstractions: one HTLC per
+channel, no amounts, on-chain transactions confirm in the block they are sent,
+no off-chain fail, no revocation. Next steps: confirmation delay (the attacker
+delays F's transactions), several HTLCs with a per-channel limit, fees.
+
 ## How to run
 
 Requirements: Tamarin 1.10 and Maude. Always run from inside the folder.

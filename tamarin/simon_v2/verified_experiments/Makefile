@@ -14,7 +14,7 @@ LOG      = results.log
 SHELL    = /bin/bash
 .SHELLFLAGS = -o pipefail -c
 
-.PHONY: all final htlc deadline clean
+.PHONY: all final htlc deadline attack clean
 
 all:
 	@echo "Verified experiments - started $$(date)" > $(LOG)
@@ -34,8 +34,13 @@ deadline:
 	@echo "" >> $(LOG); echo "== 3_deadline_theorem (controls: VERIFIED = counterexample found) - $$(date)" | tee -a $(LOG)
 	@$(MAKE) --no-print-directory -C 3_deadline_theorem -k verify summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
 
+attack:
+	@echo "" >> $(LOG); echo "== 4_attack_search - $$(date)" | tee -a $(LOG)
+	@$(MAKE) --no-print-directory -C 4_attack_search -k verify summary TAMARIN=$(TAMARIN) 2>&1 | tee -a $(LOG)
+
 clean:
 	rm -f $(LOG)
 	$(MAKE) -C 1_final_verified_model clean
 	$(MAKE) -C 2_htlcs_through_channel_updates clean
 	$(MAKE) -C 3_deadline_theorem clean
+	$(MAKE) -C 4_attack_search clean
