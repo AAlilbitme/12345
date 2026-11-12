@@ -145,11 +145,28 @@ Loads in about a second; `make` takes about two minutes.
 | `Forwarder_Loss` with all three | falsified (no trace), as expected |
 | payment off-chain / on-chain / refund witnesses, with and without assumptions | all found |
 
+`attack_delay.spthy` adds a confirmation delay: an on-chain claim or refund is
+submitted and confirmed later, the attacker schedules confirmations, and F's
+transactions confirm within one block (D = 1) only under the flag `INCLUSION`.
+
+| Run (`make delay`) | Result |
+|---|---|
+| `Loss_Gap2_Concrete`: prompt F, inclusion, CLTV gap of 2 blocks | loss trace found (27 steps) |
+| `Loss_NoInclusion_Concrete`: prompt F, gap 3, no inclusion bound | loss trace found (22 steps) |
+| `No_Forwarder_Loss`: prompt F, inclusion, gap of 3 blocks | verified (2381 steps) |
+| `Pay_Safe_Concrete`, `Refund_Witness` under the same assumptions | found (not vacuous) |
+
+So with a confirmation delay of one block the gap must be at least 2D + 1 = 3
+blocks: F's refund on the outgoing channel can be held back one block, in which
+the payee still claims, and F's claim on the incoming channel can be held back
+one more. This is the known reason for the CLTV delta, here with a
+machine-checked tight bound for D = 1. Other values of D are not modelled.
+
 So each of the three assumptions about F's own on-chain actions is necessary,
 and together they are sufficient, in this model. Abstractions: one HTLC per
 channel, no amounts, on-chain transactions confirm in the block they are sent,
-no off-chain fail, no revocation. Next steps: confirmation delay (the attacker
-delays F's transactions), several HTLCs with a per-channel limit, fees.
+no off-chain fail, no revocation. Next steps: several HTLCs with a per-channel
+limit, fees, preimage visible in the mempool, general delay D.
 
 ## How to run
 
