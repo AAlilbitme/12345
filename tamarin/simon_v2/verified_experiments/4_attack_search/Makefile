@@ -10,8 +10,8 @@ ALL = -D=PROMPT_REFUND -D=PROMPT_CLAIM -D=GAP
 HELPERS = Claimed_Once Refunded_Once Claim_Refund_Exclusive Refund_After_Expiry \
           Claim_Out_Teaches_F Stamp_Has_Tick
 
-.PHONY: all verify witnesses attacks theorem delay summary clean
-all: witnesses attacks theorem delay
+.PHONY: all verify witnesses attacks theorem delay cycle cycle-open summary clean
+all: witnesses attacks theorem delay cycle
 verify: all
 
 # The model can run: payment off-chain, on-chain, and refund (also with all assumptions).
@@ -48,6 +48,26 @@ delay:
 	EXPECT=FALSIFIED $(RUND) Loss_Gap2_Concrete $(SAFE) || fail=1; \
 	EXPECT=FALSIFIED $(RUND) Loss_NoInclusion_Concrete $(SAFE) || fail=1; \
 	exit $$fail
+
+# add: replacement cycling (attack_cycle.spthy). Established: the model runs and
+# add: the one-round cycling attack exists when F does not watch the mempool.
+RUNC  = TAMARIN=$(TAMARIN) ../run_lemma.sh attack_cycle.spthy
+CBASE = -D=REBROADCAST -D=PROMPT_CLAIM -D=INCLUSION
+CSAFE = $(CBASE) -D=GAP3 -D=MEMPOOL_WATCH
+cycle:
+	@fail=0; \
+	for L in Refund_Witness Forwarder_Loss; do $(RUNC) $$L || fail=1; done; \
+	TAG=no-watch $(RUNC) Cycling_Attack_Short $(CBASE) || fail=1; \
+	for L in Claimed_Once Refunded_Once Claim_Refund_Exclusive Refund_After_Expiry \
+	         Claim_Out_Teaches_F Stamp_Has_Tick Submit_Out_Teaches_F; do $(RUNC) $$L $(CSAFE) || fail=1; done; \
+	exit $$fail
+
+# add: OPEN (time out, inconclusive). The theorem No_Forwarder_Loss closes in
+# add: seconds, but only by reusing the two key-step lemmas, which are not
+# add: proved: it does NOT count until they are.
+cycle-open:
+	-@TAG=no-watch $(RUNC) Cycling_Attack_Concrete $(CBASE) -D=GAP3
+	-@for L in Pay_Safe_Concrete In_Resolved_After_Learning Out_Learned_Or_Refunded No_Forwarder_Loss; do $(RUNC) $$L $(CSAFE); done
 
 summary:
 	@../summary.sh results.tsv

@@ -162,6 +162,26 @@ the payee still claims, and F's claim on the incoming channel can be held back
 one more. This is the known reason for the CLTV delta, here with a
 machine-checked tight bound for D = 1. Other values of D are not modelled.
 
+`attack_cycle.spthy` adds a mempool (replacement cycling): the payee can replace
+F's pending refund by its own claim and then withdraw that claim; F can resubmit
+its refund in every block; with `MEMPOOL_WATCH` the payer of a channel reads the
+preimage from a claim as soon as it is submitted.
+
+| Run (`make cycle`) | Result |
+|---|---|
+| `Cycling_Attack_Short`: F rebroadcasts, claims promptly, inclusion bound, no mempool watching (tOut = 1, tIn = 2) | loss trace found (30 steps) |
+| model runs (`Refund_Witness`, `Forwarder_Loss`), uniqueness and clock helpers | verified |
+
+Open (`make cycle-open`, all time out, inconclusive):
+- `Cycling_Attack_Concrete`: three rounds of cycling with a CLTV gap of 3 (the
+  form that shows a larger gap does not help); 25 minutes were not enough.
+- The defence "with mempool watching and a gap of 3, F never loses":
+  `No_Forwarder_Loss` closes in 46 steps when the key steps
+  `Out_Learned_Or_Refunded` and `In_Resolved_After_Learning` are reused, but
+  these two are not proved (time out), so the theorem is NOT established.
+- The short attack has a gap of only 1 block, so on its own it does not
+  separate cycling from a too-small gap.
+
 So each of the three assumptions about F's own on-chain actions is necessary,
 and together they are sufficient, in this model. Abstractions: one HTLC per
 channel, no amounts, on-chain transactions confirm in the block they are sent,
