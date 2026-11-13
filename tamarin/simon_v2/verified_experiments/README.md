@@ -165,22 +165,24 @@ machine-checked tight bound for D = 1. Other values of D are not modelled.
 `attack_cycle.spthy` adds a mempool (replacement cycling): the payee can replace
 F's pending refund by its own claim and then withdraw that claim; F can resubmit
 its refund in every block; with `MEMPOOL_WATCH` the payer of a channel reads the
-preimage from a claim as soon as it is submitted.
+preimage from a claim as soon as it is submitted. F's transactions confirm in
+the block they are submitted unless they are replaced or the output is spent.
 
 | Run (`make cycle`) | Result |
 |---|---|
-| `Cycling_Attack_Short`: F rebroadcasts, claims promptly, inclusion bound, no mempool watching (tOut = 1, tIn = 2) | loss trace found (30 steps) |
-| model runs (`Refund_Witness`, `Forwarder_Loss`), uniqueness and clock helpers | verified |
+| Control `NO_REPLACE`: prompt refund, prompt claim, inclusion, gap, nothing can be replaced | `No_Forwarder_Loss` verified (103 steps) |
+| `Cycling_Attack_Short`: the same assumptions plus rebroadcast in every block, replacement allowed, F does not read the mempool | loss trace found (32 steps) |
+| `MEMPOOL_WATCH`: replacement allowed, F reads the mempool | `No_Forwarder_Loss` verified (355 steps) |
+| key steps `In_Resolved_After_Learning`, `Out_Learned_Or_Refunded`, helpers | verified in both safe configurations |
+| payment and refund witnesses under the safe assumptions | found (off-chain payment in both; on-chain payment and refund without replacement) |
 
-Open (`make cycle-open`, all time out, inconclusive):
-- `Cycling_Attack_Concrete`: three rounds of cycling with a CLTV gap of 3 (the
-  form that shows a larger gap does not help); 25 minutes were not enough.
-- The defence "with mempool watching and a gap of 3, F never loses":
-  `No_Forwarder_Loss` closes in 46 steps when the key steps
-  `Out_Learned_Or_Refunded` and `In_Resolved_After_Learning` are reused, but
-  these two are not proved (time out), so the theorem is NOT established.
-- The short attack has a gap of only 1 block, so on its own it does not
-  separate cycling from a too-small gap.
+So in this model replacement alone turns a safe configuration into a losing
+one, rebroadcasting does not help, and reading the mempool restores safety.
+This is the known replacement-cycling attack and its known mitigation, here
+machine-checked. Open (`make cycle-open`, time out, inconclusive): the
+two-round attack for a gap of 2 blocks, and the on-chain witnesses under
+mempool watching. Not modelled: replacing a pending claim, fees, a confirmation
+delay together with replacement.
 
 So each of the three assumptions about F's own on-chain actions is necessary,
 and together they are sufficient, in this model. Abstractions: one HTLC per

@@ -49,25 +49,33 @@ delay:
 	EXPECT=FALSIFIED $(RUND) Loss_NoInclusion_Concrete $(SAFE) || fail=1; \
 	exit $$fail
 
-# add: replacement cycling (attack_cycle.spthy). Established: the model runs and
-# add: the one-round cycling attack exists when F does not watch the mempool.
-RUNC  = TAMARIN=$(TAMARIN) ../run_lemma.sh attack_cycle.spthy
-CBASE = -D=REBROADCAST -D=PROMPT_CLAIM -D=INCLUSION
-CSAFE = $(CBASE) -D=GAP3 -D=MEMPOOL_WATCH
+# add: replacement cycling (attack_cycle.spthy).
+#   ATTACK: F does everything promptly, the gap holds, but F does not read the mempool.
+#   NOREP : control, pending refunds cannot be replaced -> F is safe.
+#   WATCH : F reads the mempool -> F is safe.
+RUNC   = TAMARIN=$(TAMARIN) ../run_lemma.sh attack_cycle.spthy
+CBASE  = -D=PROMPT_REFUND -D=PROMPT_CLAIM -D=INCLUSION -D=GAP
+ATTACK = $(CBASE) -D=REBROADCAST
+NOREP  = $(CBASE) -D=NO_REPLACE -D=SAFE
+WATCH  = $(CBASE) -D=MEMPOOL_WATCH -D=SAFE
+CHELP  = Claimed_Once Refunded_Once Claim_Refund_Exclusive Refund_After_Expiry \
+         Claim_Out_Teaches_F Stamp_Has_Tick Stamp_Before_Tick
+CKEY   = In_Resolved_After_Learning Out_Learned_Or_Refunded No_Forwarder_Loss
 cycle:
 	@fail=0; \
 	for L in Refund_Witness Forwarder_Loss; do $(RUNC) $$L || fail=1; done; \
-	TAG=no-watch $(RUNC) Cycling_Attack_Short $(CBASE) || fail=1; \
-	for L in Claimed_Once Refunded_Once Claim_Refund_Exclusive Refund_After_Expiry \
-	         Claim_Out_Teaches_F Stamp_Has_Tick Submit_Out_Teaches_F; do $(RUNC) $$L $(CSAFE) || fail=1; done; \
+	TAG=attack $(RUNC) Cycling_Attack_Short $(ATTACK) || fail=1; \
+	for L in Pay_Offchain_Concrete Pay_Safe_Concrete Refund_Witness; do $(RUNC) $$L $(CBASE) -D=NO_REPLACE || fail=1; done; \
+	$(RUNC) Pay_Offchain_Concrete $(CBASE) -D=MEMPOOL_WATCH || fail=1; \
+	for L in $(CHELP) $(CKEY); do $(RUNC) $$L $(NOREP) || fail=1; done; \
+	for L in $(CHELP) Submit_Out_Teaches_F Replace_Teaches_F $(CKEY); do $(RUNC) $$L $(WATCH) || fail=1; done; \
 	exit $$fail
 
-# add: OPEN (time out, inconclusive). The theorem No_Forwarder_Loss closes in
-# add: seconds, but only by reusing the two key-step lemmas, which are not
-# add: proved: it does NOT count until they are.
+# add: OPEN (time out, inconclusive): the two-round attack (larger gap) and the
+# add: on-chain witnesses under mempool watching.
 cycle-open:
-	-@TAG=no-watch $(RUNC) Cycling_Attack_Concrete $(CBASE) -D=GAP3
-	-@for L in Pay_Safe_Concrete In_Resolved_After_Learning Out_Learned_Or_Refunded No_Forwarder_Loss; do $(RUNC) $$L $(CSAFE); done
+	-@TAG=attack $(RUNC) Cycling_Attack_Two_Rounds $(ATTACK)
+	-@for L in Pay_Safe_Concrete Refund_Witness; do $(RUNC) $$L $(CBASE) -D=MEMPOOL_WATCH; done
 
 summary:
 	@../summary.sh results.tsv

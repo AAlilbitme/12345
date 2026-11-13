@@ -12,17 +12,18 @@ begin
 //   - F can resubmit its refund in every block.
 //
 // Flags (assumptions about F and about inclusion of F's transactions):
-//   REBROADCAST    in every block after tOut, F (re)submits the refund of an
-//                  unresolved outgoing HTLC
+//   PROMPT_REFUND  F submits the refund of an unresolved outgoing HTLC in block tOut + 1
+//   REBROADCAST    in every block after tOut, F (re)submits that refund
 //   PROMPT_CLAIM   F submits the claim of the incoming HTLC in the block it learns the preimage
-//   INCLUSION      a transaction F submits in block b confirms in block b or
-//                  b + 1, unless the output is spent first or (for the refund)
-//                  the transaction is replaced
+//   INCLUSION      a transaction F submits confirms in the same block, unless the
+//                  output is spent first or (for the refund) it is replaced
 //   MEMPOOL_WATCH  the payer of a channel (so F on pout) reads the preimage from
 //                  a claim as soon as it is submitted
-//   GAP3           tOut + 2 < tIn
-// Abstractions: one HTLC per channel, amounts and fees ignored, only a pending
-// refund can be replaced (not a pending claim), no off-chain fail, no revocation.
+//   NO_REPLACE     control: pending refunds cannot be replaced
+//   GAP            tOut < tIn
+// Abstractions: one HTLC per channel, amounts and fees ignored, no confirmation
+// delay (see attack_delay.spthy), only a pending refund can be replaced (not a
+// pending claim), no off-chain fail, no revocation.
 
 builtins: hashing, natural-numbers
 
@@ -143,12 +144,23 @@ restriction ClaimSubmittedOncePerBlock:
     "All ptr y y2 %b #i #j. ClaimSubmitted(ptr, y, %b) @ #i & ClaimSubmitted(ptr, y2, %b) @ #j ==> #i = #j"
 
 // ---- assumptions about the honest forwarder (flags) ------------------------
+// "Before the next block" is written as "before the next tick" (#x < #t): by
+// NowIsLatest and Stamp_Before_Tick this is the same as comparing block numbers.
+#ifdef PROMPT_REFUND
+restriction ForwarderRefundsPromptly:
+    "All pin pout y %tIn %tOut %c #e #t.
+        Route(pin, pout, y, %tIn, %tOut) @ #e
+      & Tick(%c) @ #t & (%tOut %+ %1) << %c
+     ==> (Ex %d #q. RefundSubmitted(pout, y, %d) @ #q & #q < #t)
+       | (Ex %d #q. Claimed(pout, y, %d) @ #q & #q < #t)"
+#endif
+
 #ifdef REBROADCAST
 restriction ForwarderRebroadcasts:
     "All pin pout y %tIn %tOut %b %c #e #t1 #t2.
         Route(pin, pout, y, %tIn, %tOut) @ #e
       & Tick(%b) @ #t1 & %tOut << %b
-      & Tick(%c) @ #t2 & %b << %c
+      & Tick(%c) @ #t2 & #t1 < #t2
      ==> (Ex %d #q. Claimed(pout, y, %d) @ #q & #q < #t2)
        | (Ex %d #q. Refunded(pout, y, %d) @ #q & #q < #t2)
        | (Ex #q. RefundSubmitted(pout, y, %b) @ #q)"
@@ -159,20 +171,21 @@ restriction ForwarderClaimsPromptly:
     "All pin pout y %tIn %tOut %b %c #e #a #t.
         Route(pin, pout, y, %tIn, %tOut) @ #e
       & Learned('F', y, %b) @ #a
-      & Tick(%c) @ #t & %b << %c
+      & Tick(%c) @ #t & #a < #t
      ==> (Ex %d #q. ClaimSubmitted(pin, y, %d) @ #q & #q < #t)
        | (Ex %d #q. Claimed(pin, y, %d) @ #q & #q < #t)
        | (Ex %d #q. Refunded(pin, y, %d) @ #q & #q < #a)"
 #endif
 
 #ifdef INCLUSION
-// F's claim on pin and F's refund on pout confirm within one block after
-// submission, unless the other party's transaction spends the output first.
+// F's claim on pin and F's refund on pout confirm in the block they are
+// submitted, unless the other party's transaction spends the output first or
+// the refund is replaced.
 restriction InclusionClaim:
     "All pin pout y %tIn %tOut %b %c #e #s #t.
         Route(pin, pout, y, %tIn, %tOut) @ #e
       & ClaimSubmitted(pin, y, %b) @ #s
-      & Tick(%c) @ #t & (%b %+ %1) << %c
+      & Tick(%c) @ #t & #s < #t
      ==> (Ex %d #q. Claimed(pin, y, %d) @ #q & #q < #t)
        | (Ex %d #q. Refunded(pin, y, %d) @ #q & #q < #t)"
 
@@ -180,18 +193,22 @@ restriction InclusionRefund:
     "All pin pout y %tIn %tOut %b %c #e #s #t.
         Route(pin, pout, y, %tIn, %tOut) @ #e
       & RefundSubmitted(pout, y, %b) @ #s
-      & Tick(%c) @ #t & (%b %+ %1) << %c
+      & Tick(%c) @ #t & #s < #t
      ==> (Ex %d #q. Claimed(pout, y, %d) @ #q & #q < #t)
        | (Ex %d #q. Refunded(pout, y, %d) @ #q & #q < #t)
        | (Ex %d #q. RefundReplaced(pout, %d) @ #q & #s < #q & #q < #t)"
 #endif
 
-#ifdef GAP3
-restriction CLTVGap:
-    "All pin pout y %tIn %tOut #e.
-        Route(pin, pout, y, %tIn, %tOut) @ #e ==> (%tOut %+ %1 %+ %1) << %tIn"
+#ifdef NO_REPLACE
+restriction NoReplacement:
+    "All ptr %b #i. RefundReplaced(ptr, %b) @ #i ==> F"
 #endif
 
+#ifdef GAP
+restriction CLTVGap:
+    "All pin pout y %tIn %tOut #e.
+        Route(pin, pout, y, %tIn, %tOut) @ #e ==> %tOut << %tIn"
+#endif
 
 // Resolve the linear HTLC facts first, the clock last.
 tactic: htlc_first
@@ -221,6 +238,24 @@ prio:
 deprio:
     regex "!Knows[(]" | regex "ClaimPending[(]" | regex "RefundPending[(]" | regex "!Block[(]" | regex "!OnChain[(]" | regex "KU[(]"
 
+// Use the restrictions and reused lemmas before unfolding any rule premise.
+tactic: formulas_first
+presort: s
+deprio:
+    regex "▶"
+deprio:
+    regex "KU[(]"
+
+// Resolve where a channel's on-chain output and its roles come from.
+tactic: origin_first
+presort: s
+prio:
+    regex "!OnChain[(]" | regex "!Payer[(]" | regex "!Payee[(]"
+prio:
+    regex "^\s*(HtlcLive|Open)[(]"
+deprio:
+    regex "!Knows[(]" | regex "ClaimPending[(]" | regex "RefundPending[(]" | regex "!Block[(]" | regex "KU[(]"
+
 // ---- helper lemmas (reused in the theorem) ---------------------------------
 // Each HTLC is resolved at most once: claimed once, refunded once, never both.
 lemma Claimed_Once [reuse, heuristic={htlc_first}]:
@@ -247,8 +282,42 @@ lemma Claim_Out_Teaches_F [reuse]:
 lemma Stamp_Has_Tick [reuse, heuristic={block_first}]:
   "All %b #q. Now(%b) @ #q ==> Ex #t. Tick(%b) @ #t & #t < #q"
 
-// Key steps of the theorem (need REBROADCAST, INCLUSION, PROMPT_CLAIM,
-// MEMPOOL_WATCH; they are false without these flags).
+// An event stamped d that happens before the start of block c has d < c.
+lemma Stamp_Before_Tick [reuse, heuristic={block_first}]:
+  "All %d %c #a #t. Now(%d) @ #a & Tick(%c) @ #t & #a < #t ==> %d << %c"
+
+#ifdef MEMPOOL_WATCH
+// Replacing F's refund on its outgoing channel teaches F the preimage.
+lemma Replace_Teaches_F [reuse, heuristic={origin_first}]:
+  "All pin pout y %tIn %tOut %b #e #s.
+      Route(pin, pout, y, %tIn, %tOut) @ #e & RefundReplaced(pout, %b) @ #s
+   ==> Learned('F', y, %b) @ #s"
+#endif
+
+#ifdef SAFE
+// Key steps of the theorem. SAFE is passed only together with PROMPT_REFUND,
+// PROMPT_CLAIM, INCLUSION and (NO_REPLACE or MEMPOOL_WATCH); the lemmas are
+// false without them.
+// Once F knows the preimage, its incoming HTLC is resolved before the next block.
+lemma In_Resolved_After_Learning [reuse, heuristic={formulas_first}]:
+  "All pin pout y %tIn %tOut %b %c #e #a #t.
+      Route(pin, pout, y, %tIn, %tOut) @ #e
+    & Learned('F', y, %b) @ #a
+    & Tick(%c) @ #t & #a < #t
+   ==> (Ex %d #q. Claimed(pin, y, %d) @ #q & #q < #t)
+     | (Ex %d #q. Refunded(pin, y, %d) @ #q & #q < #t)"
+
+// When block tOut + 2 or a later one starts, F knows the preimage or its
+// outgoing HTLC is refunded.
+lemma Out_Learned_Or_Refunded [reuse, heuristic={formulas_first}]:
+  "All pin pout y %tIn %tOut %c #e #t.
+      Route(pin, pout, y, %tIn, %tOut) @ #e
+    & Tick(%c) @ #t & (%tOut %+ %1) << %c
+   ==> (Ex %d #a. Learned('F', y, %d) @ #a & #a < #t)
+     | (Ex %d #q. Refunded(pout, y, %d) @ #q & #q < #t)"
+#endif
+
+// Helper that needs MEMPOOL_WATCH.
 #ifdef MEMPOOL_WATCH
 // A claim submitted on F's outgoing channel teaches F the preimage in that block.
 lemma Submit_Out_Teaches_F [reuse, heuristic={roles_first}]:
@@ -256,23 +325,6 @@ lemma Submit_Out_Teaches_F [reuse, heuristic={roles_first}]:
       Route(pin, pout, y, %tIn, %tOut) @ #e & ClaimSubmitted(pout, y, %b) @ #s
    ==> Learned('F', y, %b) @ #s"
 
-// By the end of block tOut + 2, F knows the preimage or its outgoing HTLC is
-// refunded (stated relative to a later block c > tOut + 3).
-lemma Out_Learned_Or_Refunded [reuse]:
-  "All pin pout y %tIn %tOut %c #e #t.
-      Route(pin, pout, y, %tIn, %tOut) @ #e
-    & Tick(%c) @ #t & (%tOut %+ %1 %+ %1 %+ %1) << %c
-   ==> (Ex %d #a. Learned('F', y, %d) @ #a & #a < #t & (%d %+ %1) << %c)
-     | (Ex %d #q. Refunded(pout, y, %d) @ #q & #q < #t)"
-
-// Once F knows the preimage in block b, its incoming HTLC is resolved by the end of block b + 1.
-lemma In_Resolved_After_Learning [reuse]:
-  "All pin pout y %tIn %tOut %b %c #e #a #t.
-      Route(pin, pout, y, %tIn, %tOut) @ #e
-    & Learned('F', y, %b) @ #a
-    & Tick(%c) @ #t & (%b %+ %1) << %c
-   ==> (Ex %d #q. Claimed(pin, y, %d) @ #q & #q < #t)
-     | (Ex %d #q. Refunded(pin, y, %d) @ #q & #q < #t)"
 #endif
 
 // ---- lemmas ----------------------------------------------------------------
@@ -310,24 +362,34 @@ lemma Forwarder_Loss:
     & Claimed(pout, y, %b) @ #i
     & Refunded(pin, y, %d) @ #j"
 
-// Executability with ALL assumptions, concrete blocks (tOut = 1, tIn = 4): both
+// Executability with the assumptions, concrete blocks (tOut = 1, tIn = 2): both
 // HTLCs are claimed on-chain in block 1 and the clock runs past the incoming expiry.
 lemma Pay_Safe_Concrete:
   exists-trace
-  "Ex pin pout y #e #k1 #k2 #k6 #c1 #s2 #c2.
-      Route(pin, pout, y, %1 %+ %1 %+ %1 %+ %1, %1) @ #e
-    & Tick(%1) @ #k1 & Tick(%1 %+ %1) @ #k2
-    & Tick(%1 %+ %1 %+ %1 %+ %1 %+ %1 %+ %1) @ #k6
+  "Ex pin pout y #e #k1 #k2 #k3 #c1 #s2 #c2.
+      Route(pin, pout, y, %1 %+ %1, %1) @ #e
+    & Tick(%1) @ #k1 & Tick(%1 %+ %1) @ #k2 & Tick(%1 %+ %1 %+ %1) @ #k3
     & Claimed(pout, y, %1) @ #c1
     & ClaimSubmitted(pin, y, %1) @ #s2
     & Claimed(pin, y, %1) @ #c2
-    & #e < #k1 & #k1 < #c1 & #c1 < #s2 & #s2 < #c2 & #c2 < #k2 & #k2 < #k6"
+    & #e < #k1 & #k1 < #c1 & #c1 < #s2 & #s2 < #c2 & #c2 < #k2 & #k2 < #k3"
 
-// ATTACK: one round of replacement cycling (expected with REBROADCAST,
-// PROMPT_CLAIM, INCLUSION, without MEMPOOL_WATCH and without a gap flag;
-// tOut = 1, tIn = 2). Block 2: F submits its refund on pout, R replaces it by a
-// claim and withdraws the claim. Block 3: S's refund on pin confirms, then R's
-// claim on pout confirms.
+// Executability with the assumptions, off-chain, concrete blocks (tOut = 1,
+// tIn = 2): both HTLCs are settled off-chain in block 1, no channel is closed,
+// and the clock runs past the incoming expiry.
+lemma Pay_Offchain_Concrete [heuristic={htlc_first}]:
+  exists-trace
+  "Ex pin pout y #e #k1 #k2 #k3 #c1 #c2.
+      Route(pin, pout, y, %1 %+ %1, %1) @ #e
+    & Tick(%1) @ #k1 & Tick(%1 %+ %1) @ #k2 & Tick(%1 %+ %1 %+ %1) @ #k3
+    & Claimed(pout, y, %1) @ #c1
+    & Claimed(pin, y, %1) @ #c2
+    & #e < #k1 & #k1 < #c1 & #c1 < #c2 & #c2 < #k2 & #k2 < #k3
+    & not (Ex p #k. Closed(p) @ #k)"
+
+// ATTACK: one round of replacement cycling (tOut = 1, tIn = 2). Block 2: F
+// submits its refund on pout, R replaces it by a claim and withdraws the claim.
+// Block 3: S's refund on pin confirms, then R's claim on pout confirms.
 lemma Cycling_Attack_Short:
   exists-trace
   "Ex pin pout y #e #k1 #k2 #k3 #r2 #c2 #w2 #fs #fr #cs #cc.
@@ -343,37 +405,31 @@ lemma Cycling_Attack_Short:
     & #e < #k1 & #k2 < #r2 & #r2 < #c2 & #c2 < #w2 & #w2 < #k3
     & #k3 < #fs & #fs < #fr & #fr < #cs & #cs < #cc"
 
-// ATTACK: replacement cycling, concrete blocks (expected with REBROADCAST,
-// PROMPT_CLAIM, INCLUSION, GAP3 but WITHOUT MEMPOOL_WATCH; tOut = 1, tIn = 4).
-// In each of the blocks 2, 3 and 4 F submits its refund on pout, R replaces it
-// by a claim and withdraws the claim. In block 5 S's refund on pin confirms and
-// R's claim on pout confirms.
-lemma Cycling_Attack_Concrete:
+// ATTACK: two rounds (tOut = 1, tIn = 3): a larger gap only costs the attacker
+// one more round per block. Blocks 2 and 3: refund, replace, withdraw. Block 4:
+// S's refund on pin confirms, then R's claim on pout confirms.
+lemma Cycling_Attack_Two_Rounds:
   exists-trace
-  "Ex pin pout y #e #k1 #k2 #k3 #k4 #k5
-      #r2 #c2 #w2 #r3 #c3 #w3 #r4 #c4 #w4 #fs #fr #cs #cc.
-      Route(pin, pout, y, %1 %+ %1 %+ %1 %+ %1, %1) @ #e
+  "Ex pin pout y #e #k1 #k2 #k3 #k4 #r2 #c2 #w2 #r3 #c3 #w3 #fs #fr #cs #cc.
+      Route(pin, pout, y, %1 %+ %1 %+ %1, %1) @ #e
     & Tick(%1) @ #k1 & Tick(%1 %+ %1) @ #k2 & Tick(%1 %+ %1 %+ %1) @ #k3
-    & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k4 & Tick(%1 %+ %1 %+ %1 %+ %1 %+ %1) @ #k5
+    & Tick(%1 %+ %1 %+ %1 %+ %1) @ #k4
     & RefundSubmitted(pout, y, %1 %+ %1) @ #r2
     & RefundReplaced(pout, %1 %+ %1) @ #c2
     & ClaimWithdrawn(pout, %1 %+ %1) @ #w2
     & RefundSubmitted(pout, y, %1 %+ %1 %+ %1) @ #r3
     & RefundReplaced(pout, %1 %+ %1 %+ %1) @ #c3
     & ClaimWithdrawn(pout, %1 %+ %1 %+ %1) @ #w3
-    & RefundSubmitted(pout, y, %1 %+ %1 %+ %1 %+ %1) @ #r4
-    & RefundReplaced(pout, %1 %+ %1 %+ %1 %+ %1) @ #c4
-    & ClaimWithdrawn(pout, %1 %+ %1 %+ %1 %+ %1) @ #w4
-    & RefundSubmitted(pin, y, %1 %+ %1 %+ %1 %+ %1 %+ %1) @ #fs
-    & Refunded(pin, y, %1 %+ %1 %+ %1 %+ %1 %+ %1) @ #fr
-    & ClaimSubmitted(pout, y, %1 %+ %1 %+ %1 %+ %1 %+ %1) @ #cs
-    & Claimed(pout, y, %1 %+ %1 %+ %1 %+ %1 %+ %1) @ #cc
+    & RefundSubmitted(pin, y, %1 %+ %1 %+ %1 %+ %1) @ #fs
+    & Refunded(pin, y, %1 %+ %1 %+ %1 %+ %1) @ #fr
+    & ClaimSubmitted(pout, y, %1 %+ %1 %+ %1 %+ %1) @ #cs
+    & Claimed(pout, y, %1 %+ %1 %+ %1 %+ %1) @ #cc
     & #e < #k1 & #k2 < #r2 & #r2 < #c2 & #c2 < #w2 & #w2 < #k3
     & #k3 < #r3 & #r3 < #c3 & #c3 < #w3 & #w3 < #k4
-    & #k4 < #r4 & #r4 < #c4 & #c4 < #w4 & #w4 < #k5
-    & #k5 < #fs & #fs < #fr & #fr < #cs & #cs < #cc"
+    & #k4 < #fs & #fs < #fr & #fr < #cs & #cs < #cc"
 
-// THEOREM (REBROADCAST, PROMPT_CLAIM, INCLUSION, MEMPOOL_WATCH, GAP3): F never loses, whatever S and R do.
+// THEOREM. Holds with PROMPT_REFUND, PROMPT_CLAIM, INCLUSION, GAP and either
+// NO_REPLACE (nothing can be replaced) or MEMPOOL_WATCH (F reads the mempool).: F never loses, whatever S and R do.
 lemma No_Forwarder_Loss [heuristic={htlc_first}]:
   "All pin pout y %tIn %tOut %b %d #e #i #j.
       Route(pin, pout, y, %tIn, %tOut) @ #e
