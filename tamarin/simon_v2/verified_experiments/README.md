@@ -172,16 +172,18 @@ the block they are submitted unless they are replaced or the output is spent.
 |---|---|
 | Control `NO_REPLACE`: prompt refund, prompt claim, inclusion, gap, nothing can be replaced | `No_Forwarder_Loss` verified (103 steps) |
 | `Cycling_Attack_Short`: the same assumptions plus rebroadcast in every block, replacement allowed, F does not read the mempool | loss trace found (32 steps) |
+| `Cycling_Attack_Two_Rounds`: the same with a gap of 2 blocks (expiries 1 and 3); the payee repeats replace-and-withdraw in blocks 2 and 3 | loss trace found (60 steps) |
 | `MEMPOOL_WATCH`: replacement allowed, F reads the mempool | `No_Forwarder_Loss` verified (355 steps) |
 | key steps `In_Resolved_After_Learning`, `Out_Learned_Or_Refunded`, helpers | verified in both safe configurations |
 | payment and refund witnesses under the safe assumptions | found (off-chain payment in both; on-chain payment and refund without replacement) |
 
 So in this model replacement alone turns a safe configuration into a losing
-one, rebroadcasting does not help, and reading the mempool restores safety.
+one, rebroadcasting does not help, a larger gap only costs the attacker one
+more round per block (shown for gaps 1 and 2, not for every gap), and reading
+the mempool restores safety.
 This is the known replacement-cycling attack and its known mitigation, here
 machine-checked. Open (`make cycle-open`, time out, inconclusive): the
-two-round attack for a gap of 2 blocks, and the on-chain witnesses under
-mempool watching. Not modelled: replacing a pending claim, fees, a confirmation
+on-chain witnesses under mempool watching. Not modelled: replacing a pending claim, fees, a confirmation
 delay together with replacement.
 
 So each of the three assumptions about F's own on-chain actions is necessary,

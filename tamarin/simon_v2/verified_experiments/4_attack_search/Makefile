@@ -64,17 +64,15 @@ CKEY   = In_Resolved_After_Learning Out_Learned_Or_Refunded No_Forwarder_Loss
 cycle:
 	@fail=0; \
 	for L in Refund_Witness Forwarder_Loss; do $(RUNC) $$L || fail=1; done; \
-	TAG=attack $(RUNC) Cycling_Attack_Short $(ATTACK) || fail=1; \
+	for L in Cycling_Attack_Short Cycling_Attack_Two_Rounds; do TAG=attack $(RUNC) $$L $(ATTACK) || fail=1; done; \
 	for L in Pay_Offchain_Concrete Pay_Safe_Concrete Refund_Witness; do $(RUNC) $$L $(CBASE) -D=NO_REPLACE || fail=1; done; \
 	$(RUNC) Pay_Offchain_Concrete $(CBASE) -D=MEMPOOL_WATCH || fail=1; \
 	for L in $(CHELP) $(CKEY); do $(RUNC) $$L $(NOREP) || fail=1; done; \
 	for L in $(CHELP) Submit_Out_Teaches_F Replace_Teaches_F $(CKEY); do $(RUNC) $$L $(WATCH) || fail=1; done; \
 	exit $$fail
 
-# add: OPEN (time out, inconclusive): the two-round attack (larger gap) and the
-# add: on-chain witnesses under mempool watching.
+# add: OPEN (time out, inconclusive): the on-chain witnesses under mempool watching.
 cycle-open:
-	-@TAG=attack $(RUNC) Cycling_Attack_Two_Rounds $(ATTACK)
 	-@for L in Pay_Safe_Concrete Refund_Witness; do $(RUNC) $$L $(CBASE) -D=MEMPOOL_WATCH; done
 
 summary:
