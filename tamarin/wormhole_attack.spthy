@@ -1,0 +1,302 @@
+theory wormhole_attack
+begin
+
+builtins: hashing, signing, multiset
+
+/*
+  wormhole_attack: HTLC layer of multihop_nhop with
+   - the channel layer replaced by Open_Channel (channel lemmas are proven in
+     the main theory),
+   - T3 (IntermediaryMustClaim) restricted to honest nodes,
+   - T2a dropped (derived: Forward_Time_Gap_Derived),
+   - off-path preimage relay between two compromised parties
+     (Collude_Relay -> Relayed, used only by Colluder_Settle_Via_Relay).
+  Only lemmas verified in this exact file are kept.
+*/
+
+// ---------------------------------------------------------------------------
+// Key management
+// ---------------------------------------------------------------------------
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A, ~ltk) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk), !Compromised($A) ]   // used only by Collude_Relay
+
+// STRIPPED: channel layer replaced by a single abstract open (channel lemmas
+// are proven in the main theory).
+rule Open_Channel:
+    [ Fr(~ptr) ]
+    --[ ChannelOpen($A, $B, ~ptr), Neq($A, $B) ]->
+    [ !ChannelConnect(~ptr, $A, $B),
+      !ChannelConnect(~ptr, $B, $A),
+      Free(~ptr) ]
+
+// ---------------------------------------------------------------------------
+// HTLC layer -- GENERALIZED to N hops via a linear Route fact,
+// carrying AMOUNTS and deducting per-hop FEES.
+//
+// The sender locks  amt + fees  and every intermediary splits its incoming
+// amount as  amtOut + fee, keeping fee.
+// ---------------------------------------------------------------------------
+
+rule Receiver_Create_Invoice:
+    let y = h(~x)
+        invoice = <$Receiver, $Sender, y, amt>
+        sigR    = sign(invoice, ltkR)
+    in
+    [ Fr(~x), In(amt), !Ltk($Receiver, ltkR) ]
+    --[ InvoiceCreated($Receiver, $Sender, y, amt),
+        SecretPreimage($Receiver, ~x) ]->
+    [ ReceiverInv($Receiver, $Sender, ~x, amt),
+      Out(<'SecretRS', invoice, sigR>) ]
+
+// Sender verifies the signed invoice, locks amt + fee budget in the first
+// HTLC, and STARTS the route chain.
+rule Sender_Offer_HTLC:
+    let invoice  = <$Receiver, $Sender, y, amt>
+        amtTotal = amt + fees
+    in
+    [ In(<'SecretRS', invoice, sigR>),
+      In(fees),
+      !Pk($Receiver, pkR),
+      !Ltk($Sender, ltkS),
+      !ChannelConnect(ptrSF, $Sender, $Forward1),
+      Free(ptrSF) ]
+    --[ HTLCOffered($Sender, $Forward1, ptrSF, y, amtTotal),
+        HTLCAdded(ptrSF, y),
+        FeeBudget($Sender, y, fees),
+        Neq($Sender, $Forward1),
+        Neq($Sender, $Receiver),
+        Neq($Forward1, $Receiver),
+        Eq(verify(sigR, invoice, pkR), true) ]->
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, amtTotal),
+      Route($Sender, $Forward1, ptrSF, y, amtTotal) ]
+
+// GENERIC FORWARD i.e one rule, any number of hops.
+rule Forward_HTLC:
+    [ Route($Prev, $Me, ptrIn, y, amtOut + fee),
+      !ChannelConnect(ptrOut, $Me, $Next),
+      Free(ptrOut) ]
+    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y, amtOut + fee, amtOut),
+        HTLCAdded(ptrOut, y),
+        ForwardHTLC($Me, ptrIn, ptrOut, y),
+        FeeExpected($Me, ptrIn, ptrOut, y, fee),
+        Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]->
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtOut + fee, amtOut, fee),
+      Route($Me, $Next, ptrOut, y, amtOut) ]
+
+// Receiver fulfils the final route hop, revealing the preimage backward.
+// NOTE: no Out(x). The preimage is NOT public; it travels only via Fulfill.
+rule Receiver_Fulfill_HTLC:
+    [ Route($Prev, $Receiver, ptrIn, y, amtIn),
+      ReceiverInv($Receiver, $Sender, x, amt) ]
+    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y, amtIn),
+        ReceiverPaid($Receiver, y, amt),
+        PreimageReleased($Receiver, x),
+        Redeemed(ptrIn, y),
+        Eq(h(x), y),
+        Eq(amtIn, amt) ]->
+    [ Fulfill(ptrIn, x) ]
+
+// The intermediary claims amtIn on ptrIn having paid amtOut on ptrOut.
+rule Intermediary_Settle:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtIn, amtOut, fee),
+      Fulfill(ptrOut, x) ]
+    --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
+        FeeEarned($Me, ptrIn, ptrOut, y, fee),
+        Redeemed(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ]
+
+rule Sender_Settle:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, amtTotal),
+      Fulfill(ptrSF, x) ]
+    --[ SenderSettled($Sender, $Forward1, $Receiver, ptrSF, x),
+        PaymentComplete($Sender, $Receiver, h(x), amtTotal),
+        Redeemed(ptrSF, y),
+        Eq(h(x), y) ]->
+    [ ]
+
+// Off-path preimage relay between two colluding (compromised) parties.
+//  * $P holds Fulfill(ptrA, x): it is the locker of channel ptrA and legitimately
+//    received x from downstream (Fulfill(ptrA, .) is only produced by
+//    Receiver_Fulfill_HTLC, Intermediary_Settle, or this rule).
+//  * $Q is the locker of channel ptrB, on which it wants to settle.
+//  * Both are compromised. x moves from P to Q only; it does not become public.
+// This is the capability the Route abstraction removed, put back as a rule.
+rule Collude_Relay:
+    [ Fulfill(ptrA, x),
+      !ChannelConnect(ptrA, $P, $PN),
+      !ChannelConnect(ptrB, $Q, $QN),
+      !Compromised($P),
+      !Compromised($Q) ]
+    --[ Relay($P, $Q, ptrA, ptrB, x),
+        Neq(ptrA, ptrB),
+        Neq($P, $Q) ]->
+    [ Relayed($Q, ptrB, x) ]
+
+// The receiving colluder settles its incoming HTLC with the relayed preimage.
+// Bounded by the linear IntermediaryPending, so no Fulfill -> Fulfill cycle.
+rule Colluder_Settle_Via_Relay:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtIn, amtOut, fee),
+      Relayed($Me, ptrOut, x) ]
+    --[ IntermediaryClaimed($Me, $Prev, ptrIn, x),
+        SettledViaRelay($Me, ptrIn, ptrOut, y),
+        Redeemed(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ]
+
+rule Open_Timeout:
+    [ !ChannelConnect(ptr, A, B) ] --[ TimedOut(ptr) ]-> [ !Timeout(ptr) ]
+
+rule Sender_Timeout_Refund:
+    [ SenderPending($Sender, $Forward1, $Receiver, ptrSF, y, amtTotal),
+      !Timeout(ptrSF) ]
+    --[ HTLCRefunded($Sender, ptrSF, y), Refunded(ptrSF, y) ]->
+    [ ]
+
+rule Intermediary_Timeout_Refund:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y,
+                          amtIn, amtOut, fee),
+      !Timeout(ptrOut) ]
+    --[ HTLCRefunded($Me, ptrOut, y), Refunded(ptrOut, y) ]->
+    [ ]
+
+
+// ---------------------------------------------------------------------------
+// Restrictions
+// ---------------------------------------------------------------------------
+
+restriction OneOutcomePerHTLC:
+    "All ptr y #i #j.
+       Redeemed(ptr, y) @ #i & Refunded(ptr, y) @ #j ==> F"
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction OneTimeoutPerPtr:
+    "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
+
+restriction OneChannelPerPtr:
+    "All A B C D ptr #i #j.
+       ChannelOpen(A, B, ptr) @ #i
+     & ChannelOpen(C, D, ptr) @ #j
+     ==> #i = #j"
+
+// T1: redemption is valid only before a channel times out.
+restriction RedeemBeforeTimeout:
+    "All ptr y #i #j.
+        Redeemed(ptr, y) @ #i & TimedOut(ptr) @ #j ==> #i < #j"
+
+// T2 (replaces T2a + T2b): if the incoming channel times out, the outgoing one
+// timed out strictly earlier. Encodes the CLTV delta.
+// (T2a "ForwardTimeGap" is derived from this; see Forward_Time_Gap_Derived below.)
+restriction HonestPartiesActBeforeIncomingTimeout:
+    "All P ptrIn ptrOut y #f #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrIn) @ #k
+     ==> Ex #m. TimedOut(ptrOut) @ #m & #m < #k"
+
+// T3: an HONEST intermediary claims its incoming HTLC once the outgoing one is
+// redeemed before the incoming timeout. Compromised parties are not forced.
+restriction IntermediaryMustClaim:
+    "All P ptrIn ptrOut y #f #i #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & TimedOut(ptrIn)  @ #k
+      & #i < #k
+      & not (Ex #r. LtkCompromised(P) @ #r)
+     ==> Ex #l. Redeemed(ptrIn, y) @ #l"
+
+// ---------------------------------------------------------------------------
+// Lemmas -- payment channel layer
+// ---------------------------------------------------------------------------
+
+lemma Invoice_Released_Once [reuse]:
+    "All R x #i #j.
+        PreimageReleased(R, x) @ #i
+      & PreimageReleased(R, x) @ #j
+     ==> #i = #j"
+
+lemma Refund_Requires_Timeout [reuse]:
+    "All ptr y #i.
+        Refunded(ptr, y) @ #i
+     ==> Ex #j. TimedOut(ptr) @ #j & #j < #i"
+
+// T2a is no longer a restriction: it is a consequence of T2 + T1 + T3-free
+// reasoning about timeouts. If this does not verify, T2a cannot be dropped.
+
+lemma Forward_Time_Gap_Derived [reuse]:
+    "All P ptrIn ptrOut y #f #j #k.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & TimedOut(ptrOut) @ #j
+      & TimedOut(ptrIn)  @ #k
+     ==> #j < #k"
+
+lemma Intermediary_Never_Loses_Under_Liveness:
+    "All P ptrIn ptrOut y #f #i #j.
+        ForwardHTLC(P, ptrIn, ptrOut, y) @ #f
+      & Redeemed(ptrOut, y) @ #i
+      & Refunded(ptrIn, y) @ #j
+     ==> Ex #r. LtkCompromised(P) @ #r"
+
+// Once the receiver fulfils the final HTLC, the sender's HTLC on the same hash
+// cannot be refunded in the honest model.
+
+lemma Payment_Atomicity_Under_Liveness:
+    "All F1 F2 ptrSF1 ptrF1F2 ptrF2R y #f1 #f2 #i.
+        ForwardHTLC(F1, ptrSF1, ptrF1F2, y) @ #f1
+      & ForwardHTLC(F2, ptrF1F2, ptrF2R, y) @ #f2
+      & Redeemed(ptrF2R, y) @ #i
+      & (not Ex P #r. LtkCompromised(P) @ #r)
+     ==> not (Ex #u. Refunded(ptrSF1, y) @ #u)"
+
+// The race is blocked WITH the liveness restriction active (honest P only).
+// timeout.spthy shows the race is reachable WITHOUT it.
+
+lemma P1_One_Forward:
+    exists-trace
+    "Ex S F1 F2 p0 p1 y a b c #o #f.
+        HTLCOffered(S, F1, p0, y, a) @ #o
+      & HTLCForwarded(F1, S, F2, p0, p1, y, b, c) @ #f"
+
+lemma P2_Two_Hops_Plain:
+    exists-trace
+    "Ex S F1 F2 R p0 p1 p2 y a0 a1 a2 b1 b2 v #t2 #t3 #t4 #t5.
+        HTLCOffered(S, F1, p0, y, a0)                  @ #t2
+      & HTLCForwarded(F1, S, F2, p0, p1, y, b1, a1)    @ #t3
+      & HTLCForwarded(F2, F1, R, p1, p2, y, b2, a2)    @ #t4
+      & HTLCFulfilled(R, F2, p2, y, v)                 @ #t5"
+
+lemma Wa_Chain_Fulfill:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x a0 a1 a2 a3 b1 b2 b3 v #o #a #b #d #r.
+        HTLCOffered(S, F1, pSF, h(x), a0)                 @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x), b1, a1)  @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x), b2, a2) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x), b3, a3)  @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x), v)                @ #r"
+
+lemma Wb_Plus_Relay:
+    exists-trace
+    "Ex S F1 F2 F3 R pSF p12 p23 p3R x a0 a1 a2 a3 b1 b2 b3 v #o #a #b #d #r #y.
+        HTLCOffered(S, F1, pSF, h(x), a0)                 @ #o
+      & HTLCForwarded(F1, S, F2, pSF, p12, h(x), b1, a1)  @ #a
+      & HTLCForwarded(F2, F1, F3, p12, p23, h(x), b2, a2) @ #b
+      & HTLCForwarded(F3, F2, R, p23, p3R, h(x), b3, a3)  @ #d
+      & HTLCFulfilled(R, F3, p3R, h(x), v)                @ #r
+      & Relay(F3, F1, p3R, p12, x) @ #y"
+
+end

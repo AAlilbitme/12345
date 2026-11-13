@@ -1,0 +1,35 @@
+% Listings moved out of the main text by the fit pass (F2).
+\subsection{Structural Restrictions}\label{lst:structural}
+
+Besides the liveness restrictions T1 to T3 (Sec.~\ref{sec:restrictions}), \code{lightning.spthy}
+has six structural restrictions. \code{OneResolutionPerHTLC} is the interface assumption between
+the channel layer and the routing layer (Sec.~\ref{sec:method}): every rule that redeems or
+refunds an HTLC records the action fact \code{Old}, and each HTLC is resolved at most once.
+\code{OneHTLCPerHashPerChannel} lets a payment hash be added at most once per channel.
+\code{Equality} and \code{Inequality} turn the action facts \code{Eq} and \code{Neq} into
+constraints, which encodes checks such as signature verification. \code{OneTimeoutPerPtr} and
+\code{OneChannelPerPtr} let a channel time out and open at most once. The order of a hop's two
+timeouts is not a restriction: it is the lemma \code{ForwardTimeGap}, derived from T2 and
+\code{OneTimeoutPerPtr} and printed in Appendix~\ref{app:safety}.
+\begin{spthy}
+restriction OneResolutionPerHTLC:
+    "All ptr y #i #j. Old(ptr, y) @ #i & Old(ptr, y) @ #j ==> #i = #j"
+
+restriction OneHTLCPerHashPerChannel:
+    "All ptr y #m #n. HTLCAdded(ptr, y) @ #m & HTLCAdded(ptr, y) @ #n ==> #m = #n"
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+restriction OneTimeoutPerPtr:
+    "All ptr #i #j. TimedOut(ptr) @ #i & TimedOut(ptr) @ #j ==> #i = #j"
+
+restriction OneChannelPerPtr:
+    "All A B C D ptr #i #j.
+       ChannelOpen(A, B, ptr) @ #i
+     & ChannelOpen(C, D, ptr) @ #j
+     ==> #i = #j"
+\end{spthy}

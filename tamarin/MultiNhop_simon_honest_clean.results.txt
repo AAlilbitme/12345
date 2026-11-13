@@ -1,0 +1,38 @@
+MultiNhop_simon_honest_clean.spthy (no saved proofs). Each lemma: tamarin-prover --prove=<lemma>, 600 s, 6 GB, 2 in parallel.
+Time includes ~100 s of Tamarin precomputation per run.
+
+state_update | verified (21 steps) | 133s
+Fulfill_Origin | verified (669 steps) | 161s
+delayed_funds | verified (44 steps) | 112s
+instant_funds | verified (60 steps) | 109s
+settlement_is_traceable | verified (4 steps) | 113s
+Protocol_execution | verified (26 steps) | 124s
+No_Punishment_Without_Cheating | verified (20 steps) | 109s
+Cooperative_Close_Execution | verified (15 steps) | 113s
+Funds_Locked_Before_Update | verified (21 steps) | 109s
+Update_Requires_Negotiation | verified (21 steps) | 115s
+Ltk_Known_Implies_Compromised | verified (3 steps) | 116s
+Invoice_Released_Once | verified (8 steps) | 110s
+Distinct_Parties_Configuration | verified (23 steps) | 120s
+Refund_Possible | verified (16 steps) | 115s
+Invoice_Has_Secret_Preimage | verified (2 steps) | 6s
+Preimage_Secret_Until_Released | verified (9 steps) | 112s
+HTLC_On_Opened_Channel | verified (23 steps) | 111s
+Settle_Excludes_Sender_Refund | verified (17 steps) | 103s
+Settle_Requires_Offer | verified (18 steps) | 102s
+Offer_Requires_Invoice | verified (5 steps) | 105s
+Invoice_Authenticates_Settlement | verified (4 steps) | 108s
+Loss_Requires_Inaction | verified (2 steps) | 5s
+Refund_Requires_Timeout | verified (202 steps) | 109s
+Intermediary_Never_Loses_Under_Liveness | verified (7 steps) | 104s
+Payment_Atomicity_Under_Liveness | verified (13 steps) | 106s
+Timeout_race_Blocked | verified (4 steps) | 105s
+Forged_Invoice_Requires_Key_Compromise | verified (26 steps) | 474s
+Multihop_Payment_Possible | verified (30 steps) | ~230s   (new version: invoice-anchored, settlements excluded)
+Wormhole_Honest_F2_Robbed | no result in 600 s | 600s
+Sanity_Honest_Payment_Completes | no result in 600 s | 601s
+Sanity_Compromised_Intermediary_Can_Lose | no result in 600 s | 600s
+Sanity_Injected_Settlement | no result in 600 s | 600s
+Wormhole_Honest_F2_Robbed_Pinned | no result in 600 s | 601s
+
+28/33 verified with plain --prove. The 5 remaining exists-trace witnesses need the saved proofs in MultiNhop_simon_honest.spthy.

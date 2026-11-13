@@ -1,0 +1,55 @@
+multihop_3hop_noT2a.spthy -- multihop.spthy with restriction ForwardTimeGap (T2a) removed.
+Run in the cloud session, one lemma at a time, 300 s / 4 GB limit each.
+TIMEOUT/OOM = no result within the limit (NOT falsified). Identical to the run with T2a present.
+
+  state_update (all-traces): verified (15 steps)
+  delayed_funds (all-traces): verified (44 steps)
+  instant_funds (all-traces): verified (60 steps)
+  settlement_is_traceable (all-traces): verified (4 steps)
+  Protocol_execution (exists-trace): verified (26 steps)
+  No_Punishment_Without_Cheating (all-traces): verified (20 steps)
+  Cooperative_Close_Execution (exists-trace): verified (15 steps)
+  Funds_Locked_Before_Update (all-traces): verified (15 steps)
+  Update_Requires_Negotiation (all-traces): verified (15 steps)
+  Ltk_Known_Implies_Compromised (all-traces): verified (3 steps)
+  Invoice_Released_Once (all-traces): verified (16 steps)
+  Multihop_Payment_Possible: TIMEOUT/OOM (>300s or >4GB)
+  Distinct_Parties_Configuration (exists-trace): verified (23 steps)
+  Refund_Possible (exists-trace): verified (16 steps)
+  Preimage_Secret_Until_Released (all-traces): verified (5 steps)
+  Invoice_Has_Secret_Preimage (all-traces): verified (2 steps)
+  HTLC_On_Opened_Channel (all-traces): verified (32 steps)
+  Settle_Requires_Receiver_Release (all-traces): verified (10 steps)
+  Forward1_Requires_Offer (all-traces): verified (34 steps)
+  Forward2_Requires_Forward1 (all-traces): verified (42 steps)
+  Fulfill_Requires_Forward2 (all-traces): verified (20 steps)
+  Forward1_Requires_Offer_Honest (all-traces): verified (26 steps)
+  Forward2_Requires_Forward1_Honest (all-traces): verified (34 steps)
+  Fulfill_Requires_Forward2_Honest (all-traces): verified (16 steps)
+  Claim_Requires_Release (all-traces): verified (34 steps)
+  Settle_Excludes_Sender_Refund (all-traces): verified (8 steps)
+  Invoice_Authenticates_Settlement (all-traces): verified (12 steps)
+  Forged_Invoice_Requires_Key_Compromise (exists-trace): verified (13 steps)
+  Loss_Requires_Inaction (all-traces): verified (2 steps)
+  Refund_Requires_Timeout (all-traces): verified (34 steps)
+  Intermediary_Never_Loses_Under_Liveness (all-traces): verified (2 steps)
+  Payment_Atomicity_Under_Liveness (all-traces): verified (2 steps)
+  Timeout_Race_Blocked (all-traces): verified (2 steps)
+  Fee_Conservation_Hop1 (all-traces): verified (18 steps)
+  Fee_Conservation_Hop2 (all-traces): verified (18 steps)
+  Receiver_Paid_Invoice_Amount (all-traces): verified (3 steps)
+  Fees_Charged_On_Path_Possible: TIMEOUT/OOM (>300s or >4GB)
+  Wormhole_Fee_Theft_Reachable (exists-trace): verified (54 steps)   [rerun, 29 min limit]
+  Wormhole_Steals_Exactly_The_Fees: TIMEOUT/OOM (>300s or >4GB)
+  Fee_Strictly_Positive_Hop1 (all-traces): verified (2 steps)
+  Fee_Strictly_Positive_Hop2 (all-traces): verified (2 steps)
+  EndToEnd_Value_Conservation (all-traces): verified (2 steps)
+  Honest_Intermediary_Refunds (exists-trace): verified (23 steps)
+DONE
+
+Rerun of the 4 slow lemmas, one at a time, 29 min limit (same machine):
+  file with T2a:    Multihop_Payment_Possible, Fees_Charged_On_Path_Possible,
+                    Wormhole_Fee_Theft_Reachable, Wormhole_Steals_Exactly_The_Fees: no result
+  file without T2a (3 GB memory cap):
+                    Wormhole_Fee_Theft_Reachable: verified (54 steps)
+                    the other three: no result (time or memory)

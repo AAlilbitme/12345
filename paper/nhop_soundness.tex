@@ -1,0 +1,172 @@
+\documentclass[11pt]{article}
+% Standalone so it compiles on its own; the body between %%%BEGIN and %%%END
+% can also be \input into the main paper.
+\usepackage[T1]{fontenc}
+\usepackage{underscore}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\title{\textbf{Soundness of the $N$-Hop Abstraction}\\\large A refinement theorem transferring routing safety to the concrete protocol for arbitrary path length}
+\author{}\date{}
+\begin{document}\maketitle
+%%%BEGIN nhop-soundness
+
+\noindent
+This section upgrades the central claim from ``we verified an idealized $N$-hop
+model'' to a \emph{theorem}: safety proved on the abstract, unbounded-length
+routing model \emph{transfers} to the concrete, full-cryptography protocol, for
+every path length $N$. The argument decomposes the problem into a part that is
+cryptographic but \emph{local} (discharged in the concrete model at bounded
+size) and a part that is unbounded but \emph{structural} (discharged in the
+abstract model for all $N$), and composes them by a pen-and-paper refinement.
+
+\subsection*{Two models over a shared action alphabet}
+
+\begin{definition}[Concrete model $\mathcal{C}$]
+The full-cryptography, fixed-position theory \texttt{multihop.spthy}: HTLC
+offers are signed messages sent over an \texttt{Out}/\texttt{In} network under a
+Dolev--Yao adversary with key compromise (\texttt{Compromise\_Ltk}). Forwarding
+is authenticated by verifying the previous hop's signature.
+\end{definition}
+
+\begin{definition}[Abstract model $\mathcal{A}$]
+The linear-fact routing theory (\texttt{multihop\_nhop.spthy}): the HTLC is
+handed hop-to-hop as an internal linear fact \texttt{Route(prev,me,ptr,y)}
+(an \emph{idealised channel}) rather than a signed broadcast. A single generic
+forward rule fires at every hop, so paths have arbitrary length~$N$.
+\end{definition}
+
+Both theories emit the same safety-relevant action facts
+$\Sigma = \{\,\texttt{ForwardHTLC},\ \texttt{Redeemed},\ \texttt{Refunded}\,\}$
+with identical arities; the intermediary-safety properties are stated over
+$\Sigma$ only. (The concrete model additionally emits the position-indexed
+\texttt{HTLCForwarded1/2}; the projection below collapses both to the abstract
+generic \texttt{HTLCForwarded}, but no safety lemma depends on the index.)
+
+\subsection*{The trap, and the local authentication lemma}
+
+\begin{remark}[Why abstraction is not automatically sound]
+Internalising the network as a trusted \texttt{Route} fact \emph{removes}
+Dolev--Yao power: $\mathcal{A}$ has strictly fewer behaviours than $\mathcal{C}$.
+Safety on $\mathcal{A}$ therefore does not, by itself, imply safety on
+$\mathcal{C}$. The gap is exactly the adversary's ability to forge or replay a
+forwarded HTLC; closing it requires a cryptographic authentication guarantee in
+$\mathcal{C}$.
+\end{remark}
+
+\begin{lemma}[\textsc{Auth}, per-hop authentication; machine-checked in $\mathcal{C}$]
+\label{lem:auth}
+For every forwarding step, the incoming HTLC accepted by a node traces back to a
+genuine offer/forward from the \emph{adjacent} previous hop, unless that hop's
+long-term key is compromised. Formally (one hop of the path), for the first and
+second forwarding positions:
+\[
+\begin{aligned}
+&\texttt{HTLCForwarded1}(F_1,F_2,S,p,y,v_{\mathit{in}},v_{\mathit{out}})
+ \Rightarrow
+ (\exists\, p',t.\ \texttt{HTLCOffered}(S,F_1,p',y,v_{\mathit{in}})@t)
+ \ \lor\ \texttt{LtkCompromised}(S),\\
+&\texttt{HTLCForwarded2}(F_2,R,F_1,p,y,v_{\mathit{in}},v_{\mathit{out}})
+ \Rightarrow
+ (\exists\, S,p',v.\ \texttt{HTLCForwarded1}(F_1,F_2,S,p',y,v,v_{\mathit{in}})@t)
+ \ \lor\ \texttt{LtkCompromised}(F_1).
+\end{aligned}
+\]
+\end{lemma}
+
+\begin{proof}[Status]
+Machine-checked in \texttt{multihop.spthy} as
+\texttt{Forward1\_Requires\_Offer} (266 steps) and
+\texttt{Forward2\_Requires\_Forward1} (274 steps), together with their
+compromise-free variants \texttt{*\_Honest}. Each quantifies over a single
+adjacent pair $(\mathit{prev},\mathit{me})$ and never over the path or $N$; the
+forward rules verify only the previous hop's signature and read only the two
+adjacent channels. Hence \textsc{Auth} is \emph{local}.
+\end{proof}
+
+\begin{remark}[Locality is what makes \textsc{Auth} tractable]
+\label{rem:local}
+A \emph{generic} single signed-forward rule that fires at every hop makes the
+\texttt{'htlc'} term self-referential (a forwarded offer is the output of
+forwarding another offer). Tamarin's origin analysis then fails to terminate at
+the \emph{sources} stage: we verified that on such a rule \emph{no} lemma
+completes---not \textsc{Auth}, not its honest variant, not even a two-hop
+reachability witness---at 300\,s, and a hand-written \texttt{[sources]} lemma
+does not rescue it (420\,s). \textsc{Auth} is provable precisely because, taken
+per hop, it is \emph{bounded}: it looks back one adjacent step and does not
+unfold the path. This is the crux of the whole argument.
+\end{remark}
+
+\subsection*{Projection and the refinement theorem}
+
+\begin{definition}[Projection $\pi$]
+$\pi$ maps a concrete trace to an abstract one by (i) keeping every
+$\Sigma$-action verbatim and (ii) deleting all network/crypto events
+(\texttt{Out}, \texttt{In}, \texttt{KU}, signature checks). Position-indexed
+\texttt{HTLCForwarded1/2} are relabelled to the generic \texttt{HTLCForwarded}.
+\end{definition}
+
+\begin{lemma}[Per-hop simulation]
+\label{lem:sim}
+Under \textsc{Auth}, every concrete forwarding step has a matching abstract
+step: an honestly-authenticated incoming HTLC (Lemma~\ref{lem:auth}) is exactly
+what licenses the abstract \texttt{Route} hand-off, so $\pi$ of a concrete step
+is a legal abstract step. The adversarial case (a forged/replayed HTLC) is ruled
+out by \textsc{Auth} except under key compromise, which both models expose
+identically via \texttt{LtkCompromised}.
+\end{lemma}
+
+\begin{theorem}[Soundness of the abstraction]
+\label{thm:main}
+Let $\varphi$ be a safety property over $\Sigma$ proved on $\mathcal{A}$ for all
+path lengths $N$. Then $\varphi$ holds on $\mathcal{C}$: for every concrete trace
+$t$, $\pi(t)$ is an abstract trace (Lemmas~\ref{lem:auth},~\ref{lem:sim}, by
+induction over the forwarding steps of $t$), so if $\pi(t)$ satisfies $\varphi$
+then so does $t$. Equivalently, every concrete violation projects to an abstract
+violation; contrapositively, abstract safety transfers. Hence the intermediary%
+-safety and atomicity properties, verified structurally on $\mathcal{A}$ for
+arbitrary $N$, hold for the concrete signed-message protocol at arbitrary $N$.
+\end{theorem}
+
+\begin{proof}[Structure]
+By induction on the number of forwarding steps in $t$. Base case: zero forwards,
+$\pi(t)$ trivially abstract. Step: extend $t$ by one concrete forward; by
+Lemma~\ref{lem:sim} (using Lemma~\ref{lem:auth} to discharge the forgery case)
+its projection extends $\pi(t)$ by one legal abstract forward. The
+$\Sigma$-actions are preserved verbatim, so any $\Sigma$-violation in $t$ appears
+in $\pi(t)$. $\square$
+\end{proof}
+
+\subsection*{What is machine-checked, and what is pen-and-paper}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Ingredient} & \textbf{Where} & \textbf{Status} \\
+\midrule
+\textsc{Auth}, per-hop, local & $\mathcal{C}$ (\texttt{multihop.spthy}) & machine-checked (266 / 274 steps) \\
+All-$N$ routing safety ($\varphi$) & $\mathcal{A}$ (\texttt{multihop\_nhop}) & machine-checked (25 active lemmas, $\approx$103.5\,s) \\
+$\Sigma$-alignment / projection $\pi$ & both & by inspection ($\Sigma$ shared verbatim) \\
+Simulation + induction (Thm.~\ref{thm:main}) & meta & pen-and-paper \\
+Generic single-rule \textsc{Auth} & --- & \emph{boundary}: sources non-termination (Rem.~\ref{rem:local}) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The meta-theorem is pen-and-paper by necessity: Tamarin cannot quantify over all
+$N$ or relate two theories (the same reason key-management meta-theorems are
+argued externally). Its two hypotheses, however, are both machine-checked, and
+its soundness rests on the \emph{locality} of \textsc{Auth}
+(Remark~\ref{rem:local})---which must be, and has been, confirmed by inspection
+of every forward rule: each references only its adjacent pair. If any forward
+rule depended on global path structure the argument would break; none does.
+
+%%%END nhop-soundness
+\end{document}

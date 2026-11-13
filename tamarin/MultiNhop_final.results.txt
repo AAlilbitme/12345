@@ -1,0 +1,37 @@
+MultiNhop_final.spthy -- final verification run
+
+1) Saved proofs (tamarin-prover MultiNhop_final.spthy):
+Sanity_Honest_Payment_Completes verified (89 steps) | Sanity_Injected_Settlement verified (76 steps) | Wormhole_Honest_F2_Robbed_Pinned verified (128 steps)
+
+2) --prove=<lemma>, 900 s, 6 GB, 2 in parallel:
+state_update | (all-traces): verified (21 steps) | 206s
+Fulfill_Origin | (all-traces): verified (669 steps) | 263s
+delayed_funds | (all-traces): verified (44 steps) | 190s
+instant_funds | (all-traces): verified (60 steps) | 183s
+settlement_is_traceable | (all-traces): verified (4 steps) | 183s
+Protocol_execution | (exists-trace): verified (26 steps) | 194s
+No_Punishment_Without_Cheating | (all-traces): verified (20 steps) | 170s
+Cooperative_Close_Execution | (exists-trace): verified (15 steps) | 184s
+Funds_Locked_Before_Update | (all-traces): verified (21 steps) | 183s
+Update_Requires_Negotiation | (all-traces): verified (21 steps) | 183s
+Ltk_Known_Implies_Compromised | (all-traces): verified (3 steps) | 184s
+Invoice_Released_Once | (all-traces): verified (8 steps) | 178s
+Distinct_Parties_Configuration | (exists-trace): verified (23 steps) | 183s
+Refund_Possible | (exists-trace): verified (16 steps) | 197s
+Preimage_Secret_Until_Released | (all-traces): verified (9 steps) | 178s
+Invoice_Has_Secret_Preimage | (all-traces): verified (2 steps) | 177s
+HTLC_On_Opened_Channel | (all-traces): verified (23 steps) | 176s
+Settle_Excludes_Sender_Refund | (all-traces): verified (17 steps) | 184s
+Settle_Requires_Offer | (all-traces): verified (30 steps) | 178s
+Offer_Requires_Invoice | (all-traces): verified (5 steps) | 188s
+Invoice_Authenticates_Settlement | (all-traces): verified (4 steps) | 191s
+Loss_Requires_Inaction | (all-traces): verified (2 steps) | 186s
+Refund_Requires_Timeout | (all-traces): verified (12 steps) | 166s
+Intermediary_Never_Loses_Under_Liveness | (all-traces): verified (7 steps) | 181s
+Forged_Invoice_Requires_Key_Compromise | (exists-trace): verified (26 steps) | 715s
+Payment_Atomicity_Under_Liveness | (all-traces): verified (13 steps) | 178s
+Timeout_race_Blocked | (all-traces): verified (4 steps) | 181s
+Sanity_Compromised_Intermediary_Can_Lose | (exists-trace): verified (29 steps) | 320s
+Multihop_Payment_Possible | (exists-trace): verified (30 steps) | 475s
+
+TOTAL: 32/33 verified. Open: Wormhole_Honest_F2_Robbed (unpinned; same attack is verified by the pinned lemma).

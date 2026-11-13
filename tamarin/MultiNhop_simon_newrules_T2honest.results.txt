@@ -1,0 +1,28 @@
+MultiNhop_simon_newrules.spthy with T2 honest-only (commit 095eec0). --prove=<lemma>, 600 s, 2 parallel.
+
+delayed_funds | verified (44 steps) | 289s
+instant_funds | verified (60 steps) | 216s
+state_update | no result in 600 s | 600s
+settlement_is_traceable | verified (4 steps) | 199s
+No_Punishment_Without_Cheating | verified (20 steps) | 208s
+Protocol_execution | no result in 600 s | 600s
+Cooperative_Close_Execution | no result in 600 s | 600s
+Funds_Locked_Before_Update | no result in 600 s | 601s
+Update_Requires_Negotiation | no result in 600 s | 601s
+Invoice_Released_Once | verified (8 steps) | 210s
+Ltk_Known_Implies_Compromised | no result in 600 s | 600s
+Distinct_Parties_Configuration | verified (89 steps) | 218s
+Refund_Possible | verified (80 steps) | 258s
+Invoice_Has_Secret_Preimage | verified (2 steps) | 224s
+HTLC_On_Opened_Channel | verified (61 steps) | 257s
+Preimage_Secret_Until_Released | no result in 600 s | 601s
+Settle_Excludes_Sender_Refund | verified (17 steps) | 238s
+Invoice_Authenticates_Settlement | no result in 600 s | 600s
+Forged_Invoice_Requires_Key_Compromise | verified (14 steps) | 513s
+Loss_Requires_Inaction | verified (2 steps) | 201s
+Refund_Requires_Timeout | verified (58 steps) | 215s
+Intermediary_Never_Loses_Under_Liveness | verified (6 steps) | 211s
+Payment_Atomicity_Under_Liveness | verified (8 steps) | 204s
+Timeout_race_Blocked | no result in 600 s | 601s
+Multihop_Payment_Possible | no result in 600 s | 601s
+Wormhole_Fee_Theft_Reachable | no result in 600 s | 600s
