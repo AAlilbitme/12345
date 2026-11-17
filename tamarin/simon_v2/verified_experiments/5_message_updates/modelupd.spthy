@@ -135,21 +135,24 @@ rule Update_Propose_A_HTLC:   // add (replaces Update_State_HTLC)
       InFlight(ptr, ~n_new, op),
       Out(<'update', $A, $B, updA, sign(updA, ltkA)>) ]
 
+// add: typing: the new state number and A's revocation hash are fresh values
+// add: (honest parties only send fresh values there; this only restricts what a
+// add: compromised A can send). It cuts the backward search through earlier updates.
 rule Update_Accept_B:   // add
-    let newCommitA = <'commit', ptr, $A, $B, n_new, hA>
-        updA       = <'update', ptr, n_old, n_new, fA_new, fB_new, op, newCommitA>
-        newCommitB = <'commit', ptr, $B, $A, n_new, h(~sBnew)>
+    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
+        updA       = <'update', ptr, n_old, ~n_new, fA_new, fB_new, op, newCommitA>
+        newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
         sigBnew    = sign(newCommitB, ltkB)
     in
     [ Fr(~sBnew), !Ltk($B, ltkB), !Pk($A, pkA),
       StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
       In(<'update', $A, $B, updA, sigUpd>) ]
     --[ Eq(verify(sigUpd, updA, pkA), true),
-        UpdateAccepted($B, $A, ptr, n_new) ]->
+        UpdateAccepted($B, $A, ptr, ~n_new) ]->
     [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
-               n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new),
-      !PeerCommit($B, ptr, n_new, newCommitA),
-      Out(<'update_ack', $A, $B, ptr, n_new, newCommitB, sigBnew>) ]
+               ~n_new, ~sBnew, newCommitB, sigBnew, fA_new, fB_new),
+      !PeerCommit($B, ptr, ~n_new, newCommitA),
+      Out(<'update_ack', $A, $B, ptr, ~n_new, newCommitB, sigBnew>) ]
 
 rule Update_Confirm_A:   // add
     [ ProposedA($A, $B, ptr, n_old, sAold, oldCommitA,
@@ -161,27 +164,29 @@ rule Update_Confirm_A:   // add
     [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
                n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new) ]
 
+// add: revocation secrets are always fresh values; typing them here keeps the
+// add: revealed secret from looking like an arbitrary message to the attacker.
 rule Revoke_A:   // add (first half of Revoke_Old_Secret)
-    [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
+    [ PendingA($A, $B, ptr, n_old, ~sAold, oldCommitA,
                n_new, sAnew, newCommitA, sigAnew, fA_new, fB_new) ]
-    --[ Revoke($A, n_old, sAold) ]->
+    --[ Revoke($A, n_old, ~sAold) ]->
     [ StateA($A, $B, ptr, n_new, sAnew, newCommitA, fA_new, fB_new),
-      !RevokedSecret($A, n_old, sAold, oldCommitA),
+      !RevokedSecret($A, n_old, ~sAold, oldCommitA),
       RevokedCommitmentUnspent(ptr, $A, $B, n_old, oldCommitA),
-      Out(<'revoke', $A, $B, ptr, n_old, sAold>) ]
+      Out(<'revoke', $A, $B, ptr, n_old, ~sAold>) ]
 
 rule Revoke_B:   // add (second half of Revoke_Old_Secret)
-    [ PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
+    [ PendingB($A, $B, ptr, n_old, ~sBold, oldCommitB,
                n_new, sBnew, newCommitB, sigBnew, fA_new, fB_new),
-      !PeerCommit($B, ptr, n_old, <'commit', ptr, $A, $B, n_old, h(sA)>),
-      In(<'revoke', $A, $B, ptr, n_old, sA>) ]
+      !PeerCommit($B, ptr, n_old, <'commit', ptr, $A, $B, n_old, h(~sA)>),
+      In(<'revoke', $A, $B, ptr, n_old, ~sA>) ]
     --[ StateUpdate($A, $B, ptr, n_new),
-        Revoke($B, n_old, sBold) ]->
+        Revoke($B, n_old, ~sBold) ]->
     [ StateB($A, $B, ptr, n_new, sBnew, newCommitB, fA_new, fB_new),
-      !RevokedSecret($B, n_old, sBold, oldCommitB),
+      !RevokedSecret($B, n_old, ~sBold, oldCommitB),
       RevokedCommitmentUnspent(ptr, $B, $A, n_old, oldCommitB),
       !UpdateDone(ptr, n_new),
-      Out(<'revoke', $B, $A, ptr, n_old, sBold>) ]
+      Out(<'revoke', $B, $A, ptr, n_old, ~sBold>) ]
 
 // add: while A waits for B's ack, A's old state is still its current one.
 rule Publish_Proposed_A:   // add

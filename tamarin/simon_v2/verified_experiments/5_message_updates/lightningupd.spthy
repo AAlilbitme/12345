@@ -17,6 +17,20 @@ deprio:
     regex "KU[(]" | regex "State[AB][(]" | regex "Pending[AB][(]" | regex "RouteInfo" | regex "Route[(]" | regex "Mutex" | regex "ChannelConnect" | regex "Ltk" | regex "Pk"
 
 
+// add: witnesses in the message model: resolve the channel-state facts first and
+// add: attacker knowledge last (otherwise the search guesses the source of a
+// add: revealed secret before the state that produced it is fixed).
+tactic: msg_witness   // add
+presort: s
+prio:
+    regex "^\s*(StateA|StateB|PendingA|PendingB|ProposedA|ReadyToLock|CommittedState[AB])[(]"
+prio:
+    regex "^\s*!(PeerCommit|A_HandshakeDone|ProposalCommitted)[(]" | regex "^\s*A_WaitAck[(]"
+prio:
+    regex "^\s*(Fulfilled|Committed|InFlight|AwaitFulfilled|AwaitRoute|UpdateFor)[(]" | regex "UpdateDone"
+deprio:
+    regex "KU[(]"
+
 // Settlement is a real channel update: the sender only settles after a
 // completed update of its channel that commits the preimage.
 lemma Settle_Is_Channel_Update [heuristic={upd}]:
@@ -36,7 +50,7 @@ lemma HTLC_Commit_Correspondence:
 
 // Hand-built trace, full payment: S -> F -> R, every HTLC step through a
 // completed channel update (update, revoke, commit), then settled back.
-lemma Hand_Payment:
+lemma Hand_Payment [heuristic={msg_witness}]:   // add: tactic
   exists-trace
   "Ex S F R p0 p1 x n0 n1 n2 n3 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 s3 t3
       #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu #u2 #r2 #c2 #cl #u3 #r3 #c3 #s.
@@ -77,6 +91,17 @@ lemma Hand_Payment:
     & not (Ex t #i. Tick(t) @ #i)"
 
 
+// add: smallest witness for the message exchange: one channel, one completed
+// add: update, no compromise.
+lemma One_Update_Witness [heuristic={msg_witness}]:   // add
+  exists-trace
+  "Ex A B p n #o #s.
+      ChannelOpen(A, B, p) @ #o & StateUpdate(A, B, p, n) @ #s & #o < #s
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o)
+    & (All a b q m #i. UpdateProposed(a, b, q, m) @ #i ==> m = n)
+    & (All a b q m #i. UpdateAccepted(a, b, q, m) @ #i ==> m = n)
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
 // add: an HTLC is forwarded only after its incoming add was committed through a
 // add: completed channel update of the incoming channel.
 lemma Add_Is_Channel_Update [heuristic={upd}]:   // add
@@ -98,7 +123,7 @@ lemma Fail_Is_Channel_Update [heuristic={upd}]:   // add
 // add: witness for the refund path: the sender refunds after the timeout and
 // add: the fail goes through a completed channel update.
 // add: the trace is pinned (one channel, two ticks, two HTLC updates) to keep the search small.
-lemma Refund_Path_Witness [heuristic={upd}]:   // add
+lemma Refund_Path_Witness [heuristic={msg_witness}]:   // add
   exists-trace
   "Ex S F p y n n2 A B a0 b0 %t %b #o0 #o #c0 #t1 #t2 #r #u #s #c.
       ChannelOpen(a0, b0, p) @ #o0
