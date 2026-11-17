@@ -135,11 +135,11 @@ rule Update_Propose_A_HTLC:   // add (replaces Update_State_HTLC)
       InFlight(ptr, ~n_new, op),
       Out(<'update', $A, $B, updA, sign(updA, ltkA)>) ]
 
-// add: typing: the new state number and A's revocation hash are fresh values
+// add: typing: the new state number is a fresh value
 // add: (honest parties only send fresh values there; this only restricts what a
 // add: compromised A can send). It cuts the backward search through earlier updates.
 rule Update_Accept_B:   // add
-    let newCommitA = <'commit', ptr, $A, $B, ~n_new, h(~sAnew)>
+    let newCommitA = <'commit', ptr, $A, $B, ~n_new, hA>
         updA       = <'update', ptr, n_old, ~n_new, fA_new, fB_new, op, newCommitA>
         newCommitB = <'commit', ptr, $B, $A, ~n_new, h(~sBnew)>
         sigBnew    = sign(newCommitB, ltkB)
