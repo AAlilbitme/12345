@@ -134,6 +134,7 @@ lemma Hand_Payment [heuristic={msg_pinned}]:   // add: tactic
     // add: message updates: only these four updates are proposed and accepted
     // add: each update number belongs to its channel (n0, n3 on p0; n1, n2 on p1)
     & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> Ex op. ChannelUpdateFor(p, op, m) @ #i)   // add: every update carries an HTLC step
     & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
     // add: no channel proposal beyond the two channels, no state beyond these six
     & (All a b q #i. A_ProposalSent(a, b, q) @ #i ==> (q = p0 | q = p1))
@@ -232,6 +233,7 @@ lemma Settle_Back_Witness [heuristic={msg_pinned}]:   // add
     & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2))
     & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2))
     & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> ((p = p0 & m = n0) | (p = p1 & (m = n1 | m = n2))))
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> Ex op. ChannelUpdateFor(p, op, m) @ #i)   // add: every update carries an HTLC step
     & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> ((p = p0 & m = n0) | (p = p1 & (m = n1 | m = n2))))
     & (All a b q #i. A_ProposalSent(a, b, q) @ #i ==> (q = p0 | q = p1))
     & (All a b q #i. ProposalExchange(a, b, q) @ #i ==> (q = p0 | q = p1))
