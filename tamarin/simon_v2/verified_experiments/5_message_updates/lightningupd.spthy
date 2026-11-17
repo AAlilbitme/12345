@@ -61,6 +61,25 @@ prio:
 deprio:
     regex "KU[(]"
 
+// add: pinned witnesses: resolve the pin case splits (disjunctions, written
+// add: with "∥") first, so a guessed extra update is closed at once; then the
+// add: message-exchange state; the HTLC sources (UpdateFor) and KU last, since
+// add: ProposedA does not record its operation and UpdateFor has six sources.
+tactic: msg_pinned   // add
+presort: s
+prio:
+    regex "∥"
+prio:
+    regex "^\s*(StateA|StateB|PendingA|PendingB|ProposedA|ReadyToLock|CommittedState[AB])[(]"
+prio:
+    regex "^\s*!(PeerCommit|A_HandshakeDone|ProposalCommitted)[(]" | regex "^\s*A_WaitAck[(]"
+prio:
+    regex "^\s*(Fulfilled|Committed|InFlight|AwaitFulfilled|SenderPending|IntermediaryPending|Route)[(]" | regex "UpdateDone"
+deprio:
+    regex "^\s*(UpdateFor|AwaitRoute)[(]"
+deprio:
+    regex "KU[(]"
+
 // Settlement is a real channel update: the sender only settles after a
 // completed update of its channel that commits the preimage.
 lemma Settle_Is_Channel_Update [heuristic={upd}]:
@@ -152,7 +171,7 @@ lemma One_Add_Witness [heuristic={msg_htlc}]:   // add
 
 // add: first half of Hand_Payment: both adds go through completed updates, the
 // add: HTLC is forwarded and fulfilled (no settle yet).
-lemma Forward_Fulfil_Witness [heuristic={msg_htlc}]:   // add
+lemma Forward_Fulfil_Witness [heuristic={msg_pinned}]:   // add
   exists-trace
   "Ex S F R p0 p1 x n0 n1 a0 b0 a1 b1 s0 t0 s1 t1
       #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu.
@@ -177,6 +196,20 @@ lemma Forward_Fulfil_Witness [heuristic={msg_htlc}]:   // add
     & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> (m = n0 | m = n1))
     & not (Ex X #k. LtkCompromised(X) @ #k)
     & not (Ex t #i. Tick(t) @ #i)"
+
+// add: diagnostic: two channels, one plain update on each.
+lemma Two_Channel_Update_Witness [heuristic={msg_pinned}]:   // add
+  exists-trace
+  "Ex a0 b0 a1 b1 p0 p1 n0 n1 #o0 #o1 #s0 #s1.
+      ChannelOpen(a0, b0, p0) @ #o0 & ChannelOpen(a1, b1, p1) @ #o1
+    & StateUpdate(a0, b0, p0, n0) @ #s0 & StateUpdate(a1, b1, p1, n1) @ #s1
+    & #o0 < #s0 & #o1 < #s1 & not (p0 = p1)
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b q m #i. StateUpdate(a, b, q, m) @ #i ==> (#i = #s0 | #i = #s1))
+    & not (Ex q op m #i. ChannelUpdateFor(q, op, m) @ #i)
+    & (All a b q m #i. UpdateProposed(a, b, q, m) @ #i ==> (m = n0 | m = n1))
+    & (All a b q m #i. UpdateAccepted(a, b, q, m) @ #i ==> (m = n0 | m = n1))
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
 
 // add: an HTLC is forwarded only after its incoming add was committed through a
 // add: completed channel update of the incoming channel.
