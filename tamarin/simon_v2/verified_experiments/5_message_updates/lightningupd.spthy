@@ -135,6 +135,11 @@ lemma Hand_Payment [heuristic={msg_pinned}]:   // add: tactic
     // add: each update number belongs to its channel (n0, n3 on p0; n1, n2 on p1)
     & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
     & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
+    // add: no channel proposal beyond the two channels, no state beyond these six
+    & (All a b q #i. A_ProposalSent(a, b, q) @ #i ==> (q = p0 | q = p1))
+    & (All a b q #i. ProposalExchange(a, b, q) @ #i ==> (q = p0 | q = p1))
+    & (All a b q m u v #i. NewStateBuilt(a, b, q, m, u, v) @ #i
+         ==> (m = '0' | m = n0 | m = n1 | m = n2 | m = n3))
     & (All p z #i. Old(p, z) @ #i ==> z = h(x))
     & not (Ex X #k. LtkCompromised(X) @ #k)
     & not (Ex P p z #i. Refunded(P, p, z) @ #i)
