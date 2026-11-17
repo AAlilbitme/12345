@@ -46,6 +46,21 @@ prio:
 deprio:
     regex "KU[(]"
 
+// add: refund witness: the sender's pending HTLC and the blocks first (they fix
+// add: the refund), then the HTLC facts, then the message exchange, KU last.
+tactic: msg_refund   // add
+presort: s
+prio:
+    regex "^\s*(SenderPending|UpdateFor)[(]" | regex "^\s*!Block[(]"
+prio:
+    regex "^\s*(Committed|InFlight|AwaitRoute)[(]" | regex "UpdateDone"
+prio:
+    regex "^\s*(ProposedA|PendingA|PendingB|StateA|StateB|ReadyToLock|CommittedState[AB])[(]"
+prio:
+    regex "^\s*!(PeerCommit|A_HandshakeDone|ProposalCommitted)[(]" | regex "^\s*A_WaitAck[(]"
+deprio:
+    regex "KU[(]"
+
 // Settlement is a real channel update: the sender only settles after a
 // completed update of its channel that commits the preimage.
 lemma Settle_Is_Channel_Update [heuristic={upd}]:
@@ -184,7 +199,7 @@ lemma Fail_Is_Channel_Update [heuristic={upd}]:   // add
 // add: witness for the refund path: the sender refunds after the timeout and
 // add: the fail goes through a completed channel update.
 // add: the trace is pinned (one channel, two ticks, two HTLC updates) to keep the search small.
-lemma Refund_Path_Witness [heuristic={msg_htlc}]:   // add
+lemma Refund_Path_Witness [heuristic={msg_refund}]:   // add
   exists-trace
   "Ex S F p y n n2 A B A0 B0 a0 b0 %t %b #o0 #o #s0 #c0 #t1 #t2 #r #u #s #c.   // add: A0 B0 #s0
       ChannelOpen(a0, b0, p) @ #o0
