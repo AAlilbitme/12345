@@ -68,6 +68,9 @@ lemma Hand_Payment:
     & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2 | #i = #u3))
     & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2 | #i = #c3))
     & (All p #i. MutexReleased(p) @ #i ==> #c2 < #i)
+    // add: message updates: only these four updates are proposed and accepted
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> (m = n0 | m = n1 | m = n2 | m = n3))
+    & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> (m = n0 | m = n1 | m = n2 | m = n3))
     & (All p z #i. Old(p, z) @ #i ==> z = h(x))
     & not (Ex X #k. LtkCompromised(X) @ #k)
     & not (Ex P p z #i. Refunded(P, p, z) @ #i)
@@ -113,6 +116,9 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
     & (All x #i. Tick(x) @ #i ==> (#i = #t1 | #i = #t2))
     & (All q op m #i. HTLCCommitted(q, op, m) @ #i ==> (#i = #c0 | #i = #c))
     & (All a b q m #i. StateUpdate(a, b, q, m) @ #i ==> (#i = #s | #i < #c0))
+    // add: message updates: only the add and the fail update are proposed and accepted
+    & (All a b q m #i. UpdateProposed(a, b, q, m) @ #i ==> (m = n | m = n2))
+    & (All a b q m #i. UpdateAccepted(a, b, q, m) @ #i ==> (m = n | m = n2))
     & not (Ex X #k. LtkCompromised(X) @ #k)"
 
 
