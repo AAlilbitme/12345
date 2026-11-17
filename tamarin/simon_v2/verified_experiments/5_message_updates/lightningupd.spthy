@@ -80,6 +80,12 @@ deprio:
 deprio:
     regex "KU[(]"
 
+// add: each revocation secret is revealed by exactly one revoke step. Used by
+// add: the payment witnesses: a guessed second revoke of a known secret is
+// add: merged with the real one at once instead of three rules deeper.
+lemma Revoke_Unique [reuse, use_induction]:   // add
+  "All A B n m s #i #j. Revoke(A, n, s) @ #i & Revoke(B, m, s) @ #j ==> #i = #j"
+
 // Settlement is a real channel update: the sender only settles after a
 // completed update of its channel that commits the preimage.
 lemma Settle_Is_Channel_Update [heuristic={upd}]:
