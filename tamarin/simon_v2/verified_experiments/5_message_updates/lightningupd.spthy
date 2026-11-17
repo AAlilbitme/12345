@@ -132,8 +132,9 @@ lemma Hand_Payment [heuristic={msg_pinned}]:   // add: tactic
     & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2 | #i = #c3))
     & (All p #i. MutexReleased(p) @ #i ==> #c2 < #i)
     // add: message updates: only these four updates are proposed and accepted
-    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> (m = n0 | m = n1 | m = n2 | m = n3))
-    & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> (m = n0 | m = n1 | m = n2 | m = n3))
+    // add: each update number belongs to its channel (n0, n3 on p0; n1, n2 on p1)
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
+    & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
     & (All p z #i. Old(p, z) @ #i ==> z = h(x))
     & not (Ex X #k. LtkCompromised(X) @ #k)
     & not (Ex P p z #i. Refunded(P, p, z) @ #i)
