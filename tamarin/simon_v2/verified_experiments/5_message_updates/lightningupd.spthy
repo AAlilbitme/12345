@@ -135,6 +135,34 @@ lemma One_Add_Witness [heuristic={msg_htlc}]:   // add
     & not (Ex X #k. LtkCompromised(X) @ #k)
     & not (Ex t #i. Tick(t) @ #i)"
 
+// add: first half of Hand_Payment: both adds go through completed updates, the
+// add: HTLC is forwarded and fulfilled (no settle yet).
+lemma Forward_Fulfil_Witness [heuristic={msg_htlc}]:   // add
+  exists-trace
+  "Ex S F R p0 p1 x n0 n1 a0 b0 a1 b1 s0 t0 s1 t1
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & HTLCFulfilled(R, F, p1, h(x)) @ #fu
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #fu
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1))
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1))
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> (m = n0 | m = n1))
+    & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> (m = n0 | m = n1))
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex t #i. Tick(t) @ #i)"
+
 // add: an HTLC is forwarded only after its incoming add was committed through a
 // add: completed channel update of the incoming channel.
 lemma Add_Is_Channel_Update [heuristic={upd}]:   // add
