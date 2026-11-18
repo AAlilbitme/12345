@@ -40,6 +40,23 @@ lemma Cheating_Never_Pays [heuristic={cheat_race}]:
      ==> Ex #x. LtkCompromised(Q) @ #x & #x < #j"
 #endif
 
+// add: message model: follow the channel-state chain first, KU last.
+tactic: state_chain   // add
+presort: s
+prio:
+    regex "^\s*(PendingB|StateB|PendingA|StateA|ProposedA)[(]"
+prio:
+    regex "^\s*!PeerCommit[(]" | regex "^\s*(ReadyToLock|CommittedState[AB])[(]"
+deprio:
+    regex "KU[(]"
+
+// add: does the message exchange let B complete an update that A never
+// add: confirmed? Expected to exist once A's key is compromised.
+lemma Update_Without_Negotiation_Witness [heuristic={state_chain}]:   // add
+  exists-trace
+  "Ex A B ptr n #i. StateUpdate(A, B, ptr, n) @ #i
+     & not (Ex fA fB #j. NewStateBuilt(A, B, ptr, n, fA, fB) @ #j)"
+
 lemma Funds_Locked_Before_Update [use_induction]:
     "All A B ptr n #i.
        StateUpdate(A, B, ptr, n) @ #i
