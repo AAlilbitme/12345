@@ -29,6 +29,26 @@ deprio:
     regex "KU[(]"
 
 
+// add: tactic for Revoke_Once: solve the pending facts, not the older states.
+tactic: pending_src   // add
+presort: s
+prio:
+    regex "^\s*(PendingA|PendingB)[(]"
+deprio:
+    regex "^\s*(StateA|StateB)[(]"
+deprio:
+    regex "KU[(]"
+
+// add: tactic for Updates_Do_Not_Fork: solve the consumed states only.
+tactic: state_only   // add
+presort: s
+prio:
+    regex "^\s*(StateA|StateB)[(]"
+deprio:
+    regex "^\s*(PendingA|PendingB)[(]"
+deprio:
+    regex "KU[(]"
+
 // Settlement is a real channel update: the sender only settles after a
 // completed update of its channel that commits the preimage.
 lemma Settle_Is_Channel_Update [heuristic={upd}]:
@@ -135,10 +155,7 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
 // add: second update needs the state the first one produces at its revoke.
 // add: UpdateFrom(ptr, n_old) is a label on both update rules. State '0' is
 // add: excluded: it comes from opening, not from a fresh update number.
-lemma Updates_Do_Not_Fork [heuristic={state_src}]:   // add
-  "All p n #i #j.
-       UpdateFrom(p, n) @ #i & UpdateFrom(p, n) @ #j & not (n = '0')
-   ==> #i = #j"
+// add: Updates_Do_Not_Fork is at the end of the file, after its helper Revoke_Once.
 
 // add: and every update starts from a completed state: opening or a revoke.
 lemma Update_From_Completed_State [heuristic={state_src}]:   // add
@@ -278,5 +295,21 @@ lemma Release_By_Creator [reuse]:   // add
    ==> R = R2"
 
 #include "lemmasupd.spthy"
+
+
+// add: Simon's review, point 1 (end of file, so the [reuse] helper below
+// add: is not assumed by any earlier lemma).
+// add: helper: each update is completed (revoked) at most once: both revokes
+// add: would consume the one pending state made with the fresh number n.
+lemma Revoke_Once [reuse, heuristic={pending_src}]:   // add
+  "All A B C D p n #i #j.
+       StateUpdate(A, B, p, n) @ #i & StateUpdate(C, D, p, n) @ #j
+   ==> #i = #j"
+
+// add: two updates (plain or HTLC, any mix) never start from the same state.
+lemma Updates_Do_Not_Fork [heuristic={state_only}]:   // add
+  "All p n #i #j.
+       UpdateFrom(p, n) @ #i & UpdateFrom(p, n) @ #j & not (n = '0')
+   ==> #i = #j"
 
 end

@@ -29,7 +29,7 @@ GOAL2  = Settle_Is_Channel_Update HTLC_Commit_Correspondence Hand_Payment \
 GOAL2_NO_TRACE = Commit_After_Close_Witness
 
 # add: lemmas for Simon's review (make review)
-REVIEW = Updates_Do_Not_Fork Update_From_Completed_State Second_HTLC_Same_Channel
+REVIEW = Update_From_Completed_State Revoke_Once Updates_Do_Not_Fork Second_HTLC_Same_Channel
 
 # add: helper lemmas for the safety lemmas below (proof aids, not results).
 HELPERS = Route_Made_Once Route_Has_Amount Paid_Has_Amount \
