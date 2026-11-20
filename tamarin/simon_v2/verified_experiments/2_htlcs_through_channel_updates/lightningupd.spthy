@@ -17,6 +17,18 @@ deprio:
     regex "KU[(]" | regex "State[AB][(]" | regex "Pending[AB][(]" | regex "RouteInfo" | regex "Route[(]" | regex "Mutex" | regex "ChannelConnect" | regex "Ltk" | regex "Pk"
 
 
+// add: for Simon's review, point 1: solve the channel-state facts first,
+// add: they are linear and each state is produced once.
+tactic: state_src   // add
+presort: s
+prio:
+    regex "^\s*(StateA|StateB|PendingA|PendingB)[(]"
+prio:
+    regex "^\s*(ReadyToLock|CommittedState[AB])[(]"
+deprio:
+    regex "KU[(]"
+
+
 // Settlement is a real channel update: the sender only settles after a
 // completed update of its channel that commits the preimage.
 lemma Settle_Is_Channel_Update [heuristic={upd}]:
@@ -123,13 +135,13 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
 // add: second update needs the state the first one produces at its revoke.
 // add: UpdateFrom(ptr, n_old) is a label on both update rules. State '0' is
 // add: excluded: it comes from opening, not from a fresh update number.
-lemma Updates_Do_Not_Fork [heuristic={upd}]:   // add
+lemma Updates_Do_Not_Fork [heuristic={state_src}]:   // add
   "All p n #i #j.
        UpdateFrom(p, n) @ #i & UpdateFrom(p, n) @ #j & not (n = '0')
    ==> #i = #j"
 
 // add: and every update starts from a completed state: opening or a revoke.
-lemma Update_From_Completed_State [heuristic={upd}]:   // add
+lemma Update_From_Completed_State [heuristic={state_src}]:   // add
   "All p n #i.
        UpdateFrom(p, n) @ #i
    ==> (n = '0') | (Ex A B #k. StateUpdate(A, B, p, n) @ #k & #k < #i)"
