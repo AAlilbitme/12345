@@ -5,3 +5,4 @@ logs/
 results.tsv
 compare.tsv
 results*.tsv
+nofunding/

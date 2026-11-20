@@ -99,6 +99,24 @@ open:
 lemma:
 	@$(RUN) $(L) $(FLAGS)
 
+# add: Simon's review (Nov 2026): 1. updates of a channel do not interleave,
+# add: 2. a second HTLC on a channel after the first is resolved, 3. it is
+# add: FundingUnspent that prevents double publication: in a copy of the model
+# add: without it (nofunding/, generated), No_Double_Publish must be FALSIFIED.
+# add: The copy also drops [reuse] from Funding_Spent_Once, which is false there.
+review:
+	@fail=0; $(RUN) Updates_Sequential || fail=1; \
+	 $(RUN) Second_HTLC_Same_Channel || fail=1; \
+	 $(MAKE) --no-print-directory nofunding-check || fail=1; exit $$fail
+
+nofunding-check:
+	@rm -rf nofunding && mkdir nofunding && \
+	 perl -0pe 's/,\s*FundingUnspent\(ptr\)//g' modelupd.spthy > nofunding/modelupd.spthy && \
+	 ! grep -q FundingUnspent nofunding/modelupd.spthy && \
+	 sed 's/^lemma Funding_Spent_Once \[reuse\]:/lemma Funding_Spent_Once:/' lemmasupd.spthy > nofunding/lemmasupd.spthy && \
+	 cp $(THEORY) tactics.spthy nofunding/ && \
+	 cd nofunding && EXPECT=FALSIFIED TAG=nofunding TAMARIN=$(TAMARIN) ../../run_lemma.sh $(THEORY) No_Double_Publish
+
 # add: check that GOAL2 + HELPERS + SAFETY is exactly what Tamarin loads
 # add: without flags, and LIVENESS what it adds with -D=LIVENESS.
 check-count:

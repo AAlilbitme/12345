@@ -117,6 +117,45 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
 
 
 
+// add: Simon's review (Nov 2026), point 1: Update_State and Update_State_HTLC
+// add: consume the same StateA/StateB, so updates of one channel cannot
+// add: interleave: once an update n1 is built, the next update of that channel
+// add: is built only after n1 completed (revoke). Holds for plain and HTLC
+// add: updates alike (NewStateBuilt is on both rules). State '0' comes from
+// add: opening, which has no StateUpdate, so it is excluded.
+lemma Updates_Sequential [use_induction, heuristic={upd}]:   // add
+  "All A B C D p n1 n2 a1 b1 a2 b2 #i #j.
+       NewStateBuilt(A, B, p, n1, a1, b1) @ #i
+     & NewStateBuilt(C, D, p, n2, a2, b2) @ #j
+     & #i < #j & not (n1 = '0')
+   ==> Ex #k. StateUpdate(A, B, p, n1) @ #k & #i < #k & #k < #j"
+
+// add: Simon's review, point 2: the mutex cycle works: after the first HTLC on
+// add: a channel is resolved (here by refund and a committed fail, which
+// add: returns the mutex), a second HTLC on the same channel is offered and its
+// add: add is committed through a channel update.
+lemma Second_HTLC_Same_Channel [heuristic={upd}]:   // add
+  exists-trace
+  "Ex S F p y1 y2 n1 nf n2 a0 b0 %t %b #o0 #o1 #c1 #t1 #t2 #r #cf #rel #o2 #c2.
+      ChannelOpen(a0, b0, p) @ #o0
+    & HTLCOffered(S, F, p, y1) @ #o1
+    & HTLCExpiry(p, y1, %t) @ #o1
+    & HTLCCommitted(p, <'add', y1>, n1) @ #c1
+    & Tick(%t) @ #t1 & Tick(%b) @ #t2 & %t << %b
+    & Refunded(S, p, y1) @ #r
+    & HTLCCommitted(p, <'fail', y1>, nf) @ #cf
+    & MutexReleased(p) @ #rel
+    & HTLCOffered(S, F, p, y2) @ #o2
+    & HTLCCommitted(p, <'add', y2>, n2) @ #c2
+    & #o0 < #o1 & #o1 < #c1 & #c1 < #t1 & #t1 < #t2 & #t2 < #r
+    & #r < #cf & #cf < #rel & #rel < #o2 & #o2 < #c2
+    & not (y1 = y2)
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o0)
+    & (All x #i. Tick(x) @ #i ==> (#i = #t1 | #i = #t2))
+    & (All q op m #i. HTLCCommitted(q, op, m) @ #i ==> (#i = #c1 | #i = #cf | #i = #c2))
+    & (All a b q y #i. HTLCOffered(a, b, q, y) @ #i ==> (#i = #o1 | #i = #o2))
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
 // add: stronger form of Settle_Is_Channel_Update: the only exception is a
 // add: compromise that happened BEFORE the settle (not "some party, any time").
 lemma Settle_Is_Channel_Update_Strong [heuristic={upd}]:   // add
