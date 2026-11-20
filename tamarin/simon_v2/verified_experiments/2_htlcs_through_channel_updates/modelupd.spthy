@@ -102,7 +102,8 @@ rule Update_State:
       StateA($A, $B, ptr, n_old, sAold, oldCommitA, fA, fB),
       StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
       In(<fA_new, fB_new>) ]
-    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new) ]->
+    --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new),
+        UpdateFrom(ptr, n_old) ]->   // add: label only (Simon's review, point 1)
     [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
                ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
       PendingB($A, $B, ptr, n_old, sBold, oldCommitB,
@@ -120,7 +121,8 @@ rule Update_State_HTLC:   // ADDED: channel update for an HTLC operation
       StateB($A, $B, ptr, n_old, sBold, oldCommitB, fA, fB),
       In(<fA_new, fB_new>), UpdateFor(ptr, op) ]
     --[ NewStateBuilt($A, $B, ptr, ~n_new, fA_new, fB_new),
-        ChannelUpdateFor(ptr, op, ~n_new) ]->
+        ChannelUpdateFor(ptr, op, ~n_new),
+        UpdateFrom(ptr, n_old) ]->   // add: label only (Simon's review, point 1)
     [ PendingA($A, $B, ptr, n_old, sAold, oldCommitA,
                ~n_new, ~sAnew, newCommitA, sigAnew, fA_new, fB_new),
       PendingB($A, $B, ptr, n_old, sBold, oldCommitB,

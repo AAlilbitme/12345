@@ -118,17 +118,21 @@ lemma Refund_Path_Witness [heuristic={upd}]:   // add
 
 
 // add: Simon's review (Nov 2026), point 1: Update_State and Update_State_HTLC
-// add: consume the same StateA/StateB, so updates of one channel cannot
-// add: interleave: once an update n1 is built, the next update of that channel
-// add: is built only after n1 completed (revoke). Holds for plain and HTLC
-// add: updates alike (NewStateBuilt is on both rules). State '0' comes from
-// add: opening, which has no StateUpdate, so it is excluded.
-lemma Updates_Sequential [use_induction, heuristic={upd}]:   // add
-  "All A B C D p n1 n2 a1 b1 a2 b2 #i #j.
-       NewStateBuilt(A, B, p, n1, a1, b1) @ #i
-     & NewStateBuilt(C, D, p, n2, a2, b2) @ #j
-     & #i < #j & not (n1 = '0')
-   ==> Ex #k. StateUpdate(A, B, p, n1) @ #k & #i < #k & #k < #j"
+// add: both consume the linear StateA/StateB, so two updates of a channel
+// add: (plain or HTLC, in any mix) can never start from the same state: a
+// add: second update needs the state the first one produces at its revoke.
+// add: UpdateFrom(ptr, n_old) is a label on both update rules. State '0' is
+// add: excluded: it comes from opening, not from a fresh update number.
+lemma Updates_Do_Not_Fork [heuristic={upd}]:   // add
+  "All p n #i #j.
+       UpdateFrom(p, n) @ #i & UpdateFrom(p, n) @ #j & not (n = '0')
+   ==> #i = #j"
+
+// add: and every update starts from a completed state: opening or a revoke.
+lemma Update_From_Completed_State [heuristic={upd}]:   // add
+  "All p n #i.
+       UpdateFrom(p, n) @ #i
+   ==> (n = '0') | (Ex A B #k. StateUpdate(A, B, p, n) @ #k & #k < #i)"
 
 // add: Simon's review, point 2: the mutex cycle works: after the first HTLC on
 // add: a channel is resolved (here by refund and a committed fail, which
@@ -136,7 +140,7 @@ lemma Updates_Sequential [use_induction, heuristic={upd}]:   // add
 // add: add is committed through a channel update.
 lemma Second_HTLC_Same_Channel [heuristic={upd}]:   // add
   exists-trace
-  "Ex S F p y1 y2 n1 nf n2 a0 b0 %t %b #o0 #o1 #c1 #t1 #t2 #r #cf #rel #o2 #c2.
+  "Ex S F p y1 y2 n1 nf n2 a0 b0 %t %b #o0 #o1 #c1 #t1 #t2 #r #cf #rel #o2 #c2 #s1 #sf #s2.
       ChannelOpen(a0, b0, p) @ #o0
     & HTLCOffered(S, F, p, y1) @ #o1
     & HTLCExpiry(p, y1, %t) @ #o1
@@ -147,6 +151,8 @@ lemma Second_HTLC_Same_Channel [heuristic={upd}]:   // add
     & MutexReleased(p) @ #rel
     & HTLCOffered(S, F, p, y2) @ #o2
     & HTLCCommitted(p, <'add', y2>, n2) @ #c2
+    & StateUpdate(a0, b0, p, n1) @ #s1 & StateUpdate(a0, b0, p, nf) @ #sf
+    & StateUpdate(a0, b0, p, n2) @ #s2
     & #o0 < #o1 & #o1 < #c1 & #c1 < #t1 & #t1 < #t2 & #t2 < #r
     & #r < #cf & #cf < #rel & #rel < #o2 & #o2 < #c2
     & not (y1 = y2)
@@ -154,6 +160,7 @@ lemma Second_HTLC_Same_Channel [heuristic={upd}]:   // add
     & (All x #i. Tick(x) @ #i ==> (#i = #t1 | #i = #t2))
     & (All q op m #i. HTLCCommitted(q, op, m) @ #i ==> (#i = #c1 | #i = #cf | #i = #c2))
     & (All a b q y #i. HTLCOffered(a, b, q, y) @ #i ==> (#i = #o1 | #i = #o2))
+    & (All a b q m #i. StateUpdate(a, b, q, m) @ #i ==> (#i = #s1 | #i = #sf | #i = #s2))   // add: pin
     & not (Ex X #k. LtkCompromised(X) @ #k)"
 
 // add: stronger form of Settle_Is_Channel_Update: the only exception is a
