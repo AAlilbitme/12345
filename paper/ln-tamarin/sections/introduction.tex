@@ -1,0 +1,99 @@
+\section{Introduction}
+
+Bitcoin~\cite{nakamoto2008} is the most important cryptocurrency in terms of
+market capitalisation. It is, however, lacking in many usability and
+scalability aspects: it is costly, has low bandwidth (only a few dozen
+transactions per second), and high latency. Many protocols strive to alleviate
+those shortcomings.
+
+\itparagraph{Payment Channel Networks}
+Payment channels enable a pair of users to quickly and cheaply perform
+arbitrarily many payments by relying on the blockchain only to resolve
+disputes. Both agents pool together funds and then iteratively update their
+balance. The scripts involved and the protocol itself ensure that no honest
+agent loses money, by relying on a revocation mechanism: any party closing a
+channel using an outdated favourable state can be punished, consequently losing
+all funds invested in the channel.
+
+Payment channels are, however, constrained to pairs of users. Two unconnected
+users still need to establish a channel in order to perform a payment, which is
+often not cost effective. Thus arose the concept of payment channel networks:
+one transitively propagates funds across payment channels to perform a payment
+between two users that are part of the same network but not connected directly.
+The most popular such protocol is perhaps the Lightning
+Network~\cite{poon2016lightning}, with about \$170M locked on the
+network~\cite{oneml}.
+
+Due to the sheer complexity of its specification~\cite{bolts}, it suffers from
+many attacks~\cite{aumayr2021generalized, malavolta2019anonymous,
+tikhomirov2020quantitative}. Despite promising ongoing
+efforts~\cite{litos2026formally, grundmann2026security} it does not yet feature
+a complete and unbounded verified formalisation. This paper attempts to
+alleviate that issue.
+
+\itparagraph{Protocol Verification}
+Designing and analysing cryptographic protocols is a notoriously difficult and
+error-prone task, as already illustrated by the various attacks and tentative
+fixes on the Lightning Network. Formal methods provide hope for more robust
+verification, and for automation.
+
+Protocol verification is split between two main classes of models: the
+computational model, inherited from cryptography, where attackers and
+participants are polynomial-time algorithms and results are typically
+probabilistic; and the symbolic or Dolev--Yao
+model~\cite{dolev1983security}, where the attacker has infinite computational
+power but is limited to a term algebra. The symbolic model abstracts away from
+cryptography and focuses on the logic of a protocol, where much of the attacker
+activity is typically found.
+
+Although tools exist for the computational model ---
+\mcryptoverif~\cite{blanchet2006computationally},
+\measycrypt~\cite{barthe2011computer},
+\msquirrel~\cite{baelde2021interactive},
+\mcryptovampire~\cite{jeanteur2024cryptovampire} --- they are brittle, hard to
+use, or narrowly scoped. Symbolic verification, by contrast, enjoys successful
+automated verifiers in \mproverif~\cite{blanchet2001efficient} and
+\mtamarin~\cite{meier2013tamarin}. \mtamarin\ is a multiset rewriting-based
+automated protocol verifier with a pedigree of widely used protocols verified,
+including WireGuard~\cite{lipp2019mechanised} and
+TLS~1.3~\cite{cremers2017comprehensive}.
+
+\itparagraph{Contributions}
+We provide a modelisation of the Lightning Network in \mtamarin\ featuring
+unbounded channels and routing on unbounded paths. Specifically:
+
+\begin{itemize}
+  \item \textbf{An integrated model.} We mechanise the two-party channel
+  lifecycle --- including revocation and punishment --- together with multi-hop
+  HTLC routing, per-hop fees, and staggered CLTV timing, in one symbolic model
+  under a full Dolev--Yao adversary. To our knowledge this combination has not
+  previously been machine-checked. The model is modular: five theories
+  establishing 61 distinct properties across 87 lemma checks.
+
+  \item \textbf{A linear single-spend discipline.} We identify a modelling
+  pitfall in which a one-shot on-chain output is encoded as a persistent fact,
+  permitting the corresponding rule to fire without bound while every safety
+  lemma continues to hold. We found two independent instances in our own model
+  and repaired both uniformly. The lesson generalises to any
+  multiset-rewriting model of a blockchain protocol.
+
+  \item \textbf{Quantified economic properties.} We prove end-to-end value
+  conservation with strictly positive per-hop fees, and use it to pin the
+  wormhole attack's theft to exactly the sum of the bypassed fees rather than
+  to unspecified ``loss''.
+
+  \item \textbf{Empirical assumption minimality.} We show by counterexample
+  that the intermediary claim obligation is not implied by the timelock
+  ordering constraints, and that the early-timeout race is reachable precisely
+  when its ordering assumption is dropped.
+
+  \item \textbf{Unbounded path length.} We lift the safety results to paths of
+  arbitrary length by abstracting the routing layer, and give the refinement
+  argument that justifies the transfer, along with an explicit account of what
+  the abstraction costs.
+\end{itemize}
+
+We do \emph{not} model payment privacy or unlinkability, which are
+confidentiality properties requiring onion routing and
+observational-equivalence proofs. We state this as an explicit exclusion rather
+than an oversight.

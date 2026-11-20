@@ -1,0 +1,412 @@
+theory lightningupd
+begin
+
+// Goal 2: Simon's model with HTLC steps routed through channel updates.
+#include "modelupd.spthy"
+#include "tactics.spthy"
+
+tactic: upd
+presort: s
+prio:
+    regex "^\s*Fulfilled[(]" | regex "^\s*Committed[(]" | regex "^\s*InFlight[(]" | regex "^\s*AwaitFulfilled[(]"
+prio:
+    regex "UpdateDone" | regex "SenderPending"
+prio:
+    regex "LtkCompromised" | regex "Compromised"
+deprio:
+    regex "KU[(]" | regex "State[AB][(]" | regex "Pending[AB][(]" | regex "RouteInfo" | regex "Route[(]" | regex "Mutex" | regex "ChannelConnect" | regex "Ltk" | regex "Pk"
+
+
+// add: witnesses in the message model: resolve the channel-state facts first and
+// add: attacker knowledge last (otherwise the search guesses the source of a
+// add: revealed secret before the state that produced it is fixed).
+tactic: msg_witness   // add
+presort: s
+prio:
+    regex "^\s*(StateA|StateB|PendingA|PendingB|ProposedA|ReadyToLock|CommittedState[AB])[(]"
+prio:
+    regex "^\s*!(PeerCommit|A_HandshakeDone|ProposalCommitted)[(]" | regex "^\s*A_WaitAck[(]"
+prio:
+    regex "^\s*(Fulfilled|Committed|InFlight|AwaitFulfilled|AwaitRoute|UpdateFor)[(]" | regex "UpdateDone"
+deprio:
+    regex "KU[(]"
+
+// add: HTLC witnesses in the message model: HTLC facts first (as in upd), then
+// add: the channel-state facts of the message exchange, attacker knowledge last.
+tactic: msg_htlc   // add
+presort: s
+prio:
+    regex "^\s*(Fulfilled|Committed|InFlight|AwaitFulfilled|AwaitRoute|UpdateFor)[(]" | regex "UpdateDone"
+prio:
+    regex "^\s*(SenderPending|IntermediaryPending|ReceiverInv|Route)[(]"
+prio:
+    regex "^\s*(ProposedA|PendingA|PendingB|StateA|StateB|ReadyToLock|CommittedState[AB])[(]"
+prio:
+    regex "^\s*!(PeerCommit|A_HandshakeDone|ProposalCommitted)[(]" | regex "^\s*A_WaitAck[(]"
+deprio:
+    regex "KU[(]"
+
+// add: refund witness: the sender's pending HTLC and the blocks first (they fix
+// add: the refund), then the HTLC facts, then the message exchange, KU last.
+tactic: msg_refund   // add
+presort: s
+prio:
+    regex "^\s*(SenderPending|UpdateFor)[(]" | regex "^\s*!Block[(]"
+prio:
+    regex "^\s*(Committed|InFlight|AwaitRoute)[(]" | regex "UpdateDone"
+prio:
+    regex "^\s*(ProposedA|PendingA|PendingB|StateA|StateB|ReadyToLock|CommittedState[AB])[(]"
+prio:
+    regex "^\s*!(PeerCommit|A_HandshakeDone|ProposalCommitted)[(]" | regex "^\s*A_WaitAck[(]"
+deprio:
+    regex "KU[(]"
+
+// add: pinned witnesses: resolve the pin case splits (disjunctions, written
+// add: with "∥") first, so a guessed extra update is closed at once; then the
+// add: message-exchange state; the HTLC sources (UpdateFor) and KU last, since
+// add: ProposedA does not record its operation and UpdateFor has six sources.
+tactic: msg_pinned   // add
+presort: s
+prio:
+    regex "∥"
+prio:
+    regex "^\s*(StateA|StateB|PendingA|PendingB|ProposedA|ReadyToLock|CommittedState[AB])[(]"
+prio:
+    regex "^\s*!(PeerCommit|A_HandshakeDone|ProposalCommitted)[(]" | regex "^\s*A_WaitAck[(]"
+prio:
+    regex "^\s*(Fulfilled|Committed|InFlight|AwaitFulfilled|SenderPending|IntermediaryPending|Route)[(]" | regex "UpdateDone"
+deprio:
+    regex "^\s*(UpdateFor|AwaitRoute)[(]"
+deprio:
+    regex "KU[(]"
+
+// Settlement is a real channel update: the sender only settles after a
+// completed update of its channel that commits the preimage.
+lemma Settle_Is_Channel_Update [heuristic={upd}]:
+  "All S F R ptr x #s. SenderSettled(S, F, R, ptr, x) @ #s
+   ==> (Ex n #c. HTLCCommitted(ptr, <'settle', h(x)>, n) @ #c & #c < #s)
+     | (Ex X #k. LtkCompromised(X) @ #k)"
+
+
+// Correspondence: a committed HTLC operation comes from the matching channel
+// update (same channel, operation and update number) and a completed state
+// update of that channel, in that order.
+lemma HTLC_Commit_Correspondence:
+  "All ptr op n #c. HTLCCommitted(ptr, op, n) @ #c
+   ==> Ex A B #u #s. ChannelUpdateFor(ptr, op, n) @ #u
+         & StateUpdate(A, B, ptr, n) @ #s
+         & #u < #s & #s < #c"
+
+// Hand-built trace, full payment: S -> F -> R, every HTLC step through a
+// completed channel update (update, revoke, commit), then settled back.
+lemma Hand_Payment [heuristic={msg_pinned}]:   // add: tactic
+  exists-trace
+  "Ex S F R p0 p1 x n0 n1 n2 n3 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2 s3 t3
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu #u2 #r2 #c2 #cl #u3 #r3 #c3 #s.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & HTLCFulfilled(R, F, p1, h(x)) @ #fu
+    & ChannelUpdateFor(p1, <'settle', h(x)>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'settle', h(x)>, n2) @ #c2
+    & IntermediaryClaimed(F, S, p0, x) @ #cl
+    & ChannelUpdateFor(p0, <'settle', h(x)>, n3) @ #u3
+    & StateUpdate(s3, t3, p0, n3) @ #r3
+    & HTLCCommitted(p0, <'settle', h(x)>, n3) @ #c3
+    & SenderSettled(S, F, R, p0, x) @ #s
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #fu
+    & #fu < #u2 & #u2 < #r2 & #r2 < #c2 & #c2 < #cl
+    & #cl < #u3 & #u3 < #r3 & #r3 < #c3 & #c3 < #s
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2 | #i = #r3))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2 | #i = #u3))
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2 | #i = #c3))
+    & (All p #i. MutexReleased(p) @ #i ==> #c2 < #i)
+    // add: message updates: only these four updates are proposed and accepted
+    // add: each update number belongs to its channel (n0, n3 on p0; n1, n2 on p1)
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> Ex op. ChannelUpdateFor(p, op, m) @ #i)   // add: every update carries an HTLC step
+    & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> ((p = p0 & (m = n0 | m = n3)) | (p = p1 & (m = n1 | m = n2))))
+    // add: no channel proposal beyond the two channels, no state beyond these six
+    & (All a b q #i. A_ProposalSent(a, b, q) @ #i ==> (q = p0 | q = p1))
+    & (All a b q #i. ProposalExchange(a, b, q) @ #i ==> (q = p0 | q = p1))
+    & (All a b q m u v #i. NewStateBuilt(a, b, q, m, u, v) @ #i
+         ==> (m = '0' | m = n0 | m = n1 | m = n2 | m = n3))
+    & not (Ex q #i. FundingSpent(q) @ #i)   // add: no channel is closed or published
+    & (All p z #i. Old(p, z) @ #i ==> z = h(x))
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex P p z #i. Refunded(P, p, z) @ #i)
+    & not (Ex t #i. Tick(t) @ #i)"
+
+
+// add: smallest witness for the message exchange: one channel, one completed
+// add: update, no compromise.
+lemma One_Update_Witness [heuristic={msg_witness}]:   // add
+  exists-trace
+  "Ex A B p n #o #s.
+      ChannelOpen(A, B, p) @ #o & StateUpdate(A, B, p, n) @ #s & #o < #s
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o)
+    & (All a b q m #i. UpdateProposed(a, b, q, m) @ #i ==> m = n)
+    & (All a b q m #i. UpdateAccepted(a, b, q, m) @ #i ==> m = n)
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+// add: smallest HTLC witness for the message exchange: one channel, one add
+// add: committed through one completed update, no compromise.
+lemma One_Add_Witness [heuristic={msg_htlc}]:   // add
+  exists-trace
+  "Ex S F p y n A B a0 b0 #o0 #o #u #s #c.
+      ChannelOpen(a0, b0, p) @ #o0
+    & HTLCOffered(S, F, p, y) @ #o
+    & ChannelUpdateFor(p, <'add', y>, n) @ #u
+    & StateUpdate(A, B, p, n) @ #s
+    & HTLCCommitted(p, <'add', y>, n) @ #c
+    & #o0 < #o & #o < #u & #u < #s & #s < #c
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o0)
+    & (All a b q m #i. StateUpdate(a, b, q, m) @ #i ==> #i = #s)
+    & (All a b q m #i. UpdateProposed(a, b, q, m) @ #i ==> m = n)
+    & (All a b q m #i. UpdateAccepted(a, b, q, m) @ #i ==> m = n)
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex t #i. Tick(t) @ #i)"
+
+// add: first half of Hand_Payment: both adds go through completed updates, the
+// add: HTLC is forwarded and fulfilled (no settle yet).
+lemma Forward_Fulfil_Witness [heuristic={msg_pinned}]:   // add
+  exists-trace
+  "Ex S F R p0 p1 x n0 n1 a0 b0 a1 b1 s0 t0 s1 t1
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & HTLCFulfilled(R, F, p1, h(x)) @ #fu
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #fu
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1))
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1))
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> (m = n0 | m = n1))
+    & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> (m = n0 | m = n1))
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex t #i. Tick(t) @ #i)"
+
+// add: three quarters of Hand_Payment: both adds, the fulfil, and the settle
+// add: committed on the second channel (R -> F); F has not claimed yet.
+lemma Settle_Back_Witness [heuristic={msg_pinned}]:   // add
+  exists-trace
+  "Ex S F R p0 p1 x n0 n1 n2 a0 b0 a1 b1 s0 t0 s1 t1 s2 t2
+      #o0 #o1 #o #u0 #r0 #c0 #f #u1 #r1 #c1 #fu #u2 #r2 #c2.
+      ChannelOpen(a0, b0, p0) @ #o0
+    & ChannelOpen(a1, b1, p1) @ #o1
+    & HTLCOffered(S, F, p0, h(x)) @ #o
+    & ChannelUpdateFor(p0, <'add', h(x)>, n0) @ #u0
+    & StateUpdate(s0, t0, p0, n0) @ #r0
+    & HTLCCommitted(p0, <'add', h(x)>, n0) @ #c0
+    & HTLCForwarded(F, S, R, p0, p1, h(x)) @ #f
+    & ChannelUpdateFor(p1, <'add', h(x)>, n1) @ #u1
+    & StateUpdate(s1, t1, p1, n1) @ #r1
+    & HTLCCommitted(p1, <'add', h(x)>, n1) @ #c1
+    & HTLCFulfilled(R, F, p1, h(x)) @ #fu
+    & ChannelUpdateFor(p1, <'settle', h(x)>, n2) @ #u2
+    & StateUpdate(s2, t2, p1, n2) @ #r2
+    & HTLCCommitted(p1, <'settle', h(x)>, n2) @ #c2
+    & #o0 < #o & #o1 < #o & #o < #u0 & #u0 < #r0 & #r0 < #c0 & #c0 < #f
+    & #f < #u1 & #u1 < #r1 & #r1 < #c1 & #c1 < #fu
+    & #fu < #u2 & #u2 < #r2 & #r2 < #c2
+    & (All a b p #i. ChannelOpen(a, b, p) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b p m #i. StateUpdate(a, b, p, m) @ #i ==> (#i = #r0 | #i = #r1 | #i = #r2))
+    & (All p op m #i. ChannelUpdateFor(p, op, m) @ #i ==> (#i = #u0 | #i = #u1 | #i = #u2))
+    & (All p op m #i. HTLCCommitted(p, op, m) @ #i ==> (#i = #c0 | #i = #c1 | #i = #c2))
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> ((p = p0 & m = n0) | (p = p1 & (m = n1 | m = n2))))
+    & (All a b p m #i. UpdateProposed(a, b, p, m) @ #i ==> Ex op. ChannelUpdateFor(p, op, m) @ #i)   // add: every update carries an HTLC step
+    & (All a b p m #i. UpdateAccepted(a, b, p, m) @ #i ==> ((p = p0 & m = n0) | (p = p1 & (m = n1 | m = n2))))
+    & (All a b q #i. A_ProposalSent(a, b, q) @ #i ==> (q = p0 | q = p1))
+    & (All a b q #i. ProposalExchange(a, b, q) @ #i ==> (q = p0 | q = p1))
+    & (All a b q m u v #i. NewStateBuilt(a, b, q, m, u, v) @ #i
+         ==> (m = '0' | m = n0 | m = n1 | m = n2))   // add
+    & not (Ex q #i. FundingSpent(q) @ #i)   // add: no channel is closed or published
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex P p z #i. Refunded(P, p, z) @ #i)
+    & not (Ex t #i. Tick(t) @ #i)"
+
+// add: diagnostic: two channels, one plain update on each.
+lemma Two_Channel_Update_Witness [heuristic={msg_pinned}]:   // add
+  exists-trace
+  "Ex a0 b0 a1 b1 p0 p1 n0 n1 #o0 #o1 #s0 #s1.
+      ChannelOpen(a0, b0, p0) @ #o0 & ChannelOpen(a1, b1, p1) @ #o1
+    & StateUpdate(a0, b0, p0, n0) @ #s0 & StateUpdate(a1, b1, p1, n1) @ #s1
+    & #o0 < #s0 & #o1 < #s1 & not (p0 = p1)
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> (#i = #o0 | #i = #o1))
+    & (All a b q m #i. StateUpdate(a, b, q, m) @ #i ==> (#i = #s0 | #i = #s1))
+    & not (Ex q op m #i. ChannelUpdateFor(q, op, m) @ #i)
+    & (All a b q m #i. UpdateProposed(a, b, q, m) @ #i ==> (m = n0 | m = n1))
+    & (All a b q m #i. UpdateAccepted(a, b, q, m) @ #i ==> (m = n0 | m = n1))
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+// add: an HTLC is forwarded only after its incoming add was committed through a
+// add: completed channel update of the incoming channel.
+lemma Add_Is_Channel_Update [heuristic={upd}]:   // add
+  "All Me Prev Next pin pout y #f. HTLCForwarded(Me, Prev, Next, pin, pout, y) @ #f
+   ==> Ex n #c. HTLCCommitted(pin, <'add', y>, n) @ #c & #c < #f"
+
+// add: same for the receiver: it fulfils only a committed add.
+lemma Fulfil_Needs_Committed_Add [heuristic={upd}]:   // add
+  "All R Prev pin y #r. HTLCFulfilled(R, Prev, pin, y) @ #r
+   ==> Ex n #c. HTLCCommitted(pin, <'add', y>, n) @ #c & #c < #r"
+
+// add: a fail update is committed only for an HTLC that was refunded after
+// add: its timeout. (Fail_From_Refund in lemmasupd.spthy is the same statement
+// add: as a [reuse] helper, loaded only with -D=LIVENESS.)
+lemma Fail_Is_Channel_Update [heuristic={upd}]:   // add
+  "All ptr y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c
+   ==> Ex P #r. Refunded(P, ptr, y) @ #r & #r < #c"
+
+// add: witness for the refund path: the sender refunds after the timeout and
+// add: the fail goes through a completed channel update.
+// add: the trace is pinned (one channel, two ticks, two HTLC updates) to keep the search small.
+lemma Refund_Path_Witness [heuristic={msg_pinned}]:   // add
+  exists-trace
+  "Ex S F p y n n2 A B A0 B0 a0 b0 %t %b #o0 #o #s0 #c0 #t1 #t2 #r #u #s #c.   // add: A0 B0 #s0
+      ChannelOpen(a0, b0, p) @ #o0
+    & HTLCOffered(S, F, p, y) @ #o
+    & HTLCExpiry(p, y, %t) @ #o
+    & StateUpdate(A0, B0, p, n) @ #s0 & #s0 < #c0   // add: the add's own update
+    & HTLCCommitted(p, <'add', y>, n) @ #c0
+    & Tick(%t) @ #t1 & Tick(%b) @ #t2 & %t << %b
+    & Refunded(S, p, y) @ #r
+    & ChannelUpdateFor(p, <'fail', y>, n2) @ #u
+    & StateUpdate(A, B, p, n2) @ #s
+    & HTLCCommitted(p, <'fail', y>, n2) @ #c
+    & #o0 < #o & #o < #c0 & #c0 < #t1 & #t1 < #t2 & #t2 < #r
+    & #r < #u & #u < #s & #s < #c
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o0)
+    & (All x #i. Tick(x) @ #i ==> (#i = #t1 | #i = #t2))
+    & (All q op m #i. HTLCCommitted(q, op, m) @ #i ==> (#i = #c0 | #i = #c))
+    & (All a b q m #i. StateUpdate(a, b, q, m) @ #i ==> (#i = #s | #i = #s0))   // add: exactly two updates
+    // add: message updates: only the add and the fail update are proposed and accepted
+    & (All a b q m #i. UpdateProposed(a, b, q, m) @ #i ==> (m = n | m = n2))
+    & (All a b q m #i. UpdateAccepted(a, b, q, m) @ #i ==> (m = n | m = n2))
+    & not (Ex X #k. LtkCompromised(X) @ #k)"
+
+
+
+// add: stronger form of Settle_Is_Channel_Update: the only exception is a
+// add: compromise that happened BEFORE the settle (not "some party, any time").
+lemma Settle_Is_Channel_Update_Strong [heuristic={upd}]:   // add
+  "All S F R ptr x #s. SenderSettled(S, F, R, ptr, x) @ #s
+   ==> (Ex n #c. HTLCCommitted(ptr, <'settle', h(x)>, n) @ #c & #c < #s)
+     | (Ex X #k. LtkCompromised(X) @ #k & #k < #s)"
+
+// add: converse direction of the correspondence: no effect without a commit.
+// add: A route exists only after the add was committed on that channel.
+lemma Route_Requires_Commit [heuristic={upd}]:   // add
+  "All ptr y v #i. RouteMade(ptr, y, v) @ #i
+   ==> Ex n #c. HTLCCommitted(ptr, <'add', y>, n) @ #c & #c < #i"
+
+// add: the channel is freed for the next HTLC only after a settle or a fail
+// add: was committed on it.
+lemma Mutex_Release_Requires_Commit [heuristic={upd}]:   // add
+  "All ptr #i. MutexReleased(ptr) @ #i
+   ==> (Ex y n #c. HTLCCommitted(ptr, <'settle', y>, n) @ #c & #c < #i)
+     | (Ex y n #c. HTLCCommitted(ptr, <'fail', y>, n) @ #c & #c < #i)"
+
+// add: checks the oddity "an HTLC update is committed only after its channel
+// add: was closed": the update completes, the channel is closed cooperatively,
+// add: and only then is the HTLC step committed. Without the restriction
+// add: CommitOnlyWhileOpen this trace exists (verified, 23 steps); with it the
+// add: expected result is FALSIFIED (no such trace).
+lemma Commit_After_Close_Witness [heuristic={upd}]:   // add
+  exists-trace
+  "Ex S F p y n A B a0 b0 m #o0 #o #u #s #cl #c.
+      ChannelOpen(a0, b0, p) @ #o0
+    & HTLCOffered(S, F, p, y) @ #o
+    & ChannelUpdateFor(p, <'add', y>, n) @ #u
+    & StateUpdate(A, B, p, n) @ #s
+    & Close(A, B, p, m) @ #cl
+    & HTLCCommitted(p, <'add', y>, n) @ #c
+    & #o0 < #o & #o < #u & #u < #s & #s < #cl & #cl < #c
+    & (All a b q #i. ChannelOpen(a, b, q) @ #i ==> #i = #o0)
+    & (All a b q k #i. StateUpdate(a, b, q, k) @ #i ==> (#i = #s | #i < #o))
+    & (All q op k #i. HTLCCommitted(q, op, k) @ #i ==> #i = #c)
+    & not (Ex X #k. LtkCompromised(X) @ #k)
+    & not (Ex t #i. Tick(t) @ #i)"
+
+// Simon's lemmas (and ours) come after the goal-2 lemmas above: their [reuse]
+// lemmas would otherwise be added to the goal-2 proofs and make them loop.
+// add: below: tactics and [reuse] helper lemmas for safety lemmas that timed
+// add: out without them. They also come after the goal-2 lemmas.
+
+// add: tactic for the route helpers: trace the AwaitRoute fact back first.
+tactic: route_once   // add
+presort: s
+prio:
+    regex "^\s*Route[(]"   // add
+prio:
+    regex "^\s*AwaitRoute[(]"
+prio:
+    regex "^\s*(Committed|InFlight|UpdateFor)[(]"
+deprio:
+    regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "!UpdateDone"
+
+// add: tactic for Fulfilled_Requires_Release: follow the Fulfilled /
+// add: AwaitFulfilled facts back to the preimage release and leave the channel
+// add: update chain (Committed, InFlight, UpdateFor) for last. With heuristic=S
+// add: the proof runs out of memory on this model.
+tactic: fulfilled_back   // add
+presort: s
+prio:
+    regex "^\s*Fulfilled[(]"
+prio:
+    regex "^\s*AwaitFulfilled[(]"
+prio:
+    regex "^\s*(IntermediaryPending|ReceiverInv)[(]"
+deprio:
+    regex "Committed[(]" | regex "InFlight[(]" | regex "UpdateFor[(]" | regex "!UpdateDone"
+deprio:
+    regex "Pending[AB][(]" | regex "State[AB][(]" | regex "KU[(]" | regex "RouteInfo" | regex "Mutex"
+
+// add: a route on a channel for a hash is created at most once (it comes from
+// add: the single committed add of that hash on that channel).
+lemma Route_Made_Once [reuse, heuristic={route_once}]:   // add
+  "All ptr y v1 v2 #i #j. RouteMade(ptr, y, v1) @ #i & RouteMade(ptr, y, v2) @ #j
+   ==> #i = #j"
+
+// add: the amount of a route is the amount of the HTLC added on that channel
+// add: (with Amount_Decreases_Along_Route this bounds what the receiver gets).
+lemma Route_Has_Amount [reuse, heuristic={route_once}]:   // add
+  "All ptr y %v #i. RouteMade(ptr, y, %v) @ #i
+   ==> Ex #a. HTLCAmount(ptr, y, %v) @ #a & #a < #i"
+
+// add: what the receiver is paid is the amount of an HTLC added on its channel.
+lemma Paid_Has_Amount [reuse, heuristic={route_once}]:   // add
+  "All R y %v #r. ReceiverPaid(R, y, %v) @ #r
+   ==> Ex ptr #a. HTLCAmount(ptr, y, %v) @ #a & #a < #r"
+
+// add: a Fulfilled fact is only produced after some preimage release.
+lemma Fulfilled_Out_Released [reuse, use_induction, heuristic={upd_preimage}]:   // add
+  "All ptr x #i. FulfilledOut(ptr, x) @ #i
+   ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"
+
+// add: only the receiver that created the invoice can release its preimage.
+lemma Release_By_Creator [reuse]:   // add
+  "All R R2 S x #j #k. InvoiceCreated(R, S, h(x)) @ #j & PreimageReleased(R2, x) @ #k
+   ==> R = R2"
+
+#include "lemmasupd.spthy"
+
+end

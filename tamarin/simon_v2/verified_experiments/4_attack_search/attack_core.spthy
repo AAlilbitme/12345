@@ -1,0 +1,198 @@
+theory AttackCore
+begin
+
+// Small model for attack search: one honest forwarder F between a payer S and
+// a payee R that may both misbehave (S -pin-> F -pout-> R).
+//
+// Each channel carries one HTLC for the same hash y = h(x), with expiry tIn on
+// pin and tOut on pout. An HTLC is resolved in one of three ways:
+//   - settled off-chain (the payee shows the preimage, both sides cooperate),
+//   - claimed on-chain by the payee with the preimage (after a close),
+//   - refunded on-chain by the payer after its expiry (after a close).
+// Either party can close a channel at any time. A claim reveals the preimage
+// to the payer of that channel.
+//
+// F LOSES when the outgoing HTLC is claimed (F paid R) and the incoming HTLC
+// is refunded (S took its money back).
+//
+// Nothing is assumed about S and R: every rule may fire or not, in any order.
+// The flags add assumptions about F's OWN unilateral on-chain actions only:
+//   PROMPT_REFUND  F refunds an unresolved outgoing HTLC in block tOut + 1
+//   PROMPT_CLAIM   F claims the incoming HTLC in the block it learns the preimage
+//   GAP            tOut < tIn
+// Abstractions: one HTLC per channel, amounts ignored, on-chain transactions
+// confirm in the block they are sent, no off-chain fail, no revocation.
+
+builtins: hashing, natural-numbers
+
+// ---- clock: increasing blocks ---------------------------------------------
+rule Clock_Tick:
+    [ In(%t) ] --[ Tick(%t) ]-> [ !Block(%t) ]
+
+restriction TickOnce:
+    "All %t #i #j. Tick(%t) @ #i & Tick(%t) @ #j ==> #i = #j"
+
+restriction TicksInOrder:
+    "All %s %t #i #j. Tick(%s) @ #i & Tick(%t) @ #j & %s << %t ==> #i < #j"
+
+// The clock may jump, but not over the block in which F can refund its
+// outgoing HTLC (block tOut + 1). A restriction "all blocks are consecutive"
+// would make every proof unfold the clock backwards without end.
+restriction ClockReachesRefundBlock:
+    "All pin pout y %tIn %tOut %c #e #t.
+        Route(pin, pout, y, %tIn, %tOut) @ #e & Tick(%c) @ #t & (%tOut %+ %1) << %c
+     ==> Ex #s. Tick(%tOut %+ %1) @ #s"
+
+// A stamped event happens in the latest block.
+restriction NowIsLatest:
+    "All %b %c #q #t. Now(%b) @ #q & Tick(%c) @ #t & %b << %c ==> #q < #t"
+
+restriction LessThan:
+    "All a b #i. Lt(a, b) @ #i ==> a << b"
+
+// ---- setup: both HTLCs are in place ----------------------------------------
+rule Setup:
+    [ Fr(~x), Fr(~pin), Fr(~pout), In(%tIn), In(%tOut) ]
+    --[ SetupOnce(), Route(~pin, ~pout, h(~x), %tIn, %tOut) ]->
+    [ !Knows('R', ~x),
+      !Payer(~pin, 'S'),  !Payee(~pin, 'F'),
+      !Payer(~pout, 'F'), !Payee(~pout, 'R'),
+      HtlcLive(~pin, h(~x), %tIn),   Open(~pin),
+      HtlcLive(~pout, h(~x), %tOut), Open(~pout) ]
+
+restriction SetupOnce:
+    "All #i #j. SetupOnce() @ #i & SetupOnce() @ #j ==> #i = #j"
+
+// F only forwards an HTLC that has not expired yet.
+restriction ForwardBeforeExpiry:
+    "All pin pout y %tIn %tOut %c #e #t.
+        Route(pin, pout, y, %tIn, %tOut) @ #e & Tick(%c) @ #t & #t < #e
+     ==> %c << %tOut"
+
+// ---- resolution ------------------------------------------------------------
+// Off-chain settle: the payee shows the preimage, the payer learns it.
+rule Settle_Offchain:
+    [ HtlcLive(ptr, h(x), %t), Open(ptr),
+      !Payee(ptr, P), !Knows(P, x), !Payer(ptr, Q), !Block(%b) ]
+    --[ Claimed(ptr, h(x), %b), Learned(Q, h(x), %b), Now(%b) ]->
+    [ Open(ptr), !Knows(Q, x) ]
+
+// Either party closes the channel; the HTLC becomes an on-chain output.
+rule Close:
+    [ HtlcLive(ptr, y, %t), Open(ptr) ]
+    --[ Closed(ptr) ]->
+    [ HtlcOnChain(ptr, y, %t) ]
+
+// On-chain claim by the payee with the preimage (reveals it to the payer).
+rule Claim_Onchain:
+    [ HtlcOnChain(ptr, h(x), %t),
+      !Payee(ptr, P), !Knows(P, x), !Payer(ptr, Q), !Block(%b) ]
+    --[ Claimed(ptr, h(x), %b), Learned(Q, h(x), %b), Now(%b) ]->
+    [ !Knows(Q, x) ]
+
+// On-chain refund by the payer after the expiry.
+rule Refund_Onchain:
+    [ HtlcOnChain(ptr, y, %t), !Block(%b) ]
+    --[ Refunded(ptr, y, %b), Lt(%t, %b), Now(%b) ]->
+    [ ]
+
+// ---- assumptions about the honest forwarder (flags) ------------------------
+#ifdef PROMPT_REFUND
+// F refunds its outgoing HTLC in block tOut + 1 unless it was resolved before.
+restriction ForwarderRefundsPromptly:
+    "All pin pout y %tIn %tOut %c #e #t.
+        Route(pin, pout, y, %tIn, %tOut) @ #e
+      & Tick(%c) @ #t & (%tOut %+ %1) << %c
+     ==> (Ex %d #q. Claimed(pout, y, %d) @ #q & #q < #t)
+       | (Ex %d #q. Refunded(pout, y, %d) @ #q & #q < #t)"
+#endif
+
+#ifdef PROMPT_CLAIM
+// F claims its incoming HTLC in the block in which it learns the preimage
+// (unless the incoming HTLC was already refunded when F learned it).
+restriction ForwarderClaimsPromptly:
+    "All pin pout y %tIn %tOut %b %c #e #a #t.
+        Route(pin, pout, y, %tIn, %tOut) @ #e
+      & Learned('F', y, %b) @ #a
+      & Tick(%c) @ #t & %b << %c
+     ==> (Ex %d #q. Claimed(pin, y, %d) @ #q & #q < #t)
+       | (Ex %d #q. Refunded(pin, y, %d) @ #q & #q < #a)"
+#endif
+
+#ifdef GAP
+// CLTV gap: the outgoing HTLC expires before the incoming one.
+restriction CLTVGap:
+    "All pin pout y %tIn %tOut #e.
+        Route(pin, pout, y, %tIn, %tOut) @ #e ==> %tOut << %tIn"
+#endif
+
+// ---- helper lemmas (reused in the theorem) ---------------------------------
+// Each HTLC is resolved at most once: claimed once, refunded once, never both.
+lemma Claimed_Once [reuse]:
+  "All ptr y y2 %b %d #i #j. Claimed(ptr, y, %b) @ #i & Claimed(ptr, y2, %d) @ #j ==> #i = #j"
+
+lemma Refunded_Once [reuse]:
+  "All ptr y y2 %b %d #i #j. Refunded(ptr, y, %b) @ #i & Refunded(ptr, y2, %d) @ #j ==> #i = #j"
+
+lemma Claim_Refund_Exclusive [reuse]:
+  "All ptr y y2 %b %d #i #j. Claimed(ptr, y, %b) @ #i & Refunded(ptr, y2, %d) @ #j ==> F"
+
+// A refund is stamped after the expiry of its HTLC.
+lemma Refund_After_Expiry [reuse]:
+  "All pin pout y %tIn %tOut %d #e #j.
+      Route(pin, pout, y, %tIn, %tOut) @ #e & Refunded(pin, y, %d) @ #j ==> %tIn << %d"
+
+// When the outgoing HTLC is claimed, F learns the preimage in that block.
+lemma Claim_Out_Teaches_F [reuse]:
+  "All pin pout y %tIn %tOut %b #e #i.
+      Route(pin, pout, y, %tIn, %tOut) @ #e & Claimed(pout, y, %b) @ #i
+   ==> Learned('F', y, %b) @ #i"
+
+// Every stamp is a block that has started.
+lemma Stamp_Has_Tick [reuse]:
+  "All %b #q. Now(%b) @ #q ==> Ex #t. Tick(%b) @ #t & #t < #q"
+
+// ---- lemmas ----------------------------------------------------------------
+// Executability: the payment completes off-chain, and the clock then passes
+// the incoming expiry (so the assumptions are not vacuous).
+lemma Pay_Offchain_Witness:
+  exists-trace
+  "Ex pin pout y %tIn %tOut %b %d %c #e #i #j #t.
+      Route(pin, pout, y, %tIn, %tOut) @ #e
+    & Claimed(pout, y, %b) @ #i & Claimed(pin, y, %d) @ #j
+    & Tick(%c) @ #t & (%tIn %+ %1) << %c
+    & not (Ex p #k. Closed(p) @ #k)"
+
+// Executability: the payment completes on-chain.
+lemma Pay_Onchain_Witness:
+  exists-trace
+  "Ex pin pout y %tIn %tOut %b %d %c #e #i #j #k1 #k2 #t.
+      Route(pin, pout, y, %tIn, %tOut) @ #e
+    & Closed(pout) @ #k1 & Closed(pin) @ #k2
+    & Claimed(pout, y, %b) @ #i & Claimed(pin, y, %d) @ #j
+    & Tick(%c) @ #t & (%tIn %+ %1) << %c"
+
+// Executability: nobody pays; both HTLCs are refunded.
+lemma Refund_Witness:
+  exists-trace
+  "Ex pin pout y %tIn %tOut %b %d #e #i #j.
+      Route(pin, pout, y, %tIn, %tOut) @ #e
+    & Refunded(pout, y, %b) @ #i & Refunded(pin, y, %d) @ #j"
+
+// ATTACK SEARCH: F pays downstream and is refunded-against upstream.
+lemma Forwarder_Loss:
+  exists-trace
+  "Ex pin pout y %tIn %tOut %b %d #e #i #j.
+      Route(pin, pout, y, %tIn, %tOut) @ #e
+    & Claimed(pout, y, %b) @ #i
+    & Refunded(pin, y, %d) @ #j"
+
+// THEOREM (with all three assumptions): F never loses, whatever S and R do.
+lemma No_Forwarder_Loss:
+  "All pin pout y %tIn %tOut %b %d #e #i #j.
+      Route(pin, pout, y, %tIn, %tOut) @ #e
+    & Claimed(pout, y, %b) @ #i
+    & Refunded(pin, y, %d) @ #j
+   ==> F"
+
+end

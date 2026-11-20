@@ -1,0 +1,56 @@
+\section{Formal Modelling Methodology}
+
+\subsection{The Curse of an All-in-One Theory}
+
+Our initial approach was to put everything into a single theory: the channel
+lifecycle, the HTLC routing logic, the CLTV block-height arithmetic, and value
+conservation. It did not work. When the signature equational theory,
+natural-number induction, and an unbounded block clock are combined,
+\mtamarin's search space explodes and the prover exhausts available memory.
+
+This was tested rather than assumed. Any \emph{two} of the three ingredients
+remain tractable; only the full triple OOM-kills the prover. The model is
+therefore split so that no single theory carries all three. The resulting
+architecture is summarised in \Cref{tab:theories}.
+
+\subsection{Tactic Engineering and Reproduction}
+
+All results were produced under a strict test-first discipline: a property is
+claimed only after \mtamarin\ reports it. Per-lemma invocation is used on the
+large theory to avoid OOM. The flag \code{-{}-stop-on-trace=seqdfs} rescues the
+heavy existence witnesses but hangs the natural-number arithmetic theories, so
+it is applied selectively. All results were reproduced in a single sitting on
+one machine under \mtamarin~1.10.0 with Maude~3.1; every theory passes
+\mtamarin's well-formedness checks, and the whole package verifies in
+$542.36$\,s of wall-clock time.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{The five-theory modular architecture. The first four theories
+establish 56 distinct properties, and the $N$-hop theory adds a further 5, for
+61 in total. Of the $N$-hop theory's 31 lemmas, 26 restate properties already
+proved in \code{multihop.spthy} over the abstract routing layer and 5 are new
+to it, giving 87 lemma checks in total.}
+\label{tab:theories}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llccrl@{}}
+\toprule
+\textbf{Theory File} & \textbf{Aspect Modelled} & \textbf{Safety} &
+\textbf{Witness} & \textbf{Time} & \textbf{Builtins} \\
+\midrule
+\code{multihop.spthy} & Lifecycle, 3-hop routing, value/fees, wormhole & 33 & 10 & $353.31$\,s & Hashing, Signing, Nat \\
+\code{Clock.spthy}    & Block-clock lifecycle \& staggered-CLTV claim windows & 6 & 3 & $54.37$\,s & Natural-numbers \\
+\code{Cltv.spthy}     & Pure CLTV block arithmetic (delta positivity) & 3 & 0 & $0.23$\,s & Natural-numbers \\
+\code{timeout.spthy}  & Early-timeout race (T2b removed) & 0 & 1 & $0.06$\,s & --- \\
+\midrule
+\emph{Distinct properties} & & \textbf{42} & \textbf{14} & & \\
+\midrule
+\code{Modif.spthy} & \emph{Re-proof} over the $N$-hop abstraction, plus fee/amount chaining & 25 & 6 & $134.39$\,s & Hashing, Signing, Multiset \\
+\midrule
+\emph{Grand total (all five theories, 87 lemma checks)} & & \textbf{67} & \textbf{20} & $\mathbf{542.36}$\,\textbf{s} & \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

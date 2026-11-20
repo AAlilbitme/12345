@@ -1,0 +1,24 @@
+% Listings moved out of the main text by the fit pass (F4).
+\subsection{Lemma Groups}\label{lst:groups}
+
+Table~\ref{tab:groups} sorts all lemmas of \code{lightning.spthy} into the groups of
+Sec.~\ref{sec:properties}, one per stage of a payment that they constrain;
+Appendix~\ref{app:catalogue} follows the same groups and catalogues every lemma. The lemmas of
+Sec.~\ref{sec:properties} to Sec.~\ref{sec:wormhole} that are stated there in prose are printed
+verbatim in the catalogue: Lemma~\ref{lem:atomicity} in Appendix~\ref{app:atomicity},
+Lemmas~\ref{lem:intermediary} and~\ref{lem:intermediary-strong}, \code{Timeout_Race_Blocked}
+and \code{Necessity_IMC_Honest_Intermediary_Loses} in Appendix~\ref{app:safety},
+Lemma~\ref{lem:causality} in Appendix~\ref{app:lock} and Lemma~\ref{lem:fee} in
+Appendix~\ref{app:fees}; Lemma~\ref{lem:skip} is printed in Appendix~\ref{lst:skipped}.
+
+
+\subsection{Skips Require Compromise}\label{lst:skipped}
+
+The statement of Lemma~\ref{lem:skip} (Sec.~\ref{sec:wormhole}), group 7: every application of
+\code{AttackerSkip}, which records \code{Skipped}, happens after some party's long-term key was
+compromised. It is proved by \texttt{make verify} and re-proved without the liveness
+restrictions by \texttt{make general}.
+\begin{spthy}
+lemma Skipped_Requires_Compromise [reuse]:
+  "All p x #i. Skipped(p, x) @ #i ==> Ex P #c. LtkCompromised(P) @ #c & #c < #i"
+\end{spthy}

@@ -1,0 +1,9 @@
+theory lightning
+begin
+
+// Simon's model + 'invoice' tag + linear FundingUnspent; his tactics and lemmas; ADDED lemmas.
+#include "modelfixb.spthy"
+#include "tactics.spthy"
+#include "lemmas.spthy"
+
+end

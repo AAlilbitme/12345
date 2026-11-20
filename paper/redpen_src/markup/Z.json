@@ -1,0 +1,26 @@
+{
+ "section": "Z",
+ "strikes": [
+  {
+   "page": 6,
+   "start": "and 2) the participants can always see",
+   "end": "liveness of the participant.",
+   "why": "End of the sentence struck on page 5 ('Such threat model is too strong ...'); replaced by the threat-model note on page 5."
+  }
+ ],
+ "notes": [
+  {
+   "page": 6,
+   "anchor": "Consequently, our model uses TAMARINrestrinctions",
+   "html": "<p>Replace by: Our model therefore uses TAMARIN restrictions to impose liveness on honest forwarders, as explained next.</p>"
+  }
+ ],
+ "inserts": [
+  {
+   "after_page": 11,
+   "title": "Liveness as restrictions: scope and alternatives (answers Simon's concern)",
+   "html": "<p>Two of our three liveness assumptions, T2b and T3, are TAMARIN restrictions of the form <i>if A then B happens</i> (T1 only orders a redemption before a timeout); for instance T3 (<code>IntermediaryMustClaim</code>): if an honest forwarder's outgoing HTLC is redeemed and its incoming HTLC times out, then its incoming HTLC is redeemed. A restriction removes every trace that violates it, including traces in which B is impossible rather than merely late. A lemma proved under T3 therefore says nothing about runs in which an honest forwarder <i>cannot</i> claim in time, which is where real timing attacks live. Likewise, T2b removes every trace in which an honest forwarder's incoming HTLC times out while its outgoing HTLC has not timed out earlier. We make the scope of this assumption explicit:</p><ul><li><b>Which results depend on it.</b> Removing T3 breaks intermediary safety: TAMARIN finds <code>Necessity_IMC_Honest_Intermediary_Loses</code> (28 steps). The necessity runs (Sec. V-D) show, for each restriction, which of the five liveness lemmas are still proved without it. The 24 lemmas of the any-length theorem (Sec. VI) are proved with all three liveness restrictions removed (<code>make general</code>). The wormhole trace <code>Wormhole_Fee_Theft_Reachable</code> is verified with every restriction in place (by replaying a saved 116-step proof), so the restrictions do not hide it. All other all-traces lemmas of <code>make verify</code>, including the fixed-depth bypass theorems, are proved with all three restrictions in place; apart from the five lemmas of the necessity runs, we have not checked which of them still hold without them.</li><li><b>A claim window exists (separate model).</b> The Clock model (<code>lightning_aux.spthy -D=CLOCK</code>) has no liveness restriction. It proves <code>Claim_Window_Exists</code>: if a forwarder's outgoing HTLC is redeemed at block bOut and its incoming HTLC is refunded at block bRef, then bOut &lt; bRef, so the forwarder had a non-empty window in which to claim. It also proves <code>Loss_Implies_Skipped_Claim</code>: a forwarder that loses never claimed. The Clock model is not composed with <code>lightning.spthy</code>, so it supports T3 but does not discharge it.</li><li><b>TODO (revision or future work):</b> replace the restrictions by the progress semantics of Backes, Dreier, Kremer and K&#252;nnemann [23]. Roughly, honest processes that can continue without input from the adversary eventually do. Traces in which the forwarder cannot act are then kept instead of pruned. TAMARIN 1.10 implements this for SAPIC+ processes (option <code>translation-progress</code>), so the routing part would have to be written as SAPIC+ processes. A cheaper first step: turn T1, T2b and T3 into premises of only the lemmas that need them, so that they no longer prune traces for every other lemma.</li></ul><p>Reference to add (same entry as in the reference-list note on p. 13): [23] M. Backes, J. Dreier, S. Kremer, and R. K&#252;nnemann, &#8220;A Novel Approach for Reasoning about Liveness in Cryptographic Protocols and its Application to Fair Exchange,&#8221; in IEEE European Symposium on Security and Privacy (EuroS&amp;P), 2017.</p>"
+  }
+ ],
+ "open_questions": []
+}

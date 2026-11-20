@@ -1,0 +1,29 @@
+\begin{abstract}
+The Lightning Network routes payments across chains of untrusted
+intermediaries using hashed time-locked contracts (HTLCs) layered on top of a
+two-party channel revocation mechanism. Prior symbolic analyses have treated
+these layers separately: two-party HTLC constructions on one side, generic
+message-forwarding abstractions on the other. Their interaction --- revocation
+and punishment together with multi-hop routing, per-hop fees, and staggered
+block-height timing --- has not been mechanised as a single symbolic model.
+
+We present such a model in \mtamarin, structured as five theories that together
+discharge 87 lemma checks over 61 distinct properties under a full Dolev--Yao
+adversary. Building it surfaced a modelling pitfall we believe generalises
+beyond Lightning: encoding a one-shot on-chain output as a persistent fact
+permits the corresponding rule to fire without bound, and every individual
+safety lemma continues to hold while it does. We found two independent
+instances of this in our own model --- unbounded punishment for a single act of
+cheating, and unbounded HTLC reuse of one channel output --- diagnosed both as
+the same defect, and repaired both with linear single-spend tokens. We state
+the repair as an auditable discipline.
+
+We further prove value conservation with per-hop fees, establish empirically
+that the intermediary claim obligation is not implied by the timelock ordering
+constraints, and reproduce the known wormhole attack. Because our model carries
+amounts rather than abstracting them away, we pin the wormhole's theft to
+exactly the sum of the bypassed fees --- a quantification the underlying
+formalism must carry numbers to express. Finally, we lift the safety results to
+paths of unbounded length by abstracting the routing layer, and give the
+refinement argument that justifies the transfer.
+\end{abstract}

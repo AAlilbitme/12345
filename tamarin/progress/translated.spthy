@@ -1,0 +1,1186 @@
+theory HopProgress begin
+
+// Function signature and definition of the equational theory E
+
+functions: fst/1, h/1, pair/2, snd/1
+equations: fst(<x.1, x.2>) = x.1, snd(<x.1, x.2>) = x.2
+
+
+
+heuristic: p
+
+
+
+
+
+
+
+
+
+
+
+
+
+lemma Redeem_Possible:
+  exists-trace "∃ #i. RedeemIn( ) @ #i"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ #i. (RedeemIn( ) @ #i)"
+*/
+by sorry
+
+lemma Refund_Possible:
+  exists-trace "∃ #i. RefundIn( ) @ #i"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ #i. (RefundIn( ) @ #i)"
+*/
+by sorry
+
+lemma Intermediary_Safe:
+  all-traces "∀ #i. (RedeemOut( ) @ #i) ⇒ (¬(∃ #j. RefundIn( ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ #i. (RedeemOut( ) @ #i) ∧ ∃ #j. (RefundIn( ) @ #j)"
+*/
+by sorry
+
+lemma Intermediary_Claims:
+  all-traces "∀ #i. (RedeemOut( ) @ #i) ⇒ (∃ #j. RedeemIn( ) @ #j)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ #i. (RedeemOut( ) @ #i) ∧ ∀ #j. (RedeemIn( ) @ #j) ⇒ ⊥"
+*/
+by sorry
+
+
+
+
+
+
+
+
+
+rule (modulo E) Init[color=#ffffff, process="new ~x.1;", issapicrule]:
+   [ Fr( ~prog_ ) ]
+  --[ ProgressFrom_( ~prog_ ), Init( ) ]->
+   [ State_( ~prog_ ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) newx_0_[color=#ffffff, process="new ~x.1;", issapicrule]:
+   [ State_( ~prog_ ), Fr( ~x.1 ) ] --> [ State_1( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) newx_0_[color=#ffffff, process="new ~x.1;",
+                           issapicrule]:
+     [ State_( ~prog_ ), Fr( ~x ) ] --> [ State_1( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) p_0_1[color=#ffffff, process="|", issapicrule]:
+   [ State_1( ~prog_, ~x.1 ) ]
+  -->
+   [ State_11( ~prog_, ~x.1 ), State_12( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) p_0_1[color=#ffffff, process="|", issapicrule]:
+     [ State_1( ~prog_, ~x ) ]
+    -->
+     [ State_11( ~prog_, ~x ), State_12( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) p_0_11[color=#ffffff, process="|", issapicrule]:
+   [ State_11( ~prog_, ~x.1 ) ]
+  -->
+   [ State_111( ~prog_, ~x.1 ), State_112( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) p_0_11[color=#ffffff, process="|", issapicrule]:
+     [ State_11( ~prog_, ~x ) ]
+    -->
+     [ State_111( ~prog_, ~x ), State_112( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) p_0_111[color=#ffffff, process="|", issapicrule]:
+   [ State_111( ~prog_, ~x.1 ) ]
+  -->
+   [ State_1111( ~prog_, ~x.1 ), State_1112( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) p_0_111[color=#ffffff, process="|", issapicrule]:
+     [ State_111( ~prog_, ~x ) ]
+    -->
+     [ State_1111( ~prog_, ~x ), State_1112( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) Receiver_0_1111[color=#ffffff, process="Receiver()",
+                                issapicrule]:
+   [ State_1111( ~prog_, ~x.1 ) ] --> [ State_11111( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) Receiver_0_1111[color=#ffffff, process="Receiver()",
+                                   issapicrule]:
+     [ State_1111( ~prog_, ~x ) ] --> [ State_11111( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) lockout_0_11111[color=#408041, process="lock 'out';",
+                                issapicrule]:
+   [ State_11111( ~prog_, ~x.1 ), Fr( lock ) ]
+  --[ Lock_0( '0', lock, 'out' ), Lock( '0', lock, 'out' ) ]->
+   [ State_111111( ~prog_, lock, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) lockout_0_11111[color=#408041, process="lock 'out';",
+                                   issapicrule]:
+     [ State_11111( ~prog_, ~x ), Fr( lock ) ]
+    --[ Lock_0( '0', lock, 'out' ), Lock( '0', lock, 'out' ) ]->
+     [ State_111111( ~prog_, lock, ~x ) ]
+  */
+
+rule (modulo E) lookupoutresasr_0_111111[color=#408041,
+                                         process="lookup 'out_res' as r.1", issapicrule]:
+   [ State_111111( ~prog_, lock, ~x.1 ) ]
+  --[ IsIn( 'out_res', r.1 ) ]->
+   [ State_1111111( ~prog_, lock, ~x.1, r.1 ) ]
+
+  /*
+  rule (modulo AC) lookupoutresasr_0_111111[color=#408041,
+                                            process="lookup 'out_res' as r.1", issapicrule]:
+     [ State_111111( ~prog_, lock, ~x ) ]
+    --[ IsIn( 'out_res', r ) ]->
+     [ State_1111111( ~prog_, lock, ~x, r ) ]
+  */
+
+rule (modulo E) lookupoutresasr_1_111111[color=#408041,
+                                         process="lookup 'out_res' as r.1", issapicrule]:
+   [ State_111111( ~prog_, lock, ~x.1 ) ]
+  --[ IsNotSet( 'out_res' ) ]->
+   [ State_1111112( ~prog_, lock, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) lookupoutresasr_1_111111[color=#408041,
+                                            process="lookup 'out_res' as r.1", issapicrule]:
+     [ State_111111( ~prog_, lock, ~x ) ]
+    --[ IsNotSet( 'out_res' ) ]->
+     [ State_1111112( ~prog_, lock, ~x ) ]
+  */
+
+rule (modulo E) unlockout_0_1111111[color=#408041,
+                                    process="unlock 'out';", issapicrule]:
+   [ State_1111111( ~prog_, lock, ~x.1, r.1 ) ]
+  --[
+  ProgressTo_11111111( ~prog_ ), Unlock_0( '0', lock, 'out' ),
+  Unlock( '0', lock, 'out' )
+  ]->
+   [ State_11111111( ~prog_, lock, ~x.1, r.1 ) ]
+
+  /*
+  rule (modulo AC) unlockout_0_1111111[color=#408041,
+                                       process="unlock 'out';", issapicrule]:
+     [ State_1111111( ~prog_, lock, ~x, r ) ]
+    --[
+    ProgressTo_11111111( ~prog_ ), Unlock_0( '0', lock, 'out' ),
+    Unlock( '0', lock, 'out' )
+    ]->
+     [ State_11111111( ~prog_, lock, ~x, r ) ]
+  */
+
+rule (modulo E) p_0_11111111[color=#408041, process="0", issapicrule]:
+   [ State_11111111( ~prog_, lock, ~x.1, r.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_11111111[color=#408041, process="0", issapicrule]:
+     [ State_11111111( ~prog_, lock, ~x, r ) ] --> [ ]
+  */
+
+rule (modulo E) insertoutresredeemed_0_1111112[color=#408041,
+                                               process="insert 'out_res','redeemed';", issapicrule]:
+   [ State_1111112( ~prog_, lock, ~x.1 ) ]
+  --[ Insert( 'out_res', 'redeemed' ) ]->
+   [ State_11111121( ~prog_, lock, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) insertoutresredeemed_0_1111112[color=#408041,
+                                                  process="insert 'out_res','redeemed';", issapicrule]:
+     [ State_1111112( ~prog_, lock, ~x ) ]
+    --[ Insert( 'out_res', 'redeemed' ) ]->
+     [ State_11111121( ~prog_, lock, ~x ) ]
+  */
+
+rule (modulo E) insertpreimageseenx_0_11111121[color=#408041,
+                                               process="insert 'preimage_seen',~x.1;", issapicrule]:
+   [ State_11111121( ~prog_, lock, ~x.1 ) ]
+  --[ Insert( 'preimage_seen', ~x.1 ) ]->
+   [ State_111111211( ~prog_, lock, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) insertpreimageseenx_0_11111121[color=#408041,
+                                                  process="insert 'preimage_seen',~x.1;", issapicrule]:
+     [ State_11111121( ~prog_, lock, ~x ) ]
+    --[ Insert( 'preimage_seen', ~x ) ]->
+     [ State_111111211( ~prog_, lock, ~x ) ]
+  */
+
+rule (modulo E) eventRedeemOut_0_111111211[color=#408041,
+                                           process="event RedeemOut( );", issapicrule]:
+   [ State_111111211( ~prog_, lock, ~x.1 ) ]
+  --[ RedeemOut( ) ]->
+   [ State_1111112111( ~prog_, lock, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) eventRedeemOut_0_111111211[color=#408041,
+                                              process="event RedeemOut( );", issapicrule]:
+     [ State_111111211( ~prog_, lock, ~x ) ]
+    --[ RedeemOut( ) ]->
+     [ State_1111112111( ~prog_, lock, ~x ) ]
+  */
+
+rule (modulo E) unlockout_0_1111112111[color=#408041,
+                                       process="unlock 'out';", issapicrule]:
+   [ State_1111112111( ~prog_, lock, ~x.1 ) ]
+  --[
+  ProgressTo_11111121111( ~prog_ ), Unlock_0( '0', lock, 'out' ),
+  Unlock( '0', lock, 'out' )
+  ]->
+   [ State_11111121111( ~prog_, lock, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) unlockout_0_1111112111[color=#408041,
+                                          process="unlock 'out';", issapicrule]:
+     [ State_1111112111( ~prog_, lock, ~x ) ]
+    --[
+    ProgressTo_11111121111( ~prog_ ), Unlock_0( '0', lock, 'out' ),
+    Unlock( '0', lock, 'out' )
+    ]->
+     [ State_11111121111( ~prog_, lock, ~x ) ]
+  */
+
+rule (modulo E) p_0_11111121111[color=#408041, process="0", issapicrule]:
+   [ State_11111121111( ~prog_, lock, ~x.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_11111121111[color=#408041, process="0",
+                                   issapicrule]:
+     [ State_11111121111( ~prog_, lock, ~x ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_11112[color=#ffffff, process="0", issapicrule]:
+   [ State_11112( ~prog_, ~x.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_11112[color=#ffffff, process="0", issapicrule]:
+     [ State_11112( ~prog_, ~x ) ] --> [ ]
+  */
+
+rule (modulo E) OutTimeout_0_1112[color=#ffffff, process="OutTimeout()",
+                                  issapicrule]:
+   [ State_1112( ~prog_, ~x.1 ) ] --> [ State_11121( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) OutTimeout_0_1112[color=#ffffff, process="OutTimeout()",
+                                     issapicrule]:
+     [ State_1112( ~prog_, ~x ) ] --> [ State_11121( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) lockout_0_11121[color=#408077, process="lock 'out';",
+                                issapicrule]:
+   [ State_11121( ~prog_, ~x.1 ), Fr( lock.1 ) ]
+  --[ Lock_1( '1', lock.1, 'out' ), Lock( '1', lock.1, 'out' ) ]->
+   [ State_111211( ~prog_, ~x.1, lock.1 ) ]
+
+  /*
+  rule (modulo AC) lockout_0_11121[color=#408077, process="lock 'out';",
+                                   issapicrule]:
+     [ State_11121( ~prog_, ~x ), Fr( lock ) ]
+    --[ Lock_1( '1', lock, 'out' ), Lock( '1', lock, 'out' ) ]->
+     [ State_111211( ~prog_, ~x, lock ) ]
+  */
+
+rule (modulo E) lookupoutresasr_0_111211[color=#408077,
+                                         process="lookup 'out_res' as r.2", issapicrule]:
+   [ State_111211( ~prog_, ~x.1, lock.1 ) ]
+  --[ IsIn( 'out_res', r.2 ) ]->
+   [ State_1112111( ~prog_, ~x.1, lock.1, r.2 ) ]
+
+  /*
+  rule (modulo AC) lookupoutresasr_0_111211[color=#408077,
+                                            process="lookup 'out_res' as r.2", issapicrule]:
+     [ State_111211( ~prog_, ~x, lock ) ]
+    --[ IsIn( 'out_res', r ) ]->
+     [ State_1112111( ~prog_, ~x, lock, r ) ]
+  */
+
+rule (modulo E) lookupoutresasr_1_111211[color=#408077,
+                                         process="lookup 'out_res' as r.2", issapicrule]:
+   [ State_111211( ~prog_, ~x.1, lock.1 ) ]
+  --[ IsNotSet( 'out_res' ) ]->
+   [ State_1112112( ~prog_, ~x.1, lock.1 ) ]
+
+  /*
+  rule (modulo AC) lookupoutresasr_1_111211[color=#408077,
+                                            process="lookup 'out_res' as r.2", issapicrule]:
+     [ State_111211( ~prog_, ~x, lock ) ]
+    --[ IsNotSet( 'out_res' ) ]->
+     [ State_1112112( ~prog_, ~x, lock ) ]
+  */
+
+rule (modulo E) unlockout_0_1112111[color=#408077,
+                                    process="unlock 'out';", issapicrule]:
+   [ State_1112111( ~prog_, ~x.1, lock.1, r.2 ) ]
+  --[
+  ProgressTo_11121111( ~prog_ ), Unlock_1( '1', lock.1, 'out' ),
+  Unlock( '1', lock.1, 'out' )
+  ]->
+   [ State_11121111( ~prog_, ~x.1, lock.1, r.2 ) ]
+
+  /*
+  rule (modulo AC) unlockout_0_1112111[color=#408077,
+                                       process="unlock 'out';", issapicrule]:
+     [ State_1112111( ~prog_, ~x, lock, r ) ]
+    --[
+    ProgressTo_11121111( ~prog_ ), Unlock_1( '1', lock, 'out' ),
+    Unlock( '1', lock, 'out' )
+    ]->
+     [ State_11121111( ~prog_, ~x, lock, r ) ]
+  */
+
+rule (modulo E) p_0_11121111[color=#408077, process="0", issapicrule]:
+   [ State_11121111( ~prog_, ~x.1, lock.1, r.2 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_11121111[color=#408077, process="0", issapicrule]:
+     [ State_11121111( ~prog_, ~x, lock, r ) ] --> [ ]
+  */
+
+rule (modulo E) insertoutrestimedout_0_1112112[color=#408077,
+                                               process="insert 'out_res','timedout';", issapicrule]:
+   [ State_1112112( ~prog_, ~x.1, lock.1 ) ]
+  --[ Insert( 'out_res', 'timedout' ) ]->
+   [ State_11121121( ~prog_, ~x.1, lock.1 ) ]
+
+  /*
+  rule (modulo AC) insertoutrestimedout_0_1112112[color=#408077,
+                                                  process="insert 'out_res','timedout';", issapicrule]:
+     [ State_1112112( ~prog_, ~x, lock ) ]
+    --[ Insert( 'out_res', 'timedout' ) ]->
+     [ State_11121121( ~prog_, ~x, lock ) ]
+  */
+
+rule (modulo E) eventTimeoutOut_0_11121121[color=#408077,
+                                           process="event TimeoutOut( );", issapicrule]:
+   [ State_11121121( ~prog_, ~x.1, lock.1 ) ]
+  --[ TimeoutOut( ) ]->
+   [ State_111211211( ~prog_, ~x.1, lock.1 ) ]
+
+  /*
+  rule (modulo AC) eventTimeoutOut_0_11121121[color=#408077,
+                                              process="event TimeoutOut( );", issapicrule]:
+     [ State_11121121( ~prog_, ~x, lock ) ]
+    --[ TimeoutOut( ) ]->
+     [ State_111211211( ~prog_, ~x, lock ) ]
+  */
+
+rule (modulo E) unlockout_0_111211211[color=#408077,
+                                      process="unlock 'out';", issapicrule]:
+   [ State_111211211( ~prog_, ~x.1, lock.1 ) ]
+  --[
+  ProgressTo_1112112111( ~prog_ ), Unlock_1( '1', lock.1, 'out' ),
+  Unlock( '1', lock.1, 'out' )
+  ]->
+   [ State_1112112111( ~prog_, ~x.1, lock.1 ) ]
+
+  /*
+  rule (modulo AC) unlockout_0_111211211[color=#408077,
+                                         process="unlock 'out';", issapicrule]:
+     [ State_111211211( ~prog_, ~x, lock ) ]
+    --[
+    ProgressTo_1112112111( ~prog_ ), Unlock_1( '1', lock, 'out' ),
+    Unlock( '1', lock, 'out' )
+    ]->
+     [ State_1112112111( ~prog_, ~x, lock ) ]
+  */
+
+rule (modulo E) p_0_1112112111[color=#408077, process="0", issapicrule]:
+   [ State_1112112111( ~prog_, ~x.1, lock.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_1112112111[color=#408077, process="0", issapicrule]:
+     [ State_1112112111( ~prog_, ~x, lock ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_11122[color=#ffffff, process="0", issapicrule]:
+   [ State_11122( ~prog_, ~x.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_11122[color=#ffffff, process="0", issapicrule]:
+     [ State_11122( ~prog_, ~x ) ] --> [ ]
+  */
+
+rule (modulo E) InTimeout_0_112[color=#ffffff, process="InTimeout()",
+                                issapicrule]:
+   [ State_112( ~prog_, ~x.1 ) ] --> [ State_1121( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) InTimeout_0_112[color=#ffffff, process="InTimeout()",
+                                   issapicrule]:
+     [ State_112( ~prog_, ~x ) ] --> [ State_1121( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) lookupoutresasr_0_1121[color=#408050,
+                                       process="lookup 'out_res' as r.3", issapicrule]:
+   [ State_1121( ~prog_, ~x.1 ) ]
+  --[ IsIn( 'out_res', r.3 ) ]->
+   [ State_11211( ~prog_, ~x.1, r.3 ) ]
+
+  /*
+  rule (modulo AC) lookupoutresasr_0_1121[color=#408050,
+                                          process="lookup 'out_res' as r.3", issapicrule]:
+     [ State_1121( ~prog_, ~x ) ]
+    --[ IsIn( 'out_res', r ) ]->
+     [ State_11211( ~prog_, ~x, r ) ]
+  */
+
+rule (modulo E) lookupoutresasr_1_1121[color=#408050,
+                                       process="lookup 'out_res' as r.3", issapicrule]:
+   [ State_1121( ~prog_, ~x.1 ) ]
+  --[ ProgressTo_11212( ~prog_ ), IsNotSet( 'out_res' ) ]->
+   [ State_11212( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) lookupoutresasr_1_1121[color=#408050,
+                                          process="lookup 'out_res' as r.3", issapicrule]:
+     [ State_1121( ~prog_, ~x ) ]
+    --[ ProgressTo_11212( ~prog_ ), IsNotSet( 'out_res' ) ]->
+     [ State_11212( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) ifrtimedout_0_11211[color=#408050,
+                                    process="if r.3='timedout'", issapicrule]:
+   [ State_11211( ~prog_, ~x.1, r.3 ) ]
+  --[ Pred_Eq( r.3, 'timedout' ) ]->
+   [ State_112111( ~prog_, ~x.1, r.3 ) ]
+
+  /*
+  rule (modulo AC) ifrtimedout_0_11211[color=#408050,
+                                       process="if r.3='timedout'", issapicrule]:
+     [ State_11211( ~prog_, ~x, r ) ]
+    --[ Pred_Eq( r, 'timedout' ) ]->
+     [ State_112111( ~prog_, ~x, r ) ]
+  */
+
+rule (modulo E) ifrtimedout_1_11211[color=#408050,
+                                    process="if r.3='timedout'", issapicrule]:
+   [ State_11211( ~prog_, ~x.1, r.3 ) ]
+  --[ ProgressTo_112112( ~prog_ ), Pred_Not_Eq( r.3, 'timedout' ) ]->
+   [ State_112112( ~prog_, ~x.1, r.3 ) ]
+
+  /*
+  rule (modulo AC) ifrtimedout_1_11211[color=#408050,
+                                       process="if r.3='timedout'", issapicrule]:
+     [ State_11211( ~prog_, ~x, r ) ]
+    --[ ProgressTo_112112( ~prog_ ), Pred_Not_Eq( r, 'timedout' ) ]->
+     [ State_112112( ~prog_, ~x, r ) ]
+  */
+
+rule (modulo E) lockin_0_112111[color=#408050, process="lock 'in';",
+                                issapicrule]:
+   [ State_112111( ~prog_, ~x.1, r.3 ), Fr( lock.2 ) ]
+  --[ Lock_2( '2', lock.2, 'in' ), Lock( '2', lock.2, 'in' ) ]->
+   [ State_1121111( ~prog_, ~x.1, lock.2, r.3 ) ]
+
+  /*
+  rule (modulo AC) lockin_0_112111[color=#408050, process="lock 'in';",
+                                   issapicrule]:
+     [ State_112111( ~prog_, ~x, r ), Fr( lock ) ]
+    --[ Lock_2( '2', lock, 'in' ), Lock( '2', lock, 'in' ) ]->
+     [ State_1121111( ~prog_, ~x, lock, r ) ]
+  */
+
+rule (modulo E) lookupinresasq_0_1121111[color=#408050,
+                                         process="lookup 'in_res' as q.1", issapicrule]:
+   [ State_1121111( ~prog_, ~x.1, lock.2, r.3 ) ]
+  --[ IsIn( 'in_res', q.1 ) ]->
+   [ State_11211111( ~prog_, ~x.1, q.1, lock.2, r.3 ) ]
+
+  /*
+  rule (modulo AC) lookupinresasq_0_1121111[color=#408050,
+                                            process="lookup 'in_res' as q.1", issapicrule]:
+     [ State_1121111( ~prog_, ~x, lock, r ) ]
+    --[ IsIn( 'in_res', q ) ]->
+     [ State_11211111( ~prog_, ~x, q, lock, r ) ]
+  */
+
+rule (modulo E) lookupinresasq_1_1121111[color=#408050,
+                                         process="lookup 'in_res' as q.1", issapicrule]:
+   [ State_1121111( ~prog_, ~x.1, lock.2, r.3 ) ]
+  --[ IsNotSet( 'in_res' ) ]->
+   [ State_11211112( ~prog_, ~x.1, lock.2, r.3 ) ]
+
+  /*
+  rule (modulo AC) lookupinresasq_1_1121111[color=#408050,
+                                            process="lookup 'in_res' as q.1", issapicrule]:
+     [ State_1121111( ~prog_, ~x, lock, r ) ]
+    --[ IsNotSet( 'in_res' ) ]->
+     [ State_11211112( ~prog_, ~x, lock, r ) ]
+  */
+
+rule (modulo E) unlockin_0_11211111[color=#408050,
+                                    process="unlock 'in';", issapicrule]:
+   [ State_11211111( ~prog_, ~x.1, q.1, lock.2, r.3 ) ]
+  --[
+  ProgressTo_112111111( ~prog_ ), Unlock_2( '2', lock.2, 'in' ),
+  Unlock( '2', lock.2, 'in' )
+  ]->
+   [ State_112111111( ~prog_, ~x.1, q.1, lock.2, r.3 ) ]
+
+  /*
+  rule (modulo AC) unlockin_0_11211111[color=#408050,
+                                       process="unlock 'in';", issapicrule]:
+     [ State_11211111( ~prog_, ~x, q, lock, r ) ]
+    --[
+    ProgressTo_112111111( ~prog_ ), Unlock_2( '2', lock, 'in' ),
+    Unlock( '2', lock, 'in' )
+    ]->
+     [ State_112111111( ~prog_, ~x, q, lock, r ) ]
+  */
+
+rule (modulo E) p_0_112111111[color=#408050, process="0", issapicrule]:
+   [ State_112111111( ~prog_, ~x.1, q.1, lock.2, r.3 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_112111111[color=#408050, process="0", issapicrule]:
+     [ State_112111111( ~prog_, ~x, q, lock, r ) ] --> [ ]
+  */
+
+rule (modulo E) insertinresrefunded_0_11211112[color=#408050,
+                                               process="insert 'in_res','refunded';", issapicrule]:
+   [ State_11211112( ~prog_, ~x.1, lock.2, r.3 ) ]
+  --[ Insert( 'in_res', 'refunded' ) ]->
+   [ State_112111121( ~prog_, ~x.1, lock.2, r.3 ) ]
+
+  /*
+  rule (modulo AC) insertinresrefunded_0_11211112[color=#408050,
+                                                  process="insert 'in_res','refunded';", issapicrule]:
+     [ State_11211112( ~prog_, ~x, lock, r ) ]
+    --[ Insert( 'in_res', 'refunded' ) ]->
+     [ State_112111121( ~prog_, ~x, lock, r ) ]
+  */
+
+rule (modulo E) eventRefundIn_0_112111121[color=#408050,
+                                          process="event RefundIn( );", issapicrule]:
+   [ State_112111121( ~prog_, ~x.1, lock.2, r.3 ) ]
+  --[ RefundIn( ) ]->
+   [ State_1121111211( ~prog_, ~x.1, lock.2, r.3 ) ]
+
+  /*
+  rule (modulo AC) eventRefundIn_0_112111121[color=#408050,
+                                             process="event RefundIn( );", issapicrule]:
+     [ State_112111121( ~prog_, ~x, lock, r ) ]
+    --[ RefundIn( ) ]->
+     [ State_1121111211( ~prog_, ~x, lock, r ) ]
+  */
+
+rule (modulo E) unlockin_0_1121111211[color=#408050,
+                                      process="unlock 'in';", issapicrule]:
+   [ State_1121111211( ~prog_, ~x.1, lock.2, r.3 ) ]
+  --[
+  ProgressTo_11211112111( ~prog_ ), Unlock_2( '2', lock.2, 'in' ),
+  Unlock( '2', lock.2, 'in' )
+  ]->
+   [ State_11211112111( ~prog_, ~x.1, lock.2, r.3 ) ]
+
+  /*
+  rule (modulo AC) unlockin_0_1121111211[color=#408050,
+                                         process="unlock 'in';", issapicrule]:
+     [ State_1121111211( ~prog_, ~x, lock, r ) ]
+    --[
+    ProgressTo_11211112111( ~prog_ ), Unlock_2( '2', lock, 'in' ),
+    Unlock( '2', lock, 'in' )
+    ]->
+     [ State_11211112111( ~prog_, ~x, lock, r ) ]
+  */
+
+rule (modulo E) p_0_11211112111[color=#408050, process="0", issapicrule]:
+   [ State_11211112111( ~prog_, ~x.1, lock.2, r.3 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_11211112111[color=#408050, process="0",
+                                   issapicrule]:
+     [ State_11211112111( ~prog_, ~x, lock, r ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_112112[color=#408050, process="0", issapicrule]:
+   [ State_112112( ~prog_, ~x.1, r.3 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_112112[color=#408050, process="0", issapicrule]:
+     [ State_112112( ~prog_, ~x, r ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_11212[color=#408050, process="0", issapicrule]:
+   [ State_11212( ~prog_, ~x.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_11212[color=#408050, process="0", issapicrule]:
+     [ State_11212( ~prog_, ~x ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_1122[color=#ffffff, process="0", issapicrule]:
+   [ State_1122( ~prog_, ~x.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_1122[color=#ffffff, process="0", issapicrule]:
+     [ State_1122( ~prog_, ~x ) ] --> [ ]
+  */
+
+rule (modulo E) Forwarder_0_12[color=#ffffff, process="Forwarder()",
+                               issapicrule]:
+   [ State_12( ~prog_, ~x.1 ) ] --> [ State_121( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) Forwarder_0_12[color=#ffffff, process="Forwarder()",
+                                  issapicrule]:
+     [ State_12( ~prog_, ~x ) ] --> [ State_121( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) lookuppreimageseenasv_0_121[color=#408070,
+                                            process="lookup 'preimage_seen' as v.1", issapicrule]:
+   [ State_121( ~prog_, ~x.1 ) ]
+  --[ IsIn( 'preimage_seen', v.1 ) ]->
+   [ State_1211( ~prog_, ~x.1, v.1 ) ]
+
+  /*
+  rule (modulo AC) lookuppreimageseenasv_0_121[color=#408070,
+                                               process="lookup 'preimage_seen' as v.1", issapicrule]:
+     [ State_121( ~prog_, ~x ) ]
+    --[ IsIn( 'preimage_seen', v ) ]->
+     [ State_1211( ~prog_, ~x, v ) ]
+  */
+
+rule (modulo E) lookuppreimageseenasv_1_121[color=#408070,
+                                            process="lookup 'preimage_seen' as v.1", issapicrule]:
+   [ State_121( ~prog_, ~x.1 ) ]
+  --[ ProgressTo_1212( ~prog_ ), IsNotSet( 'preimage_seen' ) ]->
+   [ State_1212( ~prog_, ~x.1 ) ]
+
+  /*
+  rule (modulo AC) lookuppreimageseenasv_1_121[color=#408070,
+                                               process="lookup 'preimage_seen' as v.1", issapicrule]:
+     [ State_121( ~prog_, ~x ) ]
+    --[ ProgressTo_1212( ~prog_ ), IsNotSet( 'preimage_seen' ) ]->
+     [ State_1212( ~prog_, ~x ) ]
+  */
+
+rule (modulo E) ifhvhx_0_1211[color=#408070, process="if h(v.1)=h(~x.1)",
+                              issapicrule]:
+   [ State_1211( ~prog_, ~x.1, v.1 ) ]
+  --[ Pred_Eq( h(v.1), h(~x.1) ) ]->
+   [ State_12111( ~prog_, ~x.1, v.1 ) ]
+
+  /*
+  rule (modulo AC) ifhvhx_0_1211[color=#408070,
+                                 process="if h(v.1)=h(~x.1)", issapicrule]:
+     [ State_1211( ~prog_, ~x, v ) ]
+    --[ Pred_Eq( h(v), h(~x) ) ]->
+     [ State_12111( ~prog_, ~x, v ) ]
+  */
+
+rule (modulo E) ifhvhx_1_1211[color=#408070, process="if h(v.1)=h(~x.1)",
+                              issapicrule]:
+   [ State_1211( ~prog_, ~x.1, v.1 ) ]
+  --[ ProgressTo_12112( ~prog_ ), Pred_Not_Eq( h(v.1), h(~x.1) ) ]->
+   [ State_12112( ~prog_, ~x.1, v.1 ) ]
+
+  /*
+  rule (modulo AC) ifhvhx_1_1211[color=#408070,
+                                 process="if h(v.1)=h(~x.1)", issapicrule]:
+     [ State_1211( ~prog_, ~x, v ) ]
+    --[ ProgressTo_12112( ~prog_ ), Pred_Not_Eq( h(v), h(~x) ) ]->
+     [ State_12112( ~prog_, ~x, v ) ]
+  */
+
+rule (modulo E) lockin_0_12111[color=#408070, process="lock 'in';",
+                               issapicrule]:
+   [ State_12111( ~prog_, ~x.1, v.1 ), Fr( lock.3 ) ]
+  --[ Lock_3( '3', lock.3, 'in' ), Lock( '3', lock.3, 'in' ) ]->
+   [ State_121111( ~prog_, ~x.1, v.1, lock.3 ) ]
+
+  /*
+  rule (modulo AC) lockin_0_12111[color=#408070, process="lock 'in';",
+                                  issapicrule]:
+     [ State_12111( ~prog_, ~x, v ), Fr( lock ) ]
+    --[ Lock_3( '3', lock, 'in' ), Lock( '3', lock, 'in' ) ]->
+     [ State_121111( ~prog_, ~x, v, lock ) ]
+  */
+
+rule (modulo E) lookupinresasq_0_121111[color=#408070,
+                                        process="lookup 'in_res' as q.2", issapicrule]:
+   [ State_121111( ~prog_, ~x.1, v.1, lock.3 ) ]
+  --[ IsIn( 'in_res', q.2 ) ]->
+   [ State_1211111( ~prog_, ~x.1, v.1, q.2, lock.3 ) ]
+
+  /*
+  rule (modulo AC) lookupinresasq_0_121111[color=#408070,
+                                           process="lookup 'in_res' as q.2", issapicrule]:
+     [ State_121111( ~prog_, ~x, v, lock ) ]
+    --[ IsIn( 'in_res', q ) ]->
+     [ State_1211111( ~prog_, ~x, v, q, lock ) ]
+  */
+
+rule (modulo E) lookupinresasq_1_121111[color=#408070,
+                                        process="lookup 'in_res' as q.2", issapicrule]:
+   [ State_121111( ~prog_, ~x.1, v.1, lock.3 ) ]
+  --[ IsNotSet( 'in_res' ) ]->
+   [ State_1211112( ~prog_, ~x.1, v.1, lock.3 ) ]
+
+  /*
+  rule (modulo AC) lookupinresasq_1_121111[color=#408070,
+                                           process="lookup 'in_res' as q.2", issapicrule]:
+     [ State_121111( ~prog_, ~x, v, lock ) ]
+    --[ IsNotSet( 'in_res' ) ]->
+     [ State_1211112( ~prog_, ~x, v, lock ) ]
+  */
+
+rule (modulo E) unlockin_0_1211111[color=#408070, process="unlock 'in';",
+                                   issapicrule]:
+   [ State_1211111( ~prog_, ~x.1, v.1, q.2, lock.3 ) ]
+  --[
+  ProgressTo_12111111( ~prog_ ), Unlock_3( '3', lock.3, 'in' ),
+  Unlock( '3', lock.3, 'in' )
+  ]->
+   [ State_12111111( ~prog_, ~x.1, v.1, q.2, lock.3 ) ]
+
+  /*
+  rule (modulo AC) unlockin_0_1211111[color=#408070,
+                                      process="unlock 'in';", issapicrule]:
+     [ State_1211111( ~prog_, ~x, v, q, lock ) ]
+    --[
+    ProgressTo_12111111( ~prog_ ), Unlock_3( '3', lock, 'in' ),
+    Unlock( '3', lock, 'in' )
+    ]->
+     [ State_12111111( ~prog_, ~x, v, q, lock ) ]
+  */
+
+rule (modulo E) p_0_12111111[color=#408070, process="0", issapicrule]:
+   [ State_12111111( ~prog_, ~x.1, v.1, q.2, lock.3 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_12111111[color=#408070, process="0", issapicrule]:
+     [ State_12111111( ~prog_, ~x, v, q, lock ) ] --> [ ]
+  */
+
+rule (modulo E) insertinresredeemed_0_1211112[color=#408070,
+                                              process="insert 'in_res','redeemed';", issapicrule]:
+   [ State_1211112( ~prog_, ~x.1, v.1, lock.3 ) ]
+  --[ Insert( 'in_res', 'redeemed' ) ]->
+   [ State_12111121( ~prog_, ~x.1, v.1, lock.3 ) ]
+
+  /*
+  rule (modulo AC) insertinresredeemed_0_1211112[color=#408070,
+                                                 process="insert 'in_res','redeemed';", issapicrule]:
+     [ State_1211112( ~prog_, ~x, v, lock ) ]
+    --[ Insert( 'in_res', 'redeemed' ) ]->
+     [ State_12111121( ~prog_, ~x, v, lock ) ]
+  */
+
+rule (modulo E) eventRedeemIn_0_12111121[color=#408070,
+                                         process="event RedeemIn( );", issapicrule]:
+   [ State_12111121( ~prog_, ~x.1, v.1, lock.3 ) ]
+  --[ RedeemIn( ) ]->
+   [ State_121111211( ~prog_, ~x.1, v.1, lock.3 ) ]
+
+  /*
+  rule (modulo AC) eventRedeemIn_0_12111121[color=#408070,
+                                            process="event RedeemIn( );", issapicrule]:
+     [ State_12111121( ~prog_, ~x, v, lock ) ]
+    --[ RedeemIn( ) ]->
+     [ State_121111211( ~prog_, ~x, v, lock ) ]
+  */
+
+rule (modulo E) unlockin_0_121111211[color=#408070,
+                                     process="unlock 'in';", issapicrule]:
+   [ State_121111211( ~prog_, ~x.1, v.1, lock.3 ) ]
+  --[
+  ProgressTo_1211112111( ~prog_ ), Unlock_3( '3', lock.3, 'in' ),
+  Unlock( '3', lock.3, 'in' )
+  ]->
+   [ State_1211112111( ~prog_, ~x.1, v.1, lock.3 ) ]
+
+  /*
+  rule (modulo AC) unlockin_0_121111211[color=#408070,
+                                        process="unlock 'in';", issapicrule]:
+     [ State_121111211( ~prog_, ~x, v, lock ) ]
+    --[
+    ProgressTo_1211112111( ~prog_ ), Unlock_3( '3', lock, 'in' ),
+    Unlock( '3', lock, 'in' )
+    ]->
+     [ State_1211112111( ~prog_, ~x, v, lock ) ]
+  */
+
+rule (modulo E) p_0_1211112111[color=#408070, process="0", issapicrule]:
+   [ State_1211112111( ~prog_, ~x.1, v.1, lock.3 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_1211112111[color=#408070, process="0", issapicrule]:
+     [ State_1211112111( ~prog_, ~x, v, lock ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_12112[color=#408070, process="0", issapicrule]:
+   [ State_12112( ~prog_, ~x.1, v.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_12112[color=#408070, process="0", issapicrule]:
+     [ State_12112( ~prog_, ~x, v ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_1212[color=#408070, process="0", issapicrule]:
+   [ State_1212( ~prog_, ~x.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_1212[color=#408070, process="0", issapicrule]:
+     [ State_1212( ~prog_, ~x ) ] --> [ ]
+  */
+
+rule (modulo E) p_0_122[color=#ffffff, process="0", issapicrule]:
+   [ State_122( ~prog_, ~x.1 ) ] --> [ ]
+
+  /*
+  rule (modulo AC) p_0_122[color=#ffffff, process="0", issapicrule]:
+     [ State_122( ~prog_, ~x ) ] --> [ ]
+  */
+
+restriction set_in:
+  "∀ x y #t3.
+    (IsIn( x, y ) @ #t3) ⇒
+    (∃ #t2.
+      ((Insert( x, y ) @ #t2) ∧ (#t2 < #t3)) ∧
+      (∀ #t1 yp.
+        (Insert( x, yp ) @ #t1) ⇒ (((#t1 < #t2) ∨ (#t1 = #t2)) ∨ (#t3 < #t1))))"
+
+restriction set_notin:
+  "∀ x #t3.
+    (IsNotSet( x ) @ #t3) ⇒ (∀ #t1 y. (Insert( x, y ) @ #t1) ⇒ (#t3 < #t1))"
+  // safety formula
+
+restriction predicate_eq:
+  "∀ #i a b. (Pred_Eq( a, b ) @ #i) ⇒ (a = b)"
+  // safety formula
+
+restriction predicate_not_eq:
+  "∀ #i a b. (Pred_Not_Eq( a, b ) @ #i) ⇒ (¬(a = b))"
+  // safety formula
+
+restriction single_session:
+  "∀ #i #j. ((Init( ) @ #i) ∧ (Init( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+restriction locking_0:
+  "∀ p pp l x lp #t1 #t3.
+    ((Lock_0( p, l, x ) @ #t1) ∧ (Lock( pp, lp, x ) @ #t3)) ⇒
+    ((((#t1 < #t3) ∧
+       (∃ #t2.
+         (((((Unlock_0( p, l, x ) @ #t2) ∧ (#t1 < #t2)) ∧ (#t2 < #t3)) ∧
+           (∀ #t0 pp.1. (Unlock( pp.1, l, x ) @ #t0) ⇒ (#t0 = #t2))) ∧
+          (∀ pp.1 lpp #t0.
+            (Lock( pp.1, lpp, x ) @ #t0) ⇒
+            (((#t0 < #t1) ∨ (#t0 = #t1)) ∨ (#t2 < #t0)))) ∧
+         (∀ pp.1 lpp #t0.
+           (Unlock( pp.1, lpp, x ) @ #t0) ⇒
+           (((#t0 < #t1) ∨ (#t2 < #t0)) ∨ (#t2 = #t0))))) ∨
+      (#t3 < #t1)) ∨
+     (#t1 = #t3))"
+
+restriction locking_1:
+  "∀ p pp l x lp #t1 #t3.
+    ((Lock_1( p, l, x ) @ #t1) ∧ (Lock( pp, lp, x ) @ #t3)) ⇒
+    ((((#t1 < #t3) ∧
+       (∃ #t2.
+         (((((Unlock_1( p, l, x ) @ #t2) ∧ (#t1 < #t2)) ∧ (#t2 < #t3)) ∧
+           (∀ #t0 pp.1. (Unlock( pp.1, l, x ) @ #t0) ⇒ (#t0 = #t2))) ∧
+          (∀ pp.1 lpp #t0.
+            (Lock( pp.1, lpp, x ) @ #t0) ⇒
+            (((#t0 < #t1) ∨ (#t0 = #t1)) ∨ (#t2 < #t0)))) ∧
+         (∀ pp.1 lpp #t0.
+           (Unlock( pp.1, lpp, x ) @ #t0) ⇒
+           (((#t0 < #t1) ∨ (#t2 < #t0)) ∨ (#t2 = #t0))))) ∨
+      (#t3 < #t1)) ∨
+     (#t1 = #t3))"
+
+restriction locking_2:
+  "∀ p pp l x lp #t1 #t3.
+    ((Lock_2( p, l, x ) @ #t1) ∧ (Lock( pp, lp, x ) @ #t3)) ⇒
+    ((((#t1 < #t3) ∧
+       (∃ #t2.
+         (((((Unlock_2( p, l, x ) @ #t2) ∧ (#t1 < #t2)) ∧ (#t2 < #t3)) ∧
+           (∀ #t0 pp.1. (Unlock( pp.1, l, x ) @ #t0) ⇒ (#t0 = #t2))) ∧
+          (∀ pp.1 lpp #t0.
+            (Lock( pp.1, lpp, x ) @ #t0) ⇒
+            (((#t0 < #t1) ∨ (#t0 = #t1)) ∨ (#t2 < #t0)))) ∧
+         (∀ pp.1 lpp #t0.
+           (Unlock( pp.1, lpp, x ) @ #t0) ⇒
+           (((#t0 < #t1) ∨ (#t2 < #t0)) ∨ (#t2 = #t0))))) ∨
+      (#t3 < #t1)) ∨
+     (#t1 = #t3))"
+
+restriction locking_3:
+  "∀ p pp l x lp #t1 #t3.
+    ((Lock_3( p, l, x ) @ #t1) ∧ (Lock( pp, lp, x ) @ #t3)) ⇒
+    ((((#t1 < #t3) ∧
+       (∃ #t2.
+         (((((Unlock_3( p, l, x ) @ #t2) ∧ (#t1 < #t2)) ∧ (#t2 < #t3)) ∧
+           (∀ #t0 pp.1. (Unlock( pp.1, l, x ) @ #t0) ⇒ (#t0 = #t2))) ∧
+          (∀ pp.1 lpp #t0.
+            (Lock( pp.1, lpp, x ) @ #t0) ⇒
+            (((#t0 < #t1) ∨ (#t0 = #t1)) ∨ (#t2 < #t0)))) ∧
+         (∀ pp.1 lpp #t0.
+           (Unlock( pp.1, lpp, x ) @ #t0) ⇒
+           (((#t0 < #t1) ∨ (#t2 < #t0)) ∨ (#t2 = #t0))))) ∨
+      (#t3 < #t1)) ∨
+     (#t1 = #t3))"
+
+restriction Progress__to_11111111_or_11111121111:
+  "∀ prog_ #t.
+    (ProgressFrom_( prog_ ) @ #t) ⇒
+    ((∃ #t.1. ProgressTo_11111111( prog_ ) @ #t.1) ∨
+     (∃ #t.1. ProgressTo_11111121111( prog_ ) @ #t.1))"
+
+restriction Progress__to_11121111_or_1112112111:
+  "∀ prog_ #t.
+    (ProgressFrom_( prog_ ) @ #t) ⇒
+    ((∃ #t.1. ProgressTo_11121111( prog_ ) @ #t.1) ∨
+     (∃ #t.1. ProgressTo_1112112111( prog_ ) @ #t.1))"
+
+restriction Progress__to_112111111_or_11211112111_or_112112_or_11212:
+  "∀ prog_ #t.
+    (ProgressFrom_( prog_ ) @ #t) ⇒
+    ((∃ #t.1. ProgressTo_112111111( prog_ ) @ #t.1) ∨
+     ((∃ #t.1. ProgressTo_11211112111( prog_ ) @ #t.1) ∨
+      ((∃ #t.1. ProgressTo_112112( prog_ ) @ #t.1) ∨
+       (∃ #t.1. ProgressTo_11212( prog_ ) @ #t.1))))"
+
+restriction Progress__to_12111111_or_1211112111_or_12112_or_1212:
+  "∀ prog_ #t.
+    (ProgressFrom_( prog_ ) @ #t) ⇒
+    ((∃ #t.1. ProgressTo_12111111( prog_ ) @ #t.1) ∨
+     ((∃ #t.1. ProgressTo_1211112111( prog_ ) @ #t.1) ∨
+      ((∃ #t.1. ProgressTo_12112( prog_ ) @ #t.1) ∨
+       (∃ #t.1. ProgressTo_1212( prog_ ) @ #t.1))))"
+
+restriction progressInit:
+  "∃ #t. Init( ) @ #t"
+
+/*
+WARNING: the following wellformedness checks failed!
+
+Facts occur in the left-hand-side but not in any right-hand-side 
+=================================================================
+
+  1. in rule "p_0_11112":  factName `State_11112' arity: 2 multiplicity: Linear. Perhaps you want to use the fact in rule "p_0_111":  factName `State_1111' arity: 2 multiplicity: Linear
+  
+  2. in rule "p_0_11122":  factName `State_11122' arity: 2 multiplicity: Linear. Perhaps you want to use the fact in rule "p_0_111":  factName `State_1112' arity: 2 multiplicity: Linear
+  
+  3. in rule "p_0_1122":  factName `State_1122' arity: 2 multiplicity: Linear. Perhaps you want to use the fact in rule "p_0_11":  factName `State_112' arity: 2 multiplicity: Linear
+  
+  4. in rule "p_0_122":  factName `State_122' arity: 2 multiplicity: Linear. Perhaps you want to use the fact in rule "p_0_1":  factName `State_12' arity: 2 multiplicity: Linear
+
+Message Derivation Checks
+=========================
+
+  The variables of the following rule(s) are not derivable from their premises, you may be performing unintended pattern matching.
+
+Rule Init: 
+Failed to derive Variable(s): ~prog_
+
+Rule newx_0_: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule p_0_1: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule p_0_11: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule p_0_111: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule Receiver_0_1111: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule lockout_0_11111: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1
+
+Rule lookupoutresasr_0_111111: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1, r.1
+
+Rule lookupoutresasr_1_111111: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1
+
+Rule unlockout_0_1111111: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1, r.1
+
+Rule p_0_11111111: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1, r.1
+
+Rule insertoutresredeemed_0_1111112: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1
+
+Rule insertpreimageseenx_0_11111121: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1
+
+Rule eventRedeemOut_0_111111211: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1
+
+Rule unlockout_0_1111112111: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1
+
+Rule p_0_11111121111: 
+Failed to derive Variable(s): ~prog_, lock, ~x.1
+
+Rule p_0_11112: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule OutTimeout_0_1112: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule lockout_0_11121: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1
+
+Rule lookupoutresasr_0_111211: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1, r.2
+
+Rule lookupoutresasr_1_111211: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1
+
+Rule unlockout_0_1112111: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1, r.2
+
+Rule p_0_11121111: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1, r.2
+
+Rule insertoutrestimedout_0_1112112: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1
+
+Rule eventTimeoutOut_0_11121121: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1
+
+Rule unlockout_0_111211211: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1
+
+Rule p_0_1112112111: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.1
+
+Rule p_0_11122: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule InTimeout_0_112: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule lookupoutresasr_0_1121: 
+Failed to derive Variable(s): ~prog_, ~x.1, r.3
+
+Rule lookupoutresasr_1_1121: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule ifrtimedout_0_11211: 
+Failed to derive Variable(s): ~prog_, ~x.1, r.3
+
+Rule ifrtimedout_1_11211: 
+Failed to derive Variable(s): ~prog_, ~x.1, r.3
+
+Rule lockin_0_112111: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.2, r.3
+
+Rule lookupinresasq_0_1121111: 
+Failed to derive Variable(s): ~prog_, ~x.1, q.1, lock.2, r.3
+
+Rule lookupinresasq_1_1121111: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.2, r.3
+
+Rule unlockin_0_11211111: 
+Failed to derive Variable(s): ~prog_, ~x.1, q.1, lock.2, r.3
+
+Rule p_0_112111111: 
+Failed to derive Variable(s): ~prog_, ~x.1, q.1, lock.2, r.3
+
+Rule insertinresrefunded_0_11211112: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.2, r.3
+
+Rule eventRefundIn_0_112111121: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.2, r.3
+
+Rule unlockin_0_1121111211: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.2, r.3
+
+Rule p_0_11211112111: 
+Failed to derive Variable(s): ~prog_, ~x.1, lock.2, r.3
+
+Rule p_0_112112: 
+Failed to derive Variable(s): ~prog_, ~x.1, r.3
+
+Rule p_0_11212: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule p_0_1122: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule Forwarder_0_12: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule lookuppreimageseenasv_0_121: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1
+
+Rule lookuppreimageseenasv_1_121: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule ifhvhx_0_1211: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1
+
+Rule ifhvhx_1_1211: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1
+
+Rule lockin_0_12111: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, lock.3
+
+Rule lookupinresasq_0_121111: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, q.2, lock.3
+
+Rule lookupinresasq_1_121111: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, lock.3
+
+Rule unlockin_0_1211111: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, q.2, lock.3
+
+Rule p_0_12111111: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, q.2, lock.3
+
+Rule insertinresredeemed_0_1211112: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, lock.3
+
+Rule eventRedeemIn_0_12111121: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, lock.3
+
+Rule unlockin_0_121111211: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, lock.3
+
+Rule p_0_1211112111: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1, lock.3
+
+Rule p_0_12112: 
+Failed to derive Variable(s): ~prog_, ~x.1, v.1
+
+Rule p_0_1212: 
+Failed to derive Variable(s): ~prog_, ~x.1
+
+Rule p_0_122: 
+Failed to derive Variable(s): ~prog_, ~x.1
+*/
+
+/*
+Generated from:
+Tamarin version 1.10.0
+Maude version 3.2 (unsupported)
+Git revision: cb62c305f8c8b8c1e664152aa33c95b7b8d5ef32, branch: master
+Compiled at: 2024-10-30 11:11:02.432289291 UTC
+*/
+
+end

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="920" viewBox="0 0 1200 920" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2e7d32"/></marker>
+    <marker id="ag2" markerWidth="10" markerHeight="10" refX="2" refY="3" orient="auto"><path d="M8,0 L0,3 L8,6 Z" fill="#2e7d32"/></marker>
+    <marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#ed6c02"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#c62828"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="920" fill="#ffffff"/>
+  <text x="40" y="42" font-size="18" font-weight="700" fill="#222">Alice &#8596; Bob payment channel — lifecycle (zoom of one hop)</text>
+  <text x="40" y="62" font-size="12.5" fill="#777">annotated with multihop.spthy channel-layer lemmas — see rail →</text>
+
+  <rect x="470" y="26" width="13" height="13" fill="#2e7d32"/><text x="489" y="37" font-size="11.5" fill="#333">honest</text>
+  <rect x="560" y="26" width="13" height="13" fill="#ed6c02"/><text x="579" y="37" font-size="11.5" fill="#333">stalls / refund</text>
+  <rect x="700" y="26" width="13" height="13" fill="#c62828"/><text x="719" y="37" font-size="11.5" fill="#333">cheating</text>
+
+  <g font-size="15" font-weight="600" fill="#fff" text-anchor="middle">
+    <rect x="140" y="72" width="80" height="28" rx="4" fill="#37474f"/><text x="180" y="91">Alice</text>
+    <rect x="600" y="72" width="80" height="28" rx="4" fill="#37474f"/><text x="640" y="91">Bob</text>
+  </g>
+  <g stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="2,3">
+    <line x1="180" y1="100" x2="180" y2="720"/><line x1="640" y1="100" x2="640" y2="720"/>
+  </g>
+
+  <!-- OPEN -->
+  <rect x="30" y="126" width="24" height="200" rx="4" fill="#e8f5e9"/>
+  <text x="42" y="226" font-size="11.5" font-weight="700" fill="#2e7d32" text-anchor="middle" transform="rotate(-90 42 226)">OPEN</text>
+  <circle cx="78" cy="150" r="11" fill="#2e7d32"/><text x="78" y="154" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+  <g stroke="#2e7d32" stroke-width="2">
+    <line x1="182" y1="150" x2="638" y2="150" marker-end="url(#ag)"/>
+    <line x1="638" y1="190" x2="182" y2="190" marker-end="url(#ag2)"/>
+    <line x1="182" y1="235" x2="638" y2="235" marker-start="url(#ag2)" marker-end="url(#ag)"/>
+    <line x1="182" y1="278" x2="638" y2="278" marker-start="url(#ag2)" marker-end="url(#ag)"/>
+  </g>
+  <g font-size="12.5" fill="#1b5e20" text-anchor="middle">
+    <text x="410" y="143">1.  Alice asks Bob to open a channel</text>
+    <text x="410" y="183">2.  Bob agrees</text>
+    <text x="410" y="228">3.  each creates a secret, they exchange the hashes</text>
+    <text x="410" y="271">4.  build the commitment transactions (off-chain)</text>
+  </g>
+  <line x1="182" y1="308" x2="410" y2="308" stroke="#2e7d32" stroke-width="2" marker-end="url(#ag)"/>
+  <rect x="410" y="298" width="130" height="22" rx="3" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="475" y="313" font-size="11.5" fill="#1b5e20" text-anchor="middle">on-chain ⛓</text>
+  <text x="245" y="301" font-size="12.5" fill="#1b5e20" text-anchor="middle">5.  fund 2-of-2 multisig (10)</text>
+  <line x1="100" y1="330" x2="720" y2="330" stroke="#2e7d32" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="410" y="345" font-size="12" font-weight="700" fill="#2e7d32" text-anchor="middle">— CHANNEL OPEN —</text>
+
+  <!-- TRANSACT -->
+  <rect x="30" y="370" width="24" height="120" rx="4" fill="#e8f5e9"/>
+  <text x="42" y="430" font-size="11.5" font-weight="700" fill="#2e7d32" text-anchor="middle" transform="rotate(-90 42 430)">TRANSACT</text>
+  <circle cx="78" cy="405" r="11" fill="#2e7d32"/><text x="78" y="409" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+  <g stroke="#2e7d32" stroke-width="2">
+    <line x1="182" y1="405" x2="638" y2="405" marker-start="url(#ag2)" marker-end="url(#ag)"/>
+    <line x1="182" y1="450" x2="638" y2="450" marker-start="url(#ag2)" marker-end="url(#ag)"/>
+  </g>
+  <g font-size="12.5" fill="#1b5e20" text-anchor="middle">
+    <text x="410" y="398">6.  pay: sign a new state (Alice 6 / Bob 4)</text>
+    <text x="410" y="443">7.  revoke old state: exchange the old secrets</text>
+  </g>
+
+  <!-- DoS/refund orange -->
+  <circle cx="110" cy="490" r="11" fill="#ed6c02"/><text x="110" y="494" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+  <line x1="638" y1="490" x2="182" y2="490" stroke="#ed6c02" stroke-width="1.8" stroke-dasharray="6,3" marker-end="url(#ao)"/>
+  <text x="410" y="483" font-size="12" fill="#ed6c02" text-anchor="middle">(problem 1)  Bob stops responding → Alice reclaims via timeout, never stuck</text>
+
+  <line x1="100" y1="515" x2="720" y2="515" stroke="#e0e0e0"/>
+  <text x="60" y="533" font-size="12" font-weight="700" fill="#555">CLOSE — outcomes</text>
+
+  <!-- 8a coop green -->
+  <circle cx="110" cy="575" r="11" fill="#2e7d32"/><text x="110" y="579" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+  <line x1="182" y1="575" x2="638" y2="575" stroke="#2e7d32" stroke-width="2.4" marker-start="url(#ag2)" marker-end="url(#ag)"/>
+  <text x="410" y="568" font-size="12.5" fill="#1b5e20" text-anchor="middle">8a.  cooperative close → latest balances settle on-chain</text>
+
+  <!-- 8b cheat/punish red -->
+  <circle cx="110" cy="672" r="11" fill="#c62828"/><text x="110" y="676" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+  <line x1="182" y1="650" x2="638" y2="650" stroke="#c62828" stroke-width="2.4" marker-end="url(#ar)"/>
+  <text x="410" y="643" font-size="12.5" fill="#c62828" text-anchor="middle">8b.  (problem 2)  a party publishes an OLD, revoked state …</text>
+  <line x1="638" y1="695" x2="182" y2="695" stroke="#c62828" stroke-width="2.4" marker-end="url(#ar)"/>
+  <text x="410" y="688" font-size="12.5" fill="#c62828" text-anchor="middle">… the other PUNISHES with the revocation secret → takes all funds</text>
+
+  <text x="410" y="762" font-size="11.5" fill="#777" text-anchor="middle" font-style="italic">The HTLC attached to this channel (hashlock + timelock) is what the 4-party figure routes;</text>
+  <text x="410" y="778" font-size="11.5" fill="#777" text-anchor="middle" font-style="italic">its add consumes the linear Free(ptr) slot — one HTLC per output, structural.</text>
+
+  <!-- ============ RAIL ============ -->
+  <line x1="815" y1="110" x2="815" y2="800" stroke="#ddd"/>
+  <text x="835" y="120" font-size="14" font-weight="700" fill="#222">LEMMAS · channel layer</text>
+
+  <g font-size="10.5">
+    <circle cx="844" cy="150" r="9" fill="#2e7d32"/><text x="844" y="153.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+    <text x="862" y="147" font-weight="700" fill="#2e7d32">Channel open &amp; funding</text>
+    <text x="862" y="161" fill="#444">Protocol_execution ✓ (witness) · Distinct_Parties_Configuration ✓</text>
+    <text x="862" y="173" fill="#444">Funds_Locked_Before_Update ✓ · HTLC_On_Opened_Channel ✓</text>
+
+    <circle cx="844" cy="205" r="9" fill="#2e7d32"/><text x="844" y="208.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+    <text x="862" y="202" font-weight="700" fill="#2e7d32">State update &amp; revocation</text>
+    <text x="862" y="216" fill="#444">state_update ✓ · Update_Requires_Negotiation ✓</text>
+    <text x="862" y="228" fill="#444">Invoice_Released_Once ✓ · Ltk_Known_Implies_Compromised ✓</text>
+
+    <circle cx="844" cy="260" r="9" fill="#ed6c02"/><text x="844" y="263.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+    <text x="862" y="257" font-weight="700" fill="#ed6c02">Refund / anti-stall</text>
+    <text x="862" y="271" fill="#444">Refund_Requires_Timeout ✓ · Refund_Possible ✓ (witness)</text>
+
+    <circle cx="844" cy="303" r="9" fill="#2e7d32"/><text x="844" y="306.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+    <text x="862" y="300" font-weight="700" fill="#2e7d32">Cooperative close &amp; settlement</text>
+    <text x="862" y="314" fill="#444">Cooperative_Close_Execution ✓ · settlement_is_traceable ✓</text>
+    <text x="862" y="326" fill="#444">instant_funds ✓ · delayed_funds ✓</text>
+
+    <circle cx="844" cy="358" r="9" fill="#c62828"/><text x="844" y="361.5" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+    <text x="862" y="355" font-weight="700" fill="#c62828">Punishment (safety, not an attack)</text>
+    <text x="862" y="369" fill="#444">No_Punishment_Without_Cheating ✓</text>
+    <text x="862" y="381" fill="#666">— red trace = the cheat; the lemma proves punishment ⇒ prior cheat</text>
+  </g>
+
+  <line x1="835" y1="405" x2="1170" y2="405" stroke="#eee"/>
+  <text x="835" y="425" font-size="10.5" fill="#777">✓ = machine-checked in multihop.spthy.</text>
+  <text x="835" y="440" font-size="10.5" fill="#777">Routing / value / attack lemmas are on the</text>
+  <text x="835" y="455" font-size="10.5" fill="#777">4-party figure (anchors ①–⑧ there).</text>
+
+  <text x="440" y="900" font-size="11.5" fill="#888" text-anchor="middle">Rough draft — channel-layer lemmas mapped. Next: timing theories (cltv_blocks / Clock / timeout).</text>
+</svg>

@@ -1,0 +1,99 @@
+// auth_local.spthy -- the crux of the N-hop soundness theorem.
+//
+// Goal: prove a LOCAL per-hop authentication lemma (AUTH) on a *generic*
+// signed-message forward rule (one rule, fires at any hop), at BOUNDED size.
+// If this verifies, it discharges the cryptographic content of the refinement
+// theorem locally -- without triggering the origin-analysis recursion that
+// OOM-kills unbounded signed-message routing -- so that unbounded routing
+// safety, proved structurally on the abstract Route model, transfers to the
+// concrete signed-message protocol for all N.
+//
+// AUTH: if node M forwards an HTLC that it received from P, then either P
+// genuinely originated/forwarded it to M (the adjacent previous hop), or P's
+// long-term key was compromised. Quantifies over ONE adjacent pair (P,M).
+
+// ===========================================================================
+// RESULT (tested): the GENERIC single-rule signed-message forward does NOT
+// admit even this LOCAL, bounded AUTH proof. Precomputation (raw sources) does
+// not terminate: every lemma -- including the trivial Chain_Reachable witness --
+// times out at 300s, with AND without --auto-sources. The self-referential
+// 'htlc' term (a forwarded offer is the output of forwarding another offer)
+// defeats Tamarin's origin analysis at the SOURCES stage, which blocks ALL
+// lemmas, not just reachability. See auth_local_sources.spthy for a hand-written
+// [sources] lemma attempt -- it also times out (420s). CONCLUSION: the
+// soundness-theorem crux is NOT free on a generic rule; it is instead supported
+// by the FIXED-hop machine-checked AUTH lemmas Forward1_Requires_Offer (266
+// steps) and Forward2_Requires_Forward1 (274 steps) in multihop.spthy, which are
+// genuinely local (one adjacent pair) and position-independent.
+// ===========================================================================
+
+theory auth_local
+begin
+
+builtins: hashing, signing
+
+rule Register_key:
+    [ Fr(~ltk) ]
+    --[ KeyGen($A, ~ltk) ]->
+    [ !Ltk($A, ~ltk), !Pk($A, pk(~ltk)), Out(pk(~ltk)) ]
+
+rule Compromise_Ltk:
+    [ !Ltk($A, ltk) ]
+    --[ LtkCompromised($A) ]->
+    [ Out(ltk) ]
+
+// The sender originates an HTLC offer to the first hop.
+rule Originate_HTLC:
+    let offer = <'htlc', ~ptr, $S, $B, y>
+        sig   = sign(offer, ltkS)
+    in
+    [ Fr(~ptr), !Ltk($S, ltkS), In(y) ]
+    --[ HTLCOffered($S, $B, ~ptr, y) ]->
+    [ Out(<offer, sig>) ]
+
+// GENERIC forward: node M receives a signed offer from P (verifying P's
+// signature), and forwards a fresh signed offer to N. This one rule plays
+// every hop -- it is the self-referential signed-message forward that makes
+// unbounded reachability intractable.
+rule Forward_HTLC:
+    let inOffer  = <'htlc', ptrIn,  $P, $M, y>
+        outOffer = <'htlc', ~ptrOut, $M, $N, y>
+        sigM     = sign(outOffer, ltkM)
+    in
+    [ In(<inOffer, sigP>), Fr(~ptrOut),
+      !Pk($P, pkP), !Ltk($M, ltkM) ]
+    --[ HTLCForwarded($M, $N, $P, ~ptrOut, y),
+        Neq($P, $M), Neq($M, $N),
+        Eq(verify(sigP, inOffer, pkP), true) ]->
+    [ Out(<outOffer, sigM>) ]
+
+restriction Equality:
+    "All a b #i. Eq(a, b) @ #i ==> a = b"
+restriction Inequality:
+    "All a b #i. Neq(a, b) @ #i ==> not(a = b)"
+
+// -------- the crux: LOCAL per-hop authentication --------
+lemma AUTH [use_induction]:
+    "All M N P ptrOut y #i.
+        HTLCForwarded(M, N, P, ptrOut, y) @ #i
+     ==> (Ex ptrIn #j. HTLCOffered(P, M, ptrIn, y) @ #j & #j < #i)
+       | (Ex X ptrIn #j. HTLCForwarded(P, M, X, ptrIn, y) @ #j & #j < #i)
+       | (Ex #r. LtkCompromised(P) @ #r & #r < #i)"
+
+// honest variant: without any key compromise, the incoming HTLC provably came
+// from the adjacent previous hop.
+lemma AUTH_Honest:
+    "All M N P ptrOut y #i.
+        HTLCForwarded(M, N, P, ptrOut, y) @ #i
+      & (not Ex Q #r. LtkCompromised(Q) @ #r)
+     ==> (Ex ptrIn #j. HTLCOffered(P, M, ptrIn, y) @ #j & #j < #i)
+       | (Ex X ptrIn #j. HTLCForwarded(P, M, X, ptrIn, y) @ #j & #j < #i)"
+
+// non-vacuity: a two-hop forward chain is reachable (so AUTH is not vacuous).
+lemma Chain_Reachable:
+    exists-trace
+    "Ex M N P X ptrIn ptrOut y #i #j.
+        HTLCForwarded(P, M, X, ptrIn, y) @ #i
+      & HTLCForwarded(M, N, P, ptrOut, y) @ #j & #i < #j"
+
+end

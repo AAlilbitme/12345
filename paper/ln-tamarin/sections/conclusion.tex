@@ -1,0 +1,20 @@
+\section{Conclusion and Future Work}
+
+We have given a modular, machine-checked model integrating the Lightning
+two-party channel lifecycle with multi-hop HTLC routing and fees, establishing
+61 distinct properties across five theories. The integration surfaced a linear
+single-spend discipline: two independent soundness gaps arising from encoding
+one-shot on-chain outputs as persistent facts, repaired uniformly by linear
+tokens, and generalisable into an auditable modelling invariant. We established
+the minimality of the T3 claim obligation empirically, proved value
+conservation with strictly positive per-hop fees, exhibited a griefing denial
+of service, reproduced the wormhole attack and quantified its theft as exactly
+the bypassed fees, and mapped where the prover stops scaling.
+
+Three directions follow. The refinement theorem should be machine-checked
+rather than argued on paper. The concrete and abstract layers should be
+reconciled so that message-layer attacks such as the wormhole can be stated at
+unbounded path length. And the channel layer would benefit from the numeric
+timing that currently lives only in the separate clock theories --- which, on
+the evidence of \Cref{sec:discipline}, may become tractable once the model is
+sufficiently linear.

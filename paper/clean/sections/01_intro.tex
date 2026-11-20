@@ -1,0 +1,100 @@
+\section{Introduction}\label{sec:intro}
+
+\paragraph{Payment Channel Networks}
+Bitcoin~\cite{nakamoto2008}, the leading cryptocurrency by market
+capitalisation, is costly, has low bandwidth (a few dozen transactions per
+second) and high latency. Payment channels let two users pool funds, then
+perform arbitrarily many payments quickly and cheaply via balance updates,
+relying on the blockchain only to resolve disputes; revocation ensures that no
+honest party loses money. As a channel per pair of users is often not cost
+effective, payment channel networks route funds transitively across channels.
+The most popular is perhaps the Lightning Network~\cite{poon2016}, with about
+\$170M locked~\cite{oneml2026}. Due to the sheer complexity of its
+specification~\cite{bolts}, it suffers from many attacks~\cite{tikhomirov2020},
+\cite{malavolta2019}, \cite{aumayr2021}. Promising ongoing
+efforts~\cite{grundmann2026}, \cite{litos2026} formalise it
+(\cite{grundmann2026} model-checks finite instances in TLA+). We give a
+machine-checked symbolic model of both the channel layer and
+multi-hop routing for unboundedly many parties, channels, updates and payments
+and for routes of any length, under explicit restrictions
+(Sec.~\ref{sec:method}).
+% TODO: keep this sentence consistent with the characterisation of [9] in Sec. VII
+% (scope and tool of [9] still to be stated there; no claim that [9] lacks this scope).
+
+\paragraph{Protocol Verification}
+Designing and analysing cryptographic protocols is notoriously difficult and
+error-prone, as the attacks and tentative fixes on the Lightning Network
+illustrate. In the computational model, inherited from cryptography, attackers
+and participants are polynomial-time algorithms and results are typically
+probabilistic; its tools, such as \textsc{CryptoVerif}~\cite{blanchet2006},
+\textsc{EasyCrypt}~\cite{barthe2011}, \textsc{Squirrel}~\cite{baelde2021} and
+\textsc{CryptoVampire}~\cite{jeanteur2024}, require substantial manual effort
+or are narrower in scope. The symbolic (\emph{Dolev-Yao}) model~\cite{dolevyao1983}
+gives the attacker infinite computational power but limits it to a fixed term
+algebra, abstracting away from cryptography to focus on the logic of a
+protocol, where much attacker activity is found; it enjoys
+successful automated verifiers, \proverif~\cite{blanchet2001} and
+\tamarin~\cite{meier2013}. Mechanised proofs cover widely used protocols such
+as \textsc{WireGuard}~\cite{lipp2019} and TLS~1.3~\cite{cremers2017}, the
+latter in \tamarin, which proves trace properties for unboundedly many sessions
+and states assumptions explicitly, as trace restrictions.
+% [17] is a computational (CryptoVerif) proof of WireGuard, not a Tamarin model.
+
+\paragraph{Contributions}
+All results are checked with \tamarin~1.10 and reproduced by \texttt{make all}
+(Sec.~\ref{sec:verified}); all-traces statements hold for every trace
+satisfying the model's restrictions (Sec.~\ref{sec:method}).
+\begin{itemize}[\setlength{\IEEElabelindent}{0pt}]
+\item \emph{One theory, one adversary.} \code{lightning.spthy} covers the
+  channel layer (opening, unboundedly many updates, revocation, cooperative and
+  unilateral closing, punishment) and multi-hop HTLC routing, with one generic
+  rule, \code{Forward_HTLC}, for every hop of routes of any length. The
+  Dolev-Yao adversary can also compromise any long-term key at any time, and
+  two compromised parties on a payment's route can relay its preimage around
+  the parties between them (\code{AttackerSkip}; Sec.~\ref{sec:threat}). The layers share
+  the channel topology and a per-channel slot; their contract, that each HTLC
+  is resolved at most once, is a named restriction (\code{OneResolutionPerHTLC})
+  justified informally, not a composition theorem (Sec.~\ref{sec:method}).
+\item \emph{Safety and liveness.} Among 32 all-traces safety lemmas: a party is
+  punished only if it published a revoked state or its key was compromised; a
+  sender settles only against the receiver's invoice, unless the receiver's
+  key was compromised; preimages stay secret (our model never sends them); no
+  HTLC is both redeemed and refunded. Under three liveness restrictions, T1 to
+  T3 (a redemption precedes its channel's timeout; an uncompromised forwarder's
+  outgoing HTLC times out before its incoming one; an uncompromised forwarder
+  whose outgoing HTLC is redeemed also claims its incoming one if that one
+  times out), an intermediary
+  whose outgoing HTLC is redeemed has its incoming one
+  refunded only if its key was compromised before that HTLC timed out, and,
+  without key compromise, payment atomicity holds across any two consecutive
+  forwarders. Given T3, this intermediary safety follows in a few proof steps,
+  so its weight lies in T3 itself. The restrictions
+  remove every violating trace, including traces in which an uncompromised
+  forwarder could not have acted in time; our results say nothing about such
+  traces. Ten exists-trace lemmas show that the protocol runs and that attacks
+  with compromised keys are reachable (Sec.~\ref{sec:verification}). T3
+  (\code{IntermediaryMustClaim}) is necessary: without it, \tamarin{} finds a
+  compromise-free trace in which an intermediary's outgoing HTLC is
+  redeemed while its incoming one is refunded. None of the five liveness lemmas
+  we check needs T1, and neither intermediary-safety lemma needs T2, from which
+  the timeout order \code{ForwardTimeGap} is derived
+  (Sec.~\ref{sec:timing}).
+\item \emph{The wormhole: trace and theorem.} \tamarin{} checks (by
+  replaying a saved proof) a five-party trace where the payment settles
+  while an honest intermediary is refunded on its outgoing HTLC, earning no
+  fee (Sec.~\ref{sec:wormhole}). Conversely, if the sender settles, a forwarder
+  on its route is refunded on its outgoing HTLC only if some long-term key is
+  compromised: at each of positions 1 to 6 of a route of any length under
+  the liveness restrictions and, if the payment hash is offered once, at every
+  hop without them (so also with them). Neither result says whose key is
+  compromised, or when (Sec.~\ref{sec:bypass}).
+\item \emph{Countermeasure.} On a fixed route of three intermediaries, per-hop
+  locks derived with secret tweaks (a symbolic stand-in for point time-locked
+  contracts, PTLCs~\cite{malavolta2019}) prevent bypassing the honest middle
+  hop unless the sender is compromised; plain HTLCs admit it
+  (Sec.~\ref{sec:ptlc}).
+\end{itemize}
+Sec.~\ref{sec:overview} recalls the protocol,
+Secs.~\ref{sec:symbolic}--\ref{sec:bypass} give our model and results,
+Secs.~\ref{sec:related}--\ref{sec:limitations} related work and limitations, and
+Sec.~\ref{sec:conclusion} concludes.

@@ -1,0 +1,87 @@
+// Prototype v2: arbitrary-length routing via a LINEAR FACT CHAIN (no signed
+// network messages for forwarding).  Forward consumes Route(prev,me,..) and
+// produces Route(me,next,..) -- self-chaining, unbounded length, but no
+// recursive signed term for Tamarin's source analysis to choke on.
+theory generic_v2
+begin
+
+builtins: hashing
+
+rule Open_Channel:
+    [ Fr(~ptr) ]
+    --[ ChannelOpen($A, $B, ~ptr) ]->
+    [ !ChannelConnect(~ptr, $A, $B), !ChannelConnect(~ptr, $B, $A) ]
+
+rule Receiver_Create_Invoice:
+    [ Fr(~x) ]
+    --[ InvoiceCreated($Receiver, h(~x)), SecretPreimage($Receiver, ~x) ]->
+    [ ReceiverInv($Receiver, ~x), !Invoice($Receiver, h(~x)) ]
+
+// Sender offers on its outgoing channel: starts the Route chain.
+rule Sender_Offer_HTLC:
+    [ !Invoice($Receiver, y), !ChannelConnect(ptrSF, $Sender, $F) ]
+    --[ HTLCOffered($Sender, $F, ptrSF, y), HTLCAdded(ptrSF, y),
+        Neq($Sender, $F) ]->
+    [ SenderPending($Sender, $F, ptrSF, y),
+      Route($Sender, $F, ptrSF, y) ]
+
+// GENERIC FORWARD -- one rule, any chain length, via linear Route facts.
+rule Forward_HTLC:
+    [ Route($Prev, $Me, ptrIn, y),
+      !ChannelConnect(ptrOut, $Me, $Next) ]
+    --[ HTLCForwarded($Me, $Prev, $Next, ptrIn, ptrOut, y),
+        HTLCAdded(ptrOut, y),
+        ForwardHTLC($Me, ptrIn, ptrOut, y),
+        Neq(ptrIn, ptrOut), Neq($Prev, $Me), Neq($Me, $Next) ]->
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y),
+      Route($Me, $Next, ptrOut, y) ]
+
+// Receiver fulfils the last Route hop and reveals the preimage backward.
+rule Receiver_Fulfill_HTLC:
+    [ Route($Prev, $Receiver, ptrIn, y), ReceiverInv($Receiver, x) ]
+    --[ HTLCFulfilled($Receiver, $Prev, ptrIn, y),
+        PreimageReleased($Receiver, x),
+        Redeemed(ptrIn, y), Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ]
+
+rule Intermediary_Settle:
+    [ IntermediaryPending($Me, $Prev, $Next, ptrIn, ptrOut, y),
+      Fulfill(ptrOut, x) ]
+    --[ IntermediaryClaimed($Me, $Prev, ptrIn, x), Redeemed(ptrIn, y),
+        Eq(h(x), y) ]->
+    [ Fulfill(ptrIn, x) ]
+
+rule Sender_Settle:
+    [ SenderPending($Sender, $F, ptrSF, y), Fulfill(ptrSF, x) ]
+    --[ SenderSettled($Sender, $F, ptrSF, x), Redeemed(ptrSF, y),
+        Eq(h(x), y) ]->
+    [ ]
+
+restriction Inequality:
+    "All x y #i. Neq(x, y) @ #i ==> not(x = y)"
+restriction Equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+// Every forward was preceded by the previous hop (offer or a forward TO me).
+lemma Forward_Requires_Incoming [use_induction]:
+    "All Me Prev Next ptrIn ptrOut y #i.
+        HTLCForwarded(Me, Prev, Next, ptrIn, ptrOut, y) @ #i
+     ==> (Ex S #j. HTLCOffered(S, Me, ptrIn, y) @ #j & #j < #i)
+       | (Ex P0 pin0 #j. HTLCForwarded(Prev, P0, Me, pin0, ptrIn, y) @ #j & #j < #i)"
+
+// Settling the incoming HTLC requires the preimage to have been released.
+lemma Claim_Requires_Release [use_induction]:
+    "All Me Prev ptrIn x #i.
+        IntermediaryClaimed(Me, Prev, ptrIn, x) @ #i
+     ==> Ex R #k. PreimageReleased(R, x) @ #k & #k < #i"
+
+// Non-vacuity: a two-intermediary chain settles end to end.
+lemma Two_Hop_Payment_Possible:
+    exists-trace
+    "Ex S F1 F2 R p0 p1 p2 x #o #f1 #f2 #ful.
+        HTLCOffered(S, F1, p0, h(x))            @ #o
+      & HTLCForwarded(F1, S, F2, p0, p1, h(x))  @ #f1
+      & HTLCForwarded(F2, F1, R, p1, p2, h(x))  @ #f2
+      & HTLCFulfilled(R, F2, p2, h(x))          @ #ful"
+
+end

@@ -1,0 +1,375 @@
+// Tactics (goal rankings) for the lemmas of lemmas.spthy that the default
+// heuristic does not finish (copied from Simon's tactics.spthy).
+
+tactic: cheat_race
+presort: s
+prio:
+    regex "^\s*RevokedClaimed[(]"
+prio:
+    regex "^\s*!Block[(]"
+prio:
+    regex "PunishRevoked"
+prio:
+    regex "^\s*RevokedDelayed[(]"
+deprio:
+    regex "KU[(]"
+    regex "HTLCExpiry"
+
+tactic: enabledness
+presort: s
+prio:
+    regex "^\s*[(]∃ #[a-z]+[.] [(]LtkCompromised"
+prio:
+    regex "^\s*(PendingUsed|FulfilledUsed|RevokedClaimed|Old|Redeemed|Refunded|PunishRevoked)[(]"
+prio:
+    regex "^\s*!Compromised[(]"
+prio:
+    regex "^\s*!RouteInfo[(].*▶₁"
+prio:
+    regex "^\s*(IntermediaryPending|SenderPending|RevokedDelayed)[(]"
+prio:
+    regex "^\s*!Block[(]"
+deprio:
+    regex "KU[(]"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "^\s*Route[(]"
+    regex "HTLCExpiry"
+
+tactic: preimage_user
+presort: s
+prio:
+    regex "^\s*FulfilledUsed[(]"
+prio:
+    regex "^\s*!Compromised[(]"
+prio:
+    regex "^\s*!RouteInfo[(].*▶₁"
+prio:
+    regex "^\s*(IntermediaryPending|SenderPending)[(]"
+prio:
+    regex "^\s*Route[(].*▶₀ #f"
+deprio:
+    regex "KU[(]"
+    regex "HTLCExpiry"
+    regex "∥"
+
+tactic: incoming_resolution
+presort: s
+prio:
+    regex "^\s*Old[(]"
+prio:
+    regex "^\s*(SenderPending|IntermediaryPending)[(]"
+prio:
+    regex "^\s*!Block[(]"
+prio:
+    regex "^\s*Route[(].*▶₀ #(f|o)"
+prio:
+    regex "HTLCExpiry"
+deprio:
+    regex "KU[(]"
+    regex "∥"
+
+tactic: collect_enabled
+presort: s
+prio:
+    regex "^\s*[(]∃ #u[.] [(]PendingUsed"
+prio:
+    regex "^\s*(PendingUsed|FulfilledUsed|Old)[(]"
+prio:
+    regex "^\s*Redeemed[(] pout"
+prio:
+    regex "^\s*[(]∃ #[a-z]+[.] [(]Redeemed[(] pin"
+prio:
+    regex "∥"
+deprio:
+    regex "KU[(]"
+    regex "HTLCExpiry"
+    regex "^\s*Route[(]"
+
+tactic: sender_pending
+presort: s
+prio:
+    regex "Refunded" | regex "SenderPending" | regex "IntermediaryPending"
+deprio:
+    regex "∥ [(]∃ #r[.] [(]Refunded"
+
+tactic: route_first
+presort: s
+prio:
+    regex "Route"
+
+tactic: expiry_first
+presort: s
+prio:
+    regex "HTLCExpiry"
+
+tactic: chain_walk
+presort: s
+prio:
+    regex "^\s*[(]∀"
+prio:
+    regex "^\s*[(]last[(]#"
+prio:
+    regex "^\s*[(]∃ #[a-z]+[.] [(]LtkCompromised"
+prio:
+    regex "^\s*[(]∃ S2 F2 p2"
+prio:
+    regex "^\s*HTLCExpiry[(]"
+prio:
+    regex "^\s*HTLCOffered[(]"
+prio:
+    regex "∥ [(]∃ #i[.] [(]Tick"
+prio:
+    regex "∥"
+deprio:
+    regex "KU[(]"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "!Ltk"
+    regex "!Pk"
+    regex "RouteInfo"
+    regex "Mutex"
+    regex "ReceiverInv"
+    regex "SenderPending"
+    regex "IntermediaryPending"
+    regex "^\s*Route[(]"
+
+tactic: settle_honest
+presort: s
+prio:
+    regex "^\s*!RouteInfo[(].*▶₂"
+prio:
+    regex "^\s*!Compromised[(]"
+prio:
+    regex "^\s*IntermediaryPending[(]"
+prio:
+    regex "^\s*Fulfilled[(].*▶₁ #i\s*$"
+prio:
+    regex "^\s*Route[(].*▶₀ #(f|vr|l|i)\s*$"
+prio:
+    regex "LtkCompromised"
+deprio:
+    regex "KU[(]"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "!Ltk"
+    regex "!Pk"
+    regex "Mutex"
+    regex "ReceiverInv"
+    regex "SenderPending"
+    regex "HTLCExpiry"
+    regex "^\s*Route[(]"
+    regex "∥"
+    regex "RouteInfo"
+    regex "Fulfilled"
+
+tactic: forwarder_resolution
+presort: s
+prio:
+    regex "Refunded[(] [$]Me, pout, [^)]*[)] @ #r[)] ∧ #r < #k[)]\s*$"
+prio:
+    regex "^\s*(Redeemed|FeeEarned)[(] pin"
+prio:
+    regex "^\s*Refunded[(]"
+prio:
+    regex "^\s*ForwardAmounts[(]"
+prio:
+    regex "^\s*IntermediaryPending[(]"
+prio:
+    regex "^\s*(Redeemed|FeeEarned)[(]"
+prio:
+    regex "LtkCompromised"
+deprio:
+    regex "KU[(]"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "!Ltk"
+    regex "!Pk"
+    regex "Mutex"
+    regex "ReceiverInv"
+    regex "SenderPending"
+    regex "HTLCExpiry"
+    regex "^\s*Route[(]"
+    regex "∥"
+
+tactic: fee_source
+presort: s
+prio:
+    regex "^\s*FeeEarned[(]"
+prio:
+    regex "^\s*IntermediaryPending[(]"
+deprio:
+    regex "KU[(]"
+    regex "^\s*Route[(]"
+    regex "∥"
+
+tactic: sender_preimage
+presort: s
+prio:
+    regex "^\s*SenderPending[(].*▶₀ #i\s*$"
+prio:
+    regex "^\s*Fulfilled[(].*▶₁ #i\s*$"
+prio:
+    regex "^\s*PreimageReleased[(]"
+prio:
+    regex "^\s*ReceiverInv[(]"
+prio:
+    regex "^\s*InvoiceCreated[(]"
+prio:
+    regex "^\s*SecretPreimage[(]"
+prio:
+    regex "^\s*!Compromised[(]"
+prio:
+    regex "LtkCompromised"
+deprio:
+    regex "KU[(]"
+    regex "RouteInfo"
+    regex "∥"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"
+    regex "^\s*Route[(]"
+    regex "SenderPending"
+    regex "IntermediaryPending"
+    regex "Fulfilled"
+
+tactic: invoice_signature
+presort: s
+prio:
+    regex "^\s*SenderPending[(].*▶₀ #i\s*$"
+prio:
+    regex "^\s*!KU[(] sign[(]<[$]Receiver" | regex "^\s*!KU[(] sign[(]<'invoice', [$]Receiver"   // ADDED alternative for the tag
+prio:
+    regex "^\s*!KU[(] ~ltk"
+prio:
+    regex "^\s*!Ltk[(]"
+prio:
+    regex "^\s*InvoiceCreated[(]"
+prio:
+    regex "LtkCompromised"
+deprio:
+    regex "RouteInfo"
+    regex "∥"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"
+    regex "^\s*Route[(]"
+    regex "SenderPending"
+    regex "IntermediaryPending"
+    regex "Fulfilled"
+    regex "KU[(]"
+
+tactic: pending_once
+presort: s
+prio:
+    regex "^\s*Redeemed[(] pin"
+prio:
+    regex "^\s*Refunded[(]"
+prio:
+    regex "^\s*(IntermediaryPending|SenderPending)[(]"
+prio:
+    regex "^\s*Route[(].*▶₀ #(f|vr)"
+deprio:
+    regex "∥"
+    regex "KU[(]"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"
+    regex "HTLCExpiry"
+
+tactic: sender_amount
+presort: s
+prio:
+    regex "SenderPending.*#s$"
+prio:
+    regex "HTLCAmount.*#o$"
+prio:
+    regex "sign[(]<[$]" | regex "sign[(]<'invoice'"   // ADDED alternative for the tag
+prio:
+    regex "ReceiverInv" | regex "PreimageReleased"
+prio:
+    regex "Fulfilled.*#s$"
+prio:
+    regex "∥"
+deprio:
+    regex "Fulfilled" | regex "Route" | regex "Mutex" | regex "KU" | regex "ChannelConnect" | regex "ReadyToLock" | regex "Wallet" | regex "Pk"
+
+// ADDED for the new lemmas (tagged invoice).
+tactic: offer_invoice
+presort: s
+prio:
+    regex "^\s*!KU[(] sign[(]<'invoice'"
+prio:
+    regex "^\s*!KU[(] ~ltk"
+prio:
+    regex "^\s*!Ltk[(]"
+prio:
+    regex "InvoiceCreated"
+prio:
+    regex "LtkCompromised"
+deprio:
+    regex "RouteInfo"
+    regex "∥"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"
+    regex "^\s*Route[(]"
+    regex "SenderPending"
+    regex "IntermediaryPending"
+    regex "Fulfilled"
+    regex "KU[(]"
+
+// add: tactics for the goal-2 model (HTLC steps through channel updates).
+// add: They solve the new HTLC chain first (Route/Fulfilled -> AwaitRoute/
+// add: AwaitFulfilled -> Committed -> InFlight -> UpdateFor) and leave the
+// add: channel-state history (PendingA/B, StateA/B) and KU goals for last.
+tactic: upd_route // add
+presort: s
+prio:
+    regex "^\s*Route[(]"
+prio:
+    regex "^\s*(AwaitRoute|Committed|InFlight|!UpdateDone)[(]"
+prio:
+    regex "^\s*(HTLCForwarded|HTLCOffered|HTLCAdded|HTLCFulfilled)[(]"
+prio:
+    regex "^\s*UpdateFor[(]"
+deprio:
+    regex "Pending[AB][(]"
+    regex "State[AB][(]"
+    regex "KU[(]"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"
+
+tactic: upd_preimage // add
+presort: s
+prio:
+    regex "^\s*SenderPending[(].*▶₀ #i\s*$"
+prio:
+    regex "^\s*Fulfilled[(]"
+prio:
+    regex "^\s*(AwaitFulfilled|Committed|InFlight|!UpdateDone)[(]"
+prio:
+    regex "^\s*PreimageReleased[(]"
+prio:
+    regex "^\s*(ReceiverInv|InvoiceCreated|SecretPreimage)[(]"
+prio:
+    regex "^\s*!Compromised[(]" | regex "LtkCompromised"
+deprio:
+    regex "Pending[AB][(]"
+    regex "State[AB][(]"
+    regex "KU[(]"
+    regex "RouteInfo"
+    regex "ChannelConnect"
+    regex "ReadyToLock"
+    regex "Wallet"
+    regex "Mutex"

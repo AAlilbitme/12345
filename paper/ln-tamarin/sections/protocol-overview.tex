@@ -1,0 +1,137 @@
+\section{Protocol Overview and Threat Model}
+\label{sec:protocol}
+
+\subsection{Payment Channel Lifecycle}
+\label{sec:payment-channel}
+
+In a payment channel, two parties broadcast an on-chain funding transaction.
+Once the channel is open, they transact off-chain by exchanging signed
+commitments, and update the state by exchanging new ones. When the state is
+updated, the parties exchange revocation secrets for the previous commitment
+and revoke the old state. If one party publishes an old commitment after
+revocation, the other may claim all funds. Between state updates, any
+commitment that has not yet been revoked is a valid unilateral close: if either
+party publishes one there is no penalty. Punishment is triggered only when a
+revoked commitment is published.
+
+Channels close either cooperatively, with both parties agreeing on the final
+balance and settling in a single chain transaction, or unilaterally. In a
+unilateral close one party broadcasts an unrevoked commitment, and both must
+wait for a relative timelock (CSV) to expire. That delay is what gives the
+counterparty time to detect whether the published state was revoked. If it was,
+the counterparty punishes the cheater and claims the entirety of the channel
+funds.
+
+\subsection{Multi-Hop HTLC Routing}
+\label{sec:multi-hop-htlc-routing}
+
+When sender and recipient have no direct channel, the payment is routed through
+intermediaries along a path $S \to F_1 \to \dots \to F_n \to R$. Because
+intermediaries are untrusted, each hop is conditioned on a single shared
+secret, so that the payment either completes along the entire path or completes
+nowhere.
+
+\medbfparagraph{Lock round}
+The receiver generates a preimage $x$ and sends the sender an invoice
+containing the hash $y = H(x)$ and the requested amount $v$, keeping $x$
+secret. The sender adds an HTLC to its channel with $F_1$, locking funds
+conditional on $y$ before a deadline $d_0$; after $d_0$ the payer may reclaim
+them. The unlock condition is to present $x'$ with $H(x') = y$ before the
+deadline. Each forwarder in turn locks an HTLC on its outgoing channel under
+the \emph{same} hash, deducting a routing fee, so that amounts decrease and
+deadlines tighten toward the receiver:
+\[
+\small
+v_0 > v_1 > \cdots > v_n = v,
+\qquad
+d_0 > d_1 > \cdots > d_n .
+\]
+
+No funds move during this round. Each HTLC becomes an additional conditional
+output in the two parties' current commitment transaction, and is therefore
+subject to the revocation mechanism of \Cref{sec:payment-channel}. Locking is
+safe for $F_i$ precisely because it holds an incoming HTLC on the same hash for
+a strictly larger amount: if its outgoing HTLC is claimed, the secret needed to
+claim its incoming one is thereby exposed.
+
+\medbfparagraph{Release round}
+The receiver reveals $x$ to the last forwarder to claim the final HTLC. Since
+every HTLC shares the preimage, each intermediary claims on its incoming
+channel using the same $x$, learning it when the next hop claims downstream. To
+claim $v_{n-1}$ from $F_{n-1}$, $F_n$ presents $x$ on its incoming HTLC and
+retains $v_{n-1} - v_n$ as its fee. The preimage propagates backward hop by hop
+until the sender's HTLC is settled. If any party fails to forward and the
+timelock expires, funds return to whoever locked them. If honest forwarders
+claim on time, everyone is paid; otherwise no one is.
+
+\medbfparagraph{Why deadlines must decrease}
+Consider $F_i$ holding an incoming HTLC at $d_{i-1}$ and an outgoing one at
+$d_i$. If $F_{i+1}$ claims the outgoing HTLC at the latest permitted moment
+$d_i$, then $F_i$ learns $x$ at $d_i$ and retains the window $(d_i, d_{i-1})$
+in which to settle its incoming claim. The gap $d_{i-1} - d_i$ is the CLTV
+delta, and it is precisely the time reserved for $F_i$ to recover its funds.
+Were the ordering inverted, so that $d_{i-1} < d_i$, then $F_i$'s incoming HTLC
+would expire and be refunded before the downstream party claims at $d_i$: $F_i$
+would have paid $v_i$ downstream while recovering nothing upstream, losing the
+full forwarded amount. \Cref{sec:minimality} derives the positivity of this
+delta and the non-emptiness of the resulting window from a concrete block
+clock, rather than assuming them.
+
+\medbfparagraph{Residual liveness requirement}
+A non-empty claim window is necessary but not sufficient: nothing in the
+timelock structure compels $F_i$ to use it. An intermediary offline during
+$(d_i, d_{i-1})$ forfeits its incoming HTLC even though every party followed
+the protocol and no one cheated. Routing security therefore reduces, at this
+point, to a liveness assumption on honest intermediaries, which corresponds in
+deployment to watchtower infrastructure~\cite{mccorry2019pisa}.
+
+Furthermore, the entire release round depends on the receiver disclosing $x$.
+While funds are locked, every party on the path is waiting for one of two
+events:
+
+\begin{itemize}
+  \item the receiver releases $x$, which propagates backward so that each party
+  claims its HTLC and collects its fee; or
+  \item the deadline $d_i$ passes, the HTLC times out, and the party recovers
+  its funds.
+\end{itemize}
+
+No one can force the receiver to reveal $x$. A receiver that simply declines
+immobilises the capital of every party on the path until the deadlines elapse
+--- a griefing denial of service. Separately, the \emph{wormhole attack} occurs
+when two dishonest, non-adjacent parties communicate directly, relaying $x$
+between themselves and skipping the intermediaries in between without
+disclosing it to them. The skipped intermediary is honest throughout: it
+forwards value and earns no fee. Both pathologies are reachable in our model.
+
+\subsection{Threat Model and Security Goals}
+\label{sec:threat}
+
+We assume the standard Dolev--Yao adversary model~\cite{dolev1983security}. The
+adversary controls the whole network: it can read, modify, and inject messages.
+Its only limitation is that it cannot break cryptographic primitives. We
+additionally model long-term key compromise as a separate adversarial
+capability, so that properties can be stated conditionally on honesty rather
+than assuming it globally.
+
+\medbfparagraph{Liveness assumptions}
+Security at the routing layer degrades into a liveness requirement: a node that
+goes offline loses funds even in an otherwise correct execution. We encode this
+with four timing restrictions, distinguishing passive orderings from active
+obligations.
+
+\begin{itemize}
+  \item \textbf{Structural clock constraints.} T1 (\code{RedeemBeforeTimeout}),
+  T2a (\code{ForwardTimeGap}), and T2b
+  (\code{HonestPartiesActBeforeIncomingTimeout}) are assumed structural
+  constraints of the CLTV clock.
+  \item \textbf{Active claiming.} T3 (\code{IntermediaryMustClaim}) requires an
+  intermediary to act: it must claim its incoming HTLC once its outgoing HTLC
+  is redeemed.
+\end{itemize}
+
+T1, T2a and T2b carry timing soundness; T3 carries intermediary safety.
+\Cref{sec:minimality} shows that none is implied by the others. Our security
+goals translate directly into verified lemmas: payment atomicity, intermediary
+safety, routing causality and authentication, timing safety, and value
+conservation.
