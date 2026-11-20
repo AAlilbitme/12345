@@ -28,6 +28,9 @@ GOAL2  = Settle_Is_Channel_Update HTLC_Commit_Correspondence Hand_Payment \
 # add: exists-trace lemma that must be FALSIFIED (the trace must not exist).
 GOAL2_NO_TRACE = Commit_After_Close_Witness
 
+# add: lemmas for Simon's review (make review)
+REVIEW = Updates_Sequential Second_HTLC_Same_Channel
+
 # add: helper lemmas for the safety lemmas below (proof aids, not results).
 HELPERS = Route_Made_Once Route_Has_Amount Paid_Has_Amount \
           Fulfilled_Out_Released Release_By_Creator
@@ -105,8 +108,7 @@ lemma:
 # add: without it (nofunding/, generated), No_Double_Publish must be FALSIFIED.
 # add: The copy also drops [reuse] from Funding_Spent_Once, which is false there.
 review:
-	@fail=0; $(RUN) Updates_Sequential || fail=1; \
-	 $(RUN) Second_HTLC_Same_Channel || fail=1; \
+	@fail=0; for L in $(REVIEW); do $(RUN) $$L || fail=1; done; \
 	 $(MAKE) --no-print-directory nofunding-check || fail=1; exit $$fail
 
 nofunding-check:
@@ -120,7 +122,7 @@ nofunding-check:
 # add: check that GOAL2 + HELPERS + SAFETY is exactly what Tamarin loads
 # add: without flags, and LIVENESS what it adds with -D=LIVENESS.
 check-count:
-	@diff <(echo $(GOAL2) $(GOAL2_NO_TRACE) $(HELPERS) $(SAFETY) | tr ' ' '\n' | sort) <(../list_lemmas.sh $(THEORY) lemmasupd.spthy | sort) && echo "Makefile lists match the theory (no flags)"
+	@diff <(echo $(GOAL2) $(GOAL2_NO_TRACE) $(REVIEW) $(HELPERS) $(SAFETY) | tr ' ' '\n' | sort) <(../list_lemmas.sh $(THEORY) lemmasupd.spthy | sort) && echo "Makefile lists match the theory (no flags)"
 	@TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) $(THEORY) lemmasupd.spthy
 	@FLAG=LIVENESS TAMARIN=$(TAMARIN) ../check_lemmas.sh $(THEORY) $(THEORY) lemmasupd.spthy
 
